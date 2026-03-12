@@ -1,0 +1,49 @@
+<?php
+/**
+ * Finans Kalesi — Sirket Modeli
+ * 
+ * TABLO: sirketler
+ * Sutunlar: id, firma_adi, vergi_no, telefon, email, adres, sektor,
+ *           abonelik_plani (enum: deneme/baslangic/profesyonel/kurumsal),
+ *           abonelik_bitis, aktif_mi (tinyint), kasa_sifre_hash, kasa_salt,
+ *           olusturma_tarihi, guncelleme_tarihi
+ */
+
+class Sirket {
+    
+    private $db;
+    
+    public function __construct() {
+        $this->db = Database::baglan();
+    }
+    
+    /**
+     * Yeni sirket olustur
+     */
+    public function olustur($veri) {
+        $sql = "INSERT INTO sirketler (firma_adi, vergi_no, telefon, email, adres, sektor, abonelik_plani, aktif_mi) 
+                VALUES (?, ?, ?, ?, ?, ?, 'deneme', 1)";
+        
+        $stmt = $this->db->prepare($sql);
+        $stmt->execute([
+            $veri['firma_adi'],
+            $veri['vergi_no'] ?? null,
+            $veri['telefon'] ?? null,
+            $veri['email'] ?? null,
+            $veri['adres'] ?? null,
+            $veri['sektor'] ?? null
+        ]);
+        
+        return (int) $this->db->lastInsertId();
+    }
+    
+    /**
+     * ID ile sirket bul
+     */
+    public function id_ile_bul($id) {
+        $sql = "SELECT * FROM sirketler WHERE id = ? LIMIT 1";
+        $stmt = $this->db->prepare($sql);
+        $stmt->execute([$id]);
+        return $stmt->fetch();
+    }
+}

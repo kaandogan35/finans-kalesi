@@ -1,0 +1,64 @@
+/**
+ * Card — Shadcn-uyumlu kart bileşeni ailesi
+ * Premium KOBİ Bankacılığı tasarım dili: bg-white, border-slate-200, rounded-xl
+ */
+
+import { cn } from '../../lib/utils'
+
+export function Card({ className, children, ...props }) {
+  return (
+    <div
+      className={cn(
+        'bg-white rounded-xl border border-slate-200 shadow-card',
+        className
+      )}
+      {...props}
+    >
+      {children}
+    </div>
+  )
+}
+
+export function CardHeader({ className, children, ...props }) {
+  return (
+    <div
+      className={cn(
+        'flex items-center justify-between px-5 py-3.5 border-b border-slate-200 bg-slate-50/70',
+        className
+      )}
+      {...props}
+    >
+      {children}
+    </div>
+  )
+}
+
+export function CardTitle({ className, children, ...props }) {
+  return (
+    <h3
+      className={cn('text-sm font-bold text-slate-700', className)}
+      {...props}
+    >
+      {children}
+    </h3>
+  )
+}
+
+export function CardContent({ className, children, ...props }) {
+  return (
+    <div className={cn('p-5', className)} {...props}>
+      {children}
+    </div>
+  )
+}
+
+export function CardFooter({ className, children, ...props }) {
+  return (
+    <div
+      className={cn('px-5 py-3.5 border-t border-slate-200 bg-slate-50/50', className)}
+      {...props}
+    >
+      {children}
+    </div>
+  )
+}

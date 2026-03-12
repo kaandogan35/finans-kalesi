@@ -1,0 +1,39 @@
+# Finans Kalesi — Apache URL Yönlendirme Kuralları
+# 
+# Bu dosya ne yapıyor?
+# Gelen TÜM istekleri index.php'ye yönlendiriyor.
+# Eski sistemde her sayfa ayrı dosyaydı (cariler.php, login.php).
+# Yeni sistemde tek giriş noktası var: index.php
+# index.php gelen URL'e bakarak doğru controller'ı çağırıyor.
+#
+# Benzetme: Dükkanda tek bir giriş kapısı var.
+# Kapıdaki görevli (index.php) müşteriyi doğru reyona yönlendiriyor.
+
+# URL yeniden yazma motorunu aç
+RewriteEngine On
+
+# Gerçekten var olan dosyalara dokunma (CSS, JS, resim gibi)
+RewriteCond %{REQUEST_FILENAME} !-f
+# Gerçekten var olan klasörlere dokunma
+RewriteCond %{REQUEST_FILENAME} !-d
+
+# Geri kalan her şeyi index.php'ye yönlendir
+# [QSA] = Query string'i de taşı (?sayfa=1 gibi parametreler)
+# [L] = Bu son kural, başka kurala bakma
+RewriteRule ^(.*)$ index.php [QSA,L]
+
+# Güvenlik: .env ve config dosyalarına dışarıdan erişimi engelle
+<FilesMatch "^\.">
+    Require all denied
+</FilesMatch>
+
+# PHP hata gösterimini kapat (production güvenliği)
+php_flag display_errors Off
+php_flag log_errors On
+
+# php -- BEGIN cPanel-generated handler, do not edit
+# Set the “ea-php74” package as the default “PHP” programming language.
+<IfModule mime_module>
+  AddHandler application/x-httpd-ea-php74 .php .php7 .phtml
+</IfModule>
+# php -- END cPanel-generated handler, do not edit

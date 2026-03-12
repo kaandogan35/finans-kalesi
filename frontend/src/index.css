@@ -1,0 +1,242 @@
+/* ─── Google Fonts: Plus Jakarta Sans ──────────────────────────────────────── */
+@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
+
+/* ─── Marka Değişkenleri ────────────────────────────────────────────────────── */
+:root {
+  --brand-dark:   #123F59;
+  --brand-navy:   #123F59; /* alias — geriye dönük uyumluluk */
+  --brand-accent: #f59e0b;
+  --brand-emerald: #10b981;
+  --brand-rose:    #f43f5e;
+}
+
+/* ─── Temel Sıfırlama ───────────────────────────────────────────────────────── */
+*, *::before, *::after {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  font-family: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
+  background-color: #f4f7fa;
+  background-image: radial-gradient(circle at 50% 0%, #e2e8f0 0%, #f4f7fa 80%);
+  min-height: 100vh;
+  color: #0f172a;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* ─── Premium Kart (Login / büyük sayfa kartları) ──────────────────────────── */
+.premium-card {
+  background: #ffffff;
+  border-radius: 24px;
+  box-shadow:
+    0 1px 3px  rgba(18, 63, 89, 0.06),
+    0 8px 24px rgba(18, 63, 89, 0.11),
+    0 24px 48px rgba(18, 63, 89, 0.08);
+  padding: 3rem 2.5rem;
+  border: 1px solid rgba(18, 63, 89, 0.12);
+}
+
+/* ─── Sayfa İçerik Kapsayıcı ────────────────────────────────────────────────── */
+.page-container {
+  padding: 28px 36px;
+  max-width: 1440px;
+  width: 100%;
+}
+@media (max-width: 768px) {
+  .page-container { padding: 20px 16px; }
+}
+
+/* ─── Light Card (PHP glass-card'ın açık temalı karşılığı) ─────────────────── */
+/* İçerik kartları, metrik kutular vb. için */
+.light-card {
+  background: #ffffff;
+  border: 1px solid rgba(18, 63, 89, 0.10);
+  border-radius: 20px;
+  box-shadow: 0 2px 8px  rgba(18, 63, 89, 0.07),
+              0 6px 24px rgba(18, 63, 89, 0.06);
+  transition: box-shadow 0.2s ease, transform 0.15s ease;
+  position: relative;
+  overflow: hidden;
+}
+.light-card:hover {
+  box-shadow: 0 4px 16px rgba(18, 63, 89, 0.12),
+              0 12px 40px rgba(18, 63, 89, 0.09);
+  transform: translateY(-1px);
+}
+
+/* ─── Renk Tintleri (PHP'deki border-primary bg-opacity kartlarının açık hali) */
+.tint-green  { background: rgba(5,   150, 105, 0.05) !important; border-color: rgba(5,   150, 105, 0.2) !important; }
+.tint-rose   { background: rgba(244,  63,  94, 0.05) !important; border-color: rgba(244,  63,  94, 0.2) !important; }
+.tint-navy   { background: rgba(18,   63,  89, 0.05) !important; border-color: rgba(18,   63,  89, 0.2) !important; }
+.tint-amber  { background: rgba(217, 119,   6, 0.05) !important; border-color: rgba(217, 119,   6, 0.2) !important; }
+.tint-blue   { background: rgba(37,   99, 235, 0.05) !important; border-color: rgba(37,   99, 235, 0.2) !important; }
+.tint-purple { background: rgba(124,  58, 237, 0.05) !important; border-color: rgba(124,  58, 237, 0.2) !important; }
+.tint-cyan   { background: rgba(8,   145, 178, 0.05) !important; border-color: rgba(8,   145, 178, 0.2) !important; }
+
+/* ─── Dekoratif arka plan ikonu (PHP'deki köşe ikonları) ───────────────────── */
+.card-deco-icon {
+  position: absolute;
+  top: -12px;
+  right: -12px;
+  font-size: 7rem;
+  opacity: 0.07;
+  pointer-events: none;
+  line-height: 1;
+  user-select: none;
+}
+
+/* ─── Yardımcı Sınıflar ─────────────────────────────────────────────────────── */
+.bg-brand-light {
+  background-color: rgba(18, 63, 89, 0.05);
+}
+
+.text-brand {
+  color: var(--brand-dark) !important;
+}
+
+/* ─── Sidebar Navigasyon ────────────────────────────────────────────────────── */
+.sidebar-link {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 14px;
+  border-radius: 10px;
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: #475569;
+  text-decoration: none;
+  border: 1px solid transparent;
+  transition: all 0.15s ease;
+}
+.sidebar-link:hover {
+  background-color: #f1f5f9;
+  color: #0f172a;
+  text-decoration: none;
+}
+.sidebar-link.active {
+  background-color: rgba(18, 63, 89, 0.08);
+  color: var(--brand-dark);
+  border-color: rgba(18, 63, 89, 0.15);
+}
+
+/* ─── Form: Özel Input ─────────────────────────────────────────────────────── */
+.form-control-custom {
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  padding: 0.8rem 1rem;
+  font-weight: 600;
+  color: var(--brand-dark);
+  font-family: 'Plus Jakarta Sans', sans-serif;
+  border-radius: 0 10px 10px 0;
+  transition: all 0.2s ease;
+  font-size: 0.95rem;
+}
+.form-control-custom:focus {
+  background: #ffffff;
+  border-color: var(--brand-dark);
+  box-shadow: 0 0 0 4px rgba(18, 63, 89, 0.1);
+  color: var(--brand-dark);
+  outline: none;
+}
+.form-control-custom::placeholder {
+  color: #94a3b8;
+  font-weight: 500;
+}
+
+/* Input Group ikon sol */
+.input-group .input-group-text {
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-right: none;
+  color: #94a3b8;
+  border-radius: 10px 0 0 10px;
+  padding: 0.8rem 1rem;
+  font-size: 1rem;
+}
+.input-group:focus-within .input-group-text {
+  background: #ffffff;
+  border-color: var(--brand-dark);
+  color: var(--brand-dark);
+}
+.input-group:focus-within .form-control-custom {
+  border-left: none;
+}
+
+/* ─── Giriş Butonu ──────────────────────────────────────────────────────────── */
+.btn-login {
+  background: linear-gradient(135deg, var(--brand-dark), #1a5b80);
+  border: none;
+  color: #ffffff;
+  padding: 1rem;
+  font-weight: 700;
+  font-size: 1.05rem;
+  border-radius: 12px;
+  transition: all 0.3s ease;
+  font-family: 'Plus Jakarta Sans', sans-serif;
+  width: 100%;
+  cursor: pointer;
+  letter-spacing: 0.01em;
+}
+.btn-login:hover:not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow: 0 10px 20px rgba(18, 63, 89, 0.25);
+  color: var(--brand-accent);
+}
+.btn-login:active:not(:disabled) {
+  transform: translateY(0);
+}
+.btn-login:disabled {
+  opacity: 0.65;
+  cursor: not-allowed;
+}
+
+/* ─── Bootstrap Outline Butonu (Yenile vb.) ────────────────────────────────── */
+.btn-outline-brand {
+  border: 1px solid #e2e8f0;
+  color: #64748b;
+  background: #ffffff;
+  font-weight: 600;
+  font-family: 'Plus Jakarta Sans', sans-serif;
+}
+.btn-outline-brand:hover {
+  background-color: #f8fafc;
+  border-color: #cbd5e1;
+  color: #0f172a;
+}
+
+/* ─── Finansal Rakamlar ─────────────────────────────────────────────────────── */
+.financial-num {
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: "tnum";
+  font-weight: 700;
+  letter-spacing: -0.01em;
+}
+
+/* ─── Animasyonlar ──────────────────────────────────────────────────────────── */
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50%       { opacity: 0.4; }
+}
+.animate-pulse { animation: pulse 1.8s ease-in-out infinite; }
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+.animate-spin { animation: spin 1s linear infinite; }
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+@keyframes slideUp {
+  from { opacity: 0; transform: translateY(20px) scale(0.98); }
+  to   { opacity: 1; transform: translateY(0)    scale(1);    }
+}
+
+/* ─── Scrollbar ─────────────────────────────────────────────────────────────── */
+::-webkit-scrollbar       { width: 5px; height: 5px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 9999px; }
+::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
