@@ -1,0 +1,122 @@
+<?php
+// =============================================================
+// controllers/DashboardController.php — Dashboard Özet Kontrolcüsü
+// Finans Kalesi SaaS — Sprint 2A-3
+//
+// Üç modülün (Cari, Çek/Senet, Ödeme) özet verilerini
+// tek sorguda derleyip Dashboard'a sunar.
+// Her sorgu sirket_id ile korunur — Multi-Tenant güvenliği sağlanır.
+// =============================================================
+
+class DashboardController
+{
+    private PDO $db;
+
+    public function __construct(PDO $db)
+    {
+        $this->db = $db;
+    }
+
+    // ─── GET /api/dashboard ───────────────────────────────────────────────────
+    public function ozet(array $payload): void
+    {
+        try {
+            $sirket_id = (int) $payload['sirket_id'];
+
+            Response::basarili([
+                'cari'     => $this->cari_ozet($sirket_id),
+                'cekSenet' => $this->cek_senet_ozet($sirket_id),
+                'odeme'    => $this->odeme_ozet($sirket_id),
+            ]);
+        } catch (Exception $e) {
+            error_log('Dashboard ozet hatasi: ' . $e->getMessage());
+            Response::sunucu_hatasi('Dashboard verileri alinamadi');
+        }
+    }
+
+    // ─── Cari Özet ────────────────────────────────────────────────────────────
+    // Döndürür:
+    //   toplam_alacak       → bakiye > 0 olan kartların toplamı
+    //   toplam_borc         → bakiye < 0 olan kartların mutlak değer toplamı
+    //   aktif_cari_sayisi   → aktif ve silinmemiş kart sayısı
+    //   en_yuksek_bakiyeli  → bakiyesi en yüksek (mutlak değerce) 5 cari
+    private function cari_ozet(int $sirket_id): array
+    {
+        // Özet rakamlar
+        $stmt = $this->db->prepare(
+            "SELECT
+                COALESCE(SUM(CASE WHEN bakiye > 0 THEN bakiye    ELSE 0 END), 0) AS toplam_alacak,
+                COALESCE(SUM(CASE WHEN bakiye < 0 THEN ABS(bakiye) ELSE 0 END), 0) AS toplam_borc,
+                COUNT(CASE WHEN aktif_mi = 1 THEN 1 END) AS aktif_cari_sayisi
+             FROM cari_kartlar
+             WHERE sirket_id = :sirket_id AND silindi_mi = 0"
+        );
+        $stmt->execute([':sirket_id' => $sirket_id]);
+        $ozet = $stmt->fetch(PDO::FETCH_ASSOC);
+
+        // En yüksek bakiyeli 5 cari (pozitif veya negatif)
+        $stmt2 = $this->db->prepare(
+            "SELECT id, cari_adi, cari_turu, bakiye
+             FROM cari_kartlar
+             WHERE sirket_id = :sirket_id AND silindi_mi = 0 AND aktif_mi = 1
+             ORDER BY ABS(bakiye) DESC
+             LIMIT 5"
+        );
+        $stmt2->execute([':sirket_id' => $sirket_id]);
+        $ozet['en_yuksek_bakiyeli'] = $stmt2->fetchAll(PDO::FETCH_ASSOC);
+
+        return $ozet;
+    }
+
+    // ─── Çek / Senet Özet ─────────────────────────────────────────────────────
+    // Döndürür:
+    //   portfoyde_toplam  → durum='portfoyde' olan çek/senetlerin toplam TL tutarı
+    //   portfoyde_adet    → durum='portfoyde' olan çek/senet sayısı
+    //   yaklasan_vadeler  → bugünden 30 gün içinde vadesi gelen, portföydeki/tahsildeki 5 kayıt
+    private function cek_senet_ozet(int $sirket_id): array
+    {
+        // Portföy toplamı
+        $stmt = $this->db->prepare(
+            "SELECT
+                COALESCE(SUM(CASE WHEN durum = 'portfoyde' THEN tutar_tl ELSE 0 END), 0) AS portfoyde_toplam,
+                COUNT(CASE WHEN durum = 'portfoyde' THEN 1 END) AS portfoyde_adet
+             FROM cek_senetler
+             WHERE sirket_id = :sirket_id AND silindi_mi = 0"
+        );
+        $stmt->execute([':sirket_id' => $sirket_id]);
+        $ozet = $stmt->fetch(PDO::FETCH_ASSOC);
+
+        // Yaklaşan vadeler (bugün → +30 gün, portföyde veya tahsilde olan)
+        $stmt2 = $this->db->prepare(
+            "SELECT id, seri_no, vade_tarihi, tutar_tl, durum
+             FROM cek_senetler
+             WHERE sirket_id = :sirket_id
+               AND silindi_mi = 0
+               AND durum IN ('portfoyde', 'tahsile_verildi')
+               AND vade_tarihi BETWEEN CURDATE() AND DATE_ADD(CURDATE(), INTERVAL 30 DAY)
+             ORDER BY vade_tarihi ASC
+             LIMIT 5"
+        );
+        $stmt2->execute([':sirket_id' => $sirket_id]);
+        $ozet['yaklasan_vadeler'] = $stmt2->fetchAll(PDO::FETCH_ASSOC);
+
+        return $ozet;
+    }
+
+    // ─── Ödeme Takip Özet ─────────────────────────────────────────────────────
+    // Döndürür:
+    //   bekleyen_toplam → durum='bekliyor' olan tüm ödeme/tahsilatların toplam tutarı
+    //   bekleyen_adet   → durum='bekliyor' olan kayıt sayısı
+    private function odeme_ozet(int $sirket_id): array
+    {
+        $stmt = $this->db->prepare(
+            "SELECT
+                COUNT(CASE WHEN durum = 'bekliyor' THEN 1 END) AS bekleyen_adet,
+                COALESCE(SUM(CASE WHEN durum = 'bekliyor' THEN tutar ELSE 0 END), 0) AS bekleyen_toplam
+             FROM odeme_takip
+             WHERE sirket_id = :sirket_id AND silindi_mi = 0"
+        );
+        $stmt->execute([':sirket_id' => $sirket_id]);
+        return $stmt->fetch(PDO::FETCH_ASSOC);
+    }
+}

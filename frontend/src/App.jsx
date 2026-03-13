@@ -13,7 +13,7 @@
  */
 
 import { useEffect } from 'react'
-import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
+import { BrowserRouter, Routes, Route, Navigate, useNavigate } from 'react-router-dom'
 import useAuthStore from './stores/authStore'
 
 // Layout
@@ -22,13 +22,24 @@ import AppLayout    from './components/layout/AppLayout'
 
 // Auth sayfaları
 import GirisYap from './pages/auth/GirisYap'
-import Login    from './pages/auth/Login'
 
 // Uygulama sayfaları
 import Dashboard       from './pages/dashboard/Dashboard'
 import CarilerListesi  from './pages/cariler/CarilerListesi'
 import CariYonetimi   from './pages/cariler/CariYonetimi'
 import VarlikKasa     from './pages/kasa/VarlikKasa'
+import CekSenet       from './pages/cek-senet/CekSenet'
+
+// axios.js → auth:logout olayını dinle, React Router ile yönlendir
+function AuthLogoutListener() {
+  const navigate = useNavigate()
+  useEffect(() => {
+    const handleLogout = () => navigate('/giris')
+    window.addEventListener('auth:logout', handleLogout)
+    return () => window.removeEventListener('auth:logout', handleLogout)
+  }, [navigate])
+  return null
+}
 
 // Henüz yazılmamış sayfalar için geçici bileşen
 function YakindaGeliyor({ sayfa }) {
@@ -59,11 +70,11 @@ export default function App() {
 
   return (
     <BrowserRouter>
+      <AuthLogoutListener />
       <Routes>
 
         {/* ─── Public sayfalar ───────────────────────────────────────── */}
-        <Route path="/giris" element={<Login />} />
-        <Route path="/giris-eski" element={<GirisYap />} />
+        <Route path="/giris" element={<GirisYap />} />
         <Route path="/kayit" element={<YakindaGeliyor sayfa="Kayıt Sayfası" />} />
 
         {/* ─── Korumalı sayfalar (JWT gerekli) ───────────────────────── */}
@@ -72,7 +83,7 @@ export default function App() {
             <Route path="/dashboard" element={<Dashboard />} />
             <Route path="/cariler"   element={<CariYonetimi />} />
             <Route path="/cariler/*" element={<YakindaGeliyor sayfa="Cari Detay / Yeni" />} />
-            <Route path="/cek-senet/*" element={<YakindaGeliyor sayfa="Çek / Senet Modülü" />} />
+            <Route path="/cek-senet" element={<CekSenet />} />
             <Route path="/odemeler/*" element={<YakindaGeliyor sayfa="Ödeme Takip" />} />
             <Route path="/kasa" element={<VarlikKasa />} />
           </Route>

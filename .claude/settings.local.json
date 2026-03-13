@@ -1,0 +1,10 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(rm \"c:/laragon/www/Projeler/finans-kalesi/frontend/src/components/ui/button.jsx\" \"c:/laragon/www/Projeler/finans-kalesi/frontend/src/components/ui/badge.jsx\" \"c:/laragon/www/Projeler/finans-kalesi/frontend/src/components/ui/card.jsx\" \"c:/laragon/www/Projeler/finans-kalesi/frontend/src/lib/utils.js\")",
+      "Bash(rmdir \"c:/laragon/www/Projeler/finans-kalesi/frontend/src/components/ui\")",
+      "Bash(git add:*)",
+      "Bash(git commit:*)"
+    ]
+  }
+}

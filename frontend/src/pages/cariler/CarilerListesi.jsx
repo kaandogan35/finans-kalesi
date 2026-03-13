@@ -139,6 +139,13 @@ function AksiyonMenusu({ cari, onSilIste, navigate }) {
 
 // ─── Silme Onay Modalı ────────────────────────────────────────────────────────
 function SilmeOnayModal({ cari, onOnayla, onIptal, yukleniyor }) {
+  useEffect(() => {
+    if (!cari) return
+    const handler = (e) => { if (e.key === 'Escape') onIptal() }
+    document.addEventListener('keydown', handler)
+    return () => document.removeEventListener('keydown', handler)
+  }, [cari, onIptal])
+
   if (!cari) return null
   return (
     <>
@@ -289,10 +296,10 @@ export default function CarilerListesi() {
       {/* ─── Başlık ─────────────────────────────────────────────────── */}
       <div className="d-flex align-items-start justify-content-between mb-4">
         <div>
-          <h1 style={{ fontSize: '1.25rem', fontWeight: 800, color: '#0f172a', margin: 0 }}>
+          <h1 style={{ fontSize: '1.45rem', fontWeight: 800, color: '#0f172a', margin: 0 }}>
             Cari Hesaplar
           </h1>
-          <p style={{ fontSize: 13, color: '#64748b', margin: '4px 0 0', fontWeight: 500 }}>
+          <p style={{ fontSize: 14, color: '#64748b', margin: '4px 0 0', fontWeight: 500 }}>
             {toplam > 0 ? `${toplam} kayıt` : 'Müşteri ve tedarikçi hesaplarınız'}
           </p>
         </div>
@@ -471,7 +478,7 @@ export default function CarilerListesi() {
                       <Link
                         to={`/cariler/${cari.id}`}
                         style={{
-                          fontSize: 13, fontWeight: 700, color: '#1e293b',
+                          fontSize: 14, fontWeight: 700, color: '#1e293b',
                           textDecoration: 'none', display: 'block',
                           overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
                         }}
@@ -496,20 +503,20 @@ export default function CarilerListesi() {
                     <CariTipiRozeti tur={cari.cari_turu} />
                   </div>
 
-                  {/* Alacak */}
+                  {/* Alacak — YEŞİL (finansal standart) */}
                   <div className="d-flex align-items-center gap-1">
-                    <i className="bi bi-arrow-up-circle-fill" style={{ fontSize: 13, color: '#10b981' }} />
-                    <span className="financial-num" style={{ fontSize: 13, color: '#1e293b' }}>
+                    <i className="bi bi-arrow-down-circle-fill" style={{ fontSize: 14, color: '#059669' }} />
+                    <span className="financial-num" style={{ fontSize: 14, color: '#059669' }}>
                       {paraBicimlendir(cari.toplam_alacak)}
                     </span>
                   </div>
 
-                  {/* Borç */}
+                  {/* Borç — KIRMIZI (finansal standart) */}
                   <div className="d-flex align-items-center gap-1">
-                    <i className="bi bi-arrow-down-circle-fill" style={{ fontSize: 13, color: '#f43f5e' }} />
+                    <i className="bi bi-arrow-up-circle-fill" style={{ fontSize: 14, color: '#dc2626' }} />
                     <span className="financial-num" style={{
-                      fontSize: 13,
-                      color: bakiye < 0 ? '#f43f5e' : '#1e293b',
+                      fontSize: 14,
+                      color: '#dc2626',
                     }}>
                       {paraBicimlendir(cari.toplam_borc)}
                     </span>

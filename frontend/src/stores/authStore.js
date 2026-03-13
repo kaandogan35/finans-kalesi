@@ -13,15 +13,31 @@ const useAuthStore = create((set, get) => ({
   kullanici: null,
   yukleniyor: true,    // İlk yüklemede token kontrol sürüyor mu?
   girisYapildi: false,
+  accessToken: null,
+  refreshToken: null,
 
   // ─── Actions ─────────────────────────────────────────────────────────
+
+  /**
+   * İki token'ı da store'a yazar
+   */
+  tokenlariAyarla: (accessToken, refreshToken) => {
+    set({ accessToken, refreshToken })
+  },
+
+  /**
+   * İki token'ı da null yapar
+   */
+  tokenlarıTemizle: () => {
+    set({ accessToken: null, refreshToken: null })
+  },
 
   /**
    * Uygulama başlarken mevcut token'dan kullanıcıyı yükle
    */
   baslat: async () => {
-    const token = localStorage.getItem('access_token')
-    if (!token) {
+    const { accessToken } = get()
+    if (!accessToken) {
       set({ yukleniyor: false, girisYapildi: false })
       return
     }
@@ -33,8 +49,7 @@ const useAuthStore = create((set, get) => ({
         yukleniyor: false,
       })
     } catch {
-      localStorage.removeItem('access_token')
-      localStorage.removeItem('refresh_token')
+      get().tokenlarıTemizle()
       set({ yukleniyor: false, girisYapildi: false })
     }
   },
@@ -46,8 +61,7 @@ const useAuthStore = create((set, get) => ({
     const yanit = await authApi.giris(email, sifre)
     const { kullanici, tokenlar } = yanit.data.veri
 
-    localStorage.setItem('access_token', tokenlar.access_token)
-    localStorage.setItem('refresh_token', tokenlar.refresh_token)
+    get().tokenlariAyarla(tokenlar.access_token, tokenlar.refresh_token)
 
     set({ kullanici, girisYapildi: true })
     return kullanici
@@ -58,13 +72,12 @@ const useAuthStore = create((set, get) => ({
    */
   cikisYap: async () => {
     try {
-      const refreshToken = localStorage.getItem('refresh_token')
+      const refreshToken = get().refreshToken
       await authApi.cikis(refreshToken)
     } catch {
       // Hata olsa da yerel state temizlenir
     } finally {
-      localStorage.removeItem('access_token')
-      localStorage.removeItem('refresh_token')
+      get().tokenlarıTemizle()
       set({ kullanici: null, girisYapildi: false })
     }
   },

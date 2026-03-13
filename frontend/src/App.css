@@ -1,1 +1,23 @@
-/* Tailwind CSS kullanıldığı için bu dosya boş bırakıldı */
+/* Finans Kalesi — Global Stiller */
+
+/* ─── Premium Kart Sistemi ─────────────────────────────────────────────── */
+.premium-card {
+  background-color: #ffffff;
+  border-radius: 16px;
+  border: 1px solid #eef2f6;
+  box-shadow: 0 4px 24px rgba(30, 41, 59, 0.08), 0 1px 4px rgba(30, 41, 59, 0.04);
+  padding: 1.5rem;
+  transition: box-shadow 0.2s ease, transform 0.2s ease;
+}
+
+.premium-card:hover {
+  box-shadow: 0 8px 32px rgba(30, 41, 59, 0.14), 0 2px 8px rgba(30, 41, 59, 0.06);
+  transform: translateY(-2px);
+}
+
+.premium-card .card-header-custom {
+  border-bottom: 1px solid #eef2f6;
+  padding-bottom: 1rem;
+  margin-bottom: 1rem;
+}
+/* ─────────────────────────────────────────────────────────────────────── */

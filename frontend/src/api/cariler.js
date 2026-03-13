@@ -10,5 +10,6 @@ export const carilerApi = {
   // Hareketler
   hareketler:       (id, params = {}) => api.get(`/cariler/${id}/hareketler`, { params }),
   hareket_olustur:  (id, veri)        => api.post(`/cariler/${id}/hareketler`, veri),
+  hareket_guncelle: (cariId, hId, veri) => api.put(`/cariler/${cariId}/hareketler/${hId}`, veri),
   hareket_sil:      (cariId, hId)     => api.delete(`/cariler/${cariId}/hareketler/${hId}`),
 }

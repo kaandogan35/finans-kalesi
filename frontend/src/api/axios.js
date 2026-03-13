@@ -6,6 +6,7 @@
  */
 
 import axios from 'axios'
+import useAuthStore from '../stores/authStore'
 
 // Backend URL — Vite proxy /api isteklerini PHP sunucusuna yönlendirir
 const api = axios.create({
@@ -16,9 +17,9 @@ const api = axios.create({
 
 // ─── İstek interceptor: Her isteğe JWT token ekle ──────────────────────────
 api.interceptors.request.use((config) => {
-  const token = localStorage.getItem('access_token')
-  if (token) {
-    config.headers.Authorization = `Bearer ${token}`
+  const { accessToken } = useAuthStore.getState()
+  if (accessToken) {
+    config.headers.Authorization = `Bearer ${accessToken}`
   }
   return config
 })
@@ -50,7 +51,7 @@ api.interceptors.response.use(
       tokenYenileniyor = true
 
       try {
-        const refreshToken = localStorage.getItem('refresh_token')
+        const { refreshToken, tokenlariAyarla } = useAuthStore.getState()
         if (!refreshToken) throw new Error('Refresh token yok')
 
         const yanit = await axios.post('/api/auth/yenile', {
@@ -58,7 +59,7 @@ api.interceptors.response.use(
         })
 
         const yeniToken = yanit.data.veri.tokenlar.access_token
-        localStorage.setItem('access_token', yeniToken)
+        tokenlariAyarla(yeniToken, refreshToken)
 
         // Sıradaki bekleyen istekleri çöz
         bekleyenIstekler.forEach((p) => p.resolve(yeniToken))
@@ -67,12 +68,11 @@ api.interceptors.response.use(
         originalRequest.headers.Authorization = `Bearer ${yeniToken}`
         return api(originalRequest)
       } catch {
-        // Yenileme başarısız → çıkış yap
+        // Yenileme başarısız → çıkış olayı yayınla
         bekleyenIstekler.forEach((p) => p.reject(error))
         bekleyenIstekler = []
-        localStorage.removeItem('access_token')
-        localStorage.removeItem('refresh_token')
-        window.location.href = '/giris'
+        useAuthStore.getState().tokenlarıTemizle()
+        window.dispatchEvent(new CustomEvent('auth:logout'))
         return Promise.reject(error)
       } finally {
         tokenYenileniyor = false

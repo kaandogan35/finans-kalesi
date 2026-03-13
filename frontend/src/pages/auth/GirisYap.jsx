@@ -1,11 +1,11 @@
 /**
  * GirisYap — Login Sayfası
- * Bootstrap 5 + Premium CSS — KOBİ Bankacılığı kalitesinde
+ * Login.jsx (görsel) + GirisYap.jsx (işlevsel) birleşimi
+ * Bootstrap 5 + Bootstrap Icons — lucide bağımlılığı yok
  */
 
 import { useState } from 'react'
 import { useNavigate, Link } from 'react-router-dom'
-import { Eye, EyeOff, AlertCircle, Loader2 } from 'lucide-react'
 import { toast } from 'sonner'
 import useAuthStore from '../../stores/authStore'
 
@@ -13,10 +13,10 @@ export default function GirisYap() {
   const navigate = useNavigate()
   const { girisYap } = useAuthStore()
 
-  const [form, setForm] = useState({ email: '', sifre: '' })
+  const [form, setForm]               = useState({ email: '', sifre: '' })
   const [sifreGoster, setSifreGoster] = useState(false)
-  const [yukleniyor, setYukleniyor] = useState(false)
-  const [hata, setHata] = useState('')
+  const [yukleniyor, setYukleniyor]   = useState(false)
+  const [hata, setHata]               = useState('')
 
   const handleChange = (e) => {
     setForm((prev) => ({ ...prev, [e.target.name]: e.target.value }))
@@ -57,139 +57,205 @@ export default function GirisYap() {
 
   return (
     <div
-      className="d-flex flex-column align-items-center justify-content-center"
-      style={{ minHeight: '100vh', padding: '24px 16px' }}
+      className="d-flex flex-column align-items-center justify-content-center min-vh-100"
+      style={{ padding: '24px 16px' }}
     >
-      <div style={{ width: '100%', maxWidth: 420 }}>
+      <div style={{ width: '100%', maxWidth: 460 }}>
 
-        {/* ─── Logo & Başlık ──────────────────────────────────────────── */}
-        <div className="text-center mb-4">
-          <div
-            className="mx-auto mb-3 d-flex align-items-center justify-content-center"
-            style={{
-              width: 52, height: 52,
-              borderRadius: 16,
-              background: 'var(--brand-navy)',
-              boxShadow: '0 6px 20px rgba(18,63,89,0.35)',
-            }}
-          >
-            <span style={{ color: '#fff', fontSize: 15, fontWeight: 900, letterSpacing: '-0.5px' }}>FK</span>
+        {/* ─── Ana Kart ───────────────────────────────────────────────── */}
+        <div className="premium-card" style={{ padding: 0, overflow: 'hidden' }}>
+
+          {/* Üst Şerit — Brand Gradient */}
+          <div style={{
+            background: 'linear-gradient(135deg, var(--brand-dark) 0%, #1a5b80 100%)',
+            padding: '40px 40px 52px',
+            textAlign: 'center',
+            position: 'relative',
+            overflow: 'hidden',
+          }}>
+            {/* Dekoratif arka plan ikonları */}
+            <i className="bi bi-buildings" style={{
+              position: 'absolute', right: -20, top: -20,
+              fontSize: '10rem', color: '#fff', opacity: 0.06,
+              pointerEvents: 'none', lineHeight: 1,
+            }} />
+            <i className="bi bi-shield-lock" style={{
+              position: 'absolute', left: -15, bottom: -25,
+              fontSize: '8rem', color: '#fff', opacity: 0.05,
+              pointerEvents: 'none', lineHeight: 1,
+            }} />
+
+            {/* Merkez İkon */}
+            <div
+              className="mx-auto mb-3 d-flex align-items-center justify-content-center"
+              style={{
+                width: 72, height: 72, borderRadius: 20,
+                background: 'rgba(255,255,255,0.15)',
+                backdropFilter: 'blur(8px)',
+                border: '1px solid rgba(255,255,255,0.25)',
+                position: 'relative', zIndex: 1,
+              }}
+            >
+              <i className="bi bi-buildings-fill" style={{ fontSize: 32, color: '#fff' }} />
+            </div>
+
+            <h1 style={{
+              fontSize: '1.7rem', fontWeight: 800,
+              color: '#ffffff', marginBottom: 6,
+              letterSpacing: '-0.02em', position: 'relative', zIndex: 1,
+            }}>
+              Finans Kalesi
+            </h1>
+            <p style={{
+              fontSize: 13, color: 'rgba(255,255,255,0.7)',
+              fontWeight: 500, margin: 0,
+              position: 'relative', zIndex: 1,
+            }}>
+              Güvenli Giriş Portalı
+            </p>
           </div>
-          <h1 style={{ fontSize: '1.5rem', fontWeight: 700, color: '#0f172a', marginBottom: 4 }}>
-            Finans Kalesi
-          </h1>
-          <p style={{ fontSize: 14, color: '#64748b', margin: 0 }}>
-            Hesabınıza giriş yapın
-          </p>
-        </div>
 
-        {/* ─── Giriş Kartı ────────────────────────────────────────────── */}
-        <div className="premium-card p-4">
-
-          <form onSubmit={handleSubmit} noValidate>
+          {/* Alt Form Alanı */}
+          <div style={{ padding: '36px 40px 32px' }}>
 
             {/* Hata Mesajı */}
             {hata && (
               <div
-                className="d-flex align-items-start gap-2 mb-3 p-3"
+                className="d-flex align-items-center gap-2 mb-4 p-3"
                 style={{
-                  background: '#fff1f2',
-                  border: '1px solid #fecdd3',
+                  background: 'rgba(244,63,94,0.06)',
+                  border: '1px solid rgba(244,63,94,0.2)',
                   borderRadius: 12,
                 }}
               >
-                <AlertCircle size={15} style={{ color: '#f43f5e', flexShrink: 0, marginTop: 1 }} />
-                <span style={{ fontSize: 13, color: '#be123c' }}>{hata}</span>
+                <i className="bi bi-shield-x-fill" style={{ color: '#f43f5e', fontSize: 16, flexShrink: 0 }} />
+                <span style={{ fontSize: 13, color: '#be123c', fontWeight: 600 }}>{hata}</span>
               </div>
             )}
 
-            {/* E-posta */}
-            <div className="mb-3">
-              <label className="form-label" style={{ fontSize: 13, fontWeight: 600, color: '#374151' }}>
-                E-posta adresi
-              </label>
-              <input
-                type="email"
-                name="email"
-                value={form.email}
-                onChange={handleChange}
-                placeholder="ornek@firma.com"
-                autoComplete="email"
-                autoFocus
-                className="form-control"
-                style={{ borderRadius: 10, fontSize: 14, height: 42, borderColor: '#e2e8f0' }}
-              />
-            </div>
+            <form onSubmit={handleSubmit} noValidate>
 
-            {/* Şifre */}
-            <div className="mb-4">
-              <div className="d-flex justify-content-between align-items-center mb-1">
-                <label className="form-label mb-0" style={{ fontSize: 13, fontWeight: 600, color: '#374151' }}>
-                  Şifre
+              {/* E-posta */}
+              <div className="mb-3">
+                <label style={{ fontSize: 12, fontWeight: 700, color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.06em', display: 'block', marginBottom: 8 }}>
+                  E-posta Adresi
                 </label>
-                <Link
-                  to="/sifremi-unuttum"
-                  style={{ fontSize: 12, fontWeight: 600, color: 'var(--brand-navy)', textDecoration: 'none' }}
-                >
-                  Şifremi unuttum
-                </Link>
+                <div className="input-group">
+                  <span className="input-group-text">
+                    <i className="bi bi-person-fill" style={{ color: 'var(--brand-dark)' }} />
+                  </span>
+                  <input
+                    type="email"
+                    name="email"
+                    value={form.email}
+                    onChange={handleChange}
+                    placeholder="ornek@firma.com"
+                    autoComplete="email"
+                    autoFocus
+                    className="form-control"
+                    required
+                  />
+                </div>
               </div>
-              <div className="position-relative">
-                <input
-                  type={sifreGoster ? 'text' : 'password'}
-                  name="sifre"
-                  value={form.sifre}
-                  onChange={handleChange}
-                  placeholder="••••••••"
-                  autoComplete="current-password"
-                  className="form-control"
-                  style={{ borderRadius: 10, fontSize: 14, height: 42, paddingRight: 42, borderColor: '#e2e8f0' }}
-                />
-                <button
-                  type="button"
-                  onClick={() => setSifreGoster((v) => !v)}
-                  tabIndex={-1}
-                  style={{
-                    position: 'absolute', right: 12, top: '50%',
-                    transform: 'translateY(-50%)',
-                    background: 'none', border: 'none',
-                    color: '#94a3b8', cursor: 'pointer', padding: 0,
-                  }}
-                >
-                  {sifreGoster ? <EyeOff size={16} /> : <Eye size={16} />}
-                </button>
+
+              {/* Şifre */}
+              <div className="mb-3">
+                <div className="d-flex justify-content-between align-items-center mb-2">
+                  <label style={{ fontSize: 12, fontWeight: 700, color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.06em', margin: 0 }}>
+                    Güvenlik Şifresi
+                  </label>
+                  <Link
+                    to="/sifremi-unuttum"
+                    style={{ fontSize: 12, fontWeight: 600, color: 'var(--brand-navy)', textDecoration: 'none' }}
+                  >
+                    Şifremi unuttum
+                  </Link>
+                </div>
+                <div className="input-group" style={{ position: 'relative' }}>
+                  <span className="input-group-text">
+                    <i className="bi bi-lock-fill" style={{ color: 'var(--brand-dark)' }} />
+                  </span>
+                  <input
+                    type={sifreGoster ? 'text' : 'password'}
+                    name="sifre"
+                    value={form.sifre}
+                    onChange={handleChange}
+                    placeholder="••••••••"
+                    autoComplete="current-password"
+                    className="form-control"
+                    style={{ paddingRight: 44 }}
+                    required
+                  />
+                  <button
+                    type="button"
+                    tabIndex={-1}
+                    onClick={() => setSifreGoster((v) => !v)}
+                    style={{
+                      position: 'absolute', right: 0, top: 0, bottom: 0,
+                      zIndex: 10, background: 'none', border: 'none',
+                      padding: '0 14px', color: '#94a3b8', cursor: 'pointer',
+                    }}
+                  >
+                    <i className={`bi ${sifreGoster ? 'bi-eye-slash' : 'bi-eye'}`} />
+                  </button>
+                </div>
               </div>
+
+              {/* Giriş Butonu */}
+              <button
+                type="submit"
+                disabled={yukleniyor}
+                className="btn-login"
+                style={{ marginTop: 12 }}
+              >
+                {yukleniyor ? (
+                  <>
+                    <i className="bi bi-arrow-repeat me-2" style={{ display: 'inline-block', animation: 'spin 1s linear infinite' }} />
+                    Kimlik Doğrulanıyor...
+                  </>
+                ) : (
+                  <>
+                    <i className="bi bi-unlock-fill me-2" />
+                    Sisteme Giriş Yap
+                  </>
+                )}
+              </button>
+
+            </form>
+
+            {/* Kayıt Linki */}
+            <p className="text-center mt-4 mb-3" style={{ fontSize: 13, color: '#64748b' }}>
+              Hesabınız yok mu?{' '}
+              <Link
+                to="/kayit"
+                style={{ color: 'var(--brand-navy)', fontWeight: 600, textDecoration: 'none' }}
+              >
+                Ücretsiz deneyin
+              </Link>
+            </p>
+
+            {/* AES Güvenlik Notu */}
+            <div
+              className="d-flex align-items-center justify-content-center gap-2"
+              style={{
+                padding: '10px 16px',
+                background: 'rgba(18,63,89,0.04)',
+                borderRadius: 10,
+                border: '1px solid rgba(18,63,89,0.08)',
+              }}
+            >
+              <i className="bi bi-shield-check" style={{ color: 'var(--brand-dark)', fontSize: 14 }} />
+              <span style={{ fontSize: 11, color: '#64748b', fontWeight: 600 }}>
+                AES-256-GCM şifreli güvenli bağlantı
+              </span>
             </div>
-
-            {/* Giriş Butonu */}
-            <button
-              type="submit"
-              disabled={yukleniyor}
-              className="btn btn-brand w-100 d-flex align-items-center justify-content-center gap-2"
-              style={{ height: 44, borderRadius: 12, fontSize: 14 }}
-            >
-              {yukleniyor && <Loader2 size={16} className="animate-spin" />}
-              {yukleniyor ? 'Giriş yapılıyor...' : 'Giriş Yap'}
-            </button>
-
-          </form>
-
-          {/* Kayıt Linki */}
-          <p className="text-center mt-4 mb-0" style={{ fontSize: 13, color: '#64748b' }}>
-            Hesabınız yok mu?{' '}
-            <Link
-              to="/kayit"
-              style={{ color: 'var(--brand-navy)', fontWeight: 600, textDecoration: 'none' }}
-            >
-              Ücretsiz deneyin
-            </Link>
-          </p>
+          </div>
         </div>
 
-        {/* Alt bilgi */}
-        <p className="text-center mt-4" style={{ fontSize: 11, color: '#94a3b8' }}>
+        <p className="text-center mt-4" style={{ fontSize: 11, color: '#94a3b8', fontWeight: 500 }}>
           © 2026 Finans Kalesi · Tüm hakları saklıdır
         </p>
+
       </div>
     </div>
   )

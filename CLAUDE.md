@@ -1,58 +1,142 @@
-# CLAUDE.md — Finans Kalesi SaaS Projesi
-# Bu dosya Claude Code'un projeyi tanıması için otomatik okunur.
-# Son Güncelleme: Güncel — Oturum #6
+# CLAUDE.md — Finans Kalesi Proje Anayasası
+# Bu dosya her oturumun başında otomatik okunur. Tüm kurallar bağlayıcıdır.
+# Son Güncelleme: 13 Mart 2026 — Oturum #9
 
 ---
 
 ## PROJE SAHİBİ
-Kaan Doğan — yazılım bilmeyen bir işletme sahibi. Kod yazmıyor, Claude yazıyor.
-- Teknik terimleri sade Türkçe ile açıkla
-- Asla "bu basit" veya "kolay" deme
-- Her dosya değişikliğinde ne yaptığını kısaca açıkla
+**Kaan Doğan** — Yazılım geliştirmeyen, işini büyütmek isteyen bir işletme sahibi.
+- Her teknik terimi sade, anlaşılır Türkçe ile açıkla
+- "Bu basit", "kolay", "hızlıca" gibi ifadeler kullanma — her iş emek ister
+- Her dosya değişikliğinde ne yaptığını ve neden yaptığını kısaca açıkla
+- Bir şeyden emin değilsen, tahmin etme — sor
 
 ---
 
 ## PROJE: FİNANS KALESİ (SaaS)
-KOBİ'lere satılacak abonelik tabanlı finans yazılımı.
+KOBİ'lere (hırdavat, demir-çelik başta olmak üzere tüm sektörlere) satılacak
+abonelik tabanlı finans yönetim yazılımı.
 
-### 4 Ana Modül — Hepsi ✅ TAMAMLANDI:
-1. **Cari Hesap Hareketleri** — Borç/Alacak ✅
-2. **Çek / Senet Modülü** — Portföy takibi, ciro, tahsilat ✅
-3. **Ödeme ve Tahsilat Takip** — CRM radar mantığı ✅
-4. **Varlık ve Kasa (Kozmik Oda)** — AES-256-GCM şifreli ✅
-
----
-
-## TEKNOLOJİ VE ALTYAPI
-- **Backend:** PHP 8.2 (saf PHP, REST API — framework yok)
-- **Veritabanı:** MariaDB 10.5 (utf8mb4_general_ci)
-- **Auth:** JWT token (saf PHP JWTHelper — access 15dk + refresh 7gün)
-- **Şifreleme:** AES-256-GCM (PBKDF2 key derivation, V2: prefix formatı)
-- **Mimari:** Multi-Tenant (her tabloda sirket_id, JWT içinde sirket_id)
-- **Frontend (YENİ):** React + Vite. Tasarım altyapısı **BOOTSTRAP 5**'tir. Tailwind CSS ve Shadcn UI KESİNLİKLE YASAKTIR.
+**Hedef platformlar:** Web → iOS → Android (Capacitor.js ile)
+**MVP modülleri:** Cari + Çek/Senet + Ödeme Takip + Kasa + Vade Hesaplayıcı
+**Dashboard:** En sona — tüm modüller bittikten sonra gerçek veriyle tasarlanacak.
 
 ---
 
-## ⚠️ KRİTİK KURALLAR — ASLA İHLAL ETME
+## TEKNOLOJİ YIĞINI — KESİN VE DEĞİŞMEZ
 
-### Frontend / UI Kuralları (React + Bootstrap 5)
-- **React Modal Kuralı:** Bootstrap 5 tasarımlarını (CSS) kullan ancak modalları (Pop-up'ları) kontrol etmek için ASLA `bootstrap.bundle.min.js` veya `data-bs-toggle` kullanma. Modalların açılıp kapanmasını sadece **React State (`useState`)** ile kontrol et (Örn: `className={`modal fade ${showModal ? 'show d-block' : ''}`}`).
-- **Premium UI:** Uygulamanın tasarımı `login.php` baz alınarak hazırlanmış `.premium-card` (derin gölgeli, geniş kavisli, tok borderlı) kartlar üzerinden yürür. Yazılar okunaklı, rakamlar (₺) belirgin (`fs-5 fw-bolder text-dark`) olmalıdır. Sıkışık tasarımlardan kaçınılır.
+### Backend
+- **Dil:** PHP 8.4 (Saf PHP — Laravel, Slim, Symfony yasak)
+- **Veritabanı:** PDO + MariaDB (utf8mb4_unicode_ci)
+- **Auth:** Özel JWT — `JWTHelper.php` (access: 15 dk, refresh: 7 gün)
+- **Şifreleme:** AES-256-GCM — `KriptoHelper.php` (V2 prefix)
+- **Mimari:** REST API, MVC benzeri
 
-### PHP ve Güvenlik Kuralları
-- PDO kullan (MySQLi değil)
-- Prepared statements zorunlu (SQL injection koruması)
-- **Her SQL sorgusunda WHERE sirket_id = ? olmalı** (multi-tenant izolasyon)
-- .env dosyası asla paylaşılmaz
-- Her API endpoint'inde JWT doğrulaması (public hariç: login, register, health)
-- Kozmik Oda verileri sunucuda asla plaintext loglanmaz
+### Frontend
+- **Stack:** React 19 + Vite + React Router v7 + Zustand + Axios
+- **UI:** Bootstrap 5.3 + Bootstrap Icons
+- **YASAK:** Tailwind, Shadcn, Material UI, Ant Design, Lucide React
 
-### Sunucu Güvenlik Kuralları
-- Sunucuya debug, test veya geçici PHP dosyası YÜKLEME
-- Hata ayıklama gerekiyorsa error_log() kullan, ayrı dosya oluşturma
-- FTP/SFTP şifresini terminal komutlarında açık yazma
+### Mobil (Capacitor.js — Gelecek Aşama)
+Web uygulaması kararlı olduktan sonra entegre edilir.
+Şimdiki görev: Her bileşeni Capacitor uyumlu yaz.
 
-### JSON Yanıt Formatı
+### Deployment
+- cPanel Shared Hosting — PHP 8.4 desteği deploy öncesi doğrulanacak
+- Hassas veriler yalnızca `.env` dosyasında
+
+---
+
+## ⚠️ KRİTİK KURALLAR
+
+### 1. Multi-Tenant Güvenlik
+Her SQL sorgusunda `WHERE sirket_id = :sirket_id` zorunlu.
+`sirket_id` JWT'den alınır, kullanıcı girdisinden asla alınmaz.
+
+```php
+// DOĞRU
+$stmt = $pdo->prepare("SELECT * FROM tablo WHERE id = :id AND sirket_id = :sirket_id");
+// YANLIŞ — yasak
+$stmt = $pdo->prepare("SELECT * FROM tablo WHERE id = :id");
+```
+
+### 2. PHP Kuralları
+- PDO + Prepared Statements zorunlu
+- Hata mesajları production'da kapalı, `error_log()` ile loglanır
+- `public/` klasöründe test/debug dosyası bırakılmaz
+
+### 3. Frontend Kuralları
+- Modallar yalnızca React `useState` ile açılıp kapanır
+- `bootstrap.bundle.min.js` import edilmez
+- Token yönetimi: Zustand store (`authStore.js`) — `localStorage` yasak
+- Sayfa yönlendirme: React Router — `window.location` yasak
+
+### 4. Mobil Uyumluluk (Capacitor Hazırlığı)
+- Sabit `px` yerine Bootstrap responsive sınıfları
+- Tıklanabilir alanlar minimum 44x44px
+- Tablolarda `table-responsive` wrapper zorunlu
+- `localStorage` yasak → Zustand kullan
+- `window.location` yasak → React Router kullan
+
+### 5. Deployment Güvenliği
+- Şifreler terminalde veya kodda açık yazılmaz
+- `.env` Git'e eklenmez
+
+### 6. JSON Yanıt Formatı
 ```json
-{"basarili": true, "veri": {...}}
+{"basarili": true, "veri": { ... }}
 {"basarili": false, "hata": "mesaj"}
+```
+
+---
+
+## AGENT YETENEKLERİ (SKILLS) — OTOMATİK TETİKLEYİCİLER
+
+`.claude/skills/` altındaki dosyalar göreve özel protokollerdir.
+**Aşağıdaki anahtar kelimeler mesajda geçiyorsa ilgili skill OKUNMADAN işe başlama:**
+
+| Anahtar Kelime | Okunacak Skill |
+|----------------|----------------|
+| "jsx", "bileşen", "sayfa", "modal", "UI", "tasarım" | `react-bootstrap-ui.md` |
+| "controller", "endpoint", "route", "api", "php" | `php-api-gelistirici.md` |
+| "sil", "temizle", "birleştir", "refactor", "kaldır" | `kod-temizligi-refactor.md` |
+| "yeni modül", "yeni sayfa", "modül ekle" | `yeni-modul-ekle.md` |
+| "durum", "analiz", "rapor", "nerede", "kontrol et" | `sistem-analisti.md` |
+| Deploy, "canlıya çık", "yükle", "production" | `kod-temizligi-refactor.md` |
+
+Birden fazla anahtar kelime varsa ilgili tüm skill'ler okunur.
+
+---
+
+## KLASÖR YAPISI
+
+```
+finans-kalesi/
+├── config/          app.php, database.php
+├── controllers/     Her modülün Controller'ı
+├── middleware/      AuthMiddleware.php, CorsMiddleware.php
+├── models/          Veritabanı sorguları burada
+├── routes/          URL → Controller eşleştirmesi
+├── utils/           JWTHelper, KriptoHelper, RateLimiter, Response, SistemLog
+├── public/          index.php (tek giriş), .htaccess
+└── frontend/src/
+    ├── api/         Axios çağrıları (her modül ayrı dosya)
+    ├── components/  Bootstrap bileşenleri
+    ├── pages/       Tam sayfalar (her modül kendi klasöründe)
+    ├── stores/      Zustand (authStore.js)
+    └── App.jsx      Route tanımları + AuthLogoutListener
+```
+
+---
+
+## TAMAMLANAN BACKEND MODÜLLERİ ✅
+Değiştirilmeden önce onay istenir.
+
+| Modül | Controller | Route |
+|-------|-----------|-------|
+| Auth | AuthController.php | routes/auth.php |
+| Cari Hesaplar | CariController.php | routes/cari.php |
+| Çek / Senet | CekSenetController.php | routes/cek_senet.php |
+| Ödeme Takip | OdemeTakipController.php | routes/odeme.php |
+| Kasa | KasaController.php | routes/kasa.php |
+| Dashboard | DashboardController.php | routes/dashboard.php |

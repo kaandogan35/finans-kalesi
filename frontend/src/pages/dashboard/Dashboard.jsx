@@ -167,18 +167,19 @@ export default function Dashboard() {
   const verileriYukle = async () => {
     setYukleniyor(true)
     try {
-      const [cariYanit, cekYanit, odemeYanit] = await Promise.allSettled([
-        dashboardApi.cariOzet(),
-        dashboardApi.cekSenetOzet(),
-        dashboardApi.odemeOzet(),
-      ])
+      const yanit = await dashboardApi.tumOzet()
+      const d = yanit.data.veri ?? {}
       setVeri({
-        cari:     cariYanit.status    === 'fulfilled' ? cariYanit.value.data.veri    : null,
-        cekSenet: cekYanit.status     === 'fulfilled' ? cekYanit.value.data.veri     : null,
-        odeme:    odemeYanit.status   === 'fulfilled' ? odemeYanit.value.data.veri   : null,
+        cari:     d.cari     ?? null,
+        cekSenet: d.cekSenet ?? null,
+        odeme:    d.odeme    ?? null,
       })
       setSonGuncelleme(new Date())
-    } finally { setYukleniyor(false) }
+    } catch {
+      // Veri alınamazsa kartlar boş gösterilir (null-safe erişimler kullanılıyor)
+    } finally {
+      setYukleniyor(false)
+    }
   }
 
   useEffect(() => { verileriYukle() }, [])

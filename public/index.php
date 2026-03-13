@@ -143,7 +143,12 @@ try {
         case 'kasa':
             require_once BASE_PATH . '/routes/kasa.php';
             break;
-        
+
+        // ─── Dashboard Özet (Sprint 2A-3) ───
+        case 'dashboard':
+            require_once BASE_PATH . '/routes/dashboard.php';
+            break;
+
         // ─── API Ana Sayfa ───
         case '':
             Response::basarili([

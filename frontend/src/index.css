@@ -96,6 +96,56 @@ body {
   color: var(--brand-dark) !important;
 }
 
+/* ─── Sidebar Layout ──────────────────────────────────────────────────────── */
+.sidebar-desktop {
+  width: 256px;
+}
+
+.sidebar-mobile {
+  position: fixed;
+  top: 0; bottom: 0; left: 0;
+  width: 256px;
+  z-index: 1041;
+  background: #ffffff;
+  transform: translateX(-100%);
+  transition: transform 0.2s ease;
+}
+.sidebar-mobile.show {
+  transform: translateX(0);
+}
+
+.sidebar-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.35);
+  backdrop-filter: blur(2px);
+  z-index: 1040;
+}
+
+.sidebar-logo-badge {
+  width: 34px;
+  height: 34px;
+  border-radius: 10px;
+  background: var(--brand-navy);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 2px 8px rgba(18, 63, 89, 0.3);
+}
+
+.sidebar-cikis-btn {
+  background: none;
+  border: none;
+  padding: 4px;
+  color: #94a3b8;
+  cursor: pointer;
+  border-radius: 6px;
+  transition: color 0.15s ease;
+}
+.sidebar-cikis-btn:hover {
+  color: #f43f5e;
+}
+
 /* ─── Sidebar Navigasyon ────────────────────────────────────────────────────── */
 .sidebar-link {
   display: flex;
@@ -240,3 +290,48 @@ body {
 ::-webkit-scrollbar-track { background: transparent; }
 ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 9999px; }
 ::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+
+/* ─── Uygulama Geneli %15 Ölçeklendirme ──────────────────────────────────── */
+/* Tablolar, butonlar ve metinler daha okunaklı hale getiriliyor */
+.page-container {
+  font-size: 1.05rem;
+}
+
+/* Tablo hücreleri */
+.premium-card table th,
+.premium-card table td {
+  font-size: 0.9rem;
+  padding: 15px 18px;
+}
+
+/* Butonlar */
+.btn-brand {
+  background: linear-gradient(135deg, var(--brand-dark), #1a5b80);
+  color: #fff;
+  font-weight: 700;
+  border: none;
+  font-family: 'Plus Jakarta Sans', sans-serif;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+.btn-brand:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 6px 16px rgba(18, 63, 89, 0.3);
+  color: #fff;
+}
+
+/* Nav tab'lar ölçek */
+.nav-tabs .nav-link {
+  font-size: 0.9rem !important;
+}
+
+/* Form kontrolleri ölçek */
+.form-control-custom {
+  font-size: 1rem;
+  padding: 0.85rem 1.1rem;
+}
+
+/* Finansal rakamlar ölçek */
+.financial-num {
+  font-size: 0.95rem;
+}
