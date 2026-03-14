@@ -1,6 +1,7 @@
 /**
  * CariYonetimi.jsx — Cari & Finans Yönetimi
- * Bootstrap 5 + Premium CSS | Finans Kalesi
+ * Obsidian Vault Koyu Premium Tema
+ * cari- prefix ile self-contained stiller
  * Modallar: Saf React state + createPortal
  * Revizyon: Cari Kart (Netsis mantığı), Dinamik İşlem, PDF Ekstre
  */
@@ -35,19 +36,19 @@ function KopyalaBtn({ value, label }) {
       onClick={() => kopyala(value, label)}
       style={{
         background: 'none', border: 'none', cursor: 'pointer',
-        padding: '1px 4px', color: '#94a3b8', fontSize: 13,
+        padding: '1px 4px', color: 'rgba(255,255,255,0.4)', fontSize: 13,
         display: 'inline-flex', alignItems: 'center',
         borderRadius: 4, transition: 'color 0.15s',
       }}
-      onMouseEnter={e => { e.currentTarget.style.color = 'var(--brand-dark)' }}
-      onMouseLeave={e => { e.currentTarget.style.color = '#94a3b8' }}
+      onMouseEnter={e => { e.currentTarget.style.color = '#f59e0b' }}
+      onMouseLeave={e => { e.currentTarget.style.color = 'rgba(255,255,255,0.4)' }}
     >
       <i className="bi bi-copy" />
     </button>
   )
 }
 
-// ─── Modal Bileşeni (Saf React, Bootstrap JS yok) ────────────────────────────
+// ─── Modal Bileşeni (Obsidian Vault — Koyu Glassmorphism) ────────────────────
 function Modal({ open, onClose, children, size = '', scrollable = false, staticBackdrop = false }) {
   useEffect(() => {
     if (!open) return
@@ -69,20 +70,31 @@ function Modal({ open, onClose, children, size = '', scrollable = false, staticB
   return createPortal(
     <>
       <div
-        style={{ position: 'fixed', inset: 0, background: 'rgba(15,23,42,0.6)', zIndex: 1040, animation: 'fadeIn 0.15s ease', willChange: 'opacity' }}
+        style={{
+          position: 'fixed', inset: 0, zIndex: 1040,
+          background: 'rgba(0,0,0,0.7)',
+          backdropFilter: 'blur(8px)', WebkitBackdropFilter: 'blur(8px)',
+          animation: 'fadeIn 0.15s ease',
+        }}
         onClick={staticBackdrop ? undefined : onClose}
       />
       <div
-        style={{ position: 'fixed', inset: 0, zIndex: 1050, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 16, animation: 'slideUp 0.2s ease', willChange: 'transform' }}
+        style={{
+          position: 'fixed', inset: 0, zIndex: 1050,
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+          padding: 16, animation: 'slideUp 0.2s ease',
+        }}
         onClick={staticBackdrop ? undefined : (e) => { if (e.target === e.currentTarget) onClose() }}
       >
-        <div style={{
+        <div className="cari-modal" style={{
           width: '100%', maxWidth: maxW,
           maxHeight: scrollable ? '90vh' : 'auto',
           display: 'flex', flexDirection: 'column',
           borderRadius: 20, overflow: 'hidden',
-          boxShadow: '0 32px 80px rgba(0,0,0,0.28), 0 8px 24px rgba(0,0,0,0.12)',
-          background: '#fff',
+          boxShadow: '0 32px 80px rgba(0,0,0,0.5)',
+          background: 'rgba(13,27,46,0.95)',
+          backdropFilter: 'blur(30px)', WebkitBackdropFilter: 'blur(30px)',
+          border: '1px solid rgba(255,255,255,0.1)',
         }}>
           {children}
         </div>
@@ -262,7 +274,7 @@ export default function CariYonetimi() {
   const [kartForm, setKartForm]               = useState(bosForm)
 
   // İşlem düzenleme (ekstre içi)
-  const [duzenHareket, setDuzenHareket]       = useState(null) // düzenlenen hareket id
+  const [duzenHareket, setDuzenHareket]       = useState(null)
   const [duzenForm, setDuzenForm]             = useState({ tutar: '', aciklama: '', tarih: '', tur: '' })
   const [silHareketId, setSilHareketId]       = useState(null)
 
@@ -314,13 +326,10 @@ export default function CariYonetimi() {
   const sayfaliVeri = filtrelendi.slice((sayfa - 1) * sayfaBasi, sayfa * sayfaBasi)
   const toplamSayfa = Math.ceil(filtrelendi.length / sayfaBasi)
 
-  // ─── İstatistikler (2 kart: Toplam Alacak + Toplam Borç) ──────────────
-  // /api/cariler/ozet endpoint'inden gelir — bakiye > 0 olanların toplamı (gerçek net rakamlar)
   const stats = {
     toplamAlacak: parseFloat(ozetIstatistikler.toplam_alacaklar ?? 0),
     toplamBorc:   parseFloat(ozetIstatistikler.toplam_borclar   ?? 0),
   }
-
 
   // ─── Cari Modal ─────────────────────────────────────────────────────────
   const cariEkleAc = () => {
@@ -371,7 +380,6 @@ export default function CariYonetimi() {
       toast.success(`${TL(tutar)} ${turLabel.toLowerCase()} işlemi tamamlandı.`)
       setIslemModalAcik(false)
       veriYukle()
-      // Eğer cari kart açıksa hareketleri de güncelle
       if (kartModalAcik && kartCari?.id === islemCari.id) {
         kartHareketleriYukle(islemCari)
       }
@@ -494,49 +502,280 @@ export default function CariYonetimi() {
 
   // ─── RENDER ──────────────────────────────────────────────────────────────
   return (
-    <>
-      {/* Sayfa Başlığı */}
+    <div className="cari-root">
+      <style>{`
+        /* ═══ Cari Hesaplar — Obsidian Vault ═══ */
+        .cari-root { position: relative; z-index: 1; }
+
+        /* ─── KPI Kart ─── */
+        .cari-kpi-card {
+          background: rgba(255,255,255,0.04);
+          backdrop-filter: blur(20px);
+          -webkit-backdrop-filter: blur(20px);
+          border: 1px solid rgba(255,255,255,0.08);
+          border-radius: 16px;
+          transition: all 0.2s ease;
+          position: relative;
+          overflow: hidden;
+          height: 100%;
+        }
+        .cari-kpi-card:hover {
+          background: rgba(255,255,255,0.07);
+          border-color: rgba(255,255,255,0.14);
+          transform: translateY(-2px);
+        }
+        .cari-kpi-label {
+          font-size: 11px;
+          font-weight: 600;
+          color: rgba(255,255,255,0.75);
+          text-transform: uppercase;
+          letter-spacing: 0.8px;
+          margin: 0 0 12px;
+          position: relative;
+          z-index: 1;
+          text-shadow: 0 0 14px rgba(255,255,255,0.08);
+        }
+        .cari-kpi-value {
+          font-family: 'Inter', sans-serif;
+          font-size: 26px;
+          font-weight: 500;
+          margin: 0;
+          line-height: 1.15;
+          position: relative;
+          z-index: 1;
+          letter-spacing: 0.01em;
+          word-break: break-word;
+          font-variant-numeric: tabular-nums;
+          -webkit-font-smoothing: antialiased;
+          -moz-osx-font-smoothing: grayscale;
+        }
+
+        /* ─── Glass Card ─── */
+        .cari-glass-card {
+          background: rgba(255,255,255,0.04);
+          backdrop-filter: blur(20px);
+          -webkit-backdrop-filter: blur(20px);
+          border: 1px solid rgba(255,255,255,0.08);
+          border-radius: 16px;
+          overflow: hidden;
+          transition: all 0.2s ease;
+        }
+
+        /* ─── Tab Butonları (Pill) ─── */
+        .cari-tab-btn {
+          display: inline-flex;
+          align-items: center;
+          gap: 8px;
+          padding: 8px 16px;
+          border-radius: 20px;
+          border: 1px solid rgba(255,255,255,0.08);
+          background: rgba(255,255,255,0.06);
+          color: rgba(255,255,255,0.6);
+          font-size: 13px;
+          font-weight: 600;
+          cursor: pointer;
+          transition: all 0.15s;
+          font-family: 'Outfit', sans-serif;
+          min-height: 44px;
+        }
+        .cari-tab-btn:hover {
+          background: rgba(255,255,255,0.1);
+          color: rgba(255,255,255,0.85);
+        }
+        .cari-tab-btn.active {
+          background: rgba(245,158,11,0.15);
+          border-color: rgba(245,158,11,0.3);
+          color: #f59e0b;
+        }
+        .cari-tab-badge {
+          font-size: 11px;
+          font-weight: 800;
+          padding: 2px 8px;
+          border-radius: 10px;
+          background: rgba(255,255,255,0.08);
+          color: rgba(255,255,255,0.5);
+        }
+
+        /* ─── Arama ─── */
+        .cari-search-wrap {
+          position: relative;
+          width: 280px;
+        }
+        .cari-search-input {
+          width: 100%;
+          background: rgba(255,255,255,0.05);
+          border: 1px solid rgba(255,255,255,0.1);
+          border-radius: 10px;
+          padding: 8px 14px 8px 36px;
+          color: #ffffff;
+          font-size: 13px;
+          font-weight: 500;
+          font-family: 'Outfit', sans-serif;
+          outline: none;
+          transition: all 0.15s;
+          min-height: 40px;
+        }
+        .cari-search-input::placeholder {
+          color: rgba(255,255,255,0.25);
+        }
+        .cari-search-input:focus {
+          border-color: #f59e0b;
+          box-shadow: 0 0 0 3px rgba(245,158,11,0.12);
+          background: rgba(255,255,255,0.07);
+        }
+        .cari-search-icon {
+          position: absolute;
+          left: 12px;
+          top: 50%;
+          transform: translateY(-50%);
+          color: rgba(255,255,255,0.3);
+          font-size: 14px;
+          pointer-events: none;
+        }
+        .cari-search-clear {
+          position: absolute;
+          right: 8px;
+          top: 50%;
+          transform: translateY(-50%);
+          background: none;
+          border: none;
+          color: rgba(255,255,255,0.4);
+          font-size: 17px;
+          cursor: pointer;
+          padding: 2px;
+          line-height: 1;
+        }
+        .cari-search-clear:hover { color: #f59e0b; }
+
+        /* ─── Spinner ─── */
+        .cari-spinner {
+          width: 2.5rem;
+          height: 2.5rem;
+          border: 3px solid rgba(255,255,255,0.08);
+          border-top-color: #f59e0b;
+          border-radius: 50%;
+          animation: spin 1s linear infinite;
+        }
+
+        /* ─── Modal Form Override'ları ─── */
+        .cari-modal .form-control,
+        .cari-modal .form-control-custom,
+        .cari-modal .form-select {
+          background: rgba(255,255,255,0.05) !important;
+          border: 1px solid rgba(255,255,255,0.1) !important;
+          border-radius: 10px !important;
+          color: #ffffff !important;
+          min-height: 44px;
+          font-family: 'Outfit', sans-serif;
+        }
+        .cari-modal .form-control-sm {
+          min-height: 36px;
+        }
+        .cari-modal .form-control:focus,
+        .cari-modal .form-select:focus {
+          border-color: #f59e0b !important;
+          box-shadow: 0 0 0 3px rgba(245,158,11,0.12) !important;
+          background: rgba(255,255,255,0.07) !important;
+        }
+        .cari-modal .form-control::placeholder {
+          color: rgba(255,255,255,0.25) !important;
+        }
+        .cari-modal select option {
+          background: #0d1b2e;
+          color: #ffffff;
+        }
+
+        /* ─── Pagination ─── */
+        .cari-root .pagination .page-link {
+          background: rgba(255,255,255,0.04);
+          border: 1px solid rgba(255,255,255,0.08);
+          color: rgba(255,255,255,0.6);
+          font-weight: 600;
+        }
+        .cari-root .pagination .page-link:hover {
+          background: rgba(255,255,255,0.08);
+          border-color: rgba(255,255,255,0.14);
+          color: #ffffff;
+        }
+        .cari-root .pagination .page-item.active .page-link {
+          background: rgba(245,158,11,0.15) !important;
+          border-color: rgba(245,158,11,0.3) !important;
+          color: #f59e0b !important;
+        }
+        .cari-root .pagination .page-item.disabled .page-link {
+          background: rgba(255,255,255,0.02);
+          color: rgba(255,255,255,0.2);
+          border-color: rgba(255,255,255,0.04);
+        }
+
+        /* ─── Responsive ─── */
+        @media (max-width: 992px) {
+          .cari-search-wrap { width: 100%; }
+        }
+        @media (max-width: 768px) {
+          .cari-kpi-value { font-size: 20px; }
+        }
+        @media (max-width: 480px) {
+          .cari-kpi-value { font-size: 18px; }
+          .cari-kpi-card { padding: 14px !important; border-radius: 12px; }
+          .cari-glass-card { border-radius: 12px; }
+        }
+      `}</style>
+
+      {/* ─── Sayfa Başlığı ──────────────────────────────────────────── */}
       <div className="d-flex align-items-center justify-content-between mb-4 flex-wrap gap-3">
         <div>
-          <h1 style={{ fontSize: '1.55rem', fontWeight: 800, color: '#0f172a', marginBottom: 2, letterSpacing: '-0.02em' }}>
+          <h1 style={{ fontSize: 24, fontWeight: 700, color: '#ffffff', marginBottom: 2, letterSpacing: '-0.3px' }}>
             Cari & Finans Yönetimi
           </h1>
-          <p className="text-muted mb-0" style={{ fontSize: 14, fontWeight: 500 }}>
+          <p style={{ fontSize: 14, color: 'rgba(255,255,255,0.6)', marginBottom: 0, fontWeight: 400, textShadow: '0 0 12px rgba(255,255,255,0.05)' }}>
             {cariler.length} toplam cari · {cariler.filter(c => c.durum === 'aktif').length} aktif
           </p>
         </div>
-        <button onClick={cariEkleAc} className="btn d-flex align-items-center gap-2" style={ekleBtn}>
+        <button onClick={cariEkleAc} className="d-flex align-items-center gap-2" style={ekleBtn}>
           <i className="bi bi-plus-lg" /> Yeni Cari Ekle
         </button>
       </div>
 
-      {/* ═══ Stat Kartları (2 Kart: Toplam Alacak + Toplam Borç) ═══ */}
+      {/* ═══ KPI Kartları (Glassmorphism + Neon Glow) ═══ */}
       <div className="row g-3 mb-4">
-        {/* Toplam Alacak — YEŞİL */}
+        {/* Toplam Alacak — Emerald */}
         <div className="col-12 col-md-6">
-          <div className="light-card tint-green p-4">
-            <i className="bi bi-arrow-down-circle-fill card-deco-icon" style={{ color: '#059669' }} />
-            <div className="d-flex align-items-center gap-2 mb-2">
-              <div style={ikonKutu('#059669', 'rgba(16,185,129,0.14)')}><i className="bi bi-wallet2" style={{ color: '#059669', fontSize: 18 }} /></div>
-              <span style={kartEtiket('#059669')}>Toplam Alacak</span>
-            </div>
-            <div className="financial-num" style={{ fontSize: '1.85rem', fontWeight: 800, color: '#065f46', lineHeight: 1.1 }}>{TL(stats.toplamAlacak)}</div>
-            <p style={{ fontSize: 13, color: '#059669', margin: '5px 0 0', fontWeight: 600, opacity: 0.8 }}>
+          <div className="cari-kpi-card" style={{ padding: '22px 24px' }}>
+            <i className="bi bi-arrow-down-circle-fill" style={{
+              position: 'absolute', top: 16, right: 16,
+              fontSize: 60, opacity: 0.20, color: '#10b981',
+              pointerEvents: 'none',
+            }} />
+            <h6 className="cari-kpi-label">Toplam Alacak</h6>
+            <h2 className="cari-kpi-value" style={{
+              color: '#10b981',
+              textShadow: '0 0 20px rgba(16,185,129,0.3)',
+            }}>
+              {TL(stats.toplamAlacak)}
+            </h2>
+            <p style={{ fontSize: 12, color: 'rgba(255,255,255,0.5)', fontWeight: 500, margin: '8px 0 0', position: 'relative', zIndex: 1, textShadow: '0 0 12px rgba(255,255,255,0.06)' }}>
               Müşterilerden toplanacak tutar
             </p>
           </div>
         </div>
 
-        {/* Toplam Borç — KIRMIZI */}
+        {/* Toplam Borç — Rose */}
         <div className="col-12 col-md-6">
-          <div className="light-card tint-rose p-4">
-            <i className="bi bi-arrow-up-circle-fill card-deco-icon" style={{ color: '#dc2626' }} />
-            <div className="d-flex align-items-center gap-2 mb-2">
-              <div style={ikonKutu('#dc2626', 'rgba(220,38,38,0.1)')}><i className="bi bi-cash-stack" style={{ color: '#dc2626', fontSize: 18 }} /></div>
-              <span style={kartEtiket('#dc2626')}>Toplam Borç</span>
-            </div>
-            <div className="financial-num" style={{ fontSize: '1.85rem', fontWeight: 800, color: '#991b1b', lineHeight: 1.1 }}>{TL(stats.toplamBorc)}</div>
-            <p style={{ fontSize: 13, color: '#dc2626', margin: '5px 0 0', fontWeight: 600, opacity: 0.8 }}>
+          <div className="cari-kpi-card" style={{ padding: '22px 24px' }}>
+            <i className="bi bi-arrow-up-circle-fill" style={{
+              position: 'absolute', top: 16, right: 16,
+              fontSize: 60, opacity: 0.20, color: '#ef4444',
+              pointerEvents: 'none',
+            }} />
+            <h6 className="cari-kpi-label">Toplam Borç</h6>
+            <h2 className="cari-kpi-value" style={{
+              color: '#ef4444',
+              textShadow: '0 0 20px rgba(239,68,68,0.3)',
+            }}>
+              {TL(stats.toplamBorc)}
+            </h2>
+            <p style={{ fontSize: 12, color: 'rgba(255,255,255,0.5)', fontWeight: 500, margin: '8px 0 0', position: 'relative', zIndex: 1, textShadow: '0 0 12px rgba(255,255,255,0.06)' }}>
               Tedarikçilere ödenecek tutar
             </p>
           </div>
@@ -544,68 +783,52 @@ export default function CariYonetimi() {
       </div>
 
       {/* ═══ Tablo Kartı ═══ */}
-      <div className="premium-card" style={{ padding: 0 }}>
+      <div className="cari-glass-card" style={{ padding: 0 }}>
 
-        {/* Sekmeler + Arama — Bootstrap nav-tabs */}
-        <div className="px-3 pt-3 border-bottom">
-          <div className="d-flex align-items-end justify-content-between flex-wrap gap-2">
-            <ul className="nav nav-tabs border-0 gap-1" role="tablist">
+        {/* Sekmeler + Arama */}
+        <div style={{ padding: '16px 20px', borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
+          <div className="d-flex align-items-center justify-content-between flex-wrap gap-2">
+            <div className="d-flex gap-2">
               {[
                 { key: 'alici',  label: 'Müşteriler',  icon: 'bi-person-check-fill',  sayi: cariler.filter(c => c.cariTip === 'alici').length },
                 { key: 'satici', label: 'Tedarikçiler', icon: 'bi-truck',             sayi: cariler.filter(c => c.cariTip === 'satici').length },
               ].map(s => {
                 const a = aktifSekme === s.key
                 return (
-                  <li key={s.key} className="nav-item" role="presentation">
-                    <button
-                      onClick={() => setAktifSekme(s.key)}
-                      className={`nav-link d-flex align-items-center gap-2 ${a ? 'active' : ''}`}
-                      role="tab"
-                      style={{
-                        fontSize: 14, fontWeight: a ? 700 : 600, border: 'none', borderRadius: '8px 8px 0 0',
-                        borderBottom: a ? '2px solid var(--brand-dark)' : '2px solid transparent',
-                        color: a ? 'var(--brand-dark)' : '#64748b', background: 'none',
-                      }}
-                    >
-                      <i className={`bi ${s.icon}`} style={{ fontSize: 14 }} />
-                      {s.label}
-                      <span className="badge rounded-pill" style={{
-                        background: a ? 'rgba(18,63,89,0.1)' : '#f1f5f9',
-                        color: a ? 'var(--brand-dark)' : '#94a3b8',
-                        fontSize: 11, fontWeight: 800,
-                      }}>{s.sayi}</span>
-                    </button>
-                  </li>
+                  <button
+                    key={s.key}
+                    onClick={() => setAktifSekme(s.key)}
+                    className={`cari-tab-btn ${a ? 'active' : ''}`}
+                  >
+                    <i className={`bi ${s.icon}`} style={{ fontSize: 13 }} />
+                    {s.label}
+                    <span className="cari-tab-badge" style={a ? { background: 'rgba(245,158,11,0.2)', color: '#f59e0b' } : {}}>
+                      {s.sayi}
+                    </span>
+                  </button>
                 )
               })}
-            </ul>
-            <div className="pb-2">
-              <div className="input-group" style={{ width: 280 }}>
-                <span className="input-group-text bg-light border-end-0" style={{ borderRadius: '10px 0 0 10px' }}>
-                  <i className="bi bi-search" style={{ color: '#94a3b8', fontSize: 14 }} />
-                </span>
-                <input
-                  type="text"
-                  value={arama}
-                  onChange={e => setArama(e.target.value)}
-                  placeholder="Ara: ünvan, tel, vergi no..."
-                  className="form-control bg-light border-start-0"
-                  style={{ fontSize: 14, fontWeight: 600, borderRadius: '0 10px 10px 0' }}
-                />
-                {arama && (
-                  <button onClick={() => setArama('')}
-                    className="btn btn-sm position-absolute end-0 top-50 translate-middle-y"
-                    style={{ zIndex: 5, color: '#94a3b8', fontSize: 17 }}>
-                    <i className="bi bi-x" />
-                  </button>
-                )}
-              </div>
+            </div>
+            <div className="cari-search-wrap">
+              <i className="bi bi-search cari-search-icon" />
+              <input
+                type="text"
+                value={arama}
+                onChange={e => setArama(e.target.value)}
+                placeholder="Ara: ünvan, tel, vergi no..."
+                className="cari-search-input"
+              />
+              {arama && (
+                <button onClick={() => setArama('')} className="cari-search-clear">
+                  <i className="bi bi-x" />
+                </button>
+              )}
             </div>
           </div>
         </div>
 
-        <div className="px-3 py-2 bg-light border-bottom">
-          <small className="text-muted fw-semibold" style={{ fontSize: 13 }}>
+        <div style={{ padding: '8px 20px', borderBottom: '1px solid rgba(255,255,255,0.04)' }}>
+          <small style={{ fontSize: 12, color: 'rgba(255,255,255,0.4)', fontWeight: 500 }}>
             <i className="bi bi-sort-down me-1" />
             {aktifSekme === 'alici' ? 'Müşteriler bakiyeye göre büyükten küçüğe sıralı.' : 'Tedarikçiler borca göre büyükten küçüğe sıralı.'}
           </small>
@@ -614,33 +837,36 @@ export default function CariYonetimi() {
         {/* Yükleniyor */}
         {listYukleniyor && (
           <div className="d-flex flex-column align-items-center justify-content-center py-5">
-            <div className="spinner-border text-secondary mb-3" role="status" style={{ width: '2.5rem', height: '2.5rem' }}>
-              <span className="visually-hidden">Yükleniyor...</span>
-            </div>
-            <span style={{ fontSize: 15, color: '#94a3b8', fontWeight: 600 }}>Cariler yükleniyor...</span>
+            <div className="cari-spinner mb-3" />
+            <span style={{ fontSize: 15, color: 'rgba(255,255,255,0.55)', fontWeight: 500 }}>Cariler yükleniyor...</span>
           </div>
         )}
 
         {/* Hata */}
         {!listYukleniyor && listHata && (
           <div className="d-flex flex-column align-items-center justify-content-center text-center py-5 px-3">
-            <div className="rounded-3 d-flex align-items-center justify-content-center mb-3"
-                 style={{ width: 52, height: 52, background: '#fff1f2', border: '1px solid #fecdd3' }}>
-              <i className="bi bi-exclamation-circle text-danger" style={{ fontSize: 24 }} />
+            <div className="d-flex align-items-center justify-content-center mb-3"
+                 style={{ width: 52, height: 52, borderRadius: 14, background: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.2)' }}>
+              <i className="bi bi-exclamation-circle" style={{ fontSize: 24, color: '#ef4444' }} />
             </div>
-            <p className="text-danger fw-semibold mb-3" style={{ fontSize: 14 }}>{listHata}</p>
-            <button onClick={veriYukle} className="btn btn-outline-brand" style={{ borderRadius: 10, fontSize: 14, height: 40, padding: '0 18px' }}>
-              <i className="bi bi-arrow-clockwise me-1" /> Tekrar Dene
+            <p style={{ color: '#ef4444', fontWeight: 600, marginBottom: 12, fontSize: 14 }}>{listHata}</p>
+            <button onClick={veriYukle} style={{
+              background: 'rgba(245,158,11,0.08)', border: '1px solid rgba(245,158,11,0.3)',
+              color: '#f59e0b', borderRadius: 10, fontSize: 14, height: 40, padding: '0 18px',
+              fontWeight: 600, cursor: 'pointer', fontFamily: "'Outfit', sans-serif",
+              display: 'flex', alignItems: 'center', gap: 6,
+            }}>
+              <i className="bi bi-arrow-clockwise" /> Tekrar Dene
             </button>
           </div>
         )}
 
         {/* Tablo */}
         {!listYukleniyor && !listHata && (
-        <div style={{ overflowX: 'auto' }}>
+        <div className="table-responsive">
           <table style={{ width: '100%', borderCollapse: 'collapse', minWidth: 880 }}>
             <thead>
-              <tr style={{ background: '#f8fafc' }}>
+              <tr>
                 <th style={thS}>Cari Ünvanı & İletişim</th>
                 <th style={thS}>Son İşlem</th>
                 <th style={{ ...thS, textAlign: 'right' }}>Alacak</th>
@@ -652,19 +878,19 @@ export default function CariYonetimi() {
             <tbody>
               {sayfaliVeri.length === 0 ? (
                 <tr><td colSpan={6} className="text-center py-5 px-3">
-                  <i className="bi bi-inbox d-block mb-2" style={{ fontSize: 40, color: '#cbd5e1' }} />
-                  <span style={{ fontSize: 14, fontWeight: 700, color: '#94a3b8' }}>
+                  <i className="bi bi-inbox d-block mb-2" style={{ fontSize: 40, color: 'rgba(255,255,255,0.15)' }} />
+                  <span style={{ fontSize: 14, fontWeight: 700, color: 'rgba(255,255,255,0.4)' }}>
                     {arama ? 'Aramanızla eşleşen cari bulunamadı.' : 'Bu kategoride kayıt yok.'}
                   </span>
                 </td></tr>
               ) : sayfaliVeri.map((cari, idx) => {
-                const bakR = cari.bakiye > 0 ? '#dc2626' : cari.bakiye < 0 ? '#059669' : '#64748b'
-                const bg  = idx % 2 === 0 ? '#fff' : '#fafbfc'
+                const bakR = cari.bakiye > 0 ? '#ef4444' : cari.bakiye < 0 ? '#10b981' : 'rgba(255,255,255,0.5)'
+                const bg  = idx % 2 === 0 ? 'transparent' : 'rgba(255,255,255,0.02)'
                 const borc   = parseFloat(cari.toplam_borc ?? 0)
                 const alacak = parseFloat(cari.toplam_alacak ?? 0)
                 return (
                   <tr key={cari.id} style={{ background: bg, transition: 'background 0.1s' }}
-                    onMouseEnter={e => e.currentTarget.style.background = '#f0f7ff'}
+                    onMouseEnter={e => e.currentTarget.style.background = 'rgba(255,255,255,0.05)'}
                     onMouseLeave={e => e.currentTarget.style.background = bg}>
 
                     {/* Cari Ünvanı & İletişim */}
@@ -672,23 +898,23 @@ export default function CariYonetimi() {
                       <div className="d-flex align-items-center gap-2" style={{ minWidth: 0 }}>
                         <div className="flex-shrink-0 d-flex align-items-center justify-content-center" style={{
                           width: 40, height: 40, borderRadius: 12,
-                          background: cari.cariTip === 'alici' ? 'rgba(18,63,89,0.08)' : 'rgba(217,119,6,0.1)',
-                          border: cari.cariTip === 'alici' ? '1px solid rgba(18,63,89,0.12)' : '1px solid rgba(217,119,6,0.2)',
+                          background: 'rgba(245,158,11,0.1)',
+                          border: '1px solid rgba(245,158,11,0.15)',
                         }}>
                           <i className={`bi ${cari.tip === 'kurumsal' ? 'bi-buildings-fill' : 'bi-person-fill'}`}
-                            style={{ fontSize: 16, color: cari.cariTip === 'alici' ? 'var(--brand-dark)' : '#d97706' }} />
+                            style={{ fontSize: 16, color: '#f59e0b' }} />
                         </div>
                         <div style={{ minWidth: 0 }}>
                           <div
                             onClick={() => kartAc(cari)}
                             className="text-truncate"
-                            style={{ fontWeight: 700, fontSize: 14, color: cari.cariTip === 'alici' ? 'var(--brand-dark)' : '#d97706', cursor: 'pointer',
-                              textDecoration: 'underline', textDecorationStyle: 'dotted', textDecorationColor: cari.cariTip === 'alici' ? 'rgba(18,63,89,0.3)' : 'rgba(217,119,6,0.3)' }}
+                            style={{ fontWeight: 700, fontSize: 14, color: '#f59e0b', cursor: 'pointer',
+                              textDecoration: 'underline', textDecorationStyle: 'dotted', textDecorationColor: 'rgba(245,158,11,0.3)' }}
                             title="Cari kartını görüntüle"
                           >
                             {cari.unvan}
                           </div>
-                          <div className="d-flex align-items-center gap-1" style={{ fontSize: 12, color: '#94a3b8', fontWeight: 500 }}>
+                          <div className="d-flex align-items-center gap-1" style={{ fontSize: 12, color: 'rgba(255,255,255,0.4)', fontWeight: 500 }}>
                             {cari.telefon ? (
                               <>
                                 <i className="bi bi-telephone-fill" style={{ fontSize: 10 }} />
@@ -705,28 +931,28 @@ export default function CariYonetimi() {
 
                     {/* Son İşlem Tarihi */}
                     <td style={tdS}>
-                      <span style={{ fontSize: 13, fontWeight: 600, color: '#64748b' }}>
+                      <span style={{ fontSize: 13, fontWeight: 600, color: 'rgba(255,255,255,0.5)' }}>
                         {tarihFmt(cari.son_islem)}
                       </span>
                     </td>
 
-                    {/* Alacak — YEŞİL (finansal standart) */}
+                    {/* Alacak */}
                     <td className="text-end" style={tdS}>
-                      <span className="financial-num" style={{ fontSize: 14, fontWeight: 700, color: '#059669' }}>
+                      <span className="financial-num" style={{ fontSize: 14, fontWeight: 700, color: '#10b981' }}>
                         {alacak > 0 ? TL(alacak) : '—'}
                       </span>
                     </td>
 
-                    {/* Borç — KIRMIZI (finansal standart) */}
+                    {/* Borç */}
                     <td className="text-end" style={tdS}>
-                      <span className="financial-num" style={{ fontSize: 14, fontWeight: 700, color: '#dc2626' }}>
+                      <span className="financial-num" style={{ fontSize: 14, fontWeight: 700, color: '#ef4444' }}>
                         {borc > 0 ? TL(borc) : '—'}
                       </span>
                     </td>
 
                     {/* Toplam Bakiye */}
                     <td className="text-end" style={tdS}>
-                      <div className="financial-num fw-bold" style={{ fontSize: 15, color: bakR }}>
+                      <div className="financial-num" style={{ fontSize: 15, fontWeight: 700, color: bakR, textShadow: `0 0 14px ${bakR === '#ef4444' ? 'rgba(239,68,68,0.25)' : bakR === '#10b981' ? 'rgba(16,185,129,0.25)' : 'none'}` }}>
                         {TL(cari.bakiye)}
                       </div>
                     </td>
@@ -734,10 +960,10 @@ export default function CariYonetimi() {
                     {/* İşlemler */}
                     <td className="text-end" style={tdS}>
                       <div className="d-flex justify-content-end gap-1">
-                        <AkBtn title="Finansal İşlem"  color="#10b981"           icon="bi-currency-exchange" onClick={() => islemAc(cari)} />
-                        <AkBtn title="Cari Kart"       color="var(--brand-dark)" icon="bi-person-vcard"      onClick={() => kartAc(cari)} />
-                        <AkBtn title="İşlem Geçmişi"   color="#f59e0b"           icon="bi-clock-history"      onClick={() => kartAc(cari, 'ekstre')} />
-                        <AkBtn title="Sil / Pasife Al" color="#f43f5e"           icon="bi-trash"              onClick={() => { setSilCari(cari); setSilModalAcik(true) }} />
+                        <AkBtn title="Finansal İşlem"  color="#10b981"  icon="bi-currency-exchange" onClick={() => islemAc(cari)} />
+                        <AkBtn title="Cari Kart"       color="#f59e0b"  icon="bi-person-vcard"      onClick={() => kartAc(cari)} />
+                        <AkBtn title="İşlem Geçmişi"   color="#d97706"  icon="bi-clock-history"      onClick={() => kartAc(cari, 'ekstre')} />
+                        <AkBtn title="Sil / Pasife Al" color="#ef4444"  icon="bi-trash"              onClick={() => { setSilCari(cari); setSilModalAcik(true) }} />
                       </div>
                     </td>
                   </tr>
@@ -749,8 +975,8 @@ export default function CariYonetimi() {
         )}
 
         {!listYukleniyor && !listHata && toplamSayfa > 1 && (
-          <div className="d-flex align-items-center justify-content-between px-3 py-2 border-top bg-light">
-            <small className="text-muted fw-semibold" style={{ fontSize: 13 }}>
+          <div className="d-flex align-items-center justify-content-between px-3 py-2" style={{ borderTop: '1px solid rgba(255,255,255,0.06)' }}>
+            <small style={{ fontSize: 13, color: 'rgba(255,255,255,0.4)', fontWeight: 500 }}>
               {filtrelendi.length} kayıttan {(sayfa - 1) * sayfaBasi + 1}–{Math.min(sayfa * sayfaBasi, filtrelendi.length)} gösteriliyor
             </small>
             <nav>
@@ -762,8 +988,7 @@ export default function CariYonetimi() {
                 </li>
                 {Array.from({ length: toplamSayfa }, (_, i) => i + 1).map(p => (
                   <li key={p} className={`page-item ${p === sayfa ? 'active' : ''}`}>
-                    <button className="page-link" onClick={() => setSayfa(p)}
-                      style={{ borderRadius: 8, ...(p === sayfa ? { background: 'var(--brand-dark)', borderColor: 'var(--brand-dark)' } : {}) }}>
+                    <button className="page-link" onClick={() => setSayfa(p)} style={{ borderRadius: 8 }}>
                       {p}
                     </button>
                   </li>
@@ -794,17 +1019,17 @@ export default function CariYonetimi() {
                 <label style={lblS}>Cari Rolü</label>
                 <div className="d-flex gap-2">
                   {[
-                    { val: 'alici',  label: 'Müşteri',    icon: 'bi-person-check-fill', color: '#059669', bg: 'rgba(16,185,129,0.07)'  },
-                    { val: 'satici', label: 'Tedarikçi',  icon: 'bi-truck',             color: '#d97706', bg: 'rgba(245,158,11,0.07)' },
+                    { val: 'alici',  label: 'Müşteri',    icon: 'bi-person-check-fill', color: '#10b981', bg: 'rgba(16,185,129,0.08)'  },
+                    { val: 'satici', label: 'Tedarikçi',  icon: 'bi-truck',             color: '#d97706', bg: 'rgba(245,158,11,0.08)' },
                   ].map(t => {
                     const sel = form.cariTip === t.val
                     return (
                       <label key={t.val} style={{ flex: 1, display: 'flex', alignItems: 'center', gap: 10, padding: '12px 16px', borderRadius: 12, cursor: 'pointer',
-                        border: `2px solid ${sel ? t.color : '#e2e8f0'}`, background: sel ? t.bg : '#fff', transition: 'all 0.15s' }}>
+                        border: `2px solid ${sel ? t.color : 'rgba(255,255,255,0.1)'}`, background: sel ? t.bg : 'rgba(255,255,255,0.03)', transition: 'all 0.15s' }}>
                         <input type="radio" name="cariTip" value={t.val} checked={sel}
                           onChange={e => setForm(p => ({ ...p, cariTip: e.target.value }))} style={{ display: 'none' }} />
-                        <i className={`bi ${t.icon}`} style={{ fontSize: 20, color: sel ? t.color : '#94a3b8' }} />
-                        <span style={{ fontSize: 14, fontWeight: 700, color: sel ? t.color : '#64748b' }}>{t.label}</span>
+                        <i className={`bi ${t.icon}`} style={{ fontSize: 20, color: sel ? t.color : 'rgba(255,255,255,0.35)' }} />
+                        <span style={{ fontSize: 14, fontWeight: 700, color: sel ? t.color : 'rgba(255,255,255,0.5)' }}>{t.label}</span>
                       </label>
                     )
                   })}
@@ -873,15 +1098,17 @@ export default function CariYonetimi() {
           return (
             <>
               <MHeader icon="bi-currency-exchange" baslik={etiketler.baslik}
-                headerBg={islemCari?.cariTip === 'satici' ? 'linear-gradient(135deg,#d97706,#b45309)' : 'linear-gradient(135deg,#059669,#047857)'}
                 onKapat={() => setIslemModalAcik(false)} />
               <form onSubmit={islemKaydet} noValidate>
                 <div style={{ padding: 24 }}>
                   {islemCari && (
                     <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-                      padding: '14px 18px', background: '#f8fafc', borderRadius: 12, border: '1px solid #e2e8f0', marginBottom: 20 }}>
-                      <span style={{ fontSize: 13, color: '#64748b', fontWeight: 700 }}>Güncel Bakiye</span>
-                      <span className="financial-num" style={{ fontSize: 20, fontWeight: 800, color: islemCari.bakiye > 0 ? '#dc2626' : islemCari.bakiye < 0 ? '#059669' : '#64748b' }}>
+                      padding: '14px 18px', background: 'rgba(255,255,255,0.04)', borderRadius: 12, border: '1px solid rgba(255,255,255,0.08)', marginBottom: 20 }}>
+                      <span style={{ fontSize: 13, color: 'rgba(255,255,255,0.5)', fontWeight: 700 }}>Güncel Bakiye</span>
+                      <span className="financial-num" style={{ fontSize: 20, fontWeight: 700,
+                        color: islemCari.bakiye > 0 ? '#ef4444' : islemCari.bakiye < 0 ? '#10b981' : 'rgba(255,255,255,0.5)',
+                        textShadow: `0 0 16px ${islemCari.bakiye > 0 ? 'rgba(239,68,68,0.3)' : islemCari.bakiye < 0 ? 'rgba(16,185,129,0.3)' : 'none'}`,
+                      }}>
                         {TL(islemCari.bakiye)}
                       </span>
                     </div>
@@ -890,17 +1117,17 @@ export default function CariYonetimi() {
                     <label style={lblS}>İşlem Türü</label>
                     <div className="d-flex gap-2">
                       {[
-                        { val: 'tahsilat',     label: etiketler.tahsilat, icon: 'bi-arrow-down-circle-fill', color: '#059669', bg: 'rgba(16,185,129,0.08)' },
-                        { val: 'borclandirma', label: etiketler.borc,     icon: 'bi-arrow-up-circle-fill',   color: '#dc2626', bg: 'rgba(220,38,38,0.07)'  },
+                        { val: 'tahsilat',     label: etiketler.tahsilat, icon: 'bi-arrow-down-circle-fill', color: '#10b981', bg: 'rgba(16,185,129,0.08)' },
+                        { val: 'borclandirma', label: etiketler.borc,     icon: 'bi-arrow-up-circle-fill',   color: '#ef4444', bg: 'rgba(239,68,68,0.08)'  },
                       ].map(t => (
                         <label key={t.val} style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6,
                           padding: '14px 10px', borderRadius: 12, cursor: 'pointer',
-                          border: `2px solid ${islem.tur === t.val ? t.color : '#e2e8f0'}`,
-                          background: islem.tur === t.val ? t.bg : '#fff', transition: 'all 0.15s' }}>
+                          border: `2px solid ${islem.tur === t.val ? t.color : 'rgba(255,255,255,0.1)'}`,
+                          background: islem.tur === t.val ? t.bg : 'rgba(255,255,255,0.03)', transition: 'all 0.15s' }}>
                           <input type="radio" name="islemTur" value={t.val} checked={islem.tur === t.val}
                             onChange={e => setIslem(p => ({ ...p, tur: e.target.value }))} style={{ display: 'none' }} />
                           <i className={`bi ${t.icon}`} style={{ fontSize: 26, color: t.color }} />
-                          <span style={{ fontSize: 13, fontWeight: 700, color: islem.tur === t.val ? t.color : '#64748b' }}>{t.label}</span>
+                          <span style={{ fontSize: 13, fontWeight: 700, color: islem.tur === t.val ? t.color : 'rgba(255,255,255,0.5)' }}>{t.label}</span>
                         </label>
                       ))}
                     </div>
@@ -917,7 +1144,7 @@ export default function CariYonetimi() {
                       className="form-control form-control-custom" />
                   </div>
                   <div>
-                    <label style={lblS}>Açıklama <span style={{ fontWeight: 500, textTransform: 'none', letterSpacing: 0, color: '#94a3b8' }}>(opsiyonel)</span></label>
+                    <label style={lblS}>Açıklama <span style={{ fontWeight: 500, textTransform: 'none', letterSpacing: 0, color: 'rgba(255,255,255,0.35)' }}>(opsiyonel)</span></label>
                     <textarea value={islem.aciklama} onChange={e => setIslem(p => ({ ...p, aciklama: e.target.value }))}
                       placeholder="İşlem açıklaması..." rows={2} className="form-control form-control-custom"
                       style={{ resize: 'none', borderRadius: 10 }} />
@@ -925,7 +1152,7 @@ export default function CariYonetimi() {
                 </div>
                 <MFooter onIptal={() => setIslemModalAcik(false)} yukleniyor={yukleniyor}
                   kaydetLabel={islem.tur === 'tahsilat' ? etiketler.tahsilat : etiketler.borc}
-                  kaydetStyle={{ background: islem.tur === 'tahsilat' ? 'linear-gradient(135deg,#059669,#047857)' : 'linear-gradient(135deg,#dc2626,#991b1b)' }} />
+                  kaydetStyle={{ background: islem.tur === 'tahsilat' ? 'linear-gradient(135deg,#10b981,#059669)' : 'linear-gradient(135deg,#ef4444,#dc2626)', color: '#fff', boxShadow: islem.tur === 'tahsilat' ? '0 4px 20px rgba(16,185,129,0.3)' : '0 4px 20px rgba(239,68,68,0.3)' }} />
               </form>
             </>
           )
@@ -938,79 +1165,80 @@ export default function CariYonetimi() {
       <Modal open={kartModalAcik} onClose={() => setKartModalAcik(false)} size="xl" scrollable staticBackdrop>
         {kartCari && (
           <>
-            {/* Header */}
+            {/* Header — Amber Gradient */}
             <div style={{
-              background: kartCari.cariTip === 'satici' ? 'linear-gradient(135deg,#d97706,#b45309)' : 'linear-gradient(135deg,var(--brand-dark),#1a5b80)', padding: '18px 24px',
+              background: 'linear-gradient(135deg, #f59e0b 0%, #d97706 100%)', padding: '18px 24px',
               display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexShrink: 0,
             }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
                 <div style={{
-                  width: 46, height: 46, borderRadius: 14, background: 'rgba(255,255,255,0.18)',
+                  width: 46, height: 46, borderRadius: 14,
+                  background: 'rgba(13,27,46,0.4)', backdropFilter: 'blur(8px)',
+                  border: '1px solid rgba(13,27,46,0.3)',
                   display: 'flex', alignItems: 'center', justifyContent: 'center',
                 }}>
-                  <i className="bi bi-person-vcard-fill" style={{ color: '#fff', fontSize: 22 }} />
+                  <i className="bi bi-person-vcard-fill" style={{ color: '#f59e0b', fontSize: 22 }} />
                 </div>
                 <div>
-                  <div style={{ color: '#fff', fontWeight: 800, fontSize: 17, lineHeight: 1.2 }}>{kartCari.unvan}</div>
-                  <div style={{ color: 'rgba(255,255,255,0.7)', fontSize: 13, fontWeight: 500, marginTop: 2 }}>
-                    {kartCari.cariTip === 'alici' ? 'Müşteri' : 'Tedarikçi'} · Bakiye: <span className="financial-num" style={{ color: kartCari.bakiye > 0 ? '#fca5a5' : kartCari.bakiye < 0 ? '#6ee7b7' : 'rgba(255,255,255,0.7)' }}>{TL(kartCari.bakiye)}</span>
+                  <div style={{ color: '#0d1b2e', fontWeight: 800, fontSize: 17, lineHeight: 1.2 }}>{kartCari.unvan}</div>
+                  <div style={{ color: 'rgba(13,27,46,0.7)', fontSize: 13, fontWeight: 500, marginTop: 2 }}>
+                    {kartCari.cariTip === 'alici' ? 'Müşteri' : 'Tedarikçi'} · Bakiye: <span className="financial-num" style={{ color: kartCari.bakiye > 0 ? '#991b1b' : kartCari.bakiye < 0 ? '#065f46' : 'rgba(13,27,46,0.5)' }}>{TL(kartCari.bakiye)}</span>
                   </div>
                 </div>
               </div>
               <div className="d-flex align-items-center gap-2">
-                {/* Hızlı Aksiyon Butonları */}
                 <button onClick={() => { islemAc(kartCari) }}
-                  style={{ background: 'rgba(255,255,255,0.18)', border: 'none', borderRadius: 10, color: '#fff',
+                  style={{ background: 'rgba(13,27,46,0.15)', border: 'none', borderRadius: 10, color: '#0d1b2e',
                     padding: '8px 14px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 6,
-                    fontSize: 13, fontWeight: 700, fontFamily: 'inherit', transition: 'all 0.15s' }}
-                  onMouseEnter={e => e.currentTarget.style.background = 'rgba(255,255,255,0.28)'}
-                  onMouseLeave={e => e.currentTarget.style.background = 'rgba(255,255,255,0.18)'}
+                    fontSize: 13, fontWeight: 700, fontFamily: 'inherit', transition: 'all 0.15s', minHeight: 44 }}
+                  onMouseEnter={e => e.currentTarget.style.background = 'rgba(13,27,46,0.25)'}
+                  onMouseLeave={e => e.currentTarget.style.background = 'rgba(13,27,46,0.15)'}
                 >
                   <i className="bi bi-currency-exchange" /> Finansal İşlem
                 </button>
                 <button onClick={() => ekstrePdfIndir(kartCari, kartHareketler)}
-                  style={{ background: 'rgba(255,255,255,0.18)', border: 'none', borderRadius: 10, color: '#fff',
+                  style={{ background: 'rgba(13,27,46,0.15)', border: 'none', borderRadius: 10, color: '#0d1b2e',
                     padding: '8px 14px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 6,
-                    fontSize: 13, fontWeight: 700, fontFamily: 'inherit', transition: 'all 0.15s' }}
-                  onMouseEnter={e => e.currentTarget.style.background = 'rgba(255,255,255,0.28)'}
-                  onMouseLeave={e => e.currentTarget.style.background = 'rgba(255,255,255,0.18)'}
+                    fontSize: 13, fontWeight: 700, fontFamily: 'inherit', transition: 'all 0.15s', minHeight: 44 }}
+                  onMouseEnter={e => e.currentTarget.style.background = 'rgba(13,27,46,0.25)'}
+                  onMouseLeave={e => e.currentTarget.style.background = 'rgba(13,27,46,0.15)'}
                 >
                   <i className="bi bi-file-earmark-pdf" /> PDF İndir
                 </button>
-                <button onClick={() => setKartModalAcik(false)} style={{ background: 'rgba(255,255,255,0.15)', border: 'none', borderRadius: 8,
-                  color: '#fff', width: 34, height: 34, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                <button onClick={() => setKartModalAcik(false)} style={{ background: 'rgba(13,27,46,0.15)', border: 'none', borderRadius: 8,
+                  color: '#0d1b2e', width: 34, height: 34, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                   <i className="bi bi-x-lg" style={{ fontSize: 15 }} />
                 </button>
               </div>
             </div>
 
             {/* Nav Tabs */}
-            <div style={{ borderBottom: '1px solid #e2e8f0', background: '#f8fafc', padding: '0 24px', flexShrink: 0 }}>
-              <ul className="nav nav-tabs border-0 gap-1" role="tablist" style={{ marginBottom: -1 }}>
+            <div style={{ borderBottom: '1px solid rgba(255,255,255,0.06)', padding: '0 24px', flexShrink: 0 }}>
+              <div className="d-flex gap-1" style={{ marginBottom: -1 }}>
                 {[
                   { key: 'bilgiler', label: 'Cari Bilgiler', icon: 'bi-info-circle-fill' },
                   { key: 'ekstre',   label: 'Hesap Ekstresi', icon: 'bi-list-ul' },
                 ].map(t => {
                   const a = kartSekme === t.key
                   return (
-                    <li key={t.key} className="nav-item" role="presentation">
-                      <button
-                        onClick={() => setKartSekme(t.key)}
-                        className={`nav-link d-flex align-items-center gap-2 ${a ? 'active' : ''}`}
-                        role="tab"
-                        style={{
-                          fontSize: 14, fontWeight: a ? 700 : 600, border: 'none', borderRadius: '8px 8px 0 0',
-                          borderBottom: a ? '2px solid var(--brand-dark)' : '2px solid transparent',
-                          color: a ? 'var(--brand-dark)' : '#64748b', background: 'none', padding: '12px 18px',
-                        }}
-                      >
-                        <i className={`bi ${t.icon}`} style={{ fontSize: 14 }} />
-                        {t.label}
-                      </button>
-                    </li>
+                    <button
+                      key={t.key}
+                      onClick={() => setKartSekme(t.key)}
+                      style={{
+                        display: 'flex', alignItems: 'center', gap: 8,
+                        padding: '12px 18px', border: 'none', background: 'none',
+                        borderBottom: a ? '2px solid #f59e0b' : '2px solid transparent',
+                        color: a ? '#f59e0b' : 'rgba(255,255,255,0.5)',
+                        fontSize: 14, fontWeight: a ? 700 : 500, cursor: 'pointer',
+                        transition: 'all 0.15s', fontFamily: "'Outfit', sans-serif",
+                      }}
+                    >
+                      <i className={`bi ${t.icon}`} style={{ fontSize: 14 }} />
+                      {t.label}
+                    </button>
                   )
                 })}
-              </ul>
+              </div>
             </div>
 
             {/* Sekme İçeriği */}
@@ -1023,8 +1251,13 @@ export default function CariYonetimi() {
                       {/* Okuma Modu */}
                       <div className="d-flex justify-content-end mb-3">
                         <button onClick={() => setKartDuzenleModu(true)}
-                          className="btn btn-outline-brand d-flex align-items-center gap-2"
-                          style={{ borderRadius: 10, fontSize: 13, height: 38, padding: '0 16px' }}>
+                          className="d-flex align-items-center gap-2"
+                          style={{
+                            background: 'rgba(245,158,11,0.08)', border: '1px solid rgba(245,158,11,0.3)',
+                            borderRadius: 10, fontSize: 13, height: 38, padding: '0 16px',
+                            color: '#f59e0b', fontWeight: 700, cursor: 'pointer',
+                            fontFamily: "'Outfit', sans-serif", transition: 'all 0.15s',
+                          }}>
                           <i className="bi bi-pencil" /> Düzenle
                         </button>
                       </div>
@@ -1039,12 +1272,12 @@ export default function CariYonetimi() {
                           { label: 'Durum',         value: kartCari.durum === 'aktif' ? 'Aktif' : 'Pasif', icon: 'bi-toggle-on', col: 'col-md-6' },
                         ].map((item, i) => (
                           <div key={i} className={`col-12 ${item.col}`}>
-                            <div style={{ padding: '14px 18px', background: '#eef2f7', borderRadius: 12, border: '1px solid #dce3ed' }}>
+                            <div style={{ padding: '14px 18px', background: 'rgba(255,255,255,0.04)', borderRadius: 12, border: '1px solid rgba(255,255,255,0.08)' }}>
                               <div className="d-flex align-items-center gap-2 mb-1">
-                                <i className={`bi ${item.icon}`} style={{ fontSize: 13, color: '#7a8ba0' }} />
-                                <span style={{ fontSize: 11, fontWeight: 700, color: '#7a8ba0', textTransform: 'uppercase', letterSpacing: '0.05em' }}>{item.label}</span>
+                                <i className={`bi ${item.icon}`} style={{ fontSize: 13, color: 'rgba(255,255,255,0.4)' }} />
+                                <span style={{ fontSize: 11, fontWeight: 600, color: 'rgba(255,255,255,0.4)', textTransform: 'uppercase', letterSpacing: '0.8px' }}>{item.label}</span>
                               </div>
-                              <div style={{ fontSize: 14, fontWeight: 700, color: '#1e293b' }}>{item.value}</div>
+                              <div style={{ fontSize: 14, fontWeight: 700, color: '#ffffff' }}>{item.value}</div>
                             </div>
                           </div>
                         ))}
@@ -1059,17 +1292,17 @@ export default function CariYonetimi() {
                           <label style={lblS}>Cari Rolü</label>
                           <div className="d-flex gap-2">
                             {[
-                              { val: 'alici',  label: 'Müşteri',   icon: 'bi-person-check-fill', color: '#059669', bg: 'rgba(16,185,129,0.07)' },
-                              { val: 'satici', label: 'Tedarikçi', icon: 'bi-truck',             color: '#d97706', bg: 'rgba(245,158,11,0.07)' },
+                              { val: 'alici',  label: 'Müşteri',   icon: 'bi-person-check-fill', color: '#10b981', bg: 'rgba(16,185,129,0.08)' },
+                              { val: 'satici', label: 'Tedarikçi', icon: 'bi-truck',             color: '#d97706', bg: 'rgba(245,158,11,0.08)' },
                             ].map(t => {
                               const sel = kartForm.cariTip === t.val
                               return (
                                 <label key={t.val} style={{ flex: 1, display: 'flex', alignItems: 'center', gap: 10, padding: '12px 16px', borderRadius: 12, cursor: 'pointer',
-                                  border: `2px solid ${sel ? t.color : '#e2e8f0'}`, background: sel ? t.bg : '#fff', transition: 'all 0.15s' }}>
+                                  border: `2px solid ${sel ? t.color : 'rgba(255,255,255,0.1)'}`, background: sel ? t.bg : 'rgba(255,255,255,0.03)', transition: 'all 0.15s' }}>
                                   <input type="radio" name="kartCariTip" value={t.val} checked={sel}
                                     onChange={e => setKartForm(p => ({ ...p, cariTip: e.target.value }))} style={{ display: 'none' }} />
-                                  <i className={`bi ${t.icon}`} style={{ fontSize: 20, color: sel ? t.color : '#94a3b8' }} />
-                                  <span style={{ fontSize: 14, fontWeight: 700, color: sel ? t.color : '#64748b' }}>{t.label}</span>
+                                  <i className={`bi ${t.icon}`} style={{ fontSize: 20, color: sel ? t.color : 'rgba(255,255,255,0.35)' }} />
+                                  <span style={{ fontSize: 14, fontWeight: 700, color: sel ? t.color : 'rgba(255,255,255,0.5)' }}>{t.label}</span>
                                 </label>
                               )
                             })}
@@ -1130,14 +1363,14 @@ export default function CariYonetimi() {
                   {/* Özet Kartları */}
                   <div className="row g-3 mb-4">
                     {[
-                      { label: 'Güncel Bakiye', val: TL(kartCari.bakiye),       color: kartCari.bakiye > 0 ? '#dc2626' : kartCari.bakiye < 0 ? '#059669' : '#64748b' },
-                      { label: 'İşlem Sayısı', val: kartHareketYukleniyor ? '…' : kartHareketler.length, color: '#0f172a' },
-                      { label: 'Son İşlem',    val: tarihFmt(kartCari.son_islem), color: '#64748b' },
+                      { label: 'Güncel Bakiye', val: TL(kartCari.bakiye),       color: kartCari.bakiye > 0 ? '#ef4444' : kartCari.bakiye < 0 ? '#10b981' : 'rgba(255,255,255,0.5)' },
+                      { label: 'İşlem Sayısı', val: kartHareketYukleniyor ? '…' : kartHareketler.length, color: '#ffffff' },
+                      { label: 'Son İşlem',    val: tarihFmt(kartCari.son_islem), color: 'rgba(255,255,255,0.65)' },
                     ].map((item, i) => (
                       <div key={i} className="col-6 col-md-4">
-                        <div style={{ padding: '14px 16px', textAlign: 'center', background: '#eef2f7', borderRadius: 12, border: '1px solid #dce3ed' }}>
-                          <div style={{ fontSize: 11, color: '#7a8ba0', fontWeight: 800, textTransform: 'uppercase', marginBottom: 6, letterSpacing: '0.06em' }}>{item.label}</div>
-                          <div className="financial-num" style={{ fontSize: 17, fontWeight: 800, color: item.color }}>{item.val}</div>
+                        <div style={{ padding: '14px 16px', textAlign: 'center', background: 'rgba(255,255,255,0.04)', borderRadius: 12, border: '1px solid rgba(255,255,255,0.08)' }}>
+                          <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.4)', fontWeight: 600, textTransform: 'uppercase', marginBottom: 6, letterSpacing: '0.8px' }}>{item.label}</div>
+                          <div className="financial-num" style={{ fontSize: 17, fontWeight: 700, color: item.color }}>{item.val}</div>
                         </div>
                       </div>
                     ))}
@@ -1145,20 +1378,18 @@ export default function CariYonetimi() {
 
                   {kartHareketYukleniyor ? (
                     <div className="d-flex flex-column align-items-center justify-content-center py-5">
-                      <div className="spinner-border text-secondary mb-2" role="status" style={{ width: '2rem', height: '2rem' }}>
-                        <span className="visually-hidden">Yükleniyor...</span>
-                      </div>
-                      <span style={{ fontSize: 14, color: '#94a3b8', fontWeight: 600 }}>Hareketler yükleniyor...</span>
+                      <div className="cari-spinner mb-2" />
+                      <span style={{ fontSize: 14, color: 'rgba(255,255,255,0.55)', fontWeight: 500 }}>Hareketler yükleniyor...</span>
                     </div>
                   ) : kartHareketler.length === 0 ? (
                     <div style={{ textAlign: 'center', padding: '48px 24px' }}>
-                      <i className="bi bi-inbox" style={{ fontSize: 42, color: '#cbd5e1', display: 'block', marginBottom: 10 }} />
-                      <p style={{ fontWeight: 600, fontSize: 14, color: '#94a3b8' }}>Hareket kaydı bulunamadı.</p>
+                      <i className="bi bi-inbox" style={{ fontSize: 42, color: 'rgba(255,255,255,0.15)', display: 'block', marginBottom: 10 }} />
+                      <p style={{ fontWeight: 600, fontSize: 14, color: 'rgba(255,255,255,0.55)' }}>Hareket kaydı bulunamadı.</p>
                     </div>
                   ) : (
                     <div style={{ overflowX: 'auto' }}>
                       <table style={{ width: '100%', borderCollapse: 'collapse' }}>
-                        <thead><tr style={{ background: '#f8fafc' }}>
+                        <thead><tr>
                           <th style={thS}>Tarih</th><th style={thS}>Açıklama</th><th style={thS}>Tür</th>
                           <th style={{ ...thS, textAlign: 'right' }}>Alacak</th>
                           <th style={{ ...thS, textAlign: 'right' }}>Borç</th>
@@ -1172,7 +1403,7 @@ export default function CariYonetimi() {
                             if (duzenlemede) {
                               const dBorc = duzenForm.tur === 'borclandirma'
                               return (
-                                <tr key={h.id} style={{ background: '#fffbeb' }}>
+                                <tr key={h.id} style={{ background: 'rgba(245,158,11,0.06)' }}>
                                   <td style={tdS}>
                                     <input type="date" value={duzenForm.tarih} onChange={e => setDuzenForm(p => ({ ...p, tarih: e.target.value }))}
                                       className="form-control form-control-sm" style={{ fontSize: 13, maxWidth: 150 }} />
@@ -1192,26 +1423,26 @@ export default function CariYonetimi() {
                                     {!dBorc && (
                                       <input type="text" inputMode="decimal" value={duzenForm.tutar}
                                         onChange={e => setDuzenForm(p => ({ ...p, tutar: formatParaInput(e.target.value) }))}
-                                        className="form-control form-control-sm text-end" style={{ fontSize: 13, maxWidth: 130, color: '#059669', fontWeight: 700 }} />
+                                        className="form-control form-control-sm text-end" style={{ fontSize: 13, maxWidth: 130, color: '#10b981', fontWeight: 700 }} />
                                     )}
                                   </td>
                                   <td style={{ ...tdS, textAlign: 'right' }}>
                                     {dBorc && (
                                       <input type="text" inputMode="decimal" value={duzenForm.tutar}
                                         onChange={e => setDuzenForm(p => ({ ...p, tutar: formatParaInput(e.target.value) }))}
-                                        className="form-control form-control-sm text-end" style={{ fontSize: 13, maxWidth: 130, color: '#dc2626', fontWeight: 700 }} />
+                                        className="form-control form-control-sm text-end" style={{ fontSize: 13, maxWidth: 130, color: '#ef4444', fontWeight: 700 }} />
                                     )}
                                   </td>
                                   <td style={{ ...tdS, textAlign: 'right' }}>
                                     <div className="d-flex justify-content-end gap-1">
                                       <button title="Kaydet" onClick={hareketDuzenleKaydet} disabled={yukleniyor}
                                         style={{ width: 30, height: 30, padding: 0, border: 'none', borderRadius: 6, cursor: 'pointer',
-                                          background: 'rgba(5,150,105,0.12)', color: '#059669', fontSize: 14, display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}>
+                                          background: 'rgba(16,185,129,0.12)', color: '#10b981', fontSize: 14, display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}>
                                         <i className="bi bi-check-lg" />
                                       </button>
                                       <button title="Vazgeç" onClick={() => setDuzenHareket(null)}
                                         style={{ width: 30, height: 30, padding: 0, border: 'none', borderRadius: 6, cursor: 'pointer',
-                                          background: 'rgba(100,116,139,0.1)', color: '#64748b', fontSize: 14, display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}>
+                                          background: 'rgba(255,255,255,0.06)', color: 'rgba(255,255,255,0.5)', fontSize: 14, display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}>
                                         <i className="bi bi-x-lg" />
                                       </button>
                                     </div>
@@ -1223,8 +1454,8 @@ export default function CariYonetimi() {
                             // Silme onayı satır içi
                             if (silHareketId === h.id) {
                               return (
-                                <tr key={h.id} style={{ background: '#fff1f2' }}>
-                                  <td colSpan={5} style={{ ...tdS, fontSize: 13, fontWeight: 600, color: '#dc2626' }}>
+                                <tr key={h.id} style={{ background: 'rgba(239,68,68,0.06)' }}>
+                                  <td colSpan={5} style={{ ...tdS, fontSize: 13, fontWeight: 600, color: '#ef4444' }}>
                                     <i className="bi bi-exclamation-triangle me-2" />
                                     Bu işlemi silmek istediğinizden emin misiniz? <strong>{tarihFmt(h.islem_tarihi)}</strong> — {TL(h.tutar_tl)}
                                   </td>
@@ -1232,12 +1463,12 @@ export default function CariYonetimi() {
                                     <div className="d-flex justify-content-end gap-1">
                                       <button title="Sil" onClick={() => hareketSil(h.id)} disabled={yukleniyor}
                                         style={{ width: 30, height: 30, padding: 0, border: 'none', borderRadius: 6, cursor: 'pointer',
-                                          background: 'rgba(220,38,38,0.12)', color: '#dc2626', fontSize: 14, display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}>
+                                          background: 'rgba(239,68,68,0.12)', color: '#ef4444', fontSize: 14, display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}>
                                         <i className="bi bi-trash" />
                                       </button>
                                       <button title="Vazgeç" onClick={() => setSilHareketId(null)}
                                         style={{ width: 30, height: 30, padding: 0, border: 'none', borderRadius: 6, cursor: 'pointer',
-                                          background: 'rgba(100,116,139,0.1)', color: '#64748b', fontSize: 14, display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}>
+                                          background: 'rgba(255,255,255,0.06)', color: 'rgba(255,255,255,0.5)', fontSize: 14, display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}>
                                         <i className="bi bi-x-lg" />
                                       </button>
                                     </div>
@@ -1247,24 +1478,24 @@ export default function CariYonetimi() {
                             }
 
                             return (
-                              <tr key={h.id} onMouseEnter={e => e.currentTarget.style.background = '#f8fafc'} onMouseLeave={e => e.currentTarget.style.background = ''}>
-                                <td style={tdS}><span style={{ fontSize: 13, fontWeight: 600, color: '#64748b' }}>{tarihFmt(h.islem_tarihi)}</span></td>
-                                <td style={tdS}><span style={{ fontSize: 14, fontWeight: 600, color: '#0f172a' }}>{h.aciklama || '—'}</span></td>
+                              <tr key={h.id} onMouseEnter={e => e.currentTarget.style.background = 'rgba(255,255,255,0.03)'} onMouseLeave={e => e.currentTarget.style.background = ''}>
+                                <td style={tdS}><span style={{ fontSize: 13, fontWeight: 600, color: 'rgba(255,255,255,0.5)' }}>{tarihFmt(h.islem_tarihi)}</span></td>
+                                <td style={tdS}><span style={{ fontSize: 14, fontWeight: 600, color: '#ffffff' }}>{h.aciklama || '—'}</span></td>
                                 <td style={tdS}>
                                   <span style={{ fontSize: 12, fontWeight: 700, padding: '4px 10px', borderRadius: 20,
-                                    background: borc ? 'rgba(220,38,38,0.07)' : 'rgba(16,185,129,0.08)',
-                                    color: borc ? '#dc2626' : '#059669',
-                                    border: `1px solid ${borc ? 'rgba(220,38,38,0.2)' : 'rgba(16,185,129,0.2)'}` }}>
+                                    background: borc ? 'rgba(239,68,68,0.1)' : 'rgba(16,185,129,0.1)',
+                                    color: borc ? '#ef4444' : '#10b981',
+                                    border: `1px solid ${borc ? 'rgba(239,68,68,0.2)' : 'rgba(16,185,129,0.2)'}` }}>
                                     {borc ? 'Borç' : 'Alacak'}
                                   </span>
                                 </td>
                                 <td style={{ ...tdS, textAlign: 'right' }}>
-                                  <span className="financial-num" style={{ fontSize: 15, fontWeight: 800, color: '#059669' }}>
+                                  <span className="financial-num" style={{ fontSize: 15, fontWeight: 700, color: '#10b981' }}>
                                     {!borc ? TL(h.tutar_tl) : ''}
                                   </span>
                                 </td>
                                 <td style={{ ...tdS, textAlign: 'right' }}>
-                                  <span className="financial-num" style={{ fontSize: 15, fontWeight: 800, color: '#dc2626' }}>
+                                  <span className="financial-num" style={{ fontSize: 15, fontWeight: 700, color: '#ef4444' }}>
                                     {borc ? TL(h.tutar_tl) : ''}
                                   </span>
                                 </td>
@@ -1272,13 +1503,13 @@ export default function CariYonetimi() {
                                   <div className="d-flex justify-content-end gap-1">
                                     <button title="Düzenle" onClick={() => hareketDuzenleAc(h)}
                                       style={{ width: 28, height: 28, padding: 0, border: 'none', borderRadius: 6, cursor: 'pointer',
-                                        background: 'rgba(245,158,11,0.1)', color: '#d97706', fontSize: 13, display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+                                        background: 'rgba(245,158,11,0.1)', color: '#f59e0b', fontSize: 13, display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
                                         transition: 'all 0.15s' }}>
                                       <i className="bi bi-pencil" />
                                     </button>
                                     <button title="Sil" onClick={() => setSilHareketId(h.id)}
                                       style={{ width: 28, height: 28, padding: 0, border: 'none', borderRadius: 6, cursor: 'pointer',
-                                        background: 'rgba(244,63,94,0.08)', color: '#f43f5e', fontSize: 13, display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+                                        background: 'rgba(239,68,68,0.08)', color: '#ef4444', fontSize: 13, display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
                                         transition: 'all 0.15s' }}>
                                       <i className="bi bi-trash" />
                                     </button>
@@ -1296,7 +1527,7 @@ export default function CariYonetimi() {
             </div>
 
             {/* Footer */}
-            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 8, padding: '16px 24px', borderTop: '1px solid #f1f5f9', flexShrink: 0 }}>
+            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 8, padding: '16px 24px', borderTop: '1px solid rgba(255,255,255,0.08)', flexShrink: 0 }}>
               <button onClick={() => setKartModalAcik(false)} style={cancelBtnS}>Kapat</button>
             </div>
           </>
@@ -1308,27 +1539,28 @@ export default function CariYonetimi() {
       ══════════════════════════════════════════════ */}
       <Modal open={silModalAcik} onClose={() => setSilModalAcik(false)} size="sm" staticBackdrop>
         <div style={{ padding: '32px 28px 24px', textAlign: 'center' }}>
-          <div style={{ width: 64, height: 64, borderRadius: 18, background: 'rgba(244,63,94,0.09)', border: '1px solid rgba(244,63,94,0.22)',
+          <div style={{ width: 64, height: 64, borderRadius: 18, background: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.2)',
             display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 16px' }}>
-            <i className="bi bi-exclamation-triangle-fill" style={{ fontSize: 28, color: '#f43f5e' }} />
+            <i className="bi bi-exclamation-triangle-fill" style={{ fontSize: 28, color: '#ef4444' }} />
           </div>
-          <h5 style={{ fontWeight: 800, color: '#0f172a', marginBottom: 8, fontSize: 17 }}>Cari Pasife Al</h5>
-          <p style={{ fontSize: 14, color: '#64748b', marginBottom: 0 }}>
-            <strong style={{ color: '#0f172a' }}>{silCari?.unvan}</strong> cari kaydını pasife almak istediğinizden emin misiniz?
+          <h5 style={{ fontWeight: 800, color: '#ffffff', marginBottom: 8, fontSize: 17 }}>Cari Pasife Al</h5>
+          <p style={{ fontSize: 14, color: 'rgba(255,255,255,0.6)', marginBottom: 0 }}>
+            <strong style={{ color: '#ffffff' }}>{silCari?.unvan}</strong> cari kaydını pasife almak istediğinizden emin misiniz?
           </p>
         </div>
         <div style={{ display: 'flex', justifyContent: 'center', gap: 10, padding: '0 28px 28px' }}>
           <button onClick={() => setSilModalAcik(false)} style={{ ...cancelBtnS, minWidth: 110 }}>Vazgeç</button>
-          <button onClick={silOnayla} disabled={yukleniyor} style={{ minWidth: 110, background: 'linear-gradient(135deg,#f43f5e,#be123c)',
+          <button onClick={silOnayla} disabled={yukleniyor} style={{ minWidth: 110, background: 'linear-gradient(135deg,#ef4444,#dc2626)',
             color: '#fff', fontWeight: 700, fontSize: 15, borderRadius: 10, padding: '10px 22px',
-            border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, fontFamily: 'inherit' }}>
+            border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6,
+            fontFamily: 'inherit', minHeight: 44, boxShadow: '0 4px 20px rgba(239,68,68,0.3)' }}>
             {yukleniyor
               ? <><i className="bi bi-arrow-repeat" style={{ animation: 'spin 1s linear infinite' }} /> İşleniyor...</>
               : <><i className="bi bi-trash" /> Pasife Al</>}
           </button>
         </div>
       </Modal>
-    </>
+    </div>
   )
 }
 
@@ -1347,19 +1579,25 @@ function AkBtn({ title, color, icon, onClick }) {
   )
 }
 
-function MHeader({ icon, baslik, altBaslik, onKapat, headerBg }) {
+function MHeader({ icon, baslik, altBaslik, onKapat }) {
   return (
-    <div style={{ background: headerBg || 'linear-gradient(135deg,var(--brand-dark),#1a5b80)', padding: '18px 22px',
-      display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexShrink: 0 }}>
+    <div style={{
+      background: 'rgba(13,27,46,0.98)', padding: '18px 22px',
+      display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexShrink: 0,
+      borderBottom: '2px solid #f59e0b',
+    }}>
       <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-        <i className={`bi ${icon}`} style={{ color: '#fff', fontSize: 22 }} />
+        <i className={`bi ${icon}`} style={{ color: '#f59e0b', fontSize: 22 }} />
         <div>
           <div style={{ color: '#fff', fontWeight: 800, fontSize: 16, lineHeight: 1.2 }}>{baslik}</div>
-          {altBaslik && <div style={{ color: 'rgba(255,255,255,0.72)', fontSize: 13, fontWeight: 500 }}>{altBaslik}</div>}
+          {altBaslik && <div style={{ color: 'rgba(255,255,255,0.6)', fontSize: 13, fontWeight: 500 }}>{altBaslik}</div>}
         </div>
       </div>
-      <button onClick={onKapat} style={{ background: 'rgba(255,255,255,0.15)', border: 'none', borderRadius: 8,
-        color: '#fff', width: 34, height: 34, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+      <button onClick={onKapat} style={{
+        background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 8,
+        color: 'rgba(255,255,255,0.7)', width: 34, height: 34, cursor: 'pointer',
+        display: 'flex', alignItems: 'center', justifyContent: 'center', transition: 'all 0.15s',
+      }}>
         <i className="bi bi-x-lg" style={{ fontSize: 15 }} />
       </button>
     </div>
@@ -1368,7 +1606,7 @@ function MHeader({ icon, baslik, altBaslik, onKapat, headerBg }) {
 
 function MFooter({ onIptal, yukleniyor, kaydetLabel, kaydetStyle = {} }) {
   return (
-    <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 8, padding: '14px 24px', borderTop: '1px solid #f1f5f9', flexShrink: 0 }}>
+    <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 8, padding: '14px 24px', borderTop: '1px solid rgba(255,255,255,0.08)', flexShrink: 0 }}>
       <button type="button" onClick={onIptal} style={cancelBtnS}>İptal</button>
       <button type="submit" disabled={yukleniyor} style={{ ...saveBtnS, ...kaydetStyle }}>
         {yukleniyor
@@ -1379,13 +1617,11 @@ function MFooter({ onIptal, yukleniyor, kaydetLabel, kaydetStyle = {} }) {
   )
 }
 
-// ─── Stil Sabitleri ────────────────────────────────────────────────────────────
-const ekleBtn = { background: 'linear-gradient(135deg,var(--brand-dark),#1a5b80)', color: '#fff', fontWeight: 700, fontSize: 15, borderRadius: 10, padding: '10px 22px', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 6, boxShadow: '0 4px 12px rgba(18,63,89,0.25)', fontFamily: 'inherit' }
-const thS     = { fontSize: 12, fontWeight: 700, color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.05em', padding: '12px 18px', whiteSpace: 'nowrap', borderBottom: '2px solid #f1f5f9', userSelect: 'none', background: '#f8fafc' }
-const tdS     = { fontSize: 14, padding: '14px 18px', verticalAlign: 'middle', borderBottom: '1px solid #f1f5f9' }
-const lblS    = { fontSize: 12, fontWeight: 700, color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.06em', display: 'block', marginBottom: 6 }
-const selS    = { width: '100%', background: '#f8fafc', border: '1px solid #e2e8f0', padding: '0.85rem 1.1rem', fontWeight: 600, color: 'var(--brand-dark)', fontFamily: "'Plus Jakarta Sans',sans-serif", borderRadius: 10, fontSize: '1rem', cursor: 'pointer' }
-const cancelBtnS = { background: '#f8fafc', color: '#475569', fontWeight: 700, fontSize: 15, borderRadius: 10, padding: '10px 22px', border: '1px solid #e2e8f0', cursor: 'pointer', fontFamily: 'inherit' }
-const saveBtnS   = { background: 'linear-gradient(135deg,var(--brand-dark),#1a5b80)', color: '#fff', fontWeight: 700, fontSize: 15, borderRadius: 10, padding: '10px 26px', border: 'none', cursor: 'pointer', fontFamily: 'inherit', display: 'flex', alignItems: 'center' }
-const ikonKutu = (color, bg) => ({ width: 42, height: 42, borderRadius: 12, background: bg, display: 'flex', alignItems: 'center', justifyContent: 'center' })
-const kartEtiket = (color) => ({ fontSize: 11, fontWeight: 800, color, textTransform: 'uppercase', letterSpacing: '0.07em' })
+// ─── Stil Sabitleri (Obsidian Vault) ─────────────────────────────────────────
+const ekleBtn    = { background: 'linear-gradient(135deg, #f59e0b 0%, #d97706 100%)', color: '#0d1b2e', fontWeight: 700, fontSize: 15, borderRadius: 10, padding: '10px 22px', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 6, boxShadow: '0 4px 20px rgba(245,158,11,0.3)', fontFamily: 'inherit', minHeight: 44, transition: 'all 0.2s ease' }
+const thS        = { fontSize: 11, fontWeight: 600, color: 'rgba(255,255,255,0.4)', textTransform: 'uppercase', letterSpacing: '0.8px', padding: '12px 18px', whiteSpace: 'nowrap', borderBottom: '1px solid rgba(255,255,255,0.08)', userSelect: 'none' }
+const tdS        = { fontSize: 14, padding: '14px 18px', verticalAlign: 'middle', borderBottom: '1px solid rgba(255,255,255,0.04)' }
+const lblS       = { fontSize: 12, fontWeight: 600, color: 'rgba(255,255,255,0.7)', textTransform: 'uppercase', letterSpacing: '0.06em', display: 'block', marginBottom: 6 }
+const selS       = { width: '100%', background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)', padding: '0.75rem 1rem', fontWeight: 500, color: '#ffffff', fontFamily: "'Outfit', sans-serif", borderRadius: 10, fontSize: '0.95rem', cursor: 'pointer', minHeight: 44 }
+const cancelBtnS = { background: 'rgba(255,255,255,0.06)', color: 'rgba(255,255,255,0.7)', fontWeight: 700, fontSize: 15, borderRadius: 10, padding: '10px 22px', border: '1px solid rgba(255,255,255,0.12)', cursor: 'pointer', fontFamily: 'inherit', minHeight: 44, transition: 'all 0.15s' }
+const saveBtnS   = { background: 'linear-gradient(135deg, #f59e0b 0%, #d97706 100%)', color: '#0d1b2e', fontWeight: 700, fontSize: 15, borderRadius: 10, padding: '10px 26px', border: 'none', cursor: 'pointer', fontFamily: 'inherit', display: 'flex', alignItems: 'center', boxShadow: '0 4px 20px rgba(245,158,11,0.3)', minHeight: 44 }

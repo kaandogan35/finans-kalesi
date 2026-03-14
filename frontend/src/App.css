@@ -1,104 +1,91 @@
-/* Finans Kalesi — Global Stiller */
+/* Finans Kalesi — Obsidian Vault Global Stiller */
 
-/* ─── Premium Kart Sistemi ─────────────────────────────────────────────── */
-.premium-card {
-  background-color: #ffffff;
-  border-radius: 16px;
-  border: 1px solid #eef2f6;
-  box-shadow: 0 4px 24px rgba(30, 41, 59, 0.08), 0 1px 4px rgba(30, 41, 59, 0.04);
-  padding: 1.5rem;
-  transition: box-shadow 0.2s ease, transform 0.2s ease;
-}
-
-.premium-card:hover {
-  box-shadow: 0 8px 32px rgba(30, 41, 59, 0.14), 0 2px 8px rgba(30, 41, 59, 0.06);
-  transform: translateY(-2px);
-}
-
-.premium-card .card-header-custom {
-  border-bottom: 1px solid #eef2f6;
-  padding-bottom: 1rem;
-  margin-bottom: 1rem;
-}
-/* ─────────────────────────────────────────────────────────────────────── */
-
-/* ─── Kasa Dark Theme ───────────────────────────────────────────────────── */
+/* ─── Glass Card (Tüm modüllerde kullanılan glassmorphism kart) ──────────── */
 .glass-card {
-  background: rgba(30,41,59,0.6);
-  backdrop-filter: blur(16px);
-  -webkit-backdrop-filter: blur(16px);
-  border: 1px solid rgba(255,255,255,0.05);
-  border-radius: 20px;
+  background: var(--ov-glass);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid var(--ov-border);
+  border-radius: 16px;
+  padding: 24px;
+  transition: all 0.2s ease;
+  position: relative;
+  overflow: hidden;
 }
-.text-neon-gold   { color: #fbbf24; }
-.text-neon-green  { color: #10b981; }
-.text-neon-red    { color: #f43f5e; }
-.text-neon-blue   { color: #3b82f6; }
-.text-neon-purple { color: #a855f7; }
-.text-neon-cyan   { color: #06b6d4; }
+.glass-card:hover {
+  background: var(--ov-glass-hover);
+  border-color: var(--ov-border-hover);
+}
 
+/* ─── Kasa Dark Theme (Obsidian Vault ile uyumlu) ────────────────────────── */
 .kasa-dark-page {
-  background: #0b1120;
   min-height: 100%;
   padding: 24px;
-  color: #cbd5e1;
+  color: rgba(255,255,255,0.85);
 }
 
 .kasa-input {
-  background: rgba(15,23,42,0.6) !important;
-  border: 1px solid rgba(255,255,255,0.12) !important;
-  color: #cbd5e1 !important;
+  background: rgba(255,255,255,0.05) !important;
+  border: 1px solid rgba(255,255,255,0.1) !important;
+  color: #ffffff !important;
   min-height: 44px;
+  border-radius: 10px;
+  font-family: 'Outfit', sans-serif;
 }
 .kasa-input:focus {
-  background: rgba(15,23,42,0.8) !important;
-  border-color: #fbbf24 !important;
-  box-shadow: 0 0 0 3px rgba(251,191,36,0.15) !important;
-  color: #f1f5f9 !important;
+  background: rgba(255,255,255,0.08) !important;
+  border-color: var(--ov-amber) !important;
+  box-shadow: 0 0 0 3px rgba(245,158,11,0.12) !important;
+  color: #ffffff !important;
 }
 .kasa-input option {
-  background: #0f172a;
-  color: #cbd5e1;
+  background: #0d1b2e;
+  color: #ffffff;
 }
-.kasa-input::placeholder { color: #475569 !important; }
+.kasa-input::placeholder { color: var(--ov-text-25) !important; }
 
 .kasa-table thead th {
-  background: rgba(15,23,42,0.8) !important;
-  color: #64748b !important;
-  border-bottom: 1px solid rgba(255,255,255,0.08) !important;
+  background: rgba(255,255,255,0.03) !important;
+  color: var(--ov-text-45) !important;
+  border-bottom: 1px solid var(--ov-border) !important;
   font-size: 11px;
-  font-weight: 700;
+  font-weight: 600;
   text-transform: uppercase;
-  letter-spacing: 0.06em;
-  padding: 10px 12px;
+  letter-spacing: 0.8px;
+  padding: 12px 14px;
+  font-family: 'Outfit', sans-serif;
 }
 .kasa-table tbody tr {
   background: transparent !important;
-  border-bottom: 1px solid rgba(255,255,255,0.04) !important;
+  border-bottom: 1px solid var(--ov-border-thin) !important;
   transition: background 0.15s;
 }
 .kasa-table tbody tr:hover {
-  background: rgba(255,255,255,0.04) !important;
+  background: rgba(255,255,255,0.03) !important;
 }
 .kasa-table td {
-  color: #cbd5e1 !important;
+  color: rgba(255,255,255,0.8) !important;
   border: none !important;
-  padding: 10px 12px;
-  font-size: 13px;
+  padding: 14px;
+  font-size: 14px;
 }
 
+/* ─── Dağılım Satırı ─────────────────────────────────────────────────────── */
 .kat-row {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 8px 12px;
+  padding: 12px;
   border-radius: 8px;
   cursor: pointer;
-  transition: transform 0.15s, background 0.15s;
-  border-bottom: 1px solid rgba(255,255,255,0.04);
+  transition: all 0.15s ease;
+  border-bottom: 1px solid var(--ov-border-thin);
+  gap: 12px;
 }
 .kat-row:hover {
   transform: translateX(5px);
-  background: rgba(255,255,255,0.04);
+  background: rgba(255,255,255,0.03);
 }
-/* ─────────────────────────────────────────────────────────────────────── */
+.kat-row:last-child {
+  border-bottom: none;
+}

@@ -30,6 +30,19 @@ import CariYonetimi   from './pages/cariler/CariYonetimi'
 import VarlikKasa     from './pages/kasa/VarlikKasa'
 import CekSenet       from './pages/cek-senet/CekSenet'
 
+// GEÇİCİ — Tasarım Demo (Sprint D0 onay sonrası silinecek)
+import TasarimDemo from './pages/tasarim-demo/TasarimDemo'
+import Demo1 from './pages/tasarim-demo/Demo1'
+import Demo2 from './pages/tasarim-demo/Demo2'
+import Demo3 from './pages/tasarim-demo/Demo3'
+import DemoA from './pages/tasarim-demo/DemoA'
+import DemoB from './pages/tasarim-demo/DemoB'
+import DemoC from './pages/tasarim-demo/DemoC'
+import FontKarsilastir from './pages/tasarim-demo/FontKarsilastir'
+
+// V2 Tasarım Demo
+import TasarimDemoV2 from './pages/tasarim-demo-v2/TasarimDemoV2'
+
 // axios.js → auth:logout olayını dinle, React Router ile yönlendir
 function AuthLogoutListener() {
   const navigate = useNavigate()
@@ -72,6 +85,17 @@ export default function App() {
     <BrowserRouter>
       <AuthLogoutListener />
       <Routes>
+
+        {/* ─── GEÇİCİ: Tasarım Demo (Sprint D0 — auth gerektirmez) ──── */}
+        <Route path="/tasarim-demo" element={<TasarimDemo />} />
+        <Route path="/demo-1" element={<Demo1 />} />
+        <Route path="/demo-2" element={<Demo2 />} />
+        <Route path="/demo-3" element={<Demo3 />} />
+        <Route path="/demo-a" element={<DemoA />} />
+        <Route path="/demo-b" element={<DemoB />} />
+        <Route path="/demo-c" element={<DemoC />} />
+        <Route path="/tasarim-demo/font-karsilastir" element={<FontKarsilastir />} />
+        <Route path="/tasarim-demo-v2" element={<TasarimDemoV2 />} />
 
         {/* ─── Public sayfalar ───────────────────────────────────────── */}
         <Route path="/giris" element={<GirisYap />} />

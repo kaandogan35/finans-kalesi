@@ -2237,7 +2237,7 @@ function YatirimKalesi({ yatirimlar, setYatirimlar }) {
       try {
         const res = await yatirimGuncelleApi(duzenlenen.id, form)
         if (!res.data.basarili) { toast.error(res.data.hata || 'Kayıt güncellenemedi.'); return }
-        setYatirimlar(p => p.map(y => y.id === duzenlenen.id ? { ...y, ...res.data.veri } : y))
+        setYatirimlar(p => p.map(y => y.id === duzenlenen.id ? { ...y, ...form } : y))
       } catch {
         toast.error('Kayıt güncellenemedi.')
       }
@@ -2494,25 +2494,28 @@ export default function VarlikKasa() {
   const [yatirimlar,      setYatirimlar]      = useState([])
   const [yukleniyor,      setYukleniyor]      = useState(true)
 
+  // Yatırımlar ve ortak hareketler: sadece bir kez yükle
   useEffect(() => {
-    const veriYukle = async () => {
-      try {
-        const [hRes, yRes, oRes] = await Promise.all([
-          hareketleriGetir(),
-          yatirimlariGetir(),
-          ortaklariGetir(),
-        ])
-        if (hRes.data.basarili) setHareketler(hRes.data.veri.hareketler ?? [])
+    Promise.all([yatirimlariGetir(), ortaklariGetir()])
+      .then(([yRes, oRes]) => {
         if (yRes.data.basarili) setYatirimlar(yRes.data.veri.yatirimlar ?? [])
         if (oRes.data.basarili) setOrtakHareketler(oRes.data.veri.ortaklar ?? [])
-      } catch {
-        toast.error('Veriler yüklenemedi.')
-      } finally {
-        setYukleniyor(false)
-      }
-    }
-    veriYukle()
+      })
+      .catch(() => {})
   }, [])
+
+  // Kasa hareketleri: seçili ay/yıl değiştiğinde yeniden çek
+  useEffect(() => {
+    const ay  = String(secilenAy).padStart(2, '0')
+    const son = new Date(secilenYil, secilenAy, 0).getDate()
+    const bas = `${secilenYil}-${ay}-01`
+    const bit = `${secilenYil}-${ay}-${String(son).padStart(2, '0')}`
+    setYukleniyor(true)
+    hareketleriGetir({ baslangic_tarihi: bas, bitis_tarihi: bit, adet: 500 })
+      .then(res => { if (res.data.basarili) setHareketler(res.data.veri.hareketler ?? []) })
+      .catch(() => toast.error('Hareketler yüklenemedi.'))
+      .finally(() => setYukleniyor(false))
+  }, [secilenAy, secilenYil])
 
   const shared = { secilenAy, secilenYil, setSecilenAy, setSecilenYil, hareketler, setHareketler, kapanislar }
 
