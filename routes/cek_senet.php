@@ -39,7 +39,7 @@ if ($parca_sayisi === 1) {
             $cek_senet->listele($payload);
             break;
         case 'POST':
-            $cek_senet->olustur($payload);
+            $cek_senet->olustur($payload, $girdi);
             break;
         default:
             Response::hata('Bu HTTP metodu desteklenmiyor', 405);
@@ -67,7 +67,7 @@ elseif ($parca_sayisi === 2) {
                 $cek_senet->detay($payload, $cek_id);
                 break;
             case 'PUT':
-                $cek_senet->guncelle($payload, $cek_id);
+                $cek_senet->guncelle($payload, $cek_id, $girdi);
                 break;
             case 'DELETE':
                 $cek_senet->sil($payload, $cek_id);
@@ -85,7 +85,7 @@ elseif ($parca_sayisi === 3 && $yol_parcalari[2] === 'durum') {
     if ($cek_id <= 0) {
         Response::hata('Gecersiz cek/senet ID', 400);
     } elseif ($metod === 'PUT') {
-        $cek_senet->durum_degistir($payload, $cek_id);
+        $cek_senet->durum_degistir($payload, $cek_id, $girdi);
     } else {
         Response::hata('Bu HTTP metodu desteklenmiyor', 405);
     }

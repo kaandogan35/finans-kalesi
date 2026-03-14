@@ -15,8 +15,9 @@ export default defineConfig({
     port: 3000,
     proxy: {
       '/api': {
-        target: 'http://app.hirdavatduragi.shop',
+        target: 'http://Projeler.test',
         changeOrigin: true,
+        rewrite: (path) => '/finans-kalesi/public' + path,
       },
     },
   },

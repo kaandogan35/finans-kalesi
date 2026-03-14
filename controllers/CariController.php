@@ -44,9 +44,9 @@ class CariController {
     }
 
     // ─── POST /api/cariler ───
-    public function olustur($payload) {
+    public function olustur($payload, $girdi) {
         try {
-            $veri = json_decode(file_get_contents('php://input'), true);
+            $veri = $girdi;
 
             if (empty($veri['cari_adi'])) {
                 Response::dogrulama_hatasi(array('cari_adi' => 'Cari adi zorunludur'));
@@ -96,7 +96,7 @@ class CariController {
     }
 
     // ─── PUT /api/cariler/{id} ───
-    public function guncelle($payload, $cari_id) {
+    public function guncelle($payload, $cari_id, $girdi) {
         try {
             $mevcut = $this->cariKart->getir($payload['sirket_id'], $cari_id);
             if (!$mevcut) {
@@ -104,7 +104,7 @@ class CariController {
                 return;
             }
 
-            $veri = json_decode(file_get_contents('php://input'), true);
+            $veri = $girdi;
 
             if (!empty($veri['cari_turu'])) {
                 $gecerli_turler = array('musteri', 'tedarikci', 'her_ikisi');
@@ -176,14 +176,14 @@ class CariController {
     }
 
     // ─── POST /api/cariler/{id}/hareketler ───
-    public function hareket_ekle($payload, $cari_id) {
+    public function hareket_ekle($payload, $cari_id, $girdi) {
         try {
             if (!$this->cariKart->var_mi($payload['sirket_id'], $cari_id)) {
                 Response::bulunamadi('Cari kart bulunamadi');
                 return;
             }
 
-            $veri = json_decode(file_get_contents('php://input'), true);
+            $veri = $girdi;
 
             // Zorunlu alan kontrolleri
             if (empty($veri['islem_tipi'])) {
@@ -243,14 +243,14 @@ class CariController {
     }
 
     // ─── PUT /api/cariler/{id}/hareketler/{hid} ───
-    public function hareket_guncelle($payload, $cari_id, $hareket_id) {
+    public function hareket_guncelle($payload, $cari_id, $hareket_id, $girdi) {
         try {
             if (!$this->cariKart->var_mi($payload['sirket_id'], $cari_id)) {
                 Response::bulunamadi('Cari kart bulunamadi');
                 return;
             }
 
-            $veri = json_decode(file_get_contents('php://input'), true);
+            $veri = $girdi;
 
             if (!empty($veri['islem_tipi'])) {
                 $gecerli_tipler = array('borclandirma', 'tahsilat');

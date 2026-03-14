@@ -7,6 +7,11 @@
 import { useState, useMemo, useEffect, useRef, Fragment } from 'react'
 import { createPortal } from 'react-dom'
 import { toast } from 'sonner'
+import {
+  hareketleriGetir, hareketEkle, hareketSil,
+  yatirimlariGetir, yatirimEkle, yatirimGuncelle as yatirimGuncelleApi, yatirimSil,
+  ortaklariGetir, ortakHareketEkle, ortakHareketSil,
+} from '../../api/kasa'
 
 // ─── Yardımcılar ──────────────────────────────────────────────────────────────
 const TL = (n) =>
@@ -23,51 +28,6 @@ const formatParaInput = (value) => {
 }
 const parseParaInput = (f) => parseFloat(String(f).replace(/\./g, '').replace(',', '.')) || 0
 
-// ─── Mock Veri ────────────────────────────────────────────────────────────────
-const MOCK_HAREKETLER = [
-  { id:1, tarih:'2026-03-06', islem_tipi:'giris', kategori:'Günlük Çekmece Hasılatı',              tutar:12500, baglanti_turu:'Merkez Kasa'   },
-  { id:2, tarih:'2026-03-06', islem_tipi:'cikis', kategori:'Tedarikçi / Toptancı Ödemesi',         tutar:8200,  baglanti_turu:'Banka / Havale' },
-  { id:3, tarih:'2026-03-08', islem_tipi:'giris', kategori:'Havale / Çek Tahsil',                  tutar:19000, baglanti_turu:'Banka / POS'    },
-  { id:4, tarih:'2026-03-09', islem_tipi:'cikis', kategori:'Personel, Vergi ve Sabit Giderler',    tutar:5600,  baglanti_turu:'Banka / Havale' },
-  { id:5, tarih:'2026-03-10', islem_tipi:'giris', kategori:'POS İşlemi',                           tutar:3750,  baglanti_turu:'Banka / POS'    },
-  { id:6, tarih:'2026-03-11', islem_tipi:'cikis', kategori:'Günlük İşletme Giderleri',             tutar:980,   baglanti_turu:'Merkez Kasa'    },
-  { id:7, tarih:'2026-03-12', islem_tipi:'giris', kategori:'Açık Hesap',                           tutar:4000,  baglanti_turu:'Banka / POS'    },
-  { id:8, tarih:'2026-03-13', islem_tipi:'cikis', kategori:'Kredi Kartı ve Banka Kredisi Ödemeleri', tutar:0,  baglanti_turu:'Banka / Havale' },
-]
-const MOCK_BILANCO = { net_varlik: 94100, sanal_stok: 73200, yatirim_birikimi: 18500 }
-
-const MOCK_KAPANISLAR = [
-  {
-    id: 1,
-    donem: '02-2026',
-    kesilen_fatura: 135000,
-    kar_marji: 35,
-    gelen_alis: 62000,
-    donem_basi_stok: 9800000,
-    banka_nakdi: 12400,
-    alacaklar: 28000,
-    borclar: 15000,
-    yatirim_birikimi: 0,
-    smm: 100000,
-    sanal_stok: 9762000,
-    net_varlik: 9787400,
-  }
-]
-
-const MOCK_YATIRIMLAR = [
-  { id:1, varlık_tipi:'Altin', tur:'Çeyrek Altın', miktar:10,  alis_tarihi:'2025-11-15', birim_fiyat:8500,  guncel_fiyat:null },
-  { id:2, varlık_tipi:'Altin', tur:'Gram Altın',   miktar:5,   alis_tarihi:'2025-12-01', birim_fiyat:3200,  guncel_fiyat:null },
-  { id:3, varlık_tipi:'Altin', tur:'Ata Altın',    miktar:2,   alis_tarihi:'2026-01-10', birim_fiyat:18000, guncel_fiyat:null },
-  { id:4, varlık_tipi:'Doviz', tur:'Dolar ($)',    miktar:500, alis_tarihi:'2026-01-10', birim_fiyat:34.20, guncel_fiyat:null },
-  { id:5, varlık_tipi:'Doviz', tur:'Euro (€)',     miktar:300, alis_tarihi:'2026-02-05', birim_fiyat:37.80, guncel_fiyat:null },
-]
-
-const MOCK_ORTAK_HAREKETLER = [
-  { id:1, tarih:'2026-01-10', ortak_adi:'Mehmet Yılmaz', islem_tipi:'para_girisi', tutar:25000, aciklama:'Sermaye katkısı'   },
-  { id:2, tarih:'2026-02-05', ortak_adi:'Ali Kaya',       islem_tipi:'para_cikisi', tutar:8000,  aciklama:'Avans çekimi'     },
-  { id:3, tarih:'2026-02-20', ortak_adi:'Mehmet Yılmaz', islem_tipi:'para_cikisi', tutar:5000,  aciklama:'Yakıt gideri'     },
-  { id:4, tarih:'2026-03-01', ortak_adi:'Ali Kaya',       islem_tipi:'para_girisi', tutar:12000, aciklama:'Fatura tahsilatı' },
-]
 
 const ORTAK_RENKLERI = ['var(--brand-dark)', '#d97706', '#059669', '#7c3aed', '#0891b2', '#dc2626']
 
@@ -117,18 +77,18 @@ function hesaplaOzet(hareketler, kapanislar = []) {
   const oncekiAyBankaNakit = sonKapanis ? sonKapanis.banka_nakdi : 0
   const girisler = hareketler.filter(h => h.islem_tipi === 'giris')
   const cikislar  = hareketler.filter(h => h.islem_tipi === 'cikis')
-  const mailOrderTutar = cikislar.filter(h => h.baglanti_turu === 'Mail Order').reduce((s, h) => s + h.tutar, 0)
-  const toplamGiris = girisler.reduce((s, h) => s + h.tutar, 0) + mailOrderTutar
-  const toplamCikis  = cikislar.reduce((s, h)  => s + h.tutar, 0)
-  const bankaGiris  = girisler.filter(h => h.baglanti_turu.startsWith('Banka')).reduce((s, h) => s + h.tutar, 0)
-  const bankaCikis   = cikislar.filter(h => h.baglanti_turu.startsWith('Banka')).reduce((s, h)  => s + h.tutar, 0)
+  const mailOrderTutar = cikislar.filter(h => h.baglanti_turu === 'Mail Order').reduce((s, h) => s + (h.tutar ?? 0), 0)
+  const toplamGiris = girisler.reduce((s, h) => s + (h.tutar ?? 0), 0) + mailOrderTutar
+  const toplamCikis  = cikislar.reduce((s, h)  => s + (h.tutar ?? 0), 0)
+  const bankaGiris  = girisler.filter(h => (h.baglanti_turu ?? '').startsWith('Banka')).reduce((s, h) => s + (h.tutar ?? 0), 0)
+  const bankaCikis   = cikislar.filter(h => (h.baglanti_turu ?? '').startsWith('Banka')).reduce((s, h)  => s + (h.tutar ?? 0), 0)
   const bankaGuncel = oncekiAyBankaNakit + bankaGiris - bankaCikis
   const girisFark   = 0
   const cikisFark   = 0
-  const girisDagilim = GIRIS_KAT.map(kat => ({ kat, tutar: girisler.filter(h => h.kategori === kat).reduce((s,h) => s+h.tutar, 0) }))
-  const cikisDagilim  = CIKIS_KAT.map(kat  => ({ kat, tutar: cikislar.filter(h  => h.kategori === kat).reduce((s,h) => s+h.tutar, 0) }))
-  const merkezGiris = girisler.filter(h => h.baglanti_turu === 'Merkez Kasa').reduce((s,h) => s+h.tutar, 0)
-  const merkezCikis = cikislar.filter(h => h.baglanti_turu === 'Merkez Kasa').reduce((s,h) => s+h.tutar, 0)
+  const girisDagilim = GIRIS_KAT.map(kat => ({ kat, tutar: girisler.filter(h => h.kategori === kat).reduce((s,h) => s+(h.tutar ?? 0), 0) }))
+  const cikisDagilim  = CIKIS_KAT.map(kat  => ({ kat, tutar: cikislar.filter(h  => h.kategori === kat).reduce((s,h) => s+(h.tutar ?? 0), 0) }))
+  const merkezGiris = girisler.filter(h => h.baglanti_turu === 'Merkez Kasa').reduce((s,h) => s+(h.tutar ?? 0), 0)
+  const merkezCikis = cikislar.filter(h => h.baglanti_turu === 'Merkez Kasa').reduce((s,h) => s+(h.tutar ?? 0), 0)
   const merkezKasa = merkezGiris - merkezCikis
   return { toplamGiris, toplamCikis, bankaGuncel, oncekiAyBankaNakit, girisFark, cikisFark, girisDagilim, cikisDagilim, merkezKasa }
 }
@@ -1246,8 +1206,8 @@ function OrtakCarisi({ ortakHareketler, setOrtakHareketler }) {
   // Her ortak için bakiye hesapla
   const ortakBakiye = useMemo(() => {
     return ortaklar.map(ad => {
-      const giris = ortakHareketler.filter(h => h.ortak_adi===ad && h.islem_tipi==='para_girisi').reduce((s,h)=>s+h.tutar,0)
-      const cikis  = ortakHareketler.filter(h => h.ortak_adi===ad && h.islem_tipi==='para_cikisi').reduce((s,h) =>s+h.tutar,0)
+      const giris = ortakHareketler.filter(h => h.ortak_adi===ad && h.islem_tipi==='para_girisi').reduce((s,h)=>s+(h.tutar ?? 0),0)
+      const cikis  = ortakHareketler.filter(h => h.ortak_adi===ad && h.islem_tipi==='para_cikisi').reduce((s,h) =>s+(h.tutar ?? 0),0)
       return { ad, bakiye: giris - cikis }
     })
   }, [ortaklar, ortakHareketler])
@@ -1262,8 +1222,26 @@ function OrtakCarisi({ ortakHareketler, setOrtakHareketler }) {
   const toplamSayfa = Math.ceil(filtrelendi.length / sayfaBasi)
   const sayfaliVeri = filtrelendi.slice((sayfa-1)*sayfaBasi, sayfa*sayfaBasi)
 
-  const islemEkle = (yeni) => setOrtakHareketler(prev => [...prev, yeni])
-  const islemSil  = (id)   => { setOrtakHareketler(prev => prev.filter(h => h.id !== id)); setSilOnayId(null) }
+  const islemEkle = async (yeni) => {
+    try {
+      const res = await ortakHareketEkle(yeni)
+      if (!res.data.basarili) { toast.error(res.data.hata || 'Kayıt eklenemedi.'); return }
+      setOrtakHareketler(prev => [...prev, { ...yeni, id: res.data.veri.id }])
+    } catch {
+      toast.error('Kayıt eklenemedi.')
+    }
+  }
+
+  const islemSil = async (id) => {
+    try {
+      const res = await ortakHareketSil(id)
+      if (!res.data.basarili) { toast.error(res.data.hata || 'Kayıt silinemedi.'); return }
+      setOrtakHareketler(prev => prev.filter(h => h.id !== id))
+      setSilOnayId(null)
+    } catch {
+      toast.error('Kayıt silinemedi.')
+    }
+  }
 
   // Baş harfleri daire
   const BasHarf = ({ ad, renk }) => (
@@ -1456,8 +1434,8 @@ function GostergePaneli({ hareketler, kapanislar, yatirimGuncelDeger, secilenAy,
 
     // KART 4 — Nakit Akış Ritmi
     const gunlukH = hareketler.filter(h => h.tarih === secilenTarih)
-    const gunlukGiris = gunlukH.filter(h => h.islem_tipi === 'giris').reduce((s,h) => s+h.tutar, 0)
-    const gunlukCikis = gunlukH.filter(h => h.islem_tipi === 'cikis').reduce((s,h) => s+h.tutar, 0)
+    const gunlukGiris = gunlukH.filter(h => h.islem_tipi === 'giris').reduce((s,h) => s+(h.tutar ?? 0), 0)
+    const gunlukCikis = gunlukH.filter(h => h.islem_tipi === 'cikis').reduce((s,h) => s+(h.tutar ?? 0), 0)
     const gunlukNet = gunlukGiris - gunlukCikis
     const gunlukVar = gunlukH.length > 0
 
@@ -1662,11 +1640,11 @@ function KategoriDetayModal({ show, onClose, kategori, tip, hareketler }) {
     let fark = 0
     if (siralamaAlan === 'tarih')         fark = a.tarih.localeCompare(b.tarih)
     else if (siralamaAlan === 'baglanti') fark = (a.baglanti_turu || '').localeCompare(b.baglanti_turu || '')
-    else if (siralamaAlan === 'tutar')    fark = a.tutar - b.tutar
+    else if (siralamaAlan === 'tutar')    fark = (a.tutar ?? 0) - (b.tutar ?? 0)
     return siralamaYon === 'azalan' ? -fark : fark
   })
 
-  const toplam = sirali.reduce((s, h) => s + h.tutar, 0)
+  const toplam = sirali.reduce((s, h) => s + (h.tutar ?? 0), 0)
 
   const sutunTikla = (alan) => {
     if (siralamaAlan === alan) setSiralamaYon(y => y === 'azalan' ? 'artan' : 'azalan')
@@ -1769,8 +1747,8 @@ function NakitAkisi({ secilenAy, secilenYil, setSecilenAy, setSecilenYil, hareke
     const tarihler = [...new Set(hareketler.map(h => h.tarih))].sort()
     let bakiye = sonKap ? sonKap.banka_nakdi : 0
     const kumulatif = tarihler.map(t => {
-      const gG = hareketler.filter(h => h.tarih===t && h.islem_tipi==='giris').reduce((s,h)=>s+h.tutar,0)
-      const gC  = hareketler.filter(h => h.tarih===t && h.islem_tipi==='cikis').reduce((s,h) =>s+h.tutar,0)
+      const gG = hareketler.filter(h => h.tarih===t && h.islem_tipi==='giris').reduce((s,h)=>s+(h.tutar ?? 0),0)
+      const gC  = hareketler.filter(h => h.tarih===t && h.islem_tipi==='cikis').reduce((s,h) =>s+(h.tutar ?? 0),0)
       bakiye += gG - gC
       return { tarih:t, gun:parseInt(t.split('-')[2]), bakiye }
     })
@@ -1781,23 +1759,51 @@ function NakitAkisi({ secilenAy, secilenYil, setSecilenAy, setSecilenYil, hareke
   const toplamSayfa = Math.ceil(sirali.length / sayfaBasi)
   const sayfaliVeri = sirali.slice((sayfa-1)*sayfaBasi, sayfa*sayfaBasi)
 
-  const islemEkle = (yeni) => {
+  const islemEkle = async (yeni) => {
     if (yeni.islem_tipi === 'cikis' && yeni.baglanti_turu === 'Günlük Çekmece Nakdi') {
-      const autoGiris = {
-        id: Date.now() + 1,
-        tarih: yeni.tarih,
-        islem_tipi: 'giris',
-        kategori: 'Günlük Çekmece Hasılatı',
-        baglanti_turu: 'Çekmece Otomatik',
-        tutar: yeni.tutar,
-        aciklama: '',
+      try {
+        const res = await hareketEkle(yeni)
+        if (!res.data.basarili) { toast.error(res.data.hata || 'Kayıt eklenemedi.'); return }
+        const kaydedilen = { ...yeni, id: res.data.veri.hareket_id }
+        const autoGiris = {
+          id: 'auto-' + kaydedilen.id,
+          tarih: kaydedilen.tarih,
+          islem_tipi: 'giris',
+          kategori: 'Günlük Çekmece Hasılatı',
+          baglanti_turu: 'Çekmece Otomatik',
+          tutar: kaydedilen.tutar,
+          aciklama: '',
+        }
+        setHareketler(prev => [...prev, autoGiris, kaydedilen])
+      } catch {
+        toast.error('Kayıt eklenemedi.')
       }
-      setHareketler(prev => [...prev, autoGiris, yeni])
     } else {
-      setHareketler(prev => [...prev, yeni])
+      try {
+        const res = await hareketEkle(yeni)
+        if (!res.data.basarili) { toast.error(res.data.hata || 'Kayıt eklenemedi.'); return }
+        setHareketler(prev => [...prev, { ...yeni, id: res.data.veri.hareket_id }])
+      } catch {
+        toast.error('Kayıt eklenemedi.')
+      }
     }
   }
-  const islemSil  = (id)   => { setHareketler(prev => prev.filter(h => h.id !== id)); setSilOnayId(null) }
+
+  const islemSil = async (id) => {
+    if (typeof id === 'string') {
+      setHareketler(prev => prev.filter(h => h.id !== id))
+      setSilOnayId(null)
+      return
+    }
+    try {
+      const res = await hareketSil(id)
+      if (!res.data.basarili) { toast.error(res.data.hata || 'Kayıt silinemedi.'); return }
+      setHareketler(prev => prev.filter(h => h.id !== id))
+      setSilOnayId(null)
+    } catch {
+      toast.error('Kayıt silinemedi.')
+    }
+  }
 
   return (
     <div>
@@ -1845,8 +1851,8 @@ function NakitAkisi({ secilenAy, secilenYil, setSecilenAy, setSecilenYil, hareke
         const bugun = bugunTarih()
         const bugunH = hareketler.filter(h => h.tarih === bugun)
         if (bugunH.length === 0) return null
-        const bugunGiris = bugunH.filter(h => h.islem_tipi === 'giris').reduce((s,h) => s+h.tutar, 0)
-        const bugunCikis = bugunH.filter(h => h.islem_tipi === 'cikis').reduce((s,h) => s+h.tutar, 0)
+        const bugunGiris = bugunH.filter(h => h.islem_tipi === 'giris').reduce((s,h) => s+(h.tutar ?? 0), 0)
+        const bugunCikis = bugunH.filter(h => h.islem_tipi === 'cikis').reduce((s,h) => s+(h.tutar ?? 0), 0)
         const net = bugunGiris - bugunCikis
         return (
           <div className="d-flex align-items-center justify-content-between flex-wrap gap-2 mb-3"
@@ -2226,17 +2232,38 @@ function YatirimKalesi({ yatirimlar, setYatirimlar }) {
   const acEkle    = () => { setDuzenlenen(null); setModalAcik(true) }
   const acDuzenle = (y) => { setDuzenlenen(y);   setModalAcik(true) }
 
-  const kaydet = (form) => {
+  const kaydet = async (form) => {
     if (duzenlenen) {
-      setYatirimlar(p => p.map(y => y.id === duzenlenen.id ? { ...y, ...form } : y))
+      try {
+        const res = await yatirimGuncelleApi(duzenlenen.id, form)
+        if (!res.data.basarili) { toast.error(res.data.hata || 'Kayıt güncellenemedi.'); return }
+        setYatirimlar(p => p.map(y => y.id === duzenlenen.id ? { ...y, ...res.data.veri } : y))
+      } catch {
+        toast.error('Kayıt güncellenemedi.')
+      }
     } else {
-      const yeniId = Math.max(0, ...yatirimlar.map(y => y.id)) + 1
-      const mevcutFiyat = yatirimlar.find(y => y.tur === form.tur && y.guncel_fiyat !== null)?.guncel_fiyat ?? null
-      setYatirimlar(p => [...p, { id: yeniId, ...form, guncel_fiyat: mevcutFiyat }])
+      try {
+        const mevcutFiyat = yatirimlar.find(y => y.tur === form.tur && y.guncel_fiyat !== null)?.guncel_fiyat ?? null
+        const gonderilen = { ...form, guncel_fiyat: mevcutFiyat }
+        const res = await yatirimEkle(gonderilen)
+        if (!res.data.basarili) { toast.error(res.data.hata || 'Kayıt eklenemedi.'); return }
+        setYatirimlar(p => [...p, { ...gonderilen, id: res.data.veri.id }])
+      } catch {
+        toast.error('Kayıt eklenemedi.')
+      }
     }
   }
 
-  const sil = (id) => { setYatirimlar(p => p.filter(y => y.id !== id)); setSilOnayId(null) }
+  const sil = async (id) => {
+    try {
+      const res = await yatirimSil(id)
+      if (!res.data.basarili) { toast.error(res.data.hata || 'Kayıt silinemedi.'); return }
+      setYatirimlar(p => p.filter(y => y.id !== id))
+      setSilOnayId(null)
+    } catch {
+      toast.error('Kayıt silinemedi.')
+    }
+  }
 
   const fiyatGuncelle = (fiyatlar) => {
     setYatirimlar(prev => prev.map(y => {
@@ -2461,10 +2488,31 @@ export default function VarlikKasa() {
   const [aktifSekme,  setAktifSekme]  = useState('gosterge')
   const [secilenAy,   setSecilenAy]   = useState(bugun.getMonth() + 1)
   const [secilenYil,  setSecilenYil]  = useState(bugun.getFullYear())
-  const [hareketler,  setHareketler]  = useState(MOCK_HAREKETLER)
-  const [kapanislar,      setKapanislar]      = useState(MOCK_KAPANISLAR)
-  const [ortakHareketler, setOrtakHareketler] = useState(MOCK_ORTAK_HAREKETLER)
-  const [yatirimlar,      setYatirimlar]      = useState(MOCK_YATIRIMLAR)
+  const [hareketler,  setHareketler]  = useState([])
+  const [kapanislar,      setKapanislar]      = useState([])
+  const [ortakHareketler, setOrtakHareketler] = useState([])
+  const [yatirimlar,      setYatirimlar]      = useState([])
+  const [yukleniyor,      setYukleniyor]      = useState(true)
+
+  useEffect(() => {
+    const veriYukle = async () => {
+      try {
+        const [hRes, yRes, oRes] = await Promise.all([
+          hareketleriGetir(),
+          yatirimlariGetir(),
+          ortaklariGetir(),
+        ])
+        if (hRes.data.basarili) setHareketler(hRes.data.veri.hareketler ?? [])
+        if (yRes.data.basarili) setYatirimlar(yRes.data.veri.yatirimlar ?? [])
+        if (oRes.data.basarili) setOrtakHareketler(oRes.data.veri.ortaklar ?? [])
+      } catch {
+        toast.error('Veriler yüklenemedi.')
+      } finally {
+        setYukleniyor(false)
+      }
+    }
+    veriYukle()
+  }, [])
 
   const shared = { secilenAy, secilenYil, setSecilenAy, setSecilenYil, hareketler, setHareketler, kapanislar }
 
@@ -2485,6 +2533,13 @@ export default function VarlikKasa() {
         </div>
       </div>
 
+      {yukleniyor ? (
+        <div className="d-flex justify-content-center align-items-center py-5">
+          <div className="spinner-border" style={{ color:'var(--brand-dark)', width:40, height:40 }} role="status">
+            <span className="visually-hidden">Yükleniyor...</span>
+          </div>
+        </div>
+      ) : (
       <div className="premium-card" style={{ padding:0 }}>
         <div className="px-3 pt-3 border-bottom">
           <ul className="nav nav-tabs border-0 gap-1" role="tablist">
@@ -2512,6 +2567,7 @@ export default function VarlikKasa() {
           {aktifSekme === 'yatirim'  && <YatirimKalesi yatirimlar={yatirimlar} setYatirimlar={setYatirimlar} />}
         </div>
       </div>
+      )}
     </>
   )
 }

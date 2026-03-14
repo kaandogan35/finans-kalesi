@@ -42,7 +42,7 @@ if ($parca_sayisi === 1) {
             $cari->listele($payload);
             break;
         case 'POST':
-            $cari->olustur($payload);
+            $cari->olustur($payload, $girdi);
             break;
         default:
             Response::hata('Bu HTTP metodu desteklenmiyor', 405);
@@ -70,7 +70,7 @@ elseif ($parca_sayisi === 2) {
                 $cari->detay($payload, $cari_id);
                 break;
             case 'PUT':
-                $cari->guncelle($payload, $cari_id);
+                $cari->guncelle($payload, $cari_id, $girdi);
                 break;
             case 'DELETE':
                 $cari->sil($payload, $cari_id);
@@ -93,7 +93,7 @@ elseif ($parca_sayisi === 3 && $yol_parcalari[2] === 'hareketler') {
                 $cari->hareketler_listele($payload, $cari_id);
                 break;
             case 'POST':
-                $cari->hareket_ekle($payload, $cari_id);
+                $cari->hareket_ekle($payload, $cari_id, $girdi);
                 break;
             default:
                 Response::hata('Bu HTTP metodu desteklenmiyor', 405);
@@ -112,7 +112,7 @@ elseif ($parca_sayisi === 4 && $yol_parcalari[2] === 'hareketler') {
     } else {
         switch ($metod) {
             case 'PUT':
-                $cari->hareket_guncelle($payload, $cari_id, $hareket_id);
+                $cari->hareket_guncelle($payload, $cari_id, $hareket_id, $girdi);
                 break;
             case 'DELETE':
                 $cari->hareket_sil($payload, $cari_id, $hareket_id);

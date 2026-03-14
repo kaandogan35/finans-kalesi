@@ -20,9 +20,14 @@ class CorsMiddleware {
      * Her istek geldiğinde bu çalışır
      */
     public static function calistir(): void {
-        // Ayarlardan izin verilen adresi oku
-        $izinli_adres = env('CORS_ORIGIN', '*');
-        
+        // Development ortamında tüm originlere izin ver, production'da sadece canlı domain
+        $app_env = env('APP_ENV', 'production');
+        if ($app_env === 'development') {
+            $izinli_adres = '*';
+        } else {
+            $izinli_adres = env('CORS_ORIGIN', 'https://app.hirdavatduragi.shop');
+        }
+
         // Tarayıcıya hangi adresten istek gelebileceğini söyle
         header("Access-Control-Allow-Origin: $izinli_adres");
         

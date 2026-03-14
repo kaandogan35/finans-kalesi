@@ -71,9 +71,9 @@ class CekSenetController {
     }
 
     // ─── POST /api/cek-senet ───
-    public function olustur($payload) {
+    public function olustur($payload, $girdi) {
         try {
-            $veri = json_decode(file_get_contents('php://input'), true);
+            $veri = $girdi;
 
             // Zorunlu alan kontrolleri
             if (empty($veri['tur'])) {
@@ -130,7 +130,7 @@ class CekSenetController {
     }
 
     // ─── PUT /api/cek-senet/{id} ───
-    public function guncelle($payload, $cek_id) {
+    public function guncelle($payload, $cek_id, $girdi) {
         try {
             $mevcut = $this->cekSenet->getir($payload['sirket_id'], $cek_id);
             if (!$mevcut) {
@@ -138,7 +138,7 @@ class CekSenetController {
                 return;
             }
 
-            $veri = json_decode(file_get_contents('php://input'), true);
+            $veri = $girdi;
 
             // Tur degistirilemez
             if (!empty($veri['tur'])) {
@@ -183,7 +183,7 @@ class CekSenetController {
     }
 
     // ─── PUT /api/cek-senet/{id}/durum ───
-    public function durum_degistir($payload, $cek_id) {
+    public function durum_degistir($payload, $cek_id, $girdi) {
         try {
             $mevcut = $this->cekSenet->getir($payload['sirket_id'], $cek_id);
             if (!$mevcut) {
@@ -191,7 +191,7 @@ class CekSenetController {
                 return;
             }
 
-            $veri = json_decode(file_get_contents('php://input'), true);
+            $veri = $girdi;
 
             if (empty($veri['durum'])) {
                 Response::dogrulama_hatasi(array('durum' => 'Yeni durum zorunludur'));

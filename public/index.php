@@ -73,10 +73,13 @@ $istek_yolu = parse_url($istek_uri, PHP_URL_PATH);
 // Baştaki ve sondaki slash'ları temizle
 $istek_yolu = trim($istek_yolu, '/');
 
-// "api/" prefix'ini kaldır (varsa)
-if (strpos($istek_yolu, 'api/') === 0) {
-    $istek_yolu = substr($istek_yolu, 4); // "api/" = 4 karakter
-} elseif ($istek_yolu === 'api') {
+// "api/" prefix'ini kaldır — hem kök hem alt klasör kurulumunu destekler
+// Örnek 1: /api/cariler/5        → cariler/5
+// Örnek 2: /finans-kalesi/public/api/cariler/5 → cariler/5
+$api_konum = strpos($istek_yolu, 'api/');
+if ($api_konum !== false) {
+    $istek_yolu = substr($istek_yolu, $api_konum + 4);
+} elseif ($istek_yolu === 'api' || substr($istek_yolu, -4) === '/api') {
     $istek_yolu = '';
 }
 

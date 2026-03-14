@@ -19,6 +19,22 @@ class Kasa {
         $this->kripto = $kripto;
     }
 
+    // Şifreleme yardımcısı — KriptoHelper varsa onu, yoksa SistemKripto'yu kullan
+    private function sifrele($metin) {
+        if ($this->kripto) {
+            return $this->kripto->sifrele($metin);
+        }
+        return SistemKripto::sifrele($metin);
+    }
+
+    // Çözme yardımcısı — KriptoHelper varsa onu, yoksa SistemKripto'yu kullan
+    private function coz($sifrelenmis) {
+        if ($this->kripto) {
+            return $this->kripto->coz($sifrelenmis);
+        }
+        return SistemKripto::coz($sifrelenmis);
+    }
+
     // ─────────────────────────────────────────────────
     // ŞIFRE KURULUMU
     // ─────────────────────────────────────────────────
@@ -70,7 +86,7 @@ class Kasa {
             return; // Zaten var
         }
 
-        $sifrelenmis_sifir = $this->kripto->sifrele('0');
+        $sifrelenmis_sifir = $this->sifrele('0');
         $sql = "INSERT INTO fiziki_kasa (sirket_id, bakiye_sifreli) VALUES (?, ?)";
         $stmt = $this->db->prepare($sql);
         $stmt->execute([$sirket_id, $sifrelenmis_sifir]);
@@ -85,13 +101,13 @@ class Kasa {
 
         if (!$row) return 0;
 
-        $cozulmus = $this->kripto->coz($row['bakiye_sifreli']);
+        $cozulmus = $this->coz($row['bakiye_sifreli']);
         return ($cozulmus !== null) ? (float)$cozulmus : 0;
     }
 
     // Fiziki kasa bakiyesini güncelle
     private function fiziki_bakiye_guncelle($sirket_id, $yeni_bakiye) {
-        $sifrelenmis = $this->kripto->sifrele((string)$yeni_bakiye);
+        $sifrelenmis = $this->sifrele((string)$yeni_bakiye);
         $sql = "UPDATE fiziki_kasa SET bakiye_sifreli = ?, guncelleme_tarihi = NOW() WHERE sirket_id = ?";
         $stmt = $this->db->prepare($sql);
         $stmt->execute([$sifrelenmis, $sirket_id]);
@@ -153,8 +169,8 @@ class Kasa {
         // Şifreli alanları çöz
         $hareketler = array();
         foreach ($satirlar as $satir) {
-            $tutar     = $this->kripto->coz($satir['tutar_sifreli']);
-            $aciklama  = $this->kripto->coz($satir['aciklama_sifreli']);
+            $tutar     = $this->coz($satir['tutar_sifreli']);
+            $aciklama  = $this->coz($satir['aciklama_sifreli']);
             $hareketler[] = array(
                 'id'           => $satir['id'],
                 'islem_tipi'   => $satir['islem_tipi'],
@@ -179,8 +195,8 @@ class Kasa {
 
     // Yeni kasa hareketi ekle
     public function hareket_ekle($sirket_id, $veri, $ekleyen_id) {
-        $tutar_sifreli    = $this->kripto->sifrele((string)$veri['tutar']);
-        $aciklama_sifreli = $this->kripto->sifrele(isset($veri['aciklama']) ? $veri['aciklama'] : '');
+        $tutar_sifreli    = $this->sifrele((string)$veri['tutar']);
+        $aciklama_sifreli = $this->sifrele(isset($veri['aciklama']) ? $veri['aciklama'] : '');
 
         $sql = "INSERT INTO kasa_hareketler
                 (sirket_id, islem_tipi, kategori, tutar_sifreli, aciklama_sifreli,
@@ -227,7 +243,8 @@ class Kasa {
             return false;
         }
 
-        $tutar = (float)$this->kripto->coz($hareket['tutar_sifreli']);
+        $cozulmus = $this->coz($hareket['tutar_sifreli']);
+        $tutar = ($cozulmus !== null) ? (float)$cozulmus : 0.0;
 
         // Yumuşak sil
         $sil_sql = "UPDATE kasa_hareketler
@@ -265,20 +282,23 @@ class Kasa {
 
         $yatirimlar = array();
         foreach ($satirlar as $satir) {
-            $miktar      = $this->kripto->coz($satir['miktar_sifreli']);
-            $birim_fiyat = $this->kripto->coz($satir['birim_fiyat_sifreli']);
+            $miktar      = $this->coz($satir['miktar_sifreli']);
+            $birim_fiyat = $this->coz($satir['birim_fiyat_sifreli']);
             $miktar_f    = ($miktar !== null) ? (float)$miktar : null;
             $fiyat_f     = ($birim_fiyat !== null) ? (float)$birim_fiyat : null;
 
             $yatirimlar[] = array(
                 'id'           => $satir['id'],
                 'yatirim_adi'  => $satir['yatirim_adi'],
+                'tur'          => $satir['yatirim_adi'],
                 'miktar'       => $miktar_f,
                 'birim_fiyat'  => $fiyat_f,
                 'toplam_deger' => ($miktar_f !== null && $fiyat_f !== null) ? round($miktar_f * $fiyat_f, 2) : null,
+                'guncel_fiyat' => null,
                 'alis_tarihi'  => $satir['alis_tarihi'],
                 'doviz_kodu'   => $satir['doviz_kodu'],
                 'kategori'     => $satir['kategori'],
+                'varlık_tipi'  => $satir['kategori'],
                 'olusturma_tarihi' => $satir['olusturma_tarihi'],
             );
         }
@@ -288,8 +308,8 @@ class Kasa {
 
     // Yeni yatırım ekle
     public function yatirim_ekle($sirket_id, $veri) {
-        $miktar_sifreli      = $this->kripto->sifrele((string)$veri['miktar']);
-        $birim_fiyat_sifreli = $this->kripto->sifrele((string)(isset($veri['birim_fiyat']) ? $veri['birim_fiyat'] : 0));
+        $miktar_sifreli      = $this->sifrele((string)$veri['miktar']);
+        $birim_fiyat_sifreli = $this->sifrele((string)(isset($veri['birim_fiyat']) ? $veri['birim_fiyat'] : 0));
 
         $sql = "INSERT INTO yatirim_kasasi
                 (sirket_id, yatirim_adi, miktar_sifreli, birim_fiyat_sifreli,
@@ -322,11 +342,11 @@ class Kasa {
 
         if (isset($veri['miktar'])) {
             $setler[] = "miktar_sifreli = ?";
-            $params[] = $this->kripto->sifrele((string)$veri['miktar']);
+            $params[] = $this->sifrele((string)$veri['miktar']);
         }
         if (isset($veri['birim_fiyat'])) {
             $setler[] = "birim_fiyat_sifreli = ?";
-            $params[] = $this->kripto->sifrele((string)$veri['birim_fiyat']);
+            $params[] = $this->sifrele((string)$veri['birim_fiyat']);
         }
 
         if (empty($setler)) return false;
@@ -395,8 +415,8 @@ class Kasa {
 
         $ortaklar = array();
         foreach ($satirlar as $satir) {
-            $tutar    = $this->kripto->coz($satir['tutar_sifreli']);
-            $aciklama = $this->kripto->coz($satir['aciklama_sifreli']);
+            $tutar    = $this->coz($satir['tutar_sifreli']);
+            $aciklama = $this->coz($satir['aciklama_sifreli']);
             $ortaklar[] = array(
                 'id'          => $satir['id'],
                 'ortak_adi'   => $satir['ortak_adi'],
@@ -420,8 +440,8 @@ class Kasa {
 
     // Yeni ortak hareketi ekle
     public function ortak_hareket_ekle($sirket_id, $veri, $ekleyen_id) {
-        $tutar_sifreli    = $this->kripto->sifrele((string)$veri['tutar']);
-        $aciklama_sifreli = $this->kripto->sifrele(isset($veri['aciklama']) ? $veri['aciklama'] : '');
+        $tutar_sifreli    = $this->sifrele((string)$veri['tutar']);
+        $aciklama_sifreli = $this->sifrele(isset($veri['aciklama']) ? $veri['aciklama'] : '');
 
         $sql = "INSERT INTO ortak_carisi
                 (sirket_id, ortak_adi, islem_tipi, tutar_sifreli, aciklama_sifreli, tarih, ekleyen_id)

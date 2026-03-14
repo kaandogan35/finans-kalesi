@@ -35,7 +35,7 @@ if ($parca_sayisi === 1) {
             $odeme->listele($payload);
             break;
         case 'POST':
-            $odeme->olustur($payload);
+            $odeme->olustur($payload, $girdi);
             break;
         default:
             Response::hata('Bu HTTP metodu desteklenmiyor', 405);
@@ -63,7 +63,7 @@ elseif ($parca_sayisi === 2) {
                 $odeme->detay($payload, $kayit_id);
                 break;
             case 'PUT':
-                $odeme->guncelle($payload, $kayit_id);
+                $odeme->guncelle($payload, $kayit_id, $girdi);
                 break;
             case 'DELETE':
                 $odeme->sil($payload, $kayit_id);
@@ -81,7 +81,7 @@ elseif ($parca_sayisi === 3 && $yol_parcalari[2] === 'tamamla') {
     if ($kayit_id <= 0) {
         Response::hata('Gecersiz kayit ID', 400);
     } elseif ($metod === 'PUT') {
-        $odeme->tamamla($payload, $kayit_id);
+        $odeme->tamamla($payload, $kayit_id, $girdi);
     } else {
         Response::hata('Bu HTTP metodu desteklenmiyor', 405);
     }

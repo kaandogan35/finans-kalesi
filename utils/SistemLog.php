@@ -38,7 +38,7 @@ class SistemLog {
             $db = Database::baglan();
             $stmt = $db->prepare(
                 "INSERT INTO sistem_loglari
-                    (sirket_id, kullanici_id, islem_tipi, detay, ip_adresi, tarih)
+                    (sirket_id, kullanici_id, islem_tipi, islem_detayi, ip_adresi, tarih)
                  VALUES (?, ?, ?, ?, ?, NOW())"
             );
             $stmt->execute([

@@ -12,6 +12,11 @@
 # URL yeniden yazma motorunu aç
 RewriteEngine On
 
+# Authorization başlığını PHP'ye ilet (PHP-CGI/FastCGI için zorunlu)
+# Apache CGI modunda Authorization header'ı otomatik iletmez.
+# Bu kural olmadan JWT token PHP'ye ulaşmaz → her istek 401 döner.
+RewriteRule .* - [E=HTTP_AUTHORIZATION:%{HTTP:Authorization}]
+
 # Gerçekten var olan dosyalara dokunma (CSS, JS, resim gibi)
 RewriteCond %{REQUEST_FILENAME} !-f
 # Gerçekten var olan klasörlere dokunma
@@ -31,9 +36,7 @@ RewriteRule ^(.*)$ index.php [QSA,L]
 php_flag display_errors Off
 php_flag log_errors On
 
-# php -- BEGIN cPanel-generated handler, do not edit
-# Set the “ea-php74” package as the default “PHP” programming language.
-<IfModule mime_module>
-  AddHandler application/x-httpd-ea-php74 .php .php7 .phtml
-</IfModule>
-# php -- END cPanel-generated handler, do not edit
+# cPanel PHP handler - sadece cPanel hosting'de aktif, lokalde devre dışı
+# <IfModule mime_module>
+#   AddHandler application/x-httpd-ea-php74 .php .php7 .phtml
+# </IfModule>

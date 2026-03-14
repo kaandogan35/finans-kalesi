@@ -37,7 +37,7 @@ $parca_sayisi = count($yol_parcalari);
 // ─── /api/kasa/sifre-kur ───
 if ($parca_sayisi === 2 && $yol_parcalari[1] === 'sifre-kur') {
     if ($metod === 'POST') {
-        $kasa->sifre_kur($payload);
+        $kasa->sifre_kur($payload, $girdi);
     } else {
         Response::hata('Bu HTTP metodu desteklenmiyor', 405);
     }
@@ -46,7 +46,7 @@ if ($parca_sayisi === 2 && $yol_parcalari[1] === 'sifre-kur') {
 // ─── /api/kasa/dogrula ───
 elseif ($parca_sayisi === 2 && $yol_parcalari[1] === 'dogrula') {
     if ($metod === 'POST') {
-        $kasa->dogrula($payload);
+        $kasa->dogrula($payload, $girdi);
     } else {
         Response::hata('Bu HTTP metodu desteklenmiyor', 405);
     }
@@ -68,7 +68,7 @@ elseif ($parca_sayisi === 2 && $yol_parcalari[1] === 'hareketler') {
             $kasa->hareketler_listele($payload);
             break;
         case 'POST':
-            $kasa->hareket_ekle($payload);
+            $kasa->hareket_ekle($payload, $girdi);
             break;
         default:
             Response::hata('Bu HTTP metodu desteklenmiyor', 405);
@@ -95,7 +95,7 @@ elseif ($parca_sayisi === 2 && $yol_parcalari[1] === 'yatirimlar') {
             $kasa->yatirimlar_listele($payload);
             break;
         case 'POST':
-            $kasa->yatirim_ekle($payload);
+            $kasa->yatirim_ekle($payload, $girdi);
             break;
         default:
             Response::hata('Bu HTTP metodu desteklenmiyor', 405);
@@ -111,7 +111,7 @@ elseif ($parca_sayisi === 3 && $yol_parcalari[1] === 'yatirimlar') {
     } else {
         switch ($metod) {
             case 'PUT':
-                $kasa->yatirim_guncelle($payload, $yatirim_id);
+                $kasa->yatirim_guncelle($payload, $yatirim_id, $girdi);
                 break;
             case 'DELETE':
                 $kasa->yatirim_sil($payload, $yatirim_id);
@@ -130,7 +130,7 @@ elseif ($parca_sayisi === 2 && $yol_parcalari[1] === 'ortaklar') {
             $kasa->ortaklar_listele($payload);
             break;
         case 'POST':
-            $kasa->ortak_hareket_ekle($payload);
+            $kasa->ortak_hareket_ekle($payload, $girdi);
             break;
         default:
             Response::hata('Bu HTTP metodu desteklenmiyor', 405);

@@ -68,9 +68,9 @@ class OdemeTakipController {
     }
 
     // ─── POST /api/odemeler ───
-    public function olustur($payload) {
+    public function olustur($payload, $girdi) {
         try {
-            $veri = json_decode(file_get_contents('php://input'), true);
+            $veri = $girdi;
 
             // Zorunlu alan kontrolleri
             if (empty($veri['firma_adi'])) {
@@ -134,7 +134,7 @@ class OdemeTakipController {
     }
 
     // ─── PUT /api/odemeler/{id} ───
-    public function guncelle($payload, $kayit_id) {
+    public function guncelle($payload, $kayit_id, $girdi) {
         try {
             $mevcut = $this->odemeTakip->getir($payload['sirket_id'], $kayit_id);
             if (!$mevcut) {
@@ -142,7 +142,7 @@ class OdemeTakipController {
                 return;
             }
 
-            $veri = json_decode(file_get_contents('php://input'), true);
+            $veri = $girdi;
 
             if (!empty($veri['yon'])) {
                 $gecerli_yonler = array('tahsilat', 'odeme');
@@ -188,7 +188,7 @@ class OdemeTakipController {
     }
 
     // ─── PUT /api/odemeler/{id}/tamamla ───
-    public function tamamla($payload, $kayit_id) {
+    public function tamamla($payload, $kayit_id, $girdi) {
         try {
             $mevcut = $this->odemeTakip->getir($payload['sirket_id'], $kayit_id);
             if (!$mevcut) {
@@ -201,8 +201,7 @@ class OdemeTakipController {
                 return;
             }
 
-            $veri = json_decode(file_get_contents('php://input'), true);
-            $gorusme_notu = isset($veri['gorusme_notu']) ? $veri['gorusme_notu'] : null;
+            $gorusme_notu = isset($girdi['gorusme_notu']) ? $girdi['gorusme_notu'] : null;
 
             $kayit = $this->odemeTakip->tamamla(
                 $payload['sirket_id'],

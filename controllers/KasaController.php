@@ -57,7 +57,7 @@ class KasaController {
     // DEVRE DIŞI — Şifre sistemi kaldırıldı (Sprint 2C-4b)
     // ─── POST /api/kasa/sifre-kur ───
     // İlk kez kasa şifresi oluştur
-    public function sifre_kur($payload) {
+    public function sifre_kur($payload, $girdi) {
         try {
             $gecici = new Kasa($this->db, null);
 
@@ -66,7 +66,7 @@ class KasaController {
                 return;
             }
 
-            $veri = json_decode(file_get_contents('php://input'), true);
+            $veri = $girdi;
 
             if (empty($veri['kasa_sifre'])) {
                 Response::dogrulama_hatasi(array('kasa_sifre' => 'Kasa sifresi zorunludur'));
@@ -101,9 +101,9 @@ class KasaController {
     // DEVRE DIŞI — Şifre sistemi kaldırıldı (Sprint 2C-4b)
     // ─── POST /api/kasa/dogrula ───
     // Şifreyi doğrula — doğruysa basarili döner
-    public function dogrula($payload) {
+    public function dogrula($payload, $girdi) {
         try {
-            $veri = json_decode(file_get_contents('php://input'), true);
+            $veri = $girdi;
             $kasa_sifre = isset($veri['kasa_sifre']) ? $veri['kasa_sifre'] : null;
 
             if (empty($kasa_sifre)) {
@@ -166,9 +166,9 @@ class KasaController {
     }
 
     // ─── POST /api/kasa/hareketler ───
-    public function hareket_ekle($payload) {
+    public function hareket_ekle($payload, $girdi) {
         try {
-            $veri = json_decode(file_get_contents('php://input'), true);
+            $veri = $girdi;
 
             if (empty($veri['islem_tipi'])) {
                 Response::dogrulama_hatasi(array('islem_tipi' => 'Islem tipi zorunludur (giris veya cikis)'));
@@ -226,9 +226,17 @@ class KasaController {
     }
 
     // ─── POST /api/kasa/yatirimlar ───
-    public function yatirim_ekle($payload) {
+    public function yatirim_ekle($payload, $girdi) {
         try {
-            $veri = json_decode(file_get_contents('php://input'), true);
+            $veri = $girdi;
+
+            // Frontend alan adı eşleştirmesi: tur → yatirim_adi, varlık_tipi → kategori
+            if (empty($veri['yatirim_adi']) && !empty($veri['tur'])) {
+                $veri['yatirim_adi'] = $veri['tur'];
+            }
+            if (empty($veri['kategori']) && !empty($veri['varlık_tipi'])) {
+                $veri['kategori'] = $veri['varlık_tipi'];
+            }
 
             if (empty($veri['yatirim_adi'])) {
                 Response::dogrulama_hatasi(array('yatirim_adi' => 'Yatirim adi zorunludur (ornek: Altin 22 Ayar, Dolar, BIM Hissesi)'));
@@ -251,9 +259,18 @@ class KasaController {
     }
 
     // ─── PUT /api/kasa/yatirimlar/{id} ───
-    public function yatirim_guncelle($payload, $yatirim_id) {
+    public function yatirim_guncelle($payload, $yatirim_id, $girdi) {
         try {
-            $veri = json_decode(file_get_contents('php://input'), true);
+            $veri = $girdi;
+
+            // Frontend alan adı eşleştirmesi
+            if (isset($veri['tur']) && !isset($veri['yatirim_adi'])) {
+                $veri['yatirim_adi'] = $veri['tur'];
+            }
+            if (isset($veri['varlık_tipi']) && !isset($veri['kategori'])) {
+                $veri['kategori'] = $veri['varlık_tipi'];
+            }
+
             $kasa = new Kasa($this->db, null);
             $basarili = $kasa->yatirim_guncelle($payload['sirket_id'], $yatirim_id, $veri);
 
@@ -307,9 +324,9 @@ class KasaController {
     }
 
     // ─── POST /api/kasa/ortaklar ───
-    public function ortak_hareket_ekle($payload) {
+    public function ortak_hareket_ekle($payload, $girdi) {
         try {
-            $veri = json_decode(file_get_contents('php://input'), true);
+            $veri = $girdi;
 
             if (empty($veri['ortak_adi'])) {
                 Response::dogrulama_hatasi(array('ortak_adi' => 'Ortak adi zorunludur'));
