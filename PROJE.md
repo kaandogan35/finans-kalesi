@@ -1,11 +1,11 @@
 # PROJE.md — Finans Kalesi Canlı Durum ve Yol Haritası
-# Son Güncelleme: 13 Mart 2026 — Oturum #9 (Sprint 2C-1 Tamamlandı)
+# Son Güncelleme: 14 Mart 2026 — Oturum #10
 
 ---
 
-## GÜNCEL DURUM: 🏗️ Sprint 2C — Çek/Senet Modülü Sırada
-Token altyapısı temizlendi. Axios interceptor Zustand tabanlı yazıldı.
-Sıradaki iş: Çek/Senet UI + API bağlantısı.
+## GÜNCEL DURUM: 🏗️ Sprint 2C — Cari Düzeltmeler Tamamlandı
+Cari modülündeki 4 kritik hata düzeltildi.
+Sıradaki iş: Kasa mock verilerini gerçek API'ye bağlamak.
 
 ---
 
@@ -16,7 +16,7 @@ Sıradaki iş: Çek/Senet UI + API bağlantısı.
 | Mobil Strateji | Capacitor.js — Web bittikten sonra mevcut React kodu iOS/Android'e dönüştürülür |
 | Dashboard | En sona bırakıldı — tüm modüller tamamlandıktan sonra gerçek veriyle tasarlanacak |
 | Canlıya Çıkış | Uygulama tamamen bitmeden canlıya çıkılmaz |
-| Modül Sırası | Çek/Senet → Kasa → Ödemeler → Vade Hesaplayıcı → Dashboard |
+| Modül Sırası | Kasa API → Çek/Senet → Ödemeler → Vade Hesaplayıcı → Tasarım → Dashboard |
 
 ---
 
@@ -31,17 +31,33 @@ Sıradaki iş: Çek/Senet UI + API bağlantısı.
 
 #### Sprint 2A — Temizlik ✅ TAMAMLANDI
 #### Sprint 2B — UI Standardizasyonu ✅ BÜYÜK ÖLÇÜDE TAMAMLANDI
-> Dashboard sayfası (2B-4) kasıtlı olarak en sona bırakıldı.
-
 #### Sprint 2C — API Entegrasyonu 🏗️ DEVAM EDİYOR
 
 | Durum | Görev | Notlar |
 |-------|-------|--------|
-| ✅ | 2C-1: Axios Interceptor | localStorage → Zustand. window.location → CustomEvent + React Router. lucide-react kaldırıldı. |
-| ✅ | 2C-2: Cari API | Mock veri silindi, gerçek backend bağlandı. |
-| ⬜ | **2C-3: Çek/Senet UI + API** | Sayfa tasarımı + `api/cekSenet.js` — ŞU ANKİ GÖREV |
-| ⬜ | 2C-4: Kasa UI + API | `VarlikKasa.jsx` başlanmış, tamamlanacak. `api/kasa.js` bağlanacak. |
-| ⬜ | 2C-5: Ödemeler UI + API | Sayfa tasarımı + `api/odemeler.js` |
+| ✅ | 2C-1: Axios Interceptor | localStorage → Zustand. lucide-react kaldırıldı. |
+| ✅ | 2C-2: Cari API + Düzeltmeler | API bağlı. 4 hata düzeltildi (stat kartları, tarih parse, vergi_dairesi, her_ikisi türü) |
+| ✅ | 2C-4: Kasa UI | VarlikKasa.jsx 5 parçada yazıldı. Mock veri ile çalışıyor. api/kasa.js oluşturuldu. |
+| ⬜ | **2C-4b: Kasa API Bağlantısı** | Mock veriler gerçek backend'e bağlanacak — ŞU ANKİ GÖREV |
+| ⬜ | 2C-3: Çek/Senet UI + API | Henüz başlanmadı |
+| ⬜ | 2C-5: Ödemeler UI + API | Henüz başlanmadı |
+
+---
+
+### Kasa Modülü Detay Durumu
+
+| Sekme | UI | API |
+|-------|-----|-----|
+| Gösterge Paneli | ✅ Mock | ⬜ |
+| Nakit Akışı | ✅ Mock | ⬜ |
+| Aylık Bilanço | ✅ Local state | ⬜ Backend endpoint yok — ileriye bırakıldı |
+| Ortak Carisi | ✅ Mock | ⬜ |
+| Yatırım Kalesi | ✅ Mock | ⬜ |
+
+**Kasa Özel Notlar:**
+- X-Kasa-Sifre header'ı KULLANILMIYOR — şifre ekranı kaldırıldı
+- Aylık Bilanço kalıcılığı backend endpoint gerektiriyor — şimdilik local state
+- Yatırım Kalesi'nde canlı kur API'si YOK — manuel birim_fiyat kullanılıyor
 
 ---
 
@@ -50,54 +66,27 @@ Sıradaki iş: Çek/Senet UI + API bağlantısı.
 
 | Durum | Adım |
 |-------|------|
-| ⬜ | DB tasarımı (`vade_hesaplamalari` tablosu) |
+| ⬜ | DB tasarımı (vade_hesaplamalari tablosu) |
 | ⬜ | Backend (yeni-modul-ekle.md skill'i okunarak) |
 | ⬜ | Frontend — bağımsız sayfa |
 
 ---
 
 ### Aşama 2E — Dashboard ⬜ EN SONA BIRAKILDI
-> Tüm modüller tamamlandıktan sonra gerçek kullanıcı verisine bakılarak tasarlanacak.
-> Hangi metriğin önemli olduğuna o zaman karar verilecek.
-
----
+### Aşama 2F — Komple UI Rebrand ⬜ TÜM MODÜLLER BİTİNCE
+> Tüm modüller çalışır hale geldikten sonra yapılacak.
+> 21st.dev'den ilham alınacak, Bootstrap 5.3 korunacak.
+> Tailwind ve Shadcn YASAK — CSS manuel yazılacak.
 
 ### Aşama 3 — Canlıya Çıkış Hazırlığı ⬜ BEKLEMEDE
-
-| Durum | Adım |
-|-------|------|
-| ⬜ | PHP 8.4 hosting desteği doğrula |
-| ⬜ | Güvenlik denetimi (.env, .htaccess, hata mesajları kapalı) |
-| ⬜ | `npm run build` → `dist/` cPanel'e yüklenir |
-| ⬜ | Canlı ortam testi |
-| ⬜ | PWA yapılandırması (manifest.json + service worker) |
-| ⬜ | İlk müşteri pilot — Hırdavat Durağı / Yön Cıvata |
-
----
-
 ### Aşama 4 — Mobil (Capacitor.js) ⬜ Web kararlı olduktan sonra
-
-| Durum | Adım |
-|-------|------|
-| ⬜ | Capacitor kurulumu |
-| ⬜ | iOS build (Xcode + TestFlight) |
-| ⬜ | Android build (Android Studio + Play Store beta) |
-| ⬜ | Store yayını |
-
----
-
 ### Aşama 5 — Büyüme Modülleri ⬜ UZAK DÖNEM
-Fatura/e-Fatura, Raporlama (PDF), Çoklu Kullanıcı (rol yönetimi)
 
 ---
 
 ## 📂 GÜNCEL DOSYA YAPISI
-
 ```
 finans-kalesi/
-├── config/
-│   ├── app.php
-│   └── database.php
 ├── controllers/
 │   ├── AuthController.php       ✅
 │   ├── CariController.php       ✅
@@ -105,57 +94,30 @@ finans-kalesi/
 │   ├── DashboardController.php  ✅
 │   ├── KasaController.php       ✅
 │   └── OdemeTakipController.php ✅
-├── middleware/
-│   ├── AuthMiddleware.php
-│   └── CorsMiddleware.php
-├── models/
-│   ├── CariHareket.php, CariKart.php, CekSenet.php
-│   ├── Kasa.php, Kullanici.php, OdemeTakip.php, Sirket.php
-├── routes/
-│   ├── auth.php, cari.php, cek_senet.php
-│   ├── dashboard.php, kasa.php, odeme.php
-├── utils/
-│   ├── JWTHelper.php, KriptoHelper.php, RateLimiter.php
-│   ├── Response.php, SistemKripto.php, SistemLog.php
+├── frontend/src/
+│   ├── api/
+│   │   ├── auth.js          ✅
+│   │   ├── axios.js         ✅
+│   │   ├── cariler.js       ✅ ozet() eklendi
+│   │   ├── dashboard.js     ✅
+│   │   ├── kasa.js          ✅ Oluşturuldu
+│   │   ├── cekSenet.js      ⬜ Oluşturulacak
+│   │   └── odemeler.js      ⬜ Oluşturulacak
+│   ├── pages/
+│   │   ├── auth/GirisYap.jsx          ✅
+│   │   ├── cariler/CariYonetimi.jsx   ✅ API bağlı, 4 hata düzeltildi
+│   │   ├── cariler/CarilerListesi.jsx ✅
+│   │   ├── dashboard/Dashboard.jsx    ✅ (UI en sona)
+│   │   ├── kasa/VarlikKasa.jsx        ✅ UI tamam, mock veri
+│   │   ├── cek-senet/                 ⬜ Oluşturulacak
+│   │   ├── odemeler/                  ⬜ Oluşturulacak
+│   │   └── vade-hesaplayici/          ⬜ Oluşturulacak
+│   ├── stores/authStore.js   ✅
+│   ├── App.jsx               ✅
+│   └── App.css
 ├── public/
-│   ├── index.php
-│   ├── .htaccess
-│   └── ⚠️ htaccess (noktasız kopya — silinecek)
-├── frontend/
-│   ├── dist/                    ✅ Build mevcut
-│   └── src/
-│       ├── api/
-│       │   ├── auth.js          ✅
-│       │   ├── axios.js         ✅ Interceptor yazıldı (Zustand + CustomEvent)
-│       │   ├── cariler.js       ✅
-│       │   ├── dashboard.js     ✅
-│       │   ├── cekSenet.js      ⬜ Oluşturulacak (2C-3)
-│       │   ├── kasa.js          ⬜ Oluşturulacak (2C-4)
-│       │   └── odemeler.js      ⬜ Oluşturulacak (2C-5)
-│       ├── components/layout/
-│       │   ├── AppLayout.jsx    ✅
-│       │   └── KorunanSayfa.jsx ✅
-│       ├── pages/
-│       │   ├── auth/GirisYap.jsx          ✅
-│       │   ├── cariler/CariYonetimi.jsx   ✅ API bağlı
-│       │   ├── cariler/CarilerListesi.jsx ✅
-│       │   ├── dashboard/Dashboard.jsx    ✅ (UI en sona)
-│       │   ├── kasa/VarlikKasa.jsx        ⚠️ Başlanmış, tamamlanacak
-│       │   ├── cek-senet/                 ⬜ Oluşturulacak
-│       │   ├── odemeler/                  ⬜ Oluşturulacak
-│       │   └── vade-hesaplayici/          ⬜ Oluşturulacak
-│       ├── stores/authStore.js   ✅ Zustand (accessToken + refreshToken)
-│       ├── hooks/                (boş — temizlenebilir)
-│       ├── lib/                  (boş — temizlenebilir)
-│       ├── App.jsx               ✅ AuthLogoutListener eklendi
-│       ├── App.css
-│       └── main.jsx
-├── .claude/skills/
-│   ├── sistem-analisti.md        ✅
-│   ├── php-api-gelistirici.md    ✅
-│   ├── react-bootstrap-ui.md     ✅
-│   ├── kod-temizligi-refactor.md ✅
-│   └── yeni-modul-ekle.md        ✅
+│   ├── .htaccess            ✅
+│   └── ⚠️ htaccess          Silinecek
 ├── .env / .env.example
 ├── CLAUDE.md
 └── PROJE.md
@@ -169,7 +131,6 @@ finans-kalesi/
 |--------|-----------|---------|
 | Backend | PHP (Saf) | 8.4 |
 | Veritabanı | MariaDB | 10.5+ |
-| DB Sürücüsü | PDO | — |
 | Auth | Özel JWT | — |
 | Şifreleme | AES-256-GCM | — |
 | Frontend | React + Vite | 19 / 7+ |
@@ -184,12 +145,15 @@ finans-kalesi/
 
 ---
 
-## 🚨 AKTİF TEKNİK BORÇLAR
+## 🚨 AKTİF TEKNİK BORÇLAR (Öncelik Sırasına Göre)
 
 | # | Sorun | Öncelik |
 |---|-------|---------|
-| 1 | `public/htaccess` noktasız kopya | 🟡 Silinecek |
-| 2 | `sonner` toast kütüphanesi Bootstrap dışı | 🟡 Değerlendirilecek |
-| 3 | `hooks/` ve `lib/` boş klasörler | 🟢 Temizlenebilir |
-| 4 | Çek/Senet, Kasa, Ödemeler sayfaları tamamlanmadı | 🟡 Sprint 2C |
+| 1 | Kasa mock verileri gerçek API'ye bağlanmadı | 🔴 Sıradaki görev |
+| 2 | Çek/Senet sayfası henüz başlanmadı | 🔴 Kritik modül |
+| 3 | Ödemeler sayfası tamamlanmadı | 🟡 Sprint 2C-5 |
+| 4 | Aylık Bilanço backend endpoint yok | 🟡 İleride eklenecek |
 | 5 | Vade Hesaplayıcı DB sütunları yok | 🟡 Sprint 2D |
+| 6 | public/htaccess noktasız kopya | 🟡 Silinecek |
+| 7 | sonner toast Bootstrap dışı | 🟡 Değerlendirilecek |
+| 8 | hooks/ ve lib/ boş klasörler | 🟢 Temizlenebilir |

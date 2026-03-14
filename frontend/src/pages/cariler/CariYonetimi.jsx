@@ -97,7 +97,7 @@ function apiToUI(c) {
   return {
     ...c,
     unvan:    c.cari_adi ?? '',
-    cariTip:  c.cari_turu === 'tedarikci' ? 'satici' : 'alici',
+    cariTip:  c.cari_turu === 'tedarikci' ? 'satici' : c.cari_turu === 'her_ikisi' ? 'her_ikisi' : 'alici',
     tip:      'kurumsal',
     durum:    c.aktif_mi ? 'aktif' : 'pasif',
     son_islem: c.son_islem_tarihi ?? null,
@@ -115,7 +115,6 @@ function uiToAPI(form) {
     adres:       form.adres     || null,
     il:          form.il        || null,
     ilce:        form.ilce      || null,
-    vergi_dairesi: form.vergi_dairesi || null,
     vergi_no:    form.vergi_no  || null,
     aktif_mi:    form.durum === 'aktif' ? 1 : 0,
   }
@@ -229,7 +228,7 @@ const formatParaInput = (value) => {
 }
 const parseParaInput = (formatted) => parseFloat(String(formatted).replace(/\./g, '').replace(',', '.')) || 0
 
-const bosForm  = { cariTip: 'alici', tip: 'kurumsal', unvan: '', telefon: '', adres: '', il: '', ilce: '', vergi_dairesi: '', vergi_no: '', durum: 'aktif' }
+const bosForm  = { cariTip: 'alici', tip: 'kurumsal', unvan: '', telefon: '', adres: '', il: '', ilce: '', vergi_no: '', durum: 'aktif' }
 const bosIslem = { tur: 'tahsilat', tutar: '', aciklama: '', tarih: bugunTarih() }
 
 // ─── Ana Bileşen ──────────────────────────────────────────────────────────────
@@ -237,6 +236,7 @@ export default function CariYonetimi() {
   const [cariler, setCariler]           = useState([])
   const [listYukleniyor, setListYukleniyor] = useState(true)
   const [listHata, setListHata]         = useState(null)
+  const [ozetIstatistikler, setOzetIstatistikler] = useState({ toplam_alacaklar: 0, toplam_borclar: 0 })
 
   const [aktifSekme, setAktifSekme]   = useState('alici')
   const [arama, setArama]             = useState('')
@@ -279,9 +279,13 @@ export default function CariYonetimi() {
     setListYukleniyor(true)
     setListHata(null)
     try {
-      const yanit = await carilerApi.listele({ adet: 100 })
-      const liste  = yanit.data.veri?.cariler || []
+      const [listYanit, ozetYanit] = await Promise.all([
+        carilerApi.listele({ adet: 100 }),
+        carilerApi.ozet(),
+      ])
+      const liste = listYanit.data.veri?.cariler || []
       setCariler(liste.map(apiToUI))
+      setOzetIstatistikler(ozetYanit.data.veri ?? { toplam_alacaklar: 0, toplam_borclar: 0 })
     } catch (err) {
       setListHata(err.response?.data?.hata || 'Veriler yüklenemedi.')
     } finally {
@@ -311,9 +315,10 @@ export default function CariYonetimi() {
   const toplamSayfa = Math.ceil(filtrelendi.length / sayfaBasi)
 
   // ─── İstatistikler (2 kart: Toplam Alacak + Toplam Borç) ──────────────
+  // /api/cariler/ozet endpoint'inden gelir — bakiye > 0 olanların toplamı (gerçek net rakamlar)
   const stats = {
-    toplamAlacak:  cariler.reduce((s, c) => s + Math.max(parseFloat(c.toplam_alacak ?? 0), 0), 0),
-    toplamBorc:    cariler.reduce((s, c) => s + Math.max(parseFloat(c.toplam_borc ?? 0), 0), 0),
+    toplamAlacak: parseFloat(ozetIstatistikler.toplam_alacaklar ?? 0),
+    toplamBorc:   parseFloat(ozetIstatistikler.toplam_borclar   ?? 0),
   }
 
 
@@ -397,7 +402,7 @@ export default function CariYonetimi() {
       cariTip: cari.cariTip, tip: cari.tip, unvan: cari.unvan,
       telefon: cari.telefon || '', adres: cari.adres || '',
       il: cari.il || '', ilce: cari.ilce || '',
-      vergi_dairesi: cari.vergi_dairesi || '', vergi_no: cari.vergi_no || '',
+      vergi_no: cari.vergi_no || '',
       durum: cari.durum,
     })
     setKartModalAcik(true)
@@ -426,7 +431,7 @@ export default function CariYonetimi() {
     setDuzenForm({
       tutar: formatParaInput(String(parseFloat(h.tutar_tl ?? 0)).replace('.', ',')),
       aciklama: h.aciklama || '',
-      tarih: h.islem_tarihi ? h.islem_tarihi.split('T')[0] : bugunTarih(),
+      tarih: h.islem_tarihi ? h.islem_tarihi.split('T')[0].split(' ')[0] : bugunTarih(),
       tur: h.islem_tipi,
     })
   }
@@ -843,11 +848,6 @@ export default function CariYonetimi() {
                   placeholder="Örn: İstanbul" className="form-control form-control-custom" />
               </div>
               <div className="col-6">
-                <label style={lblS}>{form.tip === 'kurumsal' ? 'Vergi Dairesi' : '—'}</label>
-                <input type="text" value={form.vergi_dairesi} onChange={e => setForm(p => ({ ...p, vergi_dairesi: e.target.value }))}
-                  placeholder={form.tip === 'kurumsal' ? 'Örn: Levent VD' : ''} className="form-control form-control-custom" />
-              </div>
-              <div className="col-6">
                 <label style={lblS}>{form.tip === 'kurumsal' ? 'Vergi Numarası' : 'TC Kimlik No'}</label>
                 <input type="text" value={form.vergi_no} onChange={e => setForm(p => ({ ...p, vergi_no: e.target.value }))}
                   placeholder={form.tip === 'kurumsal' ? '10 haneli' : '11 haneli'} className="form-control form-control-custom" />
@@ -1034,7 +1034,6 @@ export default function CariYonetimi() {
                           { label: 'Adres',         value: kartCari.adres || 'Belirtilmedi', icon: 'bi-geo-alt', col: 'col-12' },
                           { label: 'İlçe',          value: kartCari.ilce || 'Belirtilmedi', icon: 'bi-pin-map', col: 'col-md-6' },
                           { label: 'İl',            value: kartCari.il || 'Belirtilmedi', icon: 'bi-geo', col: 'col-md-6' },
-                          { label: 'Vergi Dairesi', value: kartCari.vergi_dairesi || 'Belirtilmedi', icon: 'bi-bank', col: 'col-md-6' },
                           { label: 'Vergi No',      value: kartCari.vergi_no || 'Belirtilmedi', icon: 'bi-upc-scan', col: 'col-md-6' },
                           { label: 'Telefon',       value: kartCari.telefon || 'Belirtilmedi', icon: 'bi-telephone', col: 'col-md-6' },
                           { label: 'Durum',         value: kartCari.durum === 'aktif' ? 'Aktif' : 'Pasif', icon: 'bi-toggle-on', col: 'col-md-6' },
@@ -1095,11 +1094,6 @@ export default function CariYonetimi() {
                           <label style={lblS}>İl</label>
                           <input type="text" value={kartForm.il} onChange={e => setKartForm(p => ({ ...p, il: e.target.value }))}
                             placeholder="Örn: İstanbul" className="form-control form-control-custom" />
-                        </div>
-                        <div className="col-6">
-                          <label style={lblS}>Vergi Dairesi</label>
-                          <input type="text" value={kartForm.vergi_dairesi} onChange={e => setKartForm(p => ({ ...p, vergi_dairesi: e.target.value }))}
-                            className="form-control form-control-custom" />
                         </div>
                         <div className="col-6">
                           <label style={lblS}>Vergi Numarası</label>

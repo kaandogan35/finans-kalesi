@@ -16,6 +16,7 @@ class KasaController {
         $this->db = $db;
     }
 
+    // DEVRE DIŞI — Şifre sistemi kaldırıldı (Sprint 2C-4b)
     // Kasa şifresini header'dan al ve KriptoHelper oluştur
     // Şifre yanlışsa null döner
     private function kripto_olustur($sirket_id, $kasa_sifre) {
@@ -38,6 +39,7 @@ class KasaController {
         return new KriptoHelper($kasa_sifre, $bilgiler['kasa_salt']);
     }
 
+    // DEVRE DIŞI — Şifre sistemi kaldırıldı (Sprint 2C-4b)
     // X-Kasa-Sifre header'ını al
     private function kasa_sifre_al() {
         if (isset($_SERVER['HTTP_X_KASA_SIFRE'])) {
@@ -52,6 +54,7 @@ class KasaController {
         return null;
     }
 
+    // DEVRE DIŞI — Şifre sistemi kaldırıldı (Sprint 2C-4b)
     // ─── POST /api/kasa/sifre-kur ───
     // İlk kez kasa şifresi oluştur
     public function sifre_kur($payload) {
@@ -95,6 +98,7 @@ class KasaController {
         }
     }
 
+    // DEVRE DIŞI — Şifre sistemi kaldırıldı (Sprint 2C-4b)
     // ─── POST /api/kasa/dogrula ───
     // Şifreyi doğrula — doğruysa basarili döner
     public function dogrula($payload) {
@@ -131,15 +135,7 @@ class KasaController {
     // ─── GET /api/kasa/ozet ───
     public function ozet($payload) {
         try {
-            $kasa_sifre = $this->kasa_sifre_al();
-            $kripto = $this->kripto_olustur($payload['sirket_id'], $kasa_sifre);
-
-            if (!$kripto) {
-                Response::yetkisiz('Gecersiz veya eksik kasa sifresi (X-Kasa-Sifre header)');
-                return;
-            }
-
-            $kasa = new Kasa($this->db, $kripto);
+            $kasa = new Kasa($this->db, null);
             $sonuc = $kasa->ozet($payload['sirket_id']);
             Response::basarili($sonuc);
         } catch (Exception $e) {
@@ -151,14 +147,6 @@ class KasaController {
     // ─── GET /api/kasa/hareketler ───
     public function hareketler_listele($payload) {
         try {
-            $kasa_sifre = $this->kasa_sifre_al();
-            $kripto = $this->kripto_olustur($payload['sirket_id'], $kasa_sifre);
-
-            if (!$kripto) {
-                Response::yetkisiz('Gecersiz veya eksik kasa sifresi (X-Kasa-Sifre header)');
-                return;
-            }
-
             $filtreler = array(
                 'islem_tipi'       => isset($_GET['islem_tipi']) ? $_GET['islem_tipi'] : null,
                 'kategori'         => isset($_GET['kategori']) ? $_GET['kategori'] : null,
@@ -168,7 +156,7 @@ class KasaController {
                 'adet'             => isset($_GET['adet']) ? $_GET['adet'] : 50,
             );
 
-            $kasa = new Kasa($this->db, $kripto);
+            $kasa = new Kasa($this->db, null);
             $sonuc = $kasa->hareketler_listele($payload['sirket_id'], $filtreler);
             Response::basarili($sonuc);
         } catch (Exception $e) {
@@ -180,14 +168,6 @@ class KasaController {
     // ─── POST /api/kasa/hareketler ───
     public function hareket_ekle($payload) {
         try {
-            $kasa_sifre = $this->kasa_sifre_al();
-            $kripto = $this->kripto_olustur($payload['sirket_id'], $kasa_sifre);
-
-            if (!$kripto) {
-                Response::yetkisiz('Gecersiz veya eksik kasa sifresi (X-Kasa-Sifre header)');
-                return;
-            }
-
             $veri = json_decode(file_get_contents('php://input'), true);
 
             if (empty($veri['islem_tipi'])) {
@@ -205,7 +185,7 @@ class KasaController {
                 return;
             }
 
-            $kasa = new Kasa($this->db, $kripto);
+            $kasa = new Kasa($this->db, null);
             $sonuc = $kasa->hareket_ekle($payload['sirket_id'], $veri, $payload['sub']);
 
             Response::basarili($sonuc, 'Hareket kaydedildi', 201);
@@ -218,15 +198,7 @@ class KasaController {
     // ─── DELETE /api/kasa/hareketler/{id} ───
     public function hareket_sil($payload, $hareket_id) {
         try {
-            $kasa_sifre = $this->kasa_sifre_al();
-            $kripto = $this->kripto_olustur($payload['sirket_id'], $kasa_sifre);
-
-            if (!$kripto) {
-                Response::yetkisiz('Gecersiz veya eksik kasa sifresi (X-Kasa-Sifre header)');
-                return;
-            }
-
-            $kasa = new Kasa($this->db, $kripto);
+            $kasa = new Kasa($this->db, null);
             $yeni_bakiye = $kasa->hareket_sil($payload['sirket_id'], $hareket_id);
 
             if ($yeni_bakiye === false) {
@@ -244,15 +216,7 @@ class KasaController {
     // ─── GET /api/kasa/yatirimlar ───
     public function yatirimlar_listele($payload) {
         try {
-            $kasa_sifre = $this->kasa_sifre_al();
-            $kripto = $this->kripto_olustur($payload['sirket_id'], $kasa_sifre);
-
-            if (!$kripto) {
-                Response::yetkisiz('Gecersiz veya eksik kasa sifresi (X-Kasa-Sifre header)');
-                return;
-            }
-
-            $kasa = new Kasa($this->db, $kripto);
+            $kasa = new Kasa($this->db, null);
             $yatirimlar = $kasa->yatirimlar_listele($payload['sirket_id']);
             Response::basarili(array('yatirimlar' => $yatirimlar));
         } catch (Exception $e) {
@@ -264,14 +228,6 @@ class KasaController {
     // ─── POST /api/kasa/yatirimlar ───
     public function yatirim_ekle($payload) {
         try {
-            $kasa_sifre = $this->kasa_sifre_al();
-            $kripto = $this->kripto_olustur($payload['sirket_id'], $kasa_sifre);
-
-            if (!$kripto) {
-                Response::yetkisiz('Gecersiz veya eksik kasa sifresi (X-Kasa-Sifre header)');
-                return;
-            }
-
             $veri = json_decode(file_get_contents('php://input'), true);
 
             if (empty($veri['yatirim_adi'])) {
@@ -284,7 +240,7 @@ class KasaController {
                 return;
             }
 
-            $kasa = new Kasa($this->db, $kripto);
+            $kasa = new Kasa($this->db, null);
             $yatirim_id = $kasa->yatirim_ekle($payload['sirket_id'], $veri);
 
             Response::basarili(array('id' => $yatirim_id), 'Yatirim kaydedildi', 201);
@@ -297,16 +253,8 @@ class KasaController {
     // ─── PUT /api/kasa/yatirimlar/{id} ───
     public function yatirim_guncelle($payload, $yatirim_id) {
         try {
-            $kasa_sifre = $this->kasa_sifre_al();
-            $kripto = $this->kripto_olustur($payload['sirket_id'], $kasa_sifre);
-
-            if (!$kripto) {
-                Response::yetkisiz('Gecersiz veya eksik kasa sifresi (X-Kasa-Sifre header)');
-                return;
-            }
-
             $veri = json_decode(file_get_contents('php://input'), true);
-            $kasa = new Kasa($this->db, $kripto);
+            $kasa = new Kasa($this->db, null);
             $basarili = $kasa->yatirim_guncelle($payload['sirket_id'], $yatirim_id, $veri);
 
             if (!$basarili) {
@@ -324,15 +272,7 @@ class KasaController {
     // ─── DELETE /api/kasa/yatirimlar/{id} ───
     public function yatirim_sil($payload, $yatirim_id) {
         try {
-            $kasa_sifre = $this->kasa_sifre_al();
-            $kripto = $this->kripto_olustur($payload['sirket_id'], $kasa_sifre);
-
-            if (!$kripto) {
-                Response::yetkisiz('Gecersiz veya eksik kasa sifresi (X-Kasa-Sifre header)');
-                return;
-            }
-
-            $kasa = new Kasa($this->db, $kripto);
+            $kasa = new Kasa($this->db, null);
             $basarili = $kasa->yatirim_sil($payload['sirket_id'], $yatirim_id);
 
             if (!$basarili) {
@@ -350,14 +290,6 @@ class KasaController {
     // ─── GET /api/kasa/ortaklar ───
     public function ortaklar_listele($payload) {
         try {
-            $kasa_sifre = $this->kasa_sifre_al();
-            $kripto = $this->kripto_olustur($payload['sirket_id'], $kasa_sifre);
-
-            if (!$kripto) {
-                Response::yetkisiz('Gecersiz veya eksik kasa sifresi (X-Kasa-Sifre header)');
-                return;
-            }
-
             $filtreler = array(
                 'ortak_adi'  => isset($_GET['ortak_adi']) ? $_GET['ortak_adi'] : null,
                 'islem_tipi' => isset($_GET['islem_tipi']) ? $_GET['islem_tipi'] : null,
@@ -365,7 +297,7 @@ class KasaController {
                 'adet'       => isset($_GET['adet']) ? $_GET['adet'] : 50,
             );
 
-            $kasa = new Kasa($this->db, $kripto);
+            $kasa = new Kasa($this->db, null);
             $sonuc = $kasa->ortaklar_listele($payload['sirket_id'], $filtreler);
             Response::basarili($sonuc);
         } catch (Exception $e) {
@@ -377,14 +309,6 @@ class KasaController {
     // ─── POST /api/kasa/ortaklar ───
     public function ortak_hareket_ekle($payload) {
         try {
-            $kasa_sifre = $this->kasa_sifre_al();
-            $kripto = $this->kripto_olustur($payload['sirket_id'], $kasa_sifre);
-
-            if (!$kripto) {
-                Response::yetkisiz('Gecersiz veya eksik kasa sifresi (X-Kasa-Sifre header)');
-                return;
-            }
-
             $veri = json_decode(file_get_contents('php://input'), true);
 
             if (empty($veri['ortak_adi'])) {
@@ -402,7 +326,7 @@ class KasaController {
                 return;
             }
 
-            $kasa = new Kasa($this->db, $kripto);
+            $kasa = new Kasa($this->db, null);
             $id = $kasa->ortak_hareket_ekle($payload['sirket_id'], $veri, $payload['sub']);
 
             Response::basarili(array('id' => $id), 'Ortak hareketi kaydedildi', 201);
@@ -415,15 +339,7 @@ class KasaController {
     // ─── DELETE /api/kasa/ortaklar/{id} ───
     public function ortak_hareket_sil($payload, $hareket_id) {
         try {
-            $kasa_sifre = $this->kasa_sifre_al();
-            $kripto = $this->kripto_olustur($payload['sirket_id'], $kasa_sifre);
-
-            if (!$kripto) {
-                Response::yetkisiz('Gecersiz veya eksik kasa sifresi (X-Kasa-Sifre header)');
-                return;
-            }
-
-            $kasa = new Kasa($this->db, $kripto);
+            $kasa = new Kasa($this->db, null);
             $basarili = $kasa->ortak_hareket_sil($payload['sirket_id'], $hareket_id);
 
             if (!$basarili) {

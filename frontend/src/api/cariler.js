@@ -3,6 +3,7 @@ import api from './axios'
 export const carilerApi = {
   listele:  (params = {}) => api.get('/cariler',         { params }),
   getir:    (id)          => api.get(`/cariler/${id}`),
+  ozet:     ()            => api.get('/cariler/ozet'),
   olustur:  (veri)        => api.post('/cariler',         veri),
   guncelle: (id, veri)    => api.put(`/cariler/${id}`,    veri),
   sil:      (id)          => api.delete(`/cariler/${id}`),
