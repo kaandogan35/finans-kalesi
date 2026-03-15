@@ -56,17 +56,13 @@ class SistemLog {
 
     /**
      * İstek yapan kişinin IP adresini al
-     * Proxy arkasındaki gerçek IP'yi de yakalar
+     *
+     * Güvenlik notu: HTTP_X_FORWARDED_FOR ve HTTP_CLIENT_IP başlıkları
+     * istemci tarafından sahte olarak gönderilebilir (IP spoofing).
+     * cPanel shared hosting'de güvenilir bir ters proxy yoktur,
+     * bu nedenle yalnızca sunucunun belirlediği REMOTE_ADDR kullanılır.
      */
     public static function ip_al(): string {
-        if (!empty($_SERVER['HTTP_X_FORWARDED_FOR'])) {
-            // Proxy zinciri: "1.2.3.4, 5.6.7.8" → ilk IP gerçek istemci
-            $ip = explode(',', $_SERVER['HTTP_X_FORWARDED_FOR'])[0];
-        } elseif (!empty($_SERVER['HTTP_CLIENT_IP'])) {
-            $ip = $_SERVER['HTTP_CLIENT_IP'];
-        } else {
-            $ip = $_SERVER['REMOTE_ADDR'] ?? '0.0.0.0';
-        }
-        return trim($ip);
+        return $_SERVER['REMOTE_ADDR'] ?? '0.0.0.0';
     }
 }

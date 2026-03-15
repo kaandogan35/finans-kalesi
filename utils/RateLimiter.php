@@ -19,6 +19,9 @@ class RateLimiter {
     const LOGIN_PENCERE_DK = 15;  // Kaç dakika içinde sayılsın
     const LOGIN_BLOK_DK    = 15;  // Kaç dakika bloklanacak
 
+    const KAYIT_MAX_DENEME = 3;   // Aynı IP'den maksimum kayıt denemesi
+    const KAYIT_PENCERE_DK = 60;  // 1 saat içinde sayılsın
+
     /**
      * Bu IP'den giriş yapılabilir mi?
      *
@@ -46,6 +49,36 @@ class RateLimiter {
         } catch (Exception $e) {
             // Kontrol yapılamazsa açık bırak — servisi bloklama
             error_log('RateLimiter kontrol hatasi: ' . $e->getMessage());
+            return true;
+        }
+    }
+
+    /**
+     * Bu IP'den yeni kayıt yapılabilir mi?
+     *
+     * Son KAYIT_PENCERE_DK dakika içinde KAYIT_MAX_DENEME veya daha fazla
+     * kayıt yapıldıysa engellenir (bot/spam kaydını önler).
+     *
+     * @param string $ip Kontrol edilecek IP adresi
+     * @return bool true = kayıt serbest, false = bloklu
+     */
+    public static function kayit_izinli_mi(string $ip): bool {
+        try {
+            $db = Database::baglan();
+            $stmt = $db->prepare(
+                "SELECT COUNT(*) as sayi
+                 FROM sistem_loglari
+                 WHERE ip_adresi = ?
+                   AND islem_tipi = 'kayit'
+                   AND tarih >= DATE_SUB(NOW(), INTERVAL ? MINUTE)"
+            );
+            $stmt->execute([$ip, self::KAYIT_PENCERE_DK]);
+            $sonuc = $stmt->fetch();
+
+            return (int)$sonuc['sayi'] < self::KAYIT_MAX_DENEME;
+
+        } catch (Exception $e) {
+            error_log('RateLimiter kayit kontrol hatasi: ' . $e->getMessage());
             return true;
         }
     }

@@ -1,4 +1,5 @@
 import { useState, useEffect, useMemo } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { odemeApi } from '../../api/odeme'
 
 /* ═══════════════════════════════════════════════════════════════
@@ -58,35 +59,6 @@ const ONCELIK_SIRA = { kritik: 0, yuksek: 1, normal: 2, dusuk: 3 }
    MOCK VERİ
    ═══════════════════════════════════════════════════════════════ */
 
-const MOCK_ODEMELER = [
-  { id: 1,  firma_adi: 'Demir-Çelik San. A.Ş.', cari_ad: 'Ahmet Yılmaz',   telefon: '0532 123 4567', tutar: 87500,  vade_tarihi: bugunStr(-1), oncelik: 'kritik', yon: 'tahsilat', durum: 'bekliyor',   arama_durumu: 'aranmadi',   son_arama_tarihi: null,        son_not: null,                              arama_gecmisi: [] },
-  { id: 2,  firma_adi: 'Hırdavat Merkezi Ltd.', cari_ad: 'Mehmet Kaya',    telefon: '0555 987 6543', tutar: 34250,  vade_tarihi: bugunStr(0),  oncelik: 'yuksek', yon: 'tahsilat', durum: 'bekliyor',   arama_durumu: 'cevap_yok',  son_arama_tarihi: bugunStr(0), son_not: 'Telefonu açmadı, SMS attım',       arama_gecmisi: [{ tarih: bugunStr(0),  sonuc: 'cevap_yok',  not: 'Telefonu açmadı, SMS attım' }] },
-  { id: 3,  firma_adi: 'İnşaat Malz. Co.',       cari_ad: 'Fatma Demir',    telefon: '0543 456 7890', tutar: 52000,  vade_tarihi: bugunStr(2),  oncelik: 'yuksek', yon: 'tahsilat', durum: 'bekliyor',   arama_durumu: 'soz_alindi', son_arama_tarihi: bugunStr(-1),son_not: 'Hafta sonuna kadar yatırır dedi',  arama_gecmisi: [{ tarih: bugunStr(-1), sonuc: 'soz_alindi', not: 'Hafta sonuna kadar yatırır dedi' }, { tarih: bugunStr(-3), sonuc: 'cevap_yok', not: '' }] },
-  { id: 4,  firma_adi: 'Yapı Malz. Tic.',         cari_ad: 'Ali Şahin',      telefon: '0530 222 3344', tutar: 18750,  vade_tarihi: bugunStr(5),  oncelik: 'normal', yon: 'tahsilat', durum: 'bekliyor',   arama_durumu: 'aranmadi',   son_arama_tarihi: null,        son_not: null,                              arama_gecmisi: [] },
-  { id: 5,  firma_adi: 'Çelik Konstr. A.Ş.',    cari_ad: 'Zeynep Aydın',   telefon: '0542 111 2233', tutar: 145000, vade_tarihi: bugunStr(-5), oncelik: 'kritik', yon: 'tahsilat', durum: 'bekliyor',   arama_durumu: 'cevap_yok',  son_arama_tarihi: bugunStr(-2),son_not: 'Muhasebe ile görüşeceğiz dedi',    arama_gecmisi: [{ tarih: bugunStr(-2), sonuc: 'cevap_yok', not: 'Muhasebe ile görüşeceğiz dedi' }, { tarih: bugunStr(-4), sonuc: 'cevap_yok', not: '' }] },
-  { id: 6,  firma_adi: 'Genel Ticaret Ltd.',     cari_ad: 'Hasan Çelik',    telefon: '0532 444 5566', tutar: 28000,  vade_tarihi: bugunStr(7),  oncelik: 'dusuk',  yon: 'tahsilat', durum: 'bekliyor',   arama_durumu: 'aranmadi',   son_arama_tarihi: null,        son_not: null,                              arama_gecmisi: [] },
-  { id: 7,  firma_adi: 'Elçi İnşaat',            cari_ad: 'Selma Öztürk',   telefon: '0555 333 7788', tutar: 67500,  vade_tarihi: bugunStr(-7), oncelik: 'kritik', yon: 'tahsilat', durum: 'ertelendi',  arama_durumu: 'soz_alindi', son_arama_tarihi: bugunStr(-1),son_not: "20 Mart'a erteledi, söz verdi",    arama_gecmisi: [{ tarih: bugunStr(-1), sonuc: 'soz_alindi', not: "20 Mart'a erteledi, söz verdi" }] },
-  { id: 8,  firma_adi: 'Mert Yapı Malz.',         cari_ad: 'Emre Yıldız',    telefon: '0543 999 0011', tutar: 12400,  vade_tarihi: bugunStr(10), oncelik: 'normal', yon: 'tahsilat', durum: 'tamamlandi', arama_durumu: 'tamamlandi', son_arama_tarihi: bugunStr(-1),son_not: 'Ödemeyi banka üzerinden yaptı',    arama_gecmisi: [{ tarih: bugunStr(-1), sonuc: 'tamamlandi', not: 'Ödemeyi banka üzerinden yaptı' }] },
-  { id: 9,  firma_adi: 'Doğan Hırd. San.',        cari_ad: 'Kadir Doğan',    telefon: '0530 777 8899', tutar: 43200,  vade_tarihi: bugunStr(1),  oncelik: 'yuksek', yon: 'tahsilat', durum: 'bekliyor',   arama_durumu: 'aranmadi',   son_arama_tarihi: null,        son_not: null,                              arama_gecmisi: [] },
-  { id: 10, firma_adi: 'Akça Demir Çelik',        cari_ad: 'Nurcan Akça',    telefon: '0555 100 2030', tutar: 198000, vade_tarihi: bugunStr(3),  oncelik: 'kritik', yon: 'tahsilat', durum: 'bekliyor',   arama_durumu: 'soz_alindi', son_arama_tarihi: bugunStr(0), son_not: 'Genel müdür onayı bekleniyor',    arama_gecmisi: [{ tarih: bugunStr(0),  sonuc: 'soz_alindi', not: 'Genel müdür onayı bekleniyor' }] },
-]
-
-const MOCK_KPI = { bu_hafta_vadeli: 7, bekleyen_tutar: 686100, bu_hafta_aranan: 5, gecikmus: 3 }
-
-const MOCK_YASLIMA = [
-  { aralik: '0 – 30 Gün',  tutar: 287500, oran: 41.9, renk: '#059669', bg: 'rgba(5,150,105,0.12)',  border: 'rgba(5,150,105,0.25)' },
-  { aralik: '31 – 60 Gün', tutar: 194200, oran: 28.3, renk: '#f59e0b', bg: 'rgba(245,158,11,0.12)', border: 'rgba(245,158,11,0.25)' },
-  { aralik: '61 – 90 Gün', tutar: 124300, oran: 18.1, renk: '#ea580c', bg: 'rgba(234,88,12,0.12)',  border: 'rgba(234,88,12,0.25)' },
-  { aralik: '90+ Gün',     tutar: 80100,  oran: 11.7, renk: '#ef4444', bg: 'rgba(239,68,68,0.12)',  border: 'rgba(239,68,68,0.25)' },
-]
-
-const MOCK_YAKLASAN = [
-  { id: 1, firma: 'Erdemir A.Ş.',      tur: 'Tedarikçi', tutar: 210000, tarih: bugunStr(2),  ikon: 'bi-truck',        renk: '#3b82f6', bg: 'rgba(59,130,246,0.15)' },
-  { id: 2, firma: 'SGK',                tur: 'Prim',       tutar: 42300,  tarih: bugunStr(5),  ikon: 'bi-building',     renk: '#8b5cf6', bg: 'rgba(139,92,246,0.15)' },
-  { id: 3, firma: 'Kira — Depo',        tur: 'Kira',       tutar: 35000,  tarih: bugunStr(7),  ikon: 'bi-house-door',   renk: '#0891b2', bg: 'rgba(8,145,178,0.15)' },
-  { id: 4, firma: 'KDV Ödemesi',        tur: 'Vergi',      tutar: 28900,  tarih: bugunStr(12), ikon: 'bi-bank',         renk: '#ef4444', bg: 'rgba(239,68,68,0.15)' },
-  { id: 5, firma: 'Personel Maaşları', tur: 'Maaş',       tutar: 127800, tarih: bugunStr(15), ikon: 'bi-people-fill',  renk: '#10b981', bg: 'rgba(16,185,129,0.15)' },
-]
 
 /* ═══════════════════════════════════════════════════════════════
    STILLER — Obsidian Vault Koyu Tema  |  odm- prefix
@@ -523,8 +495,10 @@ function isPulse(k) {
    ═══════════════════════════════════════════════════════════════ */
 
 export default function OdemeTakip() {
+  const navigate = useNavigate()
   const [liste,            setListe]            = useState([])
   const [yukleniyor,       setYukleniyor]       = useState(true)
+  const [apiHatasi,        setApiHatasi]        = useState(false)
   const [aktifFiltre,      setAktifFiltre]      = useState('bu_hafta')
   const [aramaTerm,        setAramaTerm]        = useState('')
   const [debouncedArama,   setDebouncedArama]   = useState('')
@@ -560,11 +534,9 @@ export default function OdemeTakip() {
         const kayitlar = listeRes.data?.veri?.kayitlar || listeRes.data?.veri || []
         // API'den gelen kayıtlarda vade_tarihi = soz_tarihi olabilir
         setListe(kayitlar.map(k => ({ ...k, vade_tarihi: k.vade_tarihi || k.soz_tarihi })))
-        setKpiVerisi(ozetRes.data?.veri || MOCK_KPI)
+        setKpiVerisi(ozetRes.data?.veri || null)
       } catch {
-        // API bağlantısı yoksa mock veri (demo mod)
-        setListe(MOCK_ODEMELER)
-        setKpiVerisi(MOCK_KPI)
+        setApiHatasi(true)
       } finally {
         setYukleniyor(false)
       }
@@ -616,7 +588,7 @@ export default function OdemeTakip() {
     else if (aktifFiltre === 'soz_alindi') { s = s.filter(k => k.arama_durumu === 'soz_alindi') }
     if (debouncedArama.trim()) {
       const q = debouncedArama.toLowerCase()
-      s = s.filter(k => k.firma_adi.toLowerCase().includes(q) || k.cari_ad.toLowerCase().includes(q) || (k.telefon && k.telefon.includes(q)))
+      s = s.filter(k => k.firma_adi.toLowerCase().includes(q) || (k.cari_adi || '').toLowerCase().includes(q) || (k.telefon && k.telefon.includes(q)))
     }
     if (oncelikFiltre)   s = s.filter(k => k.oncelik === oncelikFiltre)
     if (baslangicTarihi) s = s.filter(k => k.vade_tarihi >= baslangicTarihi)
@@ -626,6 +598,54 @@ export default function OdemeTakip() {
       return d !== 0 ? d : a.vade_tarihi.localeCompare(b.vade_tarihi)
     })
   }, [liste, aktifFiltre, debouncedArama, oncelikFiltre, baslangicTarihi, bitisTarihi])
+
+  // Alacak Yaşlandırma — tahsilat kayıtlarından hesaplanır (her bucket: geçen gün)
+  const yaslima = useMemo(() => {
+    const bugun = new Date(); bugun.setHours(0,0,0,0)
+    const alacaklar = liste.filter(k => k.yon === 'tahsilat' && k.durum !== 'tamamlandi' && k.durum !== 'iptal')
+    const toplamTutar = alacaklar.reduce((s, k) => s + (parseFloat(k.tutar) || 0), 0)
+    const buckets = [
+      { aralik: '0 – 30 Gün',  min: 0,  max: 30,          renk: '#059669', bg: 'rgba(5,150,105,0.12)',  border: 'rgba(5,150,105,0.25)' },
+      { aralik: '31 – 60 Gün', min: 31, max: 60,          renk: '#f59e0b', bg: 'rgba(245,158,11,0.12)', border: 'rgba(245,158,11,0.25)' },
+      { aralik: '61 – 90 Gün', min: 61, max: 90,          renk: '#ea580c', bg: 'rgba(234,88,12,0.12)',  border: 'rgba(234,88,12,0.25)' },
+      { aralik: '90+ Gün',     min: 91, max: Infinity,    renk: '#ef4444', bg: 'rgba(239,68,68,0.12)',  border: 'rgba(239,68,68,0.25)' },
+    ]
+    return buckets.map(b => {
+      const tutar = alacaklar
+        .filter(k => {
+          const vade = new Date((k.vade_tarihi || k.soz_tarihi) + 'T00:00:00')
+          const gecenGun = Math.max(0, Math.floor((bugun - vade) / 86400000))
+          return gecenGun >= b.min && gecenGun <= b.max
+        })
+        .reduce((s, k) => s + (parseFloat(k.tutar) || 0), 0)
+      const oran = toplamTutar > 0 ? Math.round((tutar / toplamTutar) * 1000) / 10 : 0
+      return { ...b, tutar, oran }
+    })
+  }, [liste])
+
+  // Yaklaşan Giden Ödemeler — önümüzdeki 15 gün, yon=odeme
+  const yaklasan = useMemo(() => {
+    const bugun = new Date(); bugun.setHours(0,0,0,0)
+    const sonGun = new Date(bugun); sonGun.setDate(bugun.getDate() + 15)
+    return liste
+      .filter(k => {
+        if (k.yon !== 'odeme' || k.durum === 'tamamlandi' || k.durum === 'iptal') return false
+        const v = new Date((k.vade_tarihi || k.soz_tarihi) + 'T00:00:00')
+        return v >= bugun && v <= sonGun
+      })
+      .sort((a, b) => (a.vade_tarihi || a.soz_tarihi).localeCompare(b.vade_tarihi || b.soz_tarihi))
+      .slice(0, 8)
+      .map(k => ({
+        id: k.id,
+        firma: k.firma_adi,
+        tur: 'Ödeme',
+        tutar: parseFloat(k.tutar) || 0,
+        tarih: k.vade_tarihi || k.soz_tarihi,
+        ikon: 'bi-arrow-up-right-circle',
+        renk: '#ef4444',
+        bg: 'rgba(239,68,68,0.15)',
+      }))
+  }, [liste])
 
   const resetModal = () => { setAramaSonucu(null); setAramaNotText(''); setHatirlaticiTarihi('') }
   const modalAc    = (kayit) => { resetModal(); setAramaModaliId(kayit.id) }
@@ -640,20 +660,12 @@ export default function OdemeTakip() {
       const res   = await odemeApi.olustur({ ...yeniForm, tutar })
       const kayit = res.data?.veri || {}
       setListe(prev => [{ ...kayit, vade_tarihi: kayit.vade_tarihi || kayit.soz_tarihi || yeniForm.soz_tarihi, arama_gecmisi: [], arama_durumu: 'aranmadi' }, ...prev])
-    } catch {
-      // API bağlantısı yoksa yerel olarak ekle
-      const mockKayit = {
-        id: Date.now(), ...yeniForm, tutar,
-        vade_tarihi: yeniForm.soz_tarihi,
-        cari_ad: yeniForm.ilgili_kisi || '',
-        durum: 'bekliyor', arama_durumu: 'aranmadi',
-        son_arama_tarihi: null, son_not: null, arama_gecmisi: [],
-      }
-      setListe(prev => [mockKayit, ...prev])
-    } finally {
       setYeniKaydetYukleniyor(false)
       setShowYeniModal(false)
       setYeniForm(BOSH_YENI_FORM)
+    } catch {
+      setYeniKaydetYukleniyor(false)
+      setYeniFormHata('Kayıt kaydedilemedi. Lütfen bağlantınızı kontrol edip tekrar deneyin.')
     }
   }
 
@@ -686,7 +698,8 @@ export default function OdemeTakip() {
     { key: 'gecikmus',        label: 'Gecikmiş Alacak',   icon: 'bi-exclamation-triangle', numColor: '#ef4444' },
   ]
 
-  const toplamYaklasan = MOCK_YAKLASAN.reduce((s, o) => s + o.tutar, 0)
+  const toplamYaslima  = yaslima.reduce((s, b) => s + b.tutar, 0)
+  const toplamYaklasan = yaklasan.reduce((s, o) => s + o.tutar, 0)
   const donemAdi = new Date().toLocaleDateString('tr-TR', { month: 'long', year: 'numeric' })
 
   /* ═══════════════════════════════════════════════════════════════
@@ -695,6 +708,17 @@ export default function OdemeTakip() {
   return (
     <div className="odm-page">
       <style>{STILLER}</style>
+
+      {/* ── API Hata Banner ── */}
+      {apiHatasi && (
+        <div style={{ background: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.25)', borderRadius: 12, padding: '12px 16px', marginBottom: 16, display: 'flex', alignItems: 'center', gap: 10, fontSize: 13, color: '#ef4444' }}>
+          <i className="bi bi-exclamation-triangle-fill" style={{ fontSize: 16, flexShrink: 0 }} />
+          <span>Veriler sunucudan yüklenemedi. Lütfen sayfayı yenileyin.</span>
+          <button onClick={() => navigate(0)} style={{ marginLeft: 'auto', background: 'rgba(239,68,68,0.15)', border: '1px solid rgba(239,68,68,0.3)', color: '#ef4444', borderRadius: 8, padding: '5px 12px', cursor: 'pointer', fontSize: 12, fontFamily: 'Outfit, sans-serif', fontWeight: 600 }}>
+            Yenile
+          </button>
+        </div>
+      )}
 
       {/* ── Sayfa Başlığı ── */}
       <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 22 }}>
@@ -749,7 +773,7 @@ export default function OdemeTakip() {
               <div>
                 <div className="odm-kart-baslik">Alacak Yaşlandırma</div>
                 <div className="odm-kart-aciklama">
-                  Toplam: <strong style={{ color: '#f59e0b', fontFamily: 'Inter, sans-serif' }}>{TL(686100)}</strong>
+                  Toplam: <strong style={{ color: '#f59e0b', fontFamily: 'Inter, sans-serif' }}>{TL(toplamYaslima)}</strong>
                 </div>
               </div>
             </div>
@@ -758,7 +782,7 @@ export default function OdemeTakip() {
             </span>
           </div>
 
-          {MOCK_YASLIMA.map((y) => (
+          {yaslima.map((y) => (
             <div key={y.aralik} className="odm-yas-item">
               <div className="odm-yas-header">
                 <span className="odm-yas-aralik">{y.aralik}</span>
@@ -799,11 +823,16 @@ export default function OdemeTakip() {
             </div>
             <div style={{ textAlign: 'right' }}>
               <div style={{ fontFamily: 'Inter, sans-serif', fontSize: 15, fontWeight: 800, color: '#ef4444', fontVariantNumeric: 'tabular-nums' }}>{TL(toplamYaklasan)}</div>
-              <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.4)', marginTop: 1 }}>{MOCK_YAKLASAN.length} kalem</div>
+              <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.4)', marginTop: 1 }}>{yaklasan.length} kalem</div>
             </div>
           </div>
 
-          {MOCK_YAKLASAN.map((o) => {
+          {yaklasan.length === 0 ? (
+            <div style={{ textAlign: 'center', padding: '28px 16px', color: 'rgba(255,255,255,0.3)', fontSize: 13 }}>
+              <i className="bi bi-check-circle" style={{ fontSize: 24, display: 'block', marginBottom: 8, color: '#10b981' }} />
+              Önümüzdeki 15 günde giden ödeme yok.
+            </div>
+          ) : yaklasan.map((o) => {
             const fark = gunFarki(o.tarih)
             const acil = fark !== null && fark <= 3
             return (
@@ -939,7 +968,7 @@ export default function OdemeTakip() {
 
                               <td>
                                 <div className="odm-firma">{k.firma_adi}</div>
-                                <div className="odm-cari">{k.cari_ad}</div>
+                                <div className="odm-cari">{k.cari_adi}</div>
                               </td>
 
                               <td>
@@ -1032,7 +1061,7 @@ export default function OdemeTakip() {
                       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 9 }}>
                         <div>
                           <div className="odm-firma">{k.firma_adi}</div>
-                          <div className="odm-cari">{k.cari_ad}</div>
+                          <div className="odm-cari">{k.cari_adi}</div>
                         </div>
                         <div style={{ fontFamily: 'Inter, sans-serif', fontWeight: 700, fontSize: 14, color: k.durum === 'tamamlandi' ? '#10b981' : 'rgba(255,255,255,0.85)', fontVariantNumeric: 'tabular-nums' }}>
                           {TL(k.tutar)}
@@ -1083,7 +1112,7 @@ export default function OdemeTakip() {
                     <div style={{ fontFamily: 'Outfit, sans-serif', fontSize: 14, fontWeight: 700, color: '#ffffff', letterSpacing: '-0.28px' }}>
                       {secilenKayit.firma_adi}
                     </div>
-                    <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.45)', marginTop: 1 }}>{secilenKayit.cari_ad}</div>
+                    <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.45)', marginTop: 1 }}>{secilenKayit.cari_adi}</div>
                   </div>
                 </div>
                 <button className="odm-kapat-btn" onClick={() => setSecilenKayitId(null)}>
@@ -1196,7 +1225,7 @@ export default function OdemeTakip() {
                 <div>
                   <div style={{ fontSize: 17, fontWeight: 800, color: '#fff' }}>Arama Kaydı</div>
                   <div style={{ fontSize: 11, fontWeight: 600, color: 'rgba(255,255,255,0.45)' }}>
-                    {aramaModali.firma_adi} — {aramaModali.cari_ad}
+                    {aramaModali.firma_adi} — {aramaModali.cari_adi}
                   </div>
                 </div>
               </div>

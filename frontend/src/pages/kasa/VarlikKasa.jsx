@@ -13,6 +13,7 @@ import {
   hareketleriGetir, hareketEkle, hareketSil,
   yatirimlariGetir, yatirimEkle, yatirimGuncelle as yatirimGuncelleApi, yatirimSil,
   ortaklariGetir, ortakHareketEkle, ortakHareketSil,
+  bilancoListele, bilancoKaydet, bilancoGuncelle, bilancoSil,
 } from '../../api/kasa'
 
 // ─── Yardımcılar ──────────────────────────────────────────────────────────────
@@ -346,7 +347,7 @@ function NakitModal({ open, onClose, initialTur, onKaydet, hareketler }) {
           {/* Başlık */}
           <div style={{ padding:'18px 24px', borderBottom:'2px solid #f59e0b', display:'flex', alignItems:'center', justifyContent:'space-between', flexShrink:0 }}>
             <span style={{ fontSize:17, fontWeight:800, color:'#ffffff' }}>Yeni İşlem Ekle</span>
-            <button onClick={onClose} style={{ background:'rgba(255,255,255,0.1)', border:'none', cursor:'pointer', color:'rgba(255,255,255,0.7)', fontSize:18, width:32, height:32, borderRadius:8, display:'flex', alignItems:'center', justifyContent:'center', transition:'all 0.2s' }}>
+            <button onClick={onClose} style={{ background:'rgba(255,255,255,0.1)', border:'none', cursor:'pointer', color:'rgba(255,255,255,0.7)', fontSize:18, width:44, height:44, borderRadius:8, display:'flex', alignItems:'center', justifyContent:'center', transition:'all 0.2s' }}>
               <i className="bi bi-x-lg" />
             </button>
           </div>
@@ -718,7 +719,7 @@ function AyKapanisModal({ open, onClose, kapanislar, onKaydet, yatirimGuncelDege
             <button onClick={onClose} className="kasa-modal-close" style={{
               background:'rgba(255,255,255,0.08)', border:'1px solid rgba(255,255,255,0.1)',
               cursor:'pointer', color:'rgba(255,255,255,0.6)', fontSize:16,
-              width:36, height:36, borderRadius:10,
+              width:44, height:44, borderRadius:10,
               display:'flex', alignItems:'center', justifyContent:'center', transition:'all 0.2s'
             }}>
               <i className="bi bi-x-lg" />
@@ -926,16 +927,43 @@ function AylikBilanco({ kapanislar, setKapanislar, yatirimGuncelDeger = 0 }) {
   const acEkle     = () => { setDuzenlenenKapanis(null); setModalAcik(true) }
   const acDuzenle  = (k) => { setDuzenlenenKapanis(k);   setModalAcik(true) }
 
-  const kaydet = (yeni) => {
+  const kaydet = async (yeni) => {
     if (duzenlenenKapanis) {
+      const onceki = kapanislar.find(k => k.id === duzenlenenKapanis.id)
       setKapanislar(prev => prev.map(k => k.id === duzenlenenKapanis.id ? { ...yeni, id: duzenlenenKapanis.id } : k))
+      setDuzenlenenKapanis(null)
+      try {
+        await bilancoGuncelle(duzenlenenKapanis.id, yeni)
+      } catch {
+        if (onceki) setKapanislar(prev => prev.map(k => k.id === duzenlenenKapanis.id ? onceki : k))
+        toast.error('Güncelleme kaydedilemedi.')
+      }
     } else {
-      setKapanislar(prev => [...prev, yeni])
+      const geciciId = Date.now()
+      setKapanislar(prev => [...prev, { ...yeni, id: geciciId }])
       setSayfa(1)
+      setDuzenlenenKapanis(null)
+      try {
+        const res = await bilancoKaydet(yeni)
+        const gercekId = res.data?.veri?.id
+        if (gercekId) setKapanislar(prev => prev.map(k => k.id === geciciId ? { ...k, id: gercekId } : k))
+      } catch {
+        setKapanislar(prev => prev.filter(k => k.id !== geciciId))
+        toast.error('Kayıt kaydedilemedi.')
+      }
     }
-    setDuzenlenenKapanis(null)
   }
-  const sil = (id) => { setKapanislar(prev => prev.filter(k => k.id !== id)); setSilOnayId(null) }
+  const sil = async (id) => {
+    const yedek = kapanislar.find(k => k.id === id)
+    setKapanislar(prev => prev.filter(k => k.id !== id))
+    setSilOnayId(null)
+    try {
+      await bilancoSil(id)
+    } catch {
+      if (yedek) setKapanislar(prev => [...prev, yedek])
+      toast.error('Kayıt silinemedi.')
+    }
+  }
 
   return (
     <div>
@@ -1135,13 +1163,13 @@ function AylikBilanco({ kapanislar, setKapanislar, yatirimGuncelDeger = 0 }) {
                     ) : (
                       <div className="d-flex gap-1 justify-content-end">
                         <button onClick={() => acDuzenle(k)}
-                          style={{ background:'none', border:'1px solid rgba(255,255,255,0.1)', borderRadius:8, width:34, height:34, padding:0, cursor:'pointer', display:'inline-flex', alignItems:'center', justifyContent:'center', transition:'all 0.15s' }}
+                          style={{ background:'none', border:'1px solid rgba(255,255,255,0.1)', borderRadius:8, width:44, height:44, padding:0, cursor:'pointer', display:'inline-flex', alignItems:'center', justifyContent:'center', transition:'all 0.15s' }}
                           onMouseEnter={e => { e.currentTarget.style.borderColor='#f59e0b'; e.currentTarget.style.background='rgba(245,158,11,0.1)' }}
                           onMouseLeave={e => { e.currentTarget.style.borderColor='rgba(255,255,255,0.1)'; e.currentTarget.style.background='none' }}>
                           <i className="bi bi-pencil" style={{ fontSize:13, color:'#f59e0b' }} />
                         </button>
                         <button onClick={() => setSilOnayId(k.id)}
-                          style={{ background:'rgba(239,68,68,0.08)', border:'1px solid rgba(239,68,68,0.2)', borderRadius:8, width:34, height:34, padding:0, cursor:'pointer', display:'inline-flex', alignItems:'center', justifyContent:'center', transition:'border-color 0.15s' }}
+                          style={{ background:'rgba(239,68,68,0.08)', border:'1px solid rgba(239,68,68,0.2)', borderRadius:8, width:44, height:44, padding:0, cursor:'pointer', display:'inline-flex', alignItems:'center', justifyContent:'center', transition:'border-color 0.15s' }}
                           onMouseEnter={e => { e.currentTarget.style.borderColor='#dc2626' }}
                           onMouseLeave={e => { e.currentTarget.style.borderColor='rgba(239,68,68,0.2)' }}>
                           <i className="bi bi-trash3" style={{ fontSize:13, color:'#dc2626' }} />
@@ -1251,7 +1279,7 @@ function OrtakModal({ open, onClose, mevcutOrtaklar, onKaydet }) {
                 <div style={{ fontSize:11, fontWeight:600, color:'rgba(255,255,255,0.45)', letterSpacing:'0.03em' }}>Ortak cari hareketi kaydı</div>
               </div>
             </div>
-            <button onClick={onClose} style={{ background:'rgba(255,255,255,0.08)', border:'1px solid rgba(255,255,255,0.1)', cursor:'pointer', color:'rgba(255,255,255,0.6)', fontSize:16, width:36, height:36, borderRadius:10, display:'flex', alignItems:'center', justifyContent:'center', transition:'all 0.2s' }}
+            <button onClick={onClose} style={{ background:'rgba(255,255,255,0.08)', border:'1px solid rgba(255,255,255,0.1)', cursor:'pointer', color:'rgba(255,255,255,0.6)', fontSize:16, width:44, height:44, borderRadius:10, display:'flex', alignItems:'center', justifyContent:'center', transition:'all 0.2s' }}
               onMouseEnter={e => { e.currentTarget.style.background='rgba(255,255,255,0.15)'; e.currentTarget.style.color='#fff' }}
               onMouseLeave={e => { e.currentTarget.style.background='rgba(255,255,255,0.08)'; e.currentTarget.style.color='rgba(255,255,255,0.6)' }}>
               <i className="bi bi-x-lg" />
@@ -2281,7 +2309,7 @@ function KategoriDetayModal({ show, onClose, kategori, tip, hareketler }) {
                 {girismi ? 'Giriş' : 'Çıkış'}
               </span>
             </div>
-            <button onClick={onClose} style={{ background:'rgba(255,255,255,0.1)', border:'none', cursor:'pointer', color:'rgba(255,255,255,0.7)', fontSize:18, width:32, height:32, borderRadius:8, display:'flex', alignItems:'center', justifyContent:'center', transition:'all 0.2s', flexShrink:0 }}>
+            <button onClick={onClose} style={{ background:'rgba(255,255,255,0.1)', border:'none', cursor:'pointer', color:'rgba(255,255,255,0.7)', fontSize:18, width:44, height:44, borderRadius:8, display:'flex', alignItems:'center', justifyContent:'center', transition:'all 0.2s', flexShrink:0 }}>
               <i className="bi bi-x-lg" />
             </button>
           </div>
@@ -2768,7 +2796,7 @@ function YatirimModal({ open, onClose, onKaydet, duzenlenen }) {
                 <div style={{ fontSize:11, fontWeight:600, color:'rgba(255,255,255,0.45)', letterSpacing:'0.03em' }}>Döviz, altın ve diğer birikimler</div>
               </div>
             </div>
-            <button onClick={onClose} style={{ background:'rgba(255,255,255,0.08)', border:'1px solid rgba(255,255,255,0.1)', cursor:'pointer', color:'rgba(255,255,255,0.6)', fontSize:16, width:36, height:36, borderRadius:10, display:'flex', alignItems:'center', justifyContent:'center', transition:'all 0.2s' }}
+            <button onClick={onClose} style={{ background:'rgba(255,255,255,0.08)', border:'1px solid rgba(255,255,255,0.1)', cursor:'pointer', color:'rgba(255,255,255,0.6)', fontSize:16, width:44, height:44, borderRadius:10, display:'flex', alignItems:'center', justifyContent:'center', transition:'all 0.2s' }}
               onMouseEnter={e => { e.currentTarget.style.background='rgba(255,255,255,0.15)'; e.currentTarget.style.color='#fff' }}
               onMouseLeave={e => { e.currentTarget.style.background='rgba(255,255,255,0.08)'; e.currentTarget.style.color='rgba(255,255,255,0.6)' }}>
               <i className="bi bi-x-lg" />
@@ -2924,7 +2952,7 @@ function FiyatGuncelleModal({ open, onClose, yatirimlar, onGuncelle }) {
                 <div style={{ fontSize:11, fontWeight:600, color:'rgba(255,255,255,0.45)', letterSpacing:'0.03em' }}>Kâr/zarar hesabı için güncel fiyatları girin</div>
               </div>
             </div>
-            <button onClick={onClose} style={{ background:'rgba(255,255,255,0.08)', border:'1px solid rgba(255,255,255,0.1)', cursor:'pointer', color:'rgba(255,255,255,0.6)', fontSize:16, width:36, height:36, borderRadius:10, display:'flex', alignItems:'center', justifyContent:'center', transition:'all 0.2s' }}
+            <button onClick={onClose} style={{ background:'rgba(255,255,255,0.08)', border:'1px solid rgba(255,255,255,0.1)', cursor:'pointer', color:'rgba(255,255,255,0.6)', fontSize:16, width:44, height:44, borderRadius:10, display:'flex', alignItems:'center', justifyContent:'center', transition:'all 0.2s' }}
               onMouseEnter={e => { e.currentTarget.style.background='rgba(255,255,255,0.15)'; e.currentTarget.style.color='#fff' }}
               onMouseLeave={e => { e.currentTarget.style.background='rgba(255,255,255,0.08)'; e.currentTarget.style.color='rgba(255,255,255,0.6)' }}>
               <i className="bi bi-x-lg" />
@@ -3232,13 +3260,13 @@ function YatirimKalesi({ yatirimlar, setYatirimlar }) {
                               ) : (
                                 <div className="d-flex gap-1">
                                   <button onClick={() => acDuzenle(y)}
-                                    style={{ background:'none', border:'1px solid rgba(255,255,255,0.1)', borderRadius:8, width:32, height:32, padding:0, cursor:'pointer', display:'inline-flex', alignItems:'center', justifyContent:'center', transition:'all 0.15s' }}
+                                    style={{ background:'none', border:'1px solid rgba(255,255,255,0.1)', borderRadius:8, width:44, height:44, padding:0, cursor:'pointer', display:'inline-flex', alignItems:'center', justifyContent:'center', transition:'all 0.15s' }}
                                     onMouseEnter={e => { e.currentTarget.style.borderColor='#f59e0b' }}
                                     onMouseLeave={e => { e.currentTarget.style.borderColor='rgba(255,255,255,0.1)' }}>
                                     <i className="bi bi-pencil" style={{ fontSize:12, color:'#f59e0b' }} />
                                   </button>
                                   <button onClick={() => setSilOnayId(y.id)}
-                                    style={{ background:'none', border:'1px solid rgba(255,255,255,0.1)', borderRadius:8, width:32, height:32, padding:0, cursor:'pointer', display:'inline-flex', alignItems:'center', justifyContent:'center', transition:'all 0.15s' }}
+                                    style={{ background:'none', border:'1px solid rgba(255,255,255,0.1)', borderRadius:8, width:44, height:44, padding:0, cursor:'pointer', display:'inline-flex', alignItems:'center', justifyContent:'center', transition:'all 0.15s' }}
                                     onMouseEnter={e => { e.currentTarget.style.borderColor='#dc2626'; e.currentTarget.style.color='#dc2626' }}
                                     onMouseLeave={e => { e.currentTarget.style.borderColor='rgba(255,255,255,0.1)'; e.currentTarget.style.color='rgba(255,255,255,0.35)' }}>
                                     <i className="bi bi-trash3" style={{ fontSize:12, color:'#dc2626' }} />
@@ -3322,12 +3350,13 @@ export default function VarlikKasa() {
   const [yatirimlar,      setYatirimlar]      = useState([])
   const [yukleniyor,      setYukleniyor]      = useState(true)
 
-  // Yatırımlar ve ortak hareketler: sadece bir kez yükle
+  // Yatırımlar, ortak hareketler ve bilanço: sadece bir kez yükle
   useEffect(() => {
-    Promise.all([yatirimlariGetir(), ortaklariGetir()])
-      .then(([yRes, oRes]) => {
+    Promise.all([yatirimlariGetir(), ortaklariGetir(), bilancoListele()])
+      .then(([yRes, oRes, bRes]) => {
         if (yRes.data.basarili) setYatirimlar(yRes.data.veri.yatirimlar ?? [])
         if (oRes.data.basarili) setOrtakHareketler(oRes.data.veri.ortaklar ?? [])
+        if (bRes.data.basarili) setKapanislar(bRes.data.veri.kapanislar ?? [])
       })
       .catch(() => {})
   }, [])
@@ -3649,7 +3678,7 @@ export default function VarlikKasa() {
         }
         .kasa-modal-close {
           background: rgba(255,255,255,0.1); border: none;
-          color: rgba(255,255,255,0.7); width: 32px; height: 32px;
+          color: rgba(255,255,255,0.7); width: 44px; height: 44px;
           border-radius: 8px; cursor: pointer;
           display: flex; align-items: center; justify-content: center;
           transition: all 0.2s;
@@ -3662,7 +3691,7 @@ export default function VarlikKasa() {
         .kasa-sil-btn {
           background: rgba(239,68,68,0.15); color: #ef4444;
           border: 1px solid rgba(239,68,68,0.3);
-          border-radius: 6px; padding: 4px 12px;
+          border-radius: 6px; padding: 0 14px; min-height: 44px;
           font-size: 12px; font-weight: 700; cursor: pointer;
           transition: all 0.15s;
         }
@@ -3671,13 +3700,13 @@ export default function VarlikKasa() {
           background: rgba(255,255,255,0.06);
           border: 1px solid rgba(255,255,255,0.1);
           color: rgba(255,255,255,0.6);
-          border-radius: 6px; padding: 4px 12px;
+          border-radius: 6px; padding: 0 14px; min-height: 44px;
           font-size: 12px; font-weight: 600; cursor: pointer;
         }
 
         /* ─── Sayfalama ─── */
         .kasa-sayfa-btn {
-          border-radius: 8px; min-width: 36px; min-height: 36px;
+          border-radius: 8px; min-width: 44px; min-height: 44px;
           border: 1px solid rgba(255,255,255,0.1);
           background: rgba(255,255,255,0.04); color: rgba(255,255,255,0.6);
           font-weight: 600; cursor: pointer; transition: all 0.15s;
@@ -3695,7 +3724,7 @@ export default function VarlikKasa() {
         .kasa-islem-btn {
           background: rgba(255,255,255,0.04);
           border: 1px solid rgba(255,255,255,0.1);
-          border-radius: 8px; width: 34px; height: 34px;
+          border-radius: 8px; width: 44px; height: 44px;
           padding: 0; cursor: pointer;
           display: inline-flex; align-items: center; justify-content: center;
           transition: all 0.15s;

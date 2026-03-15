@@ -3,10 +3,7 @@
 // KasaController.php — Varlık & Kasa API Kontrol Merkezi
 // Finans Kalesi SaaS — Aşama 1.9
 //
-// Her istek: JWT doğrulama + X-Kasa-Sifre header zorunlu
-// (sifre-kur ve sifre-dogrula endpoint'leri hariç)
-//
-// UYARI: Kasa şifresi loglanmaz, response'ta gönderilmez!
+// Her istek: JWT doğrulama zorunlu.
 // =============================================================
 
 class KasaController {
@@ -16,126 +13,10 @@ class KasaController {
         $this->db = $db;
     }
 
-    // DEVRE DIŞI — Şifre sistemi kaldırıldı (Sprint 2C-4b)
-    // Kasa şifresini header'dan al ve KriptoHelper oluştur
-    // Şifre yanlışsa null döner
-    private function kripto_olustur($sirket_id, $kasa_sifre) {
-        if (empty($kasa_sifre)) {
-            return null;
-        }
-
-        // Geçici Kasa nesnesi (kripto olmadan) — sadece sifre_bilgileri_al için
-        $gecici = new Kasa($this->db, null);
-        $bilgiler = $gecici->sifre_bilgileri_al($sirket_id);
-
-        if (!$bilgiler || empty($bilgiler['kasa_sifre_hash'])) {
-            return null; // Şifre kurulmamış
-        }
-
-        if (!KriptoHelper::sifre_dogrula($kasa_sifre, $bilgiler['kasa_sifre_hash'], $bilgiler['kasa_salt'])) {
-            return null; // Yanlış şifre
-        }
-
-        return new KriptoHelper($kasa_sifre, $bilgiler['kasa_salt']);
-    }
-
-    // DEVRE DIŞI — Şifre sistemi kaldırıldı (Sprint 2C-4b)
-    // X-Kasa-Sifre header'ını al
-    private function kasa_sifre_al() {
-        if (isset($_SERVER['HTTP_X_KASA_SIFRE'])) {
-            return $_SERVER['HTTP_X_KASA_SIFRE'];
-        }
-        // Apache bazı header'ları farklı isimlendirir
-        if (function_exists('getallheaders')) {
-            $headers = getallheaders();
-            if (isset($headers['X-Kasa-Sifre'])) return $headers['X-Kasa-Sifre'];
-            if (isset($headers['x-kasa-sifre'])) return $headers['x-kasa-sifre'];
-        }
-        return null;
-    }
-
-    // DEVRE DIŞI — Şifre sistemi kaldırıldı (Sprint 2C-4b)
-    // ─── POST /api/kasa/sifre-kur ───
-    // İlk kez kasa şifresi oluştur
-    public function sifre_kur($payload, $girdi) {
-        try {
-            $gecici = new Kasa($this->db, null);
-
-            if ($gecici->sifre_kurulu_mu($payload['sirket_id'])) {
-                Response::hata('Kasa sifresi zaten kurulu. Degistirmek icin yoneticiyle iletisime gecin.', 422);
-                return;
-            }
-
-            $veri = $girdi;
-
-            if (empty($veri['kasa_sifre'])) {
-                Response::dogrulama_hatasi(array('kasa_sifre' => 'Kasa sifresi zorunludur'));
-                return;
-            }
-
-            if (strlen($veri['kasa_sifre']) < 6) {
-                Response::dogrulama_hatasi(array('kasa_sifre' => 'Kasa sifresi en az 6 karakter olmalidir'));
-                return;
-            }
-
-            if ($veri['kasa_sifre'] !== (isset($veri['kasa_sifre_tekrar']) ? $veri['kasa_sifre_tekrar'] : '')) {
-                Response::dogrulama_hatasi(array('kasa_sifre_tekrar' => 'Sifreler eslesmiyor'));
-                return;
-            }
-
-            // Model içinde doğru salt oluşturulur — null kripto ile başlat
-            $kasa = new Kasa($this->db, null);
-            $basarili = $kasa->sifre_kur($payload['sirket_id'], $veri['kasa_sifre']);
-
-            if ($basarili) {
-                Response::basarili(null, 'Kasa sifresi basariyla olusturuldu');
-            } else {
-                Response::sunucu_hatasi('Kasa sifresi olusturulamadi');
-            }
-        } catch (Exception $e) {
-            error_log('Kasa sifre_kur hatasi: ' . $e->getMessage());
-            Response::sunucu_hatasi('Kasa sifresi olusturulamadi');
-        }
-    }
-
-    // DEVRE DIŞI — Şifre sistemi kaldırıldı (Sprint 2C-4b)
-    // ─── POST /api/kasa/dogrula ───
-    // Şifreyi doğrula — doğruysa basarili döner
-    public function dogrula($payload, $girdi) {
-        try {
-            $veri = $girdi;
-            $kasa_sifre = isset($veri['kasa_sifre']) ? $veri['kasa_sifre'] : null;
-
-            if (empty($kasa_sifre)) {
-                Response::dogrulama_hatasi(array('kasa_sifre' => 'Kasa sifresi zorunludur'));
-                return;
-            }
-
-            $gecici = new Kasa($this->db, null);
-
-            if (!$gecici->sifre_kurulu_mu($payload['sirket_id'])) {
-                Response::hata('Kasa sifresi henuz kurulmamis', 422);
-                return;
-            }
-
-            $kripto = $this->kripto_olustur($payload['sirket_id'], $kasa_sifre);
-
-            if (!$kripto) {
-                Response::yetkisiz('Kasa sifresi yanlis');
-                return;
-            }
-
-            Response::basarili(null, 'Kasa sifresi dogrulandi');
-        } catch (Exception $e) {
-            error_log('Kasa dogrula hatasi: ' . $e->getMessage());
-            Response::sunucu_hatasi('Dogrulama basarisiz');
-        }
-    }
-
     // ─── GET /api/kasa/ozet ───
     public function ozet($payload) {
         try {
-            $kasa = new Kasa($this->db, null);
+            $kasa = new Kasa($this->db);
             $sonuc = $kasa->ozet($payload['sirket_id']);
             Response::basarili($sonuc);
         } catch (Exception $e) {
@@ -156,7 +37,7 @@ class KasaController {
                 'adet'             => isset($_GET['adet']) ? $_GET['adet'] : 50,
             );
 
-            $kasa = new Kasa($this->db, null);
+            $kasa = new Kasa($this->db);
             $sonuc = $kasa->hareketler_listele($payload['sirket_id'], $filtreler);
             Response::basarili($sonuc);
         } catch (Exception $e) {
@@ -185,7 +66,7 @@ class KasaController {
                 return;
             }
 
-            $kasa = new Kasa($this->db, null);
+            $kasa = new Kasa($this->db);
             $sonuc = $kasa->hareket_ekle($payload['sirket_id'], $veri, $payload['sub']);
 
             Response::basarili($sonuc, 'Hareket kaydedildi', 201);
@@ -198,7 +79,7 @@ class KasaController {
     // ─── DELETE /api/kasa/hareketler/{id} ───
     public function hareket_sil($payload, $hareket_id) {
         try {
-            $kasa = new Kasa($this->db, null);
+            $kasa = new Kasa($this->db);
             $yeni_bakiye = $kasa->hareket_sil($payload['sirket_id'], $hareket_id);
 
             if ($yeni_bakiye === false) {
@@ -216,7 +97,7 @@ class KasaController {
     // ─── GET /api/kasa/yatirimlar ───
     public function yatirimlar_listele($payload) {
         try {
-            $kasa = new Kasa($this->db, null);
+            $kasa = new Kasa($this->db);
             $yatirimlar = $kasa->yatirimlar_listele($payload['sirket_id']);
             Response::basarili(array('yatirimlar' => $yatirimlar));
         } catch (Exception $e) {
@@ -248,7 +129,7 @@ class KasaController {
                 return;
             }
 
-            $kasa = new Kasa($this->db, null);
+            $kasa = new Kasa($this->db);
             $yatirim_id = $kasa->yatirim_ekle($payload['sirket_id'], $veri);
 
             Response::basarili(array('id' => $yatirim_id), 'Yatirim kaydedildi', 201);
@@ -271,7 +152,7 @@ class KasaController {
                 $veri['kategori'] = $veri['varlık_tipi'];
             }
 
-            $kasa = new Kasa($this->db, null);
+            $kasa = new Kasa($this->db);
             $basarili = $kasa->yatirim_guncelle($payload['sirket_id'], $yatirim_id, $veri);
 
             if (!$basarili) {
@@ -289,7 +170,7 @@ class KasaController {
     // ─── DELETE /api/kasa/yatirimlar/{id} ───
     public function yatirim_sil($payload, $yatirim_id) {
         try {
-            $kasa = new Kasa($this->db, null);
+            $kasa = new Kasa($this->db);
             $basarili = $kasa->yatirim_sil($payload['sirket_id'], $yatirim_id);
 
             if (!$basarili) {
@@ -314,7 +195,7 @@ class KasaController {
                 'adet'       => isset($_GET['adet']) ? $_GET['adet'] : 50,
             );
 
-            $kasa = new Kasa($this->db, null);
+            $kasa = new Kasa($this->db);
             $sonuc = $kasa->ortaklar_listele($payload['sirket_id'], $filtreler);
             Response::basarili($sonuc);
         } catch (Exception $e) {
@@ -343,7 +224,7 @@ class KasaController {
                 return;
             }
 
-            $kasa = new Kasa($this->db, null);
+            $kasa = new Kasa($this->db);
             $id = $kasa->ortak_hareket_ekle($payload['sirket_id'], $veri, $payload['sub']);
 
             Response::basarili(array('id' => $id), 'Ortak hareketi kaydedildi', 201);
@@ -356,7 +237,7 @@ class KasaController {
     // ─── DELETE /api/kasa/ortaklar/{id} ───
     public function ortak_hareket_sil($payload, $hareket_id) {
         try {
-            $kasa = new Kasa($this->db, null);
+            $kasa = new Kasa($this->db);
             $basarili = $kasa->ortak_hareket_sil($payload['sirket_id'], $hareket_id);
 
             if (!$basarili) {
@@ -368,6 +249,77 @@ class KasaController {
         } catch (Exception $e) {
             error_log('Kasa ortak_hareket_sil hatasi: ' . $e->getMessage());
             Response::sunucu_hatasi('Ortak hareketi silinemedi');
+        }
+    }
+
+    // ─── GET /api/kasa/bilanco ───
+    public function bilanco_listele($payload) {
+        try {
+            $kasa = new Kasa($this->db);
+            $sonuc = $kasa->bilanco_listele($payload['sirket_id']);
+            Response::basarili($sonuc);
+        } catch (Exception $e) {
+            error_log('Kasa bilanco_listele hatasi: ' . $e->getMessage());
+            Response::sunucu_hatasi('Bilancolar alinamadi');
+        }
+    }
+
+    // ─── POST /api/kasa/bilanco ───
+    public function bilanco_kaydet($payload, $girdi) {
+        try {
+            if (empty($girdi['donem'])) {
+                Response::dogrulama_hatasi(array('donem' => 'Donem zorunludur'));
+                return;
+            }
+
+            $kasa = new Kasa($this->db);
+            $id = $kasa->bilanco_kaydet($payload['sirket_id'], $girdi);
+
+            Response::basarili(array('id' => $id), 'Ay kapanisi kaydedildi', 201);
+        } catch (Exception $e) {
+            error_log('Kasa bilanco_kaydet hatasi: ' . $e->getMessage());
+            // Muhtemelen UNIQUE constraint ihlali (aynı dönem tekrar)
+            if (strpos($e->getMessage(), 'Duplicate') !== false) {
+                Response::hata('Bu donem icin zaten kayit var', 409);
+            } else {
+                Response::sunucu_hatasi('Bilanco kaydedilemedi');
+            }
+        }
+    }
+
+    // ─── PUT /api/kasa/bilanco/{id} ───
+    public function bilanco_guncelle($payload, $bilanco_id, $girdi) {
+        try {
+            $kasa = new Kasa($this->db);
+            $basarili = $kasa->bilanco_guncelle($payload['sirket_id'], $bilanco_id, $girdi);
+
+            if (!$basarili) {
+                Response::bulunamadi('Bilanco bulunamadi');
+                return;
+            }
+
+            Response::basarili(null, 'Bilanco guncellendi');
+        } catch (Exception $e) {
+            error_log('Kasa bilanco_guncelle hatasi: ' . $e->getMessage());
+            Response::sunucu_hatasi('Bilanco guncellenemedi');
+        }
+    }
+
+    // ─── DELETE /api/kasa/bilanco/{id} ───
+    public function bilanco_sil($payload, $bilanco_id) {
+        try {
+            $kasa = new Kasa($this->db);
+            $basarili = $kasa->bilanco_sil($payload['sirket_id'], $bilanco_id);
+
+            if (!$basarili) {
+                Response::bulunamadi('Bilanco bulunamadi');
+                return;
+            }
+
+            Response::basarili(null, 'Bilanco silindi');
+        } catch (Exception $e) {
+            error_log('Kasa bilanco_sil hatasi: ' . $e->getMessage());
+            Response::sunucu_hatasi('Bilanco silinemedi');
         }
     }
 }

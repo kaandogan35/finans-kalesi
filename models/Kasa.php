@@ -1,10 +1,10 @@
 <?php
 // =============================================================
 // Kasa.php — Varlık & Kasa Veritabanı İşlemleri (Model)
-// Finans Kalesi SaaS — Aşama 1.9 (Soft Delete + VIP Şifreleme)
+// Finans Kalesi SaaS — Aşama 1.9 (Soft Delete + AES-256-GCM)
 //
-// Tüm hassas veriler kullanıcının kasa şifresiyle AES-256-GCM
-// ile şifreli saklanır. KriptoHelper ile şifreleme/çözme yapılır.
+// Tüm hassas veriler SistemKripto (APP_ENCRYPTION_KEY) ile
+// AES-256-GCM şifreli saklanır.
 // UYARI: Bu modelde hiçbir plaintext değer loglanmamalı!
 //
 // Kapsam: kasa_hareketler, fiziki_kasa, yatirim_kasasi, ortak_carisi
@@ -12,26 +12,18 @@
 
 class Kasa {
     private $db;
-    private $kripto; // KriptoHelper instance
 
-    public function __construct($db, $kripto) {
-        $this->db     = $db;
-        $this->kripto = $kripto;
+    public function __construct($db) {
+        $this->db = $db;
     }
 
-    // Şifreleme yardımcısı — KriptoHelper varsa onu, yoksa SistemKripto'yu kullan
+    // Şifreleme yardımcısı
     private function sifrele($metin) {
-        if ($this->kripto) {
-            return $this->kripto->sifrele($metin);
-        }
         return SistemKripto::sifrele($metin);
     }
 
-    // Çözme yardımcısı — KriptoHelper varsa onu, yoksa SistemKripto'yu kullan
+    // Çözme yardımcısı
     private function coz($sifrelenmis) {
-        if ($this->kripto) {
-            return $this->kripto->coz($sifrelenmis);
-        }
         return SistemKripto::coz($sifrelenmis);
     }
 
@@ -472,6 +464,116 @@ class Kasa {
     }
 
     // ─────────────────────────────────────────────────
+    // AYLIK BİLANÇO
+    // ─────────────────────────────────────────────────
+
+    // Tüm bilançoları listele (çözülmüş)
+    public function bilanco_listele($sirket_id) {
+        $sql = "SELECT id, donem, kar_marji, olusturma_tarihi,
+                       donem_basi_stok_sifreli, kesilen_fatura_sifreli,
+                       gelen_alis_sifreli, alacaklar_sifreli, borclar_sifreli,
+                       banka_nakdi_sifreli, yatirim_birikimi_sifreli,
+                       smm_sifreli, sanal_stok_sifreli, net_varlik_sifreli
+                FROM ay_kapanislar
+                WHERE sirket_id = ?
+                ORDER BY donem ASC";
+        $stmt = $this->db->prepare($sql);
+        $stmt->execute([$sirket_id]);
+        $satirlar = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+        $liste = array();
+        foreach ($satirlar as $s) {
+            $liste[] = array(
+                'id'              => $s['id'],
+                'donem'           => $s['donem'],
+                'kar_marji'       => (float)$s['kar_marji'],
+                'donem_basi_stok' => (float)($this->coz($s['donem_basi_stok_sifreli']) ?? 0),
+                'kesilen_fatura'  => (float)($this->coz($s['kesilen_fatura_sifreli'])  ?? 0),
+                'gelen_alis'      => (float)($this->coz($s['gelen_alis_sifreli'])      ?? 0),
+                'alacaklar'       => (float)($this->coz($s['alacaklar_sifreli'])       ?? 0),
+                'borclar'         => (float)($this->coz($s['borclar_sifreli'])         ?? 0),
+                'banka_nakdi'     => (float)($this->coz($s['banka_nakdi_sifreli'])     ?? 0),
+                'yatirim_birikimi'=> (float)($this->coz($s['yatirim_birikimi_sifreli'])  ?? 0),
+                'smm'             => (float)($this->coz($s['smm_sifreli'])             ?? 0),
+                'sanal_stok'      => (float)($this->coz($s['sanal_stok_sifreli'])      ?? 0),
+                'net_varlik'      => (float)($this->coz($s['net_varlik_sifreli'])      ?? 0),
+                'olusturma_tarihi'=> $s['olusturma_tarihi'],
+            );
+        }
+        return array('kapanislar' => $liste);
+    }
+
+    // Yeni ay kapanışı kaydet
+    public function bilanco_kaydet($sirket_id, $veri) {
+        $sql = "INSERT INTO ay_kapanislar
+                (sirket_id, donem, kar_marji,
+                 donem_basi_stok_sifreli, kesilen_fatura_sifreli,
+                 gelen_alis_sifreli, alacaklar_sifreli, borclar_sifreli,
+                 banka_nakdi_sifreli, yatirim_birikimi_sifreli,
+                 smm_sifreli, sanal_stok_sifreli, net_varlik_sifreli)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
+        $stmt = $this->db->prepare($sql);
+        $stmt->execute([
+            $sirket_id,
+            $veri['donem'],
+            isset($veri['kar_marji']) ? (float)$veri['kar_marji'] : 35,
+            $this->sifrele((string)($veri['donem_basi_stok']  ?? 0)),
+            $this->sifrele((string)($veri['kesilen_fatura']   ?? 0)),
+            $this->sifrele((string)($veri['gelen_alis']       ?? 0)),
+            $this->sifrele((string)($veri['alacaklar']        ?? 0)),
+            $this->sifrele((string)($veri['borclar']          ?? 0)),
+            $this->sifrele((string)($veri['banka_nakdi']      ?? 0)),
+            $this->sifrele((string)($veri['yatirim_birikimi'] ?? 0)),
+            $this->sifrele((string)($veri['smm']              ?? 0)),
+            $this->sifrele((string)($veri['sanal_stok']       ?? 0)),
+            $this->sifrele((string)($veri['net_varlik']       ?? 0)),
+        ]);
+        return (int)$this->db->lastInsertId();
+    }
+
+    // Ay kapanışı güncelle
+    public function bilanco_guncelle($sirket_id, $bilanco_id, $veri) {
+        $sql = "UPDATE ay_kapanislar
+                SET kar_marji = ?,
+                    donem_basi_stok_sifreli = ?,
+                    kesilen_fatura_sifreli = ?,
+                    gelen_alis_sifreli = ?,
+                    alacaklar_sifreli = ?,
+                    borclar_sifreli = ?,
+                    banka_nakdi_sifreli = ?,
+                    yatirim_birikimi_sifreli = ?,
+                    smm_sifreli = ?,
+                    sanal_stok_sifreli = ?,
+                    net_varlik_sifreli = ?
+                WHERE id = ? AND sirket_id = ?";
+        $stmt = $this->db->prepare($sql);
+        $stmt->execute([
+            isset($veri['kar_marji']) ? (float)$veri['kar_marji'] : 35,
+            $this->sifrele((string)($veri['donem_basi_stok']  ?? 0)),
+            $this->sifrele((string)($veri['kesilen_fatura']   ?? 0)),
+            $this->sifrele((string)($veri['gelen_alis']       ?? 0)),
+            $this->sifrele((string)($veri['alacaklar']        ?? 0)),
+            $this->sifrele((string)($veri['borclar']          ?? 0)),
+            $this->sifrele((string)($veri['banka_nakdi']      ?? 0)),
+            $this->sifrele((string)($veri['yatirim_birikimi'] ?? 0)),
+            $this->sifrele((string)($veri['smm']              ?? 0)),
+            $this->sifrele((string)($veri['sanal_stok']       ?? 0)),
+            $this->sifrele((string)($veri['net_varlik']       ?? 0)),
+            $bilanco_id,
+            $sirket_id,
+        ]);
+        return $stmt->rowCount() > 0;
+    }
+
+    // Ay kapanışı sil (soft delete — bilanço kayıtları arşiv niteliğinde, geri alınabilir)
+    public function bilanco_sil($sirket_id, $bilanco_id) {
+        $sql = "UPDATE ay_kapanislar SET silindi_mi = 1 WHERE id = ? AND sirket_id = ?";
+        $stmt = $this->db->prepare($sql);
+        $stmt->execute([$bilanco_id, $sirket_id]);
+        return $stmt->rowCount() > 0;
+    }
+
+    // ─────────────────────────────────────────────────
     // ÖZET
     // ─────────────────────────────────────────────────
 
@@ -503,8 +605,34 @@ class Kasa {
         $o_stmt->execute([$sirket_id]);
         $ortak_meta = $o_stmt->fetch(PDO::FETCH_ASSOC);
 
+        // Bu ay giriş/çıkış toplamları — şifreli olduğu için PHP'de çözülür
+        $ay_bas = date('Y-m-01');
+        $ay_son = date('Y-m-t');
+        $ay_sql = "SELECT islem_tipi, tutar_sifreli
+                   FROM kasa_hareketler
+                   WHERE sirket_id = ? AND silindi_mi = 0
+                     AND tarih BETWEEN ? AND ?";
+        $ay_stmt = $this->db->prepare($ay_sql);
+        $ay_stmt->execute([$sirket_id, $ay_bas, $ay_son]);
+        $ay_hareketler = $ay_stmt->fetchAll(PDO::FETCH_ASSOC);
+
+        $aylik_giris = 0.0;
+        $aylik_cikis = 0.0;
+        foreach ($ay_hareketler as $h) {
+            $tutar = $this->coz($h['tutar_sifreli']);
+            $tutar_f = ($tutar !== null) ? (float)$tutar : 0.0;
+            if ($h['islem_tipi'] === 'giris') {
+                $aylik_giris += $tutar_f;
+            } else {
+                $aylik_cikis += $tutar_f;
+            }
+        }
+
         return array(
             'fiziki_kasa_bakiye'   => $fiziki_bakiye,
+            'bakiye'               => $fiziki_bakiye,
+            'aylik_giris'          => round($aylik_giris, 2),
+            'aylik_cikis'          => round($aylik_cikis, 2),
             'toplam_hareket'       => (int)$hareket_meta['toplam_hareket'],
             'giris_adet'           => (int)$hareket_meta['giris_adet'],
             'cikis_adet'           => (int)$hareket_meta['cikis_adet'],

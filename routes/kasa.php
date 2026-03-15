@@ -8,8 +8,6 @@
 //   $yol_parcalari → ['kasa', 'hareketler', '5'] gibi
 //
 // URL yapısı:
-//   /api/kasa/sifre-kur           → POST (şifre yoksa kur)
-//   /api/kasa/dogrula             → POST (şifreyi doğrula)
 //   /api/kasa/ozet                → GET
 //   /api/kasa/hareketler          → GET, POST
 //   /api/kasa/hareketler/{id}     → DELETE
@@ -34,26 +32,8 @@ $kasa = new KasaController($db);
 
 $parca_sayisi = count($yol_parcalari);
 
-// ─── /api/kasa/sifre-kur ───
-if ($parca_sayisi === 2 && $yol_parcalari[1] === 'sifre-kur') {
-    if ($metod === 'POST') {
-        $kasa->sifre_kur($payload, $girdi);
-    } else {
-        Response::hata('Bu HTTP metodu desteklenmiyor', 405);
-    }
-}
-
-// ─── /api/kasa/dogrula ───
-elseif ($parca_sayisi === 2 && $yol_parcalari[1] === 'dogrula') {
-    if ($metod === 'POST') {
-        $kasa->dogrula($payload, $girdi);
-    } else {
-        Response::hata('Bu HTTP metodu desteklenmiyor', 405);
-    }
-}
-
 // ─── /api/kasa/ozet ───
-elseif ($parca_sayisi === 2 && $yol_parcalari[1] === 'ozet') {
+if ($parca_sayisi === 2 && $yol_parcalari[1] === 'ozet') {
     if ($metod === 'GET') {
         $kasa->ozet($payload);
     } else {
@@ -147,6 +127,41 @@ elseif ($parca_sayisi === 3 && $yol_parcalari[1] === 'ortaklar') {
         $kasa->ortak_hareket_sil($payload, $hareket_id);
     } else {
         Response::hata('Bu HTTP metodu desteklenmiyor', 405);
+    }
+}
+
+// ─── /api/kasa/bilanco ───
+elseif ($parca_sayisi === 2 && $yol_parcalari[1] === 'bilanco') {
+    switch ($metod) {
+        case 'GET':
+            $kasa->bilanco_listele($payload);
+            break;
+        case 'POST':
+            $kasa->bilanco_kaydet($payload, $girdi);
+            break;
+        default:
+            Response::hata('Bu HTTP metodu desteklenmiyor', 405);
+            break;
+    }
+}
+
+// ─── /api/kasa/bilanco/{id} ───
+elseif ($parca_sayisi === 3 && $yol_parcalari[1] === 'bilanco') {
+    $bilanco_id = (int)$yol_parcalari[2];
+    if ($bilanco_id <= 0) {
+        Response::hata('Gecersiz bilanco ID', 400);
+    } else {
+        switch ($metod) {
+            case 'PUT':
+                $kasa->bilanco_guncelle($payload, $bilanco_id, $girdi);
+                break;
+            case 'DELETE':
+                $kasa->bilanco_sil($payload, $bilanco_id);
+                break;
+            default:
+                Response::hata('Bu HTTP metodu desteklenmiyor', 405);
+                break;
+        }
     }
 }
 

@@ -29,28 +29,8 @@ import CarilerListesi  from './pages/cariler/CarilerListesi'
 import CariYonetimi   from './pages/cariler/CariYonetimi'
 import VarlikKasa     from './pages/kasa/VarlikKasa'
 import CekSenet       from './pages/cek-senet/CekSenet'
-import OdemeTakip     from './pages/odeme-takip/OdemeTakip'
-
-// GEÇİCİ — Tasarım Demo (Sprint D0 onay sonrası silinecek)
-import TasarimDemo from './pages/tasarim-demo/TasarimDemo'
-import Demo1 from './pages/tasarim-demo/Demo1'
-import Demo2 from './pages/tasarim-demo/Demo2'
-import Demo3 from './pages/tasarim-demo/Demo3'
-import DemoA from './pages/tasarim-demo/DemoA'
-import DemoB from './pages/tasarim-demo/DemoB'
-import DemoC from './pages/tasarim-demo/DemoC'
-import FontKarsilastir from './pages/tasarim-demo/FontKarsilastir'
-
-// V2 Tasarım Demo
-import TasarimDemoV2 from './pages/tasarim-demo-v2/TasarimDemoV2'
-
-// V3 Tasarım Demo (ikas ilhamlı)
-import NakitAkisDemo from './pages/tasarim-demo-v3/NakitAkisDemo'
-import Palet1VolkanikDemo from './pages/tasarim-demo-v3/Palet1VolkanikDemo'
-import Palet2OrmanDemo from './pages/tasarim-demo-v3/Palet2OrmanDemo'
-import Palet3MurekkeDemo from './pages/tasarim-demo-v3/Palet3MurekkeDemo'
-import Palet4ColDemo from './pages/tasarim-demo-v3/Palet4ColDemo'
-import DashboardDemo from './pages/tasarim-demo-v3/DashboardDemo'
+import OdemeTakip       from './pages/odeme-takip/OdemeTakip'
+import VadeHesaplayici  from './pages/vade-hesaplayici/VadeHesaplayici'
 
 // axios.js → auth:logout olayını dinle, React Router ile yönlendir
 function AuthLogoutListener() {
@@ -62,6 +42,14 @@ function AuthLogoutListener() {
   }, [navigate])
   return null
 }
+
+// Tasarım demoları (auth gerekmez)
+import DemoIndex    from './tasarim-demo/DemoIndex'
+import DemoGlass    from './tasarim-demo/tema-1-glass/AppLayout'
+import DemoBanking  from './tasarim-demo/tema-2-banking/AppLayout'
+import DemoEarthy   from './tasarim-demo/tema-3-earthy/AppLayout'
+import DemoMinimal  from './tasarim-demo/tema-4-minimal/AppLayout'
+import DemoDark     from './tasarim-demo/tema-5-dark/AppLayout'
 
 // Henüz yazılmamış sayfalar için geçici bileşen
 function YakindaGeliyor({ sayfa }) {
@@ -95,23 +83,6 @@ export default function App() {
       <AuthLogoutListener />
       <Routes>
 
-        {/* ─── GEÇİCİ: Tasarım Demo (Sprint D0 — auth gerektirmez) ──── */}
-        <Route path="/tasarim-demo" element={<TasarimDemo />} />
-        <Route path="/demo-1" element={<Demo1 />} />
-        <Route path="/demo-2" element={<Demo2 />} />
-        <Route path="/demo-3" element={<Demo3 />} />
-        <Route path="/demo-a" element={<DemoA />} />
-        <Route path="/demo-b" element={<DemoB />} />
-        <Route path="/demo-c" element={<DemoC />} />
-        <Route path="/tasarim-demo/font-karsilastir" element={<FontKarsilastir />} />
-        <Route path="/tasarim-demo-v2" element={<TasarimDemoV2 />} />
-        <Route path="/tasarim-demo-v3" element={<NakitAkisDemo />} />
-        <Route path="/tasarim-demo-v3/palet-1" element={<Palet1VolkanikDemo />} />
-        <Route path="/tasarim-demo-v3/palet-2" element={<Palet2OrmanDemo />} />
-        <Route path="/tasarim-demo-v3/palet-3" element={<Palet3MurekkeDemo />} />
-        <Route path="/tasarim-demo-v3/palet-4" element={<Palet4ColDemo />} />
-        <Route path="/tasarim-demo-v3/dashboard" element={<DashboardDemo />} />
-
         {/* ─── Public sayfalar ───────────────────────────────────────── */}
         <Route path="/giris" element={<GirisYap />} />
         <Route path="/kayit" element={<YakindaGeliyor sayfa="Kayıt Sayfası" />} />
@@ -127,8 +98,17 @@ export default function App() {
             <Route path="/cek-senet" element={<CekSenet />} />
             <Route path="/odemeler" element={<OdemeTakip />} />
             <Route path="/kasa" element={<VarlikKasa />} />
+            <Route path="/vade-hesaplayici" element={<VadeHesaplayici />} />
           </Route>
         </Route>
+
+        {/* ─── Tasarım demoları (auth gerekmez) ──────────────────────── */}
+        <Route path="/demo"         element={<DemoIndex />} />
+        <Route path="/demo/glass"   element={<DemoGlass />} />
+        <Route path="/demo/banking" element={<DemoBanking />} />
+        <Route path="/demo/earthy"  element={<DemoEarthy />} />
+        <Route path="/demo/minimal" element={<DemoMinimal />} />
+        <Route path="/demo/dark"    element={<DemoDark />} />
 
         {/* ─── Kök'ü dashboard'a yönlendir ───────────────────────────── */}
         <Route path="/" element={<Navigate to="/dashboard" replace />} />

@@ -485,19 +485,6 @@ export default function CekSenet() {
   const [ciroDzlForm,     setCiroDzlForm]     = useState({})
   const [ciroDzlId,       setCiroDzlId]       = useState(null)
 
-  // ─ Evrak Ekle Dropdown ───────────────────────────────────────────────────────
-  const [evrakEkleAcik,   setEvrakEkleAcik]   = useState(false)
-  const evrakDropdownRef = useRef(null)
-
-  useEffect(() => {
-    const fn = (e) => {
-      if (evrakDropdownRef.current && !evrakDropdownRef.current.contains(e.target)) {
-        setEvrakEkleAcik(false)
-      }
-    }
-    document.addEventListener('mousedown', fn)
-    return () => document.removeEventListener('mousedown', fn)
-  }, [])
 
   // ─ Veri Yükleme ─────────────────────────────────────────────────────────────
   const veriYukle = useCallback(async () => {
@@ -915,7 +902,11 @@ export default function CekSenet() {
             <div className="cek-sk" style={{ width: 280, height: 14 }} />
           </div>
         </div>
-        <div className="cek-sk" style={{ width: 140, height: 44, borderRadius: 10, flexShrink: 0 }} />
+        <div className="d-flex gap-2">
+          <div className="cek-sk" style={{ width: 100, height: 44, borderRadius: 10 }} />
+          <div className="cek-sk" style={{ width: 100, height: 44, borderRadius: 10 }} />
+          <div className="cek-sk" style={{ width: 100, height: 44, borderRadius: 10 }} />
+        </div>
       </div>
       {/* Skeleton Tab Bar */}
       <div style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.07)', borderRadius: 14, padding: 8, marginBottom: 24, display: 'flex', gap: 6 }}>
@@ -1196,12 +1187,6 @@ export default function CekSenet() {
           align-items: center;
           gap: 16px;
         }
-        .cek-page-icon {
-          font-size: 28px;
-          color: #f59e0b;
-          filter: drop-shadow(0 0 8px rgba(245,158,11,0.4));
-          flex-shrink: 0;
-        }
         .cek-page-title {
           font-size: 24px;
           font-weight: 700;
@@ -1225,7 +1210,7 @@ export default function CekSenet() {
           padding: 0 20px;
           min-height: 44px;
           font-size: 14px;
-          font-weight: 600;
+          font-weight: 700;
           cursor: pointer;
           display: inline-flex;
           align-items: center;
@@ -1238,41 +1223,57 @@ export default function CekSenet() {
           transform: translateY(-1px);
         }
 
-        /* ─── Evrak Ekle Dropdown ─── */
-        .cek-dropdown {
+        /* ─── ERP Aksiyon Satırı Tooltip ─── */
+        .cek-act[title]:hover::after {
+          content: attr(title);
           position: absolute;
-          top: calc(100% + 8px);
-          right: 0;
+          bottom: calc(100% + 6px);
+          left: 50%;
+          transform: translateX(-50%);
           background: rgba(13,27,46,0.97);
-          border: 1px solid rgba(255,255,255,0.12);
-          border-radius: 14px;
-          padding: 6px;
-          min-width: 220px;
-          z-index: 500;
-          box-shadow: 0 12px 40px rgba(0,0,0,0.4);
-          animation: cekSlideUp 0.15s ease;
-          backdrop-filter: blur(20px);
-          -webkit-backdrop-filter: blur(20px);
+          color: rgba(255,255,255,0.9);
+          font-size: 11px;
+          font-weight: 600;
+          white-space: nowrap;
+          padding: 4px 8px;
+          border-radius: 6px;
+          border: 1px solid rgba(255,255,255,0.1);
+          pointer-events: none;
+          z-index: 100;
         }
-        .cek-dropdown-item {
+        .cek-act { position: relative; }
+
+        /* ─── ERP Header Stat Pill ─── */
+        .cek-stat-pill {
           display: flex;
           align-items: center;
-          width: 100%;
-          padding: 10px 14px;
-          border: none;
-          background: none;
-          color: rgba(255,255,255,0.8);
+          gap: 8px;
+          background: rgba(255,255,255,0.04);
+          border: 1px solid rgba(255,255,255,0.08);
+          border-radius: 12px;
+          padding: 8px 14px;
+          backdrop-filter: blur(12px);
+          -webkit-backdrop-filter: blur(12px);
+          white-space: nowrap;
+        }
+        .cek-stat-label {
+          font-size: 10px;
+          font-weight: 700;
+          color: rgba(255,255,255,0.4);
+          text-transform: uppercase;
+          letter-spacing: 0.06em;
+          line-height: 1;
+          margin-bottom: 3px;
+        }
+        .cek-stat-val {
           font-size: 13px;
-          font-weight: 500;
-          border-radius: 10px;
-          cursor: pointer;
-          transition: all 0.15s;
-          text-align: left;
+          font-weight: 800;
+          font-family: 'Inter', sans-serif;
+          line-height: 1;
+          font-variant-numeric: tabular-nums;
         }
-        .cek-dropdown-item:hover {
-          background: rgba(255,255,255,0.06);
-          color: #ffffff;
-        }
+
+        /* ─── Amber Primary Buton ─── */
 
         /* ─── Tab Bar ─── */
         .cek-tab-bar {
@@ -1315,49 +1316,54 @@ export default function CekSenet() {
         }
         @media (max-width: 576px) {
           .cek-page-header { flex-direction: column; align-items: flex-start; }
-          .cek-btn-primary { width: 100%; justify-content: center; }
+          .cek-stat-pill { padding: 6px 10px; }
+          .cek-stat-val { font-size: 12px; }
         }
       `}</style>
 
       {/* ─── Sayfa Başlığı ──────────────────────────────────────────────────── */}
       <div className="cek-page-header mb-4">
         <div className="cek-page-header-left">
-          <i className="bi bi-file-earmark-text-fill cek-page-icon" />
+          <div style={{ width: 48, height: 48, borderRadius: 14, background: 'linear-gradient(135deg, #f59e0b, #d97706)', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 4px 16px rgba(245,158,11,0.35)', flexShrink: 0 }}>
+            <i className="bi bi-file-earmark-text-fill" style={{ fontSize: 22, color: '#0d1b2e' }} />
+          </div>
           <div>
             <h4 className="cek-page-title">Çek &amp; Senet Yönetimi</h4>
-            <p className="cek-page-sub">Portföy takibi, tahsilat ve borç evrakları</p>
+            <p className="cek-page-sub">Portföy takibi · Tahsilat · Borç evrakları · Ciro yönetimi</p>
           </div>
         </div>
-        <div style={{ position: 'relative' }} ref={evrakDropdownRef}>
-          <button
-            className="cek-btn-primary"
-            onClick={() => setEvrakEkleAcik(v => !v)}
-          >
-            <i className="bi bi-plus-lg me-2" />
-            Evrak Ekle
-            <i
-              className="bi bi-chevron-down ms-2"
-              style={{ fontSize: 11, transition: 'transform 0.2s', transform: evrakEkleAcik ? 'rotate(180deg)' : 'rotate(0deg)' }}
-            />
-          </button>
-          {evrakEkleAcik && (
-            <div className="cek-dropdown">
-              <button
-                className="cek-dropdown-item"
-                onClick={() => { setPortfoyForm(portfoyBosluk()); setPortfoyDzlId(null); setPortfoyModal(true); setEvrakEkleAcik(false) }}
-              >
-                <i className="bi bi-collection-fill me-2" style={{ color: '#f59e0b' }} />
-                Müşteri Çeki / Senedi
-              </button>
-              <button
-                className="cek-dropdown-item"
-                onClick={() => { setKendiForm(kendiBosluk()); setKendiDzlId(null); setKendiModal(true); setEvrakEkleAcik(false) }}
-              >
-                <i className="bi bi-arrow-up-circle-fill me-2" style={{ color: '#ef4444' }} />
-                Kendi Çekimiz
-              </button>
+        {/* ERP Quick Stats */}
+        <div className="d-flex align-items-center gap-2 flex-wrap">
+          <div className="cek-stat-pill" style={{ borderColor: 'rgba(245,158,11,0.2)' }}>
+            <i className="bi bi-collection-fill" style={{ color: '#f59e0b', fontSize: 13 }} />
+            <div>
+              <div className="cek-stat-label">Portföy</div>
+              <div className="cek-stat-val" style={{ color: '#f59e0b' }}>{TL(toplam(portfoy))}</div>
             </div>
-          )}
+          </div>
+          <div className="cek-stat-pill" style={{ borderColor: 'rgba(16,185,129,0.2)' }}>
+            <i className="bi bi-bank" style={{ color: '#10b981', fontSize: 13 }} />
+            <div>
+              <div className="cek-stat-label">Tahsilde</div>
+              <div className="cek-stat-val" style={{ color: '#10b981' }}>{TL(toplam(tahsil))}</div>
+            </div>
+          </div>
+          <div className="cek-stat-pill" style={{ borderColor: toplam(tahsil) - toplam(kendi) >= 0 ? 'rgba(16,185,129,0.2)' : 'rgba(239,68,68,0.2)' }}>
+            <i className={`bi ${toplam(tahsil) - toplam(kendi) >= 0 ? 'bi-graph-up-arrow' : 'bi-graph-down-arrow'}`} style={{ color: toplam(tahsil) - toplam(kendi) >= 0 ? '#10b981' : '#ef4444', fontSize: 13 }} />
+            <div>
+              <div className="cek-stat-label">Net Durum</div>
+              <div className="cek-stat-val" style={{ color: toplam(tahsil) - toplam(kendi) >= 0 ? '#10b981' : '#ef4444' }}>{TL(toplam(tahsil) - toplam(kendi))}</div>
+            </div>
+          </div>
+          <button
+            onClick={veriYukle}
+            title="Verileri Yenile"
+            style={{ width: 40, height: 40, borderRadius: 10, background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)', color: 'rgba(255,255,255,0.5)', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, transition: 'all 0.15s' }}
+            onMouseEnter={e => { e.currentTarget.style.background = 'rgba(255,255,255,0.08)'; e.currentTarget.style.color = '#ffffff' }}
+            onMouseLeave={e => { e.currentTarget.style.background = 'rgba(255,255,255,0.04)'; e.currentTarget.style.color = 'rgba(255,255,255,0.5)' }}
+          >
+            <i className="bi bi-arrow-clockwise" style={{ fontSize: 15 }} />
+          </button>
         </div>
       </div>
 
@@ -1786,8 +1792,9 @@ export default function CekSenet() {
                 </table>
               </div>
               {fP.length > 0 && (
-                <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.35)', textAlign: 'right', marginTop: 8 }}>
-                  {fP.length} kayıt · Toplam {TL(portfoyToplam)}
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: 12, padding: '10px 16px', background: 'rgba(245,158,11,0.05)', border: '1px solid rgba(245,158,11,0.12)', borderRadius: 10 }}>
+                  <span style={{ fontSize: 12, color: 'rgba(255,255,255,0.4)' }}>{fP.length} evrak listeleniyor</span>
+                  <span style={{ fontSize: 13, fontWeight: 700, color: '#f59e0b', fontFamily: "'Inter', sans-serif" }}>Toplam: {TL(portfoyToplam)}</span>
                 </div>
               )}
             </div>
@@ -1887,8 +1894,9 @@ export default function CekSenet() {
                 </table>
               </div>
               {fT.length > 0 && (
-                <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.35)', textAlign: 'right', marginTop: 8 }}>
-                  {fT.length} kayıt · Toplam {TL(tahsilToplam)}
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: 12, padding: '10px 16px', background: 'rgba(16,185,129,0.05)', border: '1px solid rgba(16,185,129,0.12)', borderRadius: 10 }}>
+                  <span style={{ fontSize: 12, color: 'rgba(255,255,255,0.4)' }}>{fT.length} evrak listeleniyor</span>
+                  <span style={{ fontSize: 13, fontWeight: 700, color: '#10b981', fontFamily: "'Inter', sans-serif" }}>Toplam: {TL(tahsilToplam)}</span>
                 </div>
               )}
             </div>
@@ -1991,8 +1999,9 @@ export default function CekSenet() {
                 </table>
               </div>
               {fK.length > 0 && (
-                <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.35)', textAlign: 'right', marginTop: 8 }}>
-                  {fK.length} kayıt · Toplam {TL(kendiToplam)}
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: 12, padding: '10px 16px', background: 'rgba(239,68,68,0.05)', border: '1px solid rgba(239,68,68,0.12)', borderRadius: 10 }}>
+                  <span style={{ fontSize: 12, color: 'rgba(255,255,255,0.4)' }}>{fK.length} evrak listeleniyor</span>
+                  <span style={{ fontSize: 13, fontWeight: 700, color: '#ef4444', fontFamily: "'Inter', sans-serif" }}>Toplam: {TL(kendiToplam)}</span>
                 </div>
               )}
             </div>
@@ -2096,8 +2105,9 @@ export default function CekSenet() {
                 </table>
               </div>
               {fC.length > 0 && (
-                <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.35)', textAlign: 'right', marginTop: 8 }}>
-                  {fC.length} kayıt · Toplam {TL(ciroToplam)}
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: 12, padding: '10px 16px', background: 'rgba(217,119,6,0.05)', border: '1px solid rgba(217,119,6,0.12)', borderRadius: 10 }}>
+                  <span style={{ fontSize: 12, color: 'rgba(255,255,255,0.4)' }}>{fC.length} evrak listeleniyor</span>
+                  <span style={{ fontSize: 13, fontWeight: 700, color: '#d97706', fontFamily: "'Inter', sans-serif" }}>Toplam: {TL(ciroToplam)}</span>
                 </div>
               )}
             </div>
@@ -2219,8 +2229,9 @@ export default function CekSenet() {
                 </table>
               </div>
               {fA.length > 0 && (
-                <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.35)', textAlign: 'right', marginTop: 8 }}>
-                  {fA.length} kayıt gösteriliyor
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: 12, padding: '10px 16px', background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.07)', borderRadius: 10 }}>
+                  <span style={{ fontSize: 12, color: 'rgba(255,255,255,0.4)' }}>{fA.length} kayıt gösteriliyor</span>
+                  <span style={{ fontSize: 13, fontWeight: 700, color: 'rgba(255,255,255,0.6)', fontFamily: "'Inter', sans-serif" }}>Toplam: {TL(fA.reduce((s, i) => s + i.tutar, 0))}</span>
                 </div>
               )}
             </div>
@@ -2247,16 +2258,28 @@ export default function CekSenet() {
 
       {/* ─── Portföy: Yeni / Düzenle ────────────────────────────────────────── */}
       <Modal open={portfoyModal} onClose={() => { setPortfoyModal(false); setPortfoyDzlId(null) }} scrollable>
-        <div style={{ padding: '22px 24px 0', borderBottom: '1px solid rgba(255,255,255,0.08)' }}>
-          <div className="d-flex justify-content-between align-items-center mb-0 pb-4">
-            <h6 style={{ fontWeight: 700, color: '#ffffff', margin: 0 }}>
-              {portfoyDzlId ? 'Evrak Düzenle' : 'Yeni Evrak Ekle — Portföy'}
-            </h6>
-            <button className="btn-close" onClick={() => { setPortfoyModal(false); setPortfoyDzlId(null) }} />
+        {/* Premium Gradient Header */}
+        <div style={{ padding: '20px 24px', background: 'linear-gradient(135deg, rgba(245,158,11,0.15), rgba(217,119,6,0.08))', borderBottom: '2px solid rgba(245,158,11,0.3)', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexShrink: 0 }}>
+          <div className="d-flex align-items-center gap-3">
+            <div style={{ width: 42, height: 42, borderRadius: 12, background: 'linear-gradient(135deg,#f59e0b,#d97706)', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 4px 12px rgba(245,158,11,0.35)', flexShrink: 0 }}>
+              <i className={`bi ${portfoyDzlId ? 'bi-pencil-square' : 'bi-file-earmark-plus'}`} style={{ color: '#fff', fontSize: 18 }} />
+            </div>
+            <div>
+              <div style={{ fontSize: 16, fontWeight: 800, color: '#fff', lineHeight: 1.2 }}>{portfoyDzlId ? 'Evrak Düzenle' : 'Yeni Evrak — Portföy'}</div>
+              <div style={{ fontSize: 11, fontWeight: 600, color: 'rgba(255,255,255,0.45)', marginTop: 2 }}>Müşteri çeki veya senedi</div>
+            </div>
           </div>
+          <button style={{ background: 'rgba(255,255,255,0.08)', border: '1px solid rgba(255,255,255,0.1)', width: 36, height: 36, borderRadius: 10, color: 'rgba(255,255,255,0.6)', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }} onClick={() => { setPortfoyModal(false); setPortfoyDzlId(null) }}>
+            <i className="bi bi-x-lg" style={{ fontSize: 14 }} />
+          </button>
         </div>
         <div style={{ padding: '20px 24px', overflowY: 'auto' }}>
-          <div className="row g-3">
+          {/* Bölüm: Evrak Bilgileri */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 14 }}>
+            <div style={{ width: 4, height: 18, borderRadius: 2, background: '#f59e0b' }} />
+            <span style={{ fontSize: 11, fontWeight: 700, color: '#f59e0b', textTransform: 'uppercase', letterSpacing: '0.06em' }}>Cari & Evrak Bilgileri</span>
+          </div>
+          <div className="row g-3 mb-3">
             <div className="col-12">
               <FG label="Evrak Tipi" zorunlu>
                 <select className="form-select" style={{ minHeight: 44 }}
@@ -2276,10 +2299,17 @@ export default function CekSenet() {
             <div className="col-md-6">
               <FG label="Asıl Borçlu">
                 <input className="form-control" style={{ minHeight: 44 }} value={portfoyForm.asil_borclu}
-                  placeholder="Asıl borçlu adı"
+                  placeholder="Asıl borçlu adı (opsiyonel)"
                   onChange={(e) => setPortfoyForm({ ...portfoyForm, asil_borclu: e.target.value })} />
               </FG>
             </div>
+          </div>
+          {/* Bölüm: Evrak Detayları */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 14 }}>
+            <div style={{ width: 4, height: 18, borderRadius: 2, background: '#3b82f6' }} />
+            <span style={{ fontSize: 11, fontWeight: 700, color: '#3b82f6', textTransform: 'uppercase', letterSpacing: '0.06em' }}>Evrak Detayları</span>
+          </div>
+          <div className="row g-3">
             <div className="col-md-6">
               <FG label="Evrak / Çek No">
                 <input className="form-control" style={{ minHeight: 44 }} value={portfoyForm.evrak_no}
@@ -2295,7 +2325,7 @@ export default function CekSenet() {
             </div>
             <div className="col-md-6">
               <FG label="Vade Tarihi" zorunlu kritik>
-                <input type="date" className="form-control" style={{ minHeight: 44, borderColor: '#ef4444' }}
+                <input type="date" className="form-control" style={{ minHeight: 44, borderColor: 'rgba(239,68,68,0.5)' }}
                   value={portfoyForm.vade_tarihi}
                   onChange={(e) => setPortfoyForm({ ...portfoyForm, vade_tarihi: e.target.value })} />
               </FG>
@@ -2310,57 +2340,78 @@ export default function CekSenet() {
             <div className="col-12">
               <FG label="Tutar" zorunlu>
                 <div className="input-group">
-                  <input className="form-control" style={{ minHeight: 44 }} placeholder="0,00"
+                  <input className="form-control" style={{ minHeight: 44, fontSize: 16, fontWeight: 700 }} placeholder="0,00"
                     value={portfoyForm.tutarStr}
                     onChange={(e) => setPortfoyForm({ ...portfoyForm, tutarStr: formatParaInput(e.target.value) })} />
-                  <span className="input-group-text">₺</span>
+                  <span className="input-group-text" style={{ fontWeight: 700, fontSize: 15 }}>₺</span>
                 </div>
               </FG>
             </div>
           </div>
         </div>
-        <div style={{ padding: '16px 24px 22px', borderTop: '1px solid rgba(255,255,255,0.08)', display: 'flex', gap: 10, justifyContent: 'flex-end' }}>
-          <button className="btn btn-outline-secondary" style={{ minHeight: 44, padding: '0 20px' }}
+        {/* Premium Footer */}
+        <div style={{ padding: '14px 24px', borderTop: '1px solid rgba(255,255,255,0.08)', background: 'rgba(13,27,46,0.98)', display: 'flex', gap: 10, justifyContent: 'flex-end', flexShrink: 0 }}>
+          <button style={{ minHeight: 44, padding: '0 20px', background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.12)', borderRadius: 10, color: 'rgba(255,255,255,0.7)', cursor: 'pointer', fontSize: 14, fontWeight: 600 }}
             onClick={() => { setPortfoyModal(false); setPortfoyDzlId(null) }}>İptal</button>
-          <button className="btn text-white" style={{ background: 'linear-gradient(135deg, #f59e0b, #d97706)', color: '#0d1b2e', minHeight: 44, padding: '0 24px', fontWeight: 600 }}
-            onClick={portfoyKaydet}>Kaydet</button>
+          <button style={{ minHeight: 44, padding: '0 28px', background: 'linear-gradient(135deg,#f59e0b,#d97706)', border: 'none', borderRadius: 10, color: '#0d1b2e', fontWeight: 700, fontSize: 14, cursor: 'pointer', boxShadow: '0 4px 16px rgba(245,158,11,0.3)' }}
+            onClick={portfoyKaydet}>
+            <i className="bi bi-floppy me-2" />Kaydet
+          </button>
         </div>
       </Modal>
 
       {/* ─── Tahsile Ver Modalı ─────────────────────────────────────────────── */}
       <Modal open={tahsileModal} onClose={() => setTahsileModal(false)} size="sm">
-        <div style={{ background: 'linear-gradient(135deg, #10b981, #059669)', padding: '18px 22px', borderRadius: '20px 20px 0 0' }}>
-          <div className="d-flex justify-content-between align-items-center">
-            <h6 style={{ color: '#fff', margin: 0, fontWeight: 700 }}>Tahsile Ver</h6>
-            <button className="btn-close btn-close-white" onClick={() => setTahsileModal(false)} />
+        <div style={{ padding: '20px 24px', background: 'linear-gradient(135deg, rgba(16,185,129,0.18), rgba(5,150,105,0.08))', borderBottom: '2px solid rgba(16,185,129,0.35)', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+          <div className="d-flex align-items-center gap-3">
+            <div style={{ width: 42, height: 42, borderRadius: 12, background: 'linear-gradient(135deg,#10b981,#059669)', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 4px 12px rgba(16,185,129,0.35)', flexShrink: 0 }}>
+              <i className="bi bi-bank" style={{ color: '#fff', fontSize: 18 }} />
+            </div>
+            <div>
+              <div style={{ fontSize: 16, fontWeight: 800, color: '#fff', lineHeight: 1.2 }}>Tahsile Ver</div>
+              <div style={{ fontSize: 11, fontWeight: 600, color: 'rgba(255,255,255,0.45)', marginTop: 2 }}>Banka tahsilatına gönder</div>
+            </div>
           </div>
+          <button style={{ background: 'rgba(255,255,255,0.08)', border: '1px solid rgba(255,255,255,0.1)', width: 36, height: 36, borderRadius: 10, color: 'rgba(255,255,255,0.6)', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }} onClick={() => setTahsileModal(false)}>
+            <i className="bi bi-x-lg" style={{ fontSize: 14 }} />
+          </button>
         </div>
-        <div style={{ padding: '20px 22px' }}>
+        <div style={{ padding: '20px 24px' }}>
           <FG label="Banka Adı" zorunlu>
             <AutoComplete value={tahsileForm.banka} onChange={(v) => setTahsileForm({ ...tahsileForm, banka: v })}
               options={BANKALAR} placeholder="Banka seç veya yaz..." id="tv-banka" required />
           </FG>
-          <FG label="İşlem Tarihi" zorunlu>
+          <FG label="Tahsile Veriş Tarihi" zorunlu>
             <input type="date" className="form-control" style={{ minHeight: 44 }}
               value={tahsileForm.tarih}
               onChange={(e) => setTahsileForm({ ...tahsileForm, tarih: e.target.value })} />
           </FG>
         </div>
-        <div style={{ padding: '0 22px 22px', display: 'flex', gap: 10, justifyContent: 'flex-end' }}>
-          <button className="btn btn-outline-secondary" style={{ minHeight: 44, padding: '0 20px' }} onClick={() => setTahsileModal(false)}>İptal</button>
-          <button className="btn text-white" style={{ background: '#10b981', minHeight: 44, padding: '0 24px', fontWeight: 600 }} onClick={tahsileVer}>İşlemi Tamamla</button>
+        <div style={{ padding: '0 24px 20px', display: 'flex', gap: 10, justifyContent: 'flex-end' }}>
+          <button style={{ minHeight: 44, padding: '0 20px', background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.12)', borderRadius: 10, color: 'rgba(255,255,255,0.7)', cursor: 'pointer', fontSize: 14, fontWeight: 600 }} onClick={() => setTahsileModal(false)}>İptal</button>
+          <button style={{ minHeight: 44, padding: '0 24px', background: 'linear-gradient(135deg,#10b981,#059669)', border: 'none', borderRadius: 10, color: '#fff', fontWeight: 700, fontSize: 14, cursor: 'pointer', boxShadow: '0 4px 16px rgba(16,185,129,0.3)' }} onClick={tahsileVer}>
+            <i className="bi bi-check-circle me-2" />İşlemi Tamamla
+          </button>
         </div>
       </Modal>
 
       {/* ─── Cirola Modalı ──────────────────────────────────────────────────── */}
       <Modal open={cirolaModal} onClose={() => setCirolaModal(false)} size="sm">
-        <div style={{ background: 'linear-gradient(135deg, #d97706, #b45309)', padding: '18px 22px', borderRadius: '20px 20px 0 0' }}>
-          <div className="d-flex justify-content-between align-items-center">
-            <h6 style={{ color: '#fff', margin: 0, fontWeight: 700 }}>Evrakı Ciroyla</h6>
-            <button className="btn-close btn-close-white" onClick={() => setCirolaModal(false)} />
+        <div style={{ padding: '20px 24px', background: 'linear-gradient(135deg, rgba(217,119,6,0.18), rgba(146,64,14,0.08))', borderBottom: '2px solid rgba(217,119,6,0.35)', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+          <div className="d-flex align-items-center gap-3">
+            <div style={{ width: 42, height: 42, borderRadius: 12, background: 'linear-gradient(135deg,#d97706,#b45309)', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 4px 12px rgba(217,119,6,0.35)', flexShrink: 0 }}>
+              <i className="bi bi-arrow-left-right" style={{ color: '#fff', fontSize: 18 }} />
+            </div>
+            <div>
+              <div style={{ fontSize: 16, fontWeight: 800, color: '#fff', lineHeight: 1.2 }}>Evrakı Ciroyla</div>
+              <div style={{ fontSize: 11, fontWeight: 600, color: 'rgba(255,255,255,0.45)', marginTop: 2 }}>Başka firmaya devret</div>
+            </div>
           </div>
+          <button style={{ background: 'rgba(255,255,255,0.08)', border: '1px solid rgba(255,255,255,0.1)', width: 36, height: 36, borderRadius: 10, color: 'rgba(255,255,255,0.6)', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }} onClick={() => setCirolaModal(false)}>
+            <i className="bi bi-x-lg" style={{ fontSize: 14 }} />
+          </button>
         </div>
-        <div style={{ padding: '20px 22px' }}>
+        <div style={{ padding: '20px 24px' }}>
           <FG label="Teslim Edilecek Firma (Cari)" zorunlu>
             <AutoComplete value={cirolaForm.firma}
               onChange={(v) => setCirolaForm({ ...cirolaForm, firma: v, cari_id: cariIdBul(v) })}
@@ -2372,24 +2423,38 @@ export default function CekSenet() {
               onChange={(e) => setCirolaForm({ ...cirolaForm, tarih: e.target.value })} />
           </FG>
         </div>
-        <div style={{ padding: '0 22px 22px', display: 'flex', gap: 10, justifyContent: 'flex-end' }}>
-          <button className="btn btn-outline-secondary" style={{ minHeight: 44, padding: '0 20px' }} onClick={() => setCirolaModal(false)}>İptal</button>
-          <button className="btn text-white" style={{ background: '#d97706', minHeight: 44, padding: '0 24px', fontWeight: 600 }} onClick={cirolaKaydet}>Ciroyu Tamamla</button>
+        <div style={{ padding: '0 24px 20px', display: 'flex', gap: 10, justifyContent: 'flex-end' }}>
+          <button style={{ minHeight: 44, padding: '0 20px', background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.12)', borderRadius: 10, color: 'rgba(255,255,255,0.7)', cursor: 'pointer', fontSize: 14, fontWeight: 600 }} onClick={() => setCirolaModal(false)}>İptal</button>
+          <button style={{ minHeight: 44, padding: '0 24px', background: 'linear-gradient(135deg,#d97706,#b45309)', border: 'none', borderRadius: 10, color: '#fff', fontWeight: 700, fontSize: 14, cursor: 'pointer', boxShadow: '0 4px 16px rgba(217,119,6,0.3)' }} onClick={cirolaKaydet}>
+            <i className="bi bi-arrow-left-right me-2" />Ciroyu Tamamla
+          </button>
         </div>
       </Modal>
 
       {/* ─── Kendi Çekimiz: Yeni / Düzenle ─────────────────────────────────── */}
       <Modal open={kendiModal} onClose={() => { setKendiModal(false); setKendiDzlId(null) }} scrollable>
-        <div style={{ padding: '22px 24px 0', borderBottom: '1px solid rgba(255,255,255,0.08)' }}>
-          <div className="d-flex justify-content-between align-items-center mb-0 pb-4">
-            <h6 style={{ fontWeight: 700, color: '#ffffff', margin: 0 }}>
-              {kendiDzlId ? 'Evrak Düzenle' : 'Yeni Borç Evrakı Ekle'}
-            </h6>
-            <button className="btn-close" onClick={() => { setKendiModal(false); setKendiDzlId(null) }} />
+        {/* Premium Red Header */}
+        <div style={{ padding: '20px 24px', background: 'linear-gradient(135deg, rgba(239,68,68,0.15), rgba(185,28,28,0.08))', borderBottom: '2px solid rgba(239,68,68,0.3)', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexShrink: 0 }}>
+          <div className="d-flex align-items-center gap-3">
+            <div style={{ width: 42, height: 42, borderRadius: 12, background: 'linear-gradient(135deg,#ef4444,#dc2626)', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 4px 12px rgba(239,68,68,0.35)', flexShrink: 0 }}>
+              <i className={`bi ${kendiDzlId ? 'bi-pencil-square' : 'bi-file-earmark-minus'}`} style={{ color: '#fff', fontSize: 18 }} />
+            </div>
+            <div>
+              <div style={{ fontSize: 16, fontWeight: 800, color: '#fff', lineHeight: 1.2 }}>{kendiDzlId ? 'Borç Evrakı Düzenle' : 'Yeni Borç Evrakı'}</div>
+              <div style={{ fontSize: 11, fontWeight: 600, color: 'rgba(255,255,255,0.45)', marginTop: 2 }}>Kendi çekimiz / senedimiz</div>
+            </div>
           </div>
+          <button style={{ background: 'rgba(255,255,255,0.08)', border: '1px solid rgba(255,255,255,0.1)', width: 36, height: 36, borderRadius: 10, color: 'rgba(255,255,255,0.6)', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }} onClick={() => { setKendiModal(false); setKendiDzlId(null) }}>
+            <i className="bi bi-x-lg" style={{ fontSize: 14 }} />
+          </button>
         </div>
         <div style={{ padding: '20px 24px', overflowY: 'auto' }}>
-          <div className="row g-3">
+          {/* Bölüm: Cari & Evrak Bilgileri */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 14 }}>
+            <div style={{ width: 4, height: 18, borderRadius: 2, background: '#ef4444' }} />
+            <span style={{ fontSize: 11, fontWeight: 700, color: '#ef4444', textTransform: 'uppercase', letterSpacing: '0.06em' }}>Cari & Evrak Bilgileri</span>
+          </div>
+          <div className="row g-3 mb-3">
             <div className="col-12">
               <FG label="Evrak Tipi" zorunlu>
                 <select className="form-select" style={{ minHeight: 44 }}
@@ -2413,6 +2478,13 @@ export default function CekSenet() {
                   onChange={(e) => setKendiForm({ ...kendiForm, asil_borclu: e.target.value })} />
               </FG>
             </div>
+          </div>
+          {/* Bölüm: Ödeme Detayları */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 14 }}>
+            <div style={{ width: 4, height: 18, borderRadius: 2, background: '#3b82f6' }} />
+            <span style={{ fontSize: 11, fontWeight: 700, color: '#3b82f6', textTransform: 'uppercase', letterSpacing: '0.06em' }}>Ödeme Detayları</span>
+          </div>
+          <div className="row g-3">
             <div className="col-md-6">
               <FG label="Evrak / Çek No">
                 <input className="form-control" style={{ minHeight: 44 }} value={kendiForm.evrak_no}
@@ -2428,7 +2500,7 @@ export default function CekSenet() {
             </div>
             <div className="col-md-6">
               <FG label="Vade Tarihi" zorunlu kritik>
-                <input type="date" className="form-control" style={{ minHeight: 44, borderColor: '#ef4444' }}
+                <input type="date" className="form-control" style={{ minHeight: 44, borderColor: 'rgba(239,68,68,0.5)' }}
                   value={kendiForm.vade_tarihi}
                   onChange={(e) => setKendiForm({ ...kendiForm, vade_tarihi: e.target.value })} />
               </FG>
@@ -2443,30 +2515,41 @@ export default function CekSenet() {
             <div className="col-12">
               <FG label="Tutar" zorunlu>
                 <div className="input-group">
-                  <input className="form-control" style={{ minHeight: 44 }} placeholder="0,00"
+                  <input className="form-control" style={{ minHeight: 44, fontSize: 16, fontWeight: 700 }} placeholder="0,00"
                     value={kendiForm.tutarStr}
                     onChange={(e) => setKendiForm({ ...kendiForm, tutarStr: formatParaInput(e.target.value) })} />
-                  <span className="input-group-text">₺</span>
+                  <span className="input-group-text" style={{ fontWeight: 700, fontSize: 15 }}>₺</span>
                 </div>
               </FG>
             </div>
           </div>
         </div>
-        <div style={{ padding: '16px 24px 22px', borderTop: '1px solid rgba(255,255,255,0.08)', display: 'flex', gap: 10, justifyContent: 'flex-end' }}>
-          <button className="btn btn-outline-secondary" style={{ minHeight: 44, padding: '0 20px' }}
+        {/* Premium Footer */}
+        <div style={{ padding: '14px 24px', borderTop: '1px solid rgba(255,255,255,0.08)', background: 'rgba(13,27,46,0.98)', display: 'flex', gap: 10, justifyContent: 'flex-end', flexShrink: 0 }}>
+          <button style={{ minHeight: 44, padding: '0 20px', background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.12)', borderRadius: 10, color: 'rgba(255,255,255,0.7)', cursor: 'pointer', fontSize: 14, fontWeight: 600 }}
             onClick={() => { setKendiModal(false); setKendiDzlId(null) }}>İptal</button>
-          <button className="btn text-white" style={{ background: '#ef4444', minHeight: 44, padding: '0 24px', fontWeight: 600 }}
-            onClick={kendiKaydet}>Kaydet</button>
+          <button style={{ minHeight: 44, padding: '0 28px', background: 'linear-gradient(135deg,#ef4444,#dc2626)', border: 'none', borderRadius: 10, color: '#fff', fontWeight: 700, fontSize: 14, cursor: 'pointer', boxShadow: '0 4px 16px rgba(239,68,68,0.3)' }}
+            onClick={kendiKaydet}>
+            <i className="bi bi-floppy me-2" />Kaydet
+          </button>
         </div>
       </Modal>
 
       {/* ─── Tahsil Düzenle Modalı ──────────────────────────────────────────── */}
       <Modal open={tahsilDzlModal} onClose={() => setTahsilDzlModal(false)} scrollable>
-        <div style={{ padding: '22px 24px 0', borderBottom: '1px solid rgba(255,255,255,0.08)' }}>
-          <div className="d-flex justify-content-between align-items-center mb-0 pb-4">
-            <h6 style={{ fontWeight: 700, color: '#ffffff', margin: 0 }}>Tahsildeki Evrak Düzenle</h6>
-            <button className="btn-close" onClick={() => setTahsilDzlModal(false)} />
+        <div style={{ padding: '20px 24px', background: 'linear-gradient(135deg, rgba(16,185,129,0.15), rgba(5,150,105,0.07))', borderBottom: '2px solid rgba(16,185,129,0.3)', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexShrink: 0 }}>
+          <div className="d-flex align-items-center gap-3">
+            <div style={{ width: 42, height: 42, borderRadius: 12, background: 'linear-gradient(135deg,#10b981,#059669)', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 4px 12px rgba(16,185,129,0.35)', flexShrink: 0 }}>
+              <i className="bi bi-pencil-square" style={{ color: '#fff', fontSize: 18 }} />
+            </div>
+            <div>
+              <div style={{ fontSize: 16, fontWeight: 800, color: '#fff', lineHeight: 1.2 }}>Tahsildeki Evrak Düzenle</div>
+              <div style={{ fontSize: 11, fontWeight: 600, color: 'rgba(255,255,255,0.45)', marginTop: 2 }}>Tahsil bilgilerini güncelle</div>
+            </div>
           </div>
+          <button style={{ background: 'rgba(255,255,255,0.08)', border: '1px solid rgba(255,255,255,0.1)', width: 36, height: 36, borderRadius: 10, color: 'rgba(255,255,255,0.6)', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }} onClick={() => setTahsilDzlModal(false)}>
+            <i className="bi bi-x-lg" style={{ fontSize: 14 }} />
+          </button>
         </div>
         <div style={{ padding: '20px 24px', overflowY: 'auto' }}>
           <div className="row g-3">
@@ -2519,19 +2602,29 @@ export default function CekSenet() {
             </div>
           </div>
         </div>
-        <div style={{ padding: '16px 24px 22px', borderTop: '1px solid rgba(255,255,255,0.08)', display: 'flex', gap: 10, justifyContent: 'flex-end' }}>
-          <button className="btn btn-outline-secondary" style={{ minHeight: 44, padding: '0 20px' }} onClick={() => setTahsilDzlModal(false)}>İptal</button>
-          <button className="btn text-white" style={{ background: '#10b981', minHeight: 44, padding: '0 24px', fontWeight: 600 }} onClick={tahsilDzlKaydet}>Güncelle</button>
+        <div style={{ padding: '14px 24px', borderTop: '1px solid rgba(255,255,255,0.08)', background: 'rgba(13,27,46,0.98)', display: 'flex', gap: 10, justifyContent: 'flex-end', flexShrink: 0 }}>
+          <button style={{ minHeight: 44, padding: '0 20px', background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.12)', borderRadius: 10, color: 'rgba(255,255,255,0.7)', cursor: 'pointer', fontSize: 14, fontWeight: 600 }} onClick={() => setTahsilDzlModal(false)}>İptal</button>
+          <button style={{ minHeight: 44, padding: '0 28px', background: 'linear-gradient(135deg,#10b981,#059669)', border: 'none', borderRadius: 10, color: '#fff', fontWeight: 700, fontSize: 14, cursor: 'pointer', boxShadow: '0 4px 16px rgba(16,185,129,0.3)' }} onClick={tahsilDzlKaydet}>
+            <i className="bi bi-floppy me-2" />Güncelle
+          </button>
         </div>
       </Modal>
 
       {/* ─── Ciro Düzenle Modalı ────────────────────────────────────────────── */}
       <Modal open={ciroDzlModal} onClose={() => setCiroDzlModal(false)} scrollable>
-        <div style={{ padding: '22px 24px 0', borderBottom: '1px solid rgba(255,255,255,0.08)' }}>
-          <div className="d-flex justify-content-between align-items-center mb-0 pb-4">
-            <h6 style={{ fontWeight: 700, color: '#ffffff', margin: 0 }}>Cirolanan Evrak Düzenle</h6>
-            <button className="btn-close" onClick={() => setCiroDzlModal(false)} />
+        <div style={{ padding: '20px 24px', background: 'linear-gradient(135deg, rgba(217,119,6,0.15), rgba(146,64,14,0.07))', borderBottom: '2px solid rgba(217,119,6,0.3)', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexShrink: 0 }}>
+          <div className="d-flex align-items-center gap-3">
+            <div style={{ width: 42, height: 42, borderRadius: 12, background: 'linear-gradient(135deg,#d97706,#b45309)', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 4px 12px rgba(217,119,6,0.35)', flexShrink: 0 }}>
+              <i className="bi bi-pencil-square" style={{ color: '#fff', fontSize: 18 }} />
+            </div>
+            <div>
+              <div style={{ fontSize: 16, fontWeight: 800, color: '#fff', lineHeight: 1.2 }}>Cirolanan Evrak Düzenle</div>
+              <div style={{ fontSize: 11, fontWeight: 600, color: 'rgba(255,255,255,0.45)', marginTop: 2 }}>Ciro bilgilerini güncelle</div>
+            </div>
           </div>
+          <button style={{ background: 'rgba(255,255,255,0.08)', border: '1px solid rgba(255,255,255,0.1)', width: 36, height: 36, borderRadius: 10, color: 'rgba(255,255,255,0.6)', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }} onClick={() => setCiroDzlModal(false)}>
+            <i className="bi bi-x-lg" style={{ fontSize: 14 }} />
+          </button>
         </div>
         <div style={{ padding: '20px 24px', overflowY: 'auto' }}>
           <div className="row g-3">
@@ -2588,9 +2681,11 @@ export default function CekSenet() {
             </div>
           </div>
         </div>
-        <div style={{ padding: '16px 24px 22px', borderTop: '1px solid rgba(255,255,255,0.08)', display: 'flex', gap: 10, justifyContent: 'flex-end' }}>
-          <button className="btn btn-outline-secondary" style={{ minHeight: 44, padding: '0 20px' }} onClick={() => setCiroDzlModal(false)}>İptal</button>
-          <button className="btn text-white" style={{ background: '#d97706', minHeight: 44, padding: '0 24px', fontWeight: 600 }} onClick={ciroDzlKaydet}>Güncelle</button>
+        <div style={{ padding: '14px 24px', borderTop: '1px solid rgba(255,255,255,0.08)', background: 'rgba(13,27,46,0.98)', display: 'flex', gap: 10, justifyContent: 'flex-end', flexShrink: 0 }}>
+          <button style={{ minHeight: 44, padding: '0 20px', background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.12)', borderRadius: 10, color: 'rgba(255,255,255,0.7)', cursor: 'pointer', fontSize: 14, fontWeight: 600 }} onClick={() => setCiroDzlModal(false)}>İptal</button>
+          <button style={{ minHeight: 44, padding: '0 28px', background: 'linear-gradient(135deg,#d97706,#b45309)', border: 'none', borderRadius: 10, color: '#fff', fontWeight: 700, fontSize: 14, cursor: 'pointer', boxShadow: '0 4px 16px rgba(217,119,6,0.3)' }} onClick={ciroDzlKaydet}>
+            <i className="bi bi-floppy me-2" />Güncelle
+          </button>
         </div>
       </Modal>
 

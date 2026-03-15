@@ -1,11 +1,11 @@
 # PROJE.md — Finans Kalesi Canlı Durum ve Yol Haritası
-# Son Güncelleme: 14 Mart 2026 — Oturum #13
+# Son Güncelleme: 15 Mart 2026 — Oturum #15
 
 ---
 
-## GÜNCEL DURUM: 🎨 Aşama 2F — Obsidian Vault Tasarım Dönüşümü DEVAM EDİYOR
-Tüm frontend sayfaları "Obsidian Vault" koyu premium tasarım sistemine geçiriliyor.
-5 aşamalı plan uygulanıyor. Her aşama sonunda kullanıcı onayı alınıyor.
+## GÜNCEL DURUM: ✅ Vade Hesaplayıcı Modülü TAMAMLANDI (Sprint 2D)
+Tamamen frontend-only, 4 sekme, ağırlıklı ortalama vade hesaplama aracı.
+Sıradaki: Aşama 2F temizlik adımı (tasarim-demo/ silme, kullanılmayan CSS temizleme).
 
 ---
 
@@ -40,7 +40,9 @@ Tüm frontend sayfaları "Obsidian Vault" koyu premium tasarım sistemine geçir
 | ✅ | 2C-4: Kasa UI | VarlikKasa.jsx yazıldı. Mock veri ile çalışıyor. api/kasa.js oluşturuldu. |
 | ✅ | **2C-4b: Kasa API Bağlantısı** | API bağlandı. Yatırım güncelle hatası düzeltildi. Aylık hareket filtresi eklendi. Kayıt testleri geçti. |
 | ✅ | **2C-3: Çek/Senet API Bağlantısı** | API bağlandı. Tüm tab'lar gerçek veri. Durum değişimleri (tahsil/ciro/iade/ödendi) API'ye bağlı. Cari seçimi entegre edildi. |
-| 🔶 | 2C-5: Ödemeler UI + API | Henüz başlanmadı — ŞU ANKİ GÖREV |
+| ✅ | **2C-5: Ödemeler UI + API** | Bağlantı yapıldı. |
+| ✅ | **2C-6: Aylık Bilanço API Bağlantısı** | `ay_kapanislar` tablosu oluşturuldu. Backend (Kasa.php + KasaController + routes/kasa.php) + Frontend (api/kasa.js + VarlikKasa.jsx) tam bağlı. AES şifreli saklanıyor. |
+| ✅ | **2C-7: Dashboard Veri Düzeltmeleri** | 3 uyuşmazlık giderildi: kasa bakiye alias (`bakiye`), aylık giriş/çıkış toplamları, çek/senet hiyerarşik yapı (portföyde/tahsilde/ödendi/karşılıksız). |
 
 ---
 
@@ -50,25 +52,24 @@ Tüm frontend sayfaları "Obsidian Vault" koyu premium tasarım sistemine geçir
 |-------|-----|-----|
 | Gösterge Paneli | ✅ | ✅ Hareketlerden hesaplanıyor |
 | Nakit Akışı | ✅ | ✅ Aylık filtreli, ekle/sil çalışıyor |
-| Aylık Bilanço | ✅ | ⬜ Backend endpoint yok — local state, ileriye bırakıldı |
+| Aylık Bilanço | ✅ | ✅ `ay_kapanislar` tablosuna AES şifreli kaydediliyor |
 | Ortak Carisi | ✅ | ✅ Ekle/sil çalışıyor |
 | Yatırım Kalesi | ✅ | ✅ Ekle/güncelle/sil çalışıyor |
 
 **Kasa Özel Notlar:**
 - X-Kasa-Sifre header'ı KULLANILMIYOR — şifre ekranı kaldırıldı
-- Aylık Bilanço kalıcılığı backend endpoint gerektiriyor — şimdilik local state
 - Yatırım Kalesi'nde canlı kur API'si YOK — manuel birim_fiyat kullanılıyor
 
 ---
 
-### Aşama 2D — Vade Hesaplayıcı ⬜ BEKLEMEDE
-> Sprint 2C tamamen bitmeden başlanmaz. DB sütunları henüz yok.
+### Aşama 2D — Vade Hesaplayıcı ✅ TAMAMLANDI
+> Tamamen frontend-only hesap aracı. Veritabanı gerektirmez.
 
 | Durum | Adım |
 |-------|------|
-| ⬜ | DB tasarımı (vade_hesaplamalari tablosu) |
-| ⬜ | Backend (yeni-modul-ekle.md skill'i okunarak) |
-| ⬜ | Frontend — bağımsız sayfa |
+| ✅ | Frontend — VadeHesaplayici.jsx (4 sekme, useMemo hesaplamalar) |
+| ✅ | /vade-hesaplayici route — App.jsx |
+| ✅ | Sidebar linki — AppLayout.jsx |
 
 ---
 
@@ -117,18 +118,19 @@ finans-kalesi/
 │   │   ├── axios.js         ✅
 │   │   ├── cariler.js       ✅ ozet() eklendi
 │   │   ├── dashboard.js     ✅
-│   │   ├── kasa.js          ✅ Oluşturuldu
+│   │   ├── kasa.js          ✅ bilanco CRUD eklendi
 │   │   ├── cekSenet.js      ✅ API bağlı
-│   │   └── odeme.js         ⬜ Oluşturulacak
+│   │   └── odeme.js         ✅ API bağlı
 │   ├── pages/
 │   │   ├── auth/GirisYap.jsx          ✅
 │   │   ├── cariler/CariYonetimi.jsx   ✅ API bağlı, 4 hata düzeltildi
 │   │   ├── cariler/CarilerListesi.jsx ✅
-│   │   ├── dashboard/Dashboard.jsx    ✅ (UI en sona)
-│   │   ├── kasa/VarlikKasa.jsx        ✅ API bağlı, testler geçti
+│   │   ├── dashboard/Dashboard.jsx    ✅ Gerçek veri bağlı, 3 alan uyuşmazlığı düzeltildi
+│   │   ├── kasa/VarlikKasa.jsx        ✅ Tüm sekmeler API bağlı (bilanco dahil)
 │   │   ├── cek-senet/CekSenet.jsx     ✅ API bağlı, gerçek veri
-│   │   ├── odeme-takip/               ⬜ Oluşturulacak
-│   │   └── vade-hesaplayici/          ⬜ Oluşturulacak
+│   │   ├── odeme-takip/               ✅ API bağlı
+│   │   └── vade-hesaplayici/
+│   │       └── VadeHesaplayici.jsx    ✅ 4 sekme, frontend-only hesap aracı
 │   ├── stores/authStore.js   ✅
 │   ├── App.jsx               ✅
 │   └── App.css
@@ -166,9 +168,7 @@ finans-kalesi/
 
 | # | Sorun | Öncelik |
 |---|-------|---------|
-| 1 | Ödemeler sayfası henüz başlanmadı | 🔴 Sıradaki görev |
-| 4 | Aylık Bilanço backend endpoint yok | 🟡 İleride eklenecek |
-| 5 | Vade Hesaplayıcı DB sütunları yok | 🟡 Sprint 2D |
-| 6 | public/htaccess noktasız kopya | 🟡 Silinecek |
-| 7 | sonner toast Bootstrap dışı | 🟡 Değerlendirilecek |
-| 8 | hooks/ ve lib/ boş klasörler | 🟢 Temizlenebilir |
+| 1 | 2F Temizlik: tasarim-demo/ silme, kullanılmayan CSS | 🔴 Sıradaki görev |
+| 2 | public/htaccess noktasız kopya | 🟡 Silinecek |
+| 4 | sonner toast Bootstrap dışı | 🟡 Değerlendirilecek |
+| 5 | hooks/ ve lib/ boş klasörler | 🟢 Temizlenebilir |

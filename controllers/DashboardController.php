@@ -56,14 +56,23 @@ class DashboardController
 
         // En yüksek bakiyeli 5 cari (pozitif veya negatif)
         $stmt2 = $this->db->prepare(
-            "SELECT id, cari_adi, cari_turu, bakiye
+            "SELECT id, cari_adi_sifreli, cari_turu, bakiye
              FROM cari_kartlar
              WHERE sirket_id = :sirket_id AND silindi_mi = 0 AND aktif_mi = 1
              ORDER BY ABS(bakiye) DESC
              LIMIT 5"
         );
         $stmt2->execute([':sirket_id' => $sirket_id]);
-        $ozet['en_yuksek_bakiyeli'] = $stmt2->fetchAll(PDO::FETCH_ASSOC);
+        $kayitlar = $stmt2->fetchAll(PDO::FETCH_ASSOC);
+
+        // Şifreli cari adını çöz
+        $kripto = new SistemKripto();
+        foreach ($kayitlar as &$k) {
+            $k['cari_adi'] = $kripto->coz($k['cari_adi_sifreli']);
+            unset($k['cari_adi_sifreli']);
+        }
+        unset($k);
+        $ozet['en_yuksek_bakiyeli'] = $kayitlar;
 
         return $ozet;
     }

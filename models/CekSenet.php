@@ -333,7 +333,12 @@ class CekSenet {
                         AND durum IN ('portfoyde','tahsile_verildi') THEN tutar_tl ELSE 0 END), 0) as vadesi_gecmis_tutar,
 
                     COUNT(CASE WHEN durum IN ('karsiliksiz','protestolu') THEN 1 END) as sorunlu_adet,
-                    COALESCE(SUM(CASE WHEN durum IN ('karsiliksiz','protestolu') THEN tutar_tl ELSE 0 END), 0) as sorunlu_tutar
+                    COALESCE(SUM(CASE WHEN durum IN ('karsiliksiz','protestolu') THEN tutar_tl ELSE 0 END), 0) as sorunlu_tutar,
+
+                    COALESCE(SUM(CASE WHEN durum = 'portfoyde' THEN tutar_tl ELSE 0 END), 0) as portfoyde_tutar,
+                    COUNT(CASE WHEN durum = 'portfoyde' THEN 1 END) as portfoyde_adet,
+                    COALESCE(SUM(CASE WHEN durum = 'tahsile_verildi' THEN tutar_tl ELSE 0 END), 0) as tahsile_tutar,
+                    COALESCE(SUM(CASE WHEN durum IN ('tahsil_edildi','odendi') THEN tutar_tl ELSE 0 END), 0) as odendi_tutar
 
                 FROM cek_senetler
                 WHERE sirket_id = ? AND silindi_mi = 0";

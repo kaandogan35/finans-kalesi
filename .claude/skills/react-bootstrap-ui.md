@@ -3,8 +3,8 @@ Sen "Finans Kalesi" projesinin Frontend mimarısın.
 Yeni bileşen yazarken veya UI düzenlerken aşağıdaki kurallara KESİNLİKLE uymalısın.
 
 > **ÇALIŞMA MODELİ:**
-> - Bu dosya tasarım görevlerinde OTOMATİK okunur (React/Bootstrap teknik kuralları için).
-> - Görsel tema → `koyu-tema.md` (Obsidian Vault koyu glassmorphism) ile birlikte okunur.
+> - Bu dosya tasarım görevlerinde OTOMATİK okunur — platform, mimari ve davranış kuralları için.
+> - Tüm renkler, fontlar, kart stilleri, buton ve modal görünümleri → `koyu-tema.md`'den alınır. Bu dosyadan renk referansı alınmaz.
 > - Tasarım kalitesi → sistem `frontend-design` Skill'i tarafından yönetilir.
 > - `ikas-tasarim.md` KULLANILMAZ — eski V3 sistemidir.
 > - Ekstra yönerge yoksa → aynı modülün mevcut `.jsx` dosyasını tasarım referansı olarak al.
@@ -64,18 +64,7 @@ useEffect(() => { veriGetir() }, []) // boş dependency array
 
 ---
 
-## TASARIM DİLİ
-
-### Renk Kodlaması (Cari Tipi)
-- **Müşteri (alici):** `#123F59` / `linear-gradient(135deg, var(--brand-dark), #1a5b80)`
-- **Tedarikçi (satici):** `#d97706` / `linear-gradient(135deg, #d97706, #b45309)`
-Yeni renk uydurulmaz. Bu iki renk sistemi tüm UI'da tutarlı uygulanır.
-
-### Kart Arka Planları
-Bilgi kartları: `background: #eef2f7`, `border-color: #dce3ed`
-(`#f8fafc` soluk kalır — kullanılmaz)
-
-### Tablo Yapısı
+## TABLO YAPISI
 Tüm tablolar `table-responsive` wrapper içinde olur (Capacitor/mobil zorunlu):
 ```jsx
 <div className="table-responsive">
@@ -91,8 +80,3 @@ Her bileşen bu kurallara uyar — ileride sıfır düzeltme hedefi:
 - `window.location` kullanma → React Router kullan
 - `localStorage` kullanma → Zustand store kullan
 
----
-
-## TEST SORUSU
-Bu skill'i okuduğunu kanıtla:
-"Yeni bir modal yazıyorum, backdrop tıklamayla kapanmasın ama ESC çalışsın" desem ne yaparsın?

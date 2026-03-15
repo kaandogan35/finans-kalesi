@@ -81,7 +81,9 @@ function AksiyonMenusu({ cari, onSilIste, navigate }) {
         onClick={() => setAcik(v => !v)}
         style={{
           background: 'none', border: 'none', cursor: 'pointer',
-          color: 'rgba(255,255,255,0.35)', padding: '4px 6px', borderRadius: 8,
+          color: 'rgba(255,255,255,0.35)', padding: 0, borderRadius: 8,
+          minWidth: 44, minHeight: 44,
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
           transition: 'all 0.15s',
         }}
         onMouseEnter={e => { e.currentTarget.style.background = 'rgba(255,255,255,0.08)'; e.currentTarget.style.color = 'rgba(255,255,255,0.8)' }}
@@ -353,7 +355,7 @@ export default function CarilerListesi() {
         <button
           onClick={() => navigate('/cariler/yeni')}
           className="btn btn-brand d-flex align-items-center gap-2"
-          style={{ borderRadius: 12, fontSize: 13, height: 40, padding: '0 18px' }}
+          style={{ borderRadius: 12, fontSize: 13, height: 44, padding: '0 18px' }}
         >
           <i className="bi bi-plus-lg" style={{ fontSize: 14 }} />
           Yeni Cari
@@ -457,7 +459,7 @@ export default function CarilerListesi() {
               style={{
                 background: 'transparent', border: '1px solid rgba(245,158,11,0.4)',
                 color: '#f59e0b', fontWeight: 700, fontSize: 13,
-                borderRadius: 10, height: 36, padding: '0 16px', cursor: 'pointer',
+                borderRadius: 10, height: 44, padding: '0 16px', cursor: 'pointer',
                 transition: 'all 0.15s',
               }}
               onMouseEnter={e => { e.currentTarget.style.background = 'rgba(245,158,11,0.08)'; e.currentTarget.style.borderColor = '#f59e0b' }}
@@ -489,7 +491,7 @@ export default function CarilerListesi() {
               <button
                 onClick={() => navigate('/cariler/yeni')}
                 className="btn btn-brand d-flex align-items-center gap-2"
-                style={{ borderRadius: 12, fontSize: 13, height: 38, padding: '0 18px' }}
+                style={{ borderRadius: 12, fontSize: 13, height: 44, padding: '0 18px' }}
               >
                 <i className="bi bi-plus-lg" /> İlk Cariyi Ekle
               </button>
@@ -592,7 +594,7 @@ export default function CarilerListesi() {
               <button
                 style={{
                   background: 'transparent', border: '1px solid rgba(255,255,255,0.1)',
-                  borderRadius: 8, fontSize: 12, height: 34, padding: '0 14px',
+                  borderRadius: 8, fontSize: 12, height: 44, padding: '0 14px',
                   color: 'rgba(255,255,255,0.5)', cursor: 'pointer', transition: 'all 0.15s',
                   opacity: sayfa <= 1 ? 0.4 : 1,
                 }}
@@ -609,7 +611,7 @@ export default function CarilerListesi() {
               <button
                 style={{
                   background: 'transparent', border: '1px solid rgba(255,255,255,0.1)',
-                  borderRadius: 8, fontSize: 12, height: 34, padding: '0 14px',
+                  borderRadius: 8, fontSize: 12, height: 44, padding: '0 14px',
                   color: 'rgba(255,255,255,0.5)', cursor: 'pointer', transition: 'all 0.15s',
                   opacity: sayfa >= toplamSayfa ? 0.4 : 1,
                 }}

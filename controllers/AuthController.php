@@ -23,6 +23,14 @@ class AuthController {
      * KAYIT
      */
     public function kayit($girdi) {
+        // 0. Rate limit — aynı IP'den kısa sürede çok fazla kayıt denemesi
+        $ip = SistemLog::ip_al();
+        if (!RateLimiter::kayit_izinli_mi($ip)) {
+            SistemLog::kaydet(SistemLog::YETKISIZ_ERISIM, 'kayit_rate_limit: ' . ($girdi['email'] ?? ''));
+            Response::cok_fazla_istek(3600); // 1 saat bekle
+            return;
+        }
+
         // 1. Zorunlu alanlari kontrol et
         $gerekli = ['firma_adi', 'ad_soyad', 'email', 'sifre'];
         $eksik = [];

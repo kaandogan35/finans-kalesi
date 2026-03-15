@@ -114,11 +114,10 @@ try {
             }
             
             Response::basarili([
-                'durum'    => 'aktif',
-                'versiyon' => '1.0.0',
-                'zaman'    => date('Y-m-d H:i:s'),
+                'durum'      => 'aktif',
+                'versiyon'   => '1.0.0',
+                'zaman'      => date('Y-m-d H:i:s'),
                 'veritabani' => $db_durum,
-                'php_versiyon' => PHP_VERSION,
             ], 'Finans Kalesi API çalışıyor');
             break;
         

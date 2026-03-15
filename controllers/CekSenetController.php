@@ -45,8 +45,27 @@ class CekSenetController {
     // ─── GET /api/cek-senet/ozet ───
     public function ozet($payload) {
         try {
-            $istatistikler = $this->cekSenet->ozet_istatistikler($payload['sirket_id']);
-            Response::basarili($istatistikler);
+            $ist = $this->cekSenet->ozet_istatistikler($payload['sirket_id']);
+
+            // Frontend'in beklediği hiyerarşik yapıya dönüştür
+            $veri = array_merge($ist, array(
+                'portfoyde' => array(
+                    'toplam' => (float)$ist['portfoyde_tutar'],
+                    'adet'   => (int)$ist['portfoyde_adet'],
+                ),
+                'tahsilde' => array(
+                    'toplam' => (float)$ist['tahsile_tutar'],
+                ),
+                'odendi' => array(
+                    'toplam' => (float)$ist['odendi_tutar'],
+                ),
+                'karsilıksız' => array(
+                    'toplam' => (float)$ist['sorunlu_tutar'],
+                    'adet'   => (int)$ist['sorunlu_adet'],
+                ),
+            ));
+
+            Response::basarili($veri);
         } catch (Exception $e) {
             error_log('CekSenet ozet hatasi: ' . $e->getMessage());
             Response::sunucu_hatasi('Istatistikler alinamadi');
