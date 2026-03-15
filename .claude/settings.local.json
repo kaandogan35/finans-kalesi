@@ -73,7 +73,19 @@
       "Bash(find c:laragonwwwProjelerfinans-kalesi -name *.sql -o -name *schema* -o -name *migration*)",
       "Bash(ls -la /c/laragon/www/Projeler/finans-kalesi/.env*)",
       "Bash(find /c/laragon/www/Projeler/finans-kalesi/frontend/src/tasarim-demo -type f -name *)",
-      "Bash(find /c/laragon/www/Projeler/finans-kalesi -name *.sql -o -name schema* -o -name *migration*)"
+      "Bash(find /c/laragon/www/Projeler/finans-kalesi -name *.sql -o -name schema* -o -name *migration*)",
+      "Bash(mysql -u root -h 127.0.0.1 finans_kalesi -e \"ALTER TABLE sirketler ADD COLUMN tema_adi VARCHAR\\(50\\) NOT NULL DEFAULT ''banking'' COMMENT ''Aktif tema: banking | earthy | dark'';\")",
+      "Bash(mysql -u root -h 127.0.0.1 finans_kalesi -e \"SELECT id, firma_adi, tema_adi FROM sirketler LIMIT 5;\")",
+      "Bash(curl -s -X POST http://localhost/Projeler/finans-kalesi/public/api/auth/giris -H \"Content-Type: application/json\" -d '{\"\"\"\"email\"\"\"\":\"\"\"\"kaan@test.com\"\"\"\",\"\"\"\"sifre\"\"\"\":\"\"\"\"12345678\"\"\"\"}')",
+      "Bash(mysql -u root -h 127.0.0.1 finans_kalesi -e \"SELECT id, email, sirket_id FROM kullanicilar LIMIT 5;\")",
+      "Bash(curl -s -X POST http://localhost/Projeler/finans-kalesi/public/api/auth/giris -H \"Content-Type: application/json\" -d '{\"\"email\"\":\"\"kaan@hirdavatduragi.shop\"\",\"\"sifre\"\":\"\"12345678\"\"}')",
+      "Bash(curl -s -X POST http://localhost/Projeler/finans-kalesi/public/api/auth/giris -H \"Content-Type: application/json\" -d '{\"\"email\"\":\"\"test@ornek.com\"\",\"\"sifre\"\":\"\"test1234\"\"}')",
+      "Bash(mysql -u root -h 127.0.0.1 finans_kalesi -e \"UPDATE sirketler SET tema_adi = ''banking''; SELECT id, firma_adi, tema_adi FROM sirketler;\")",
+      "Bash(find /c/laragon/www/Projeler/finans-kalesi -type f \\\\\\(-name *.sql -o -name *database* -o -name *schema* \\\\\\) -not -path */node_modules/* -not -path */.git/*)",
+      "Bash(find /c/laragon/www/Projeler/finans-kalesi -type f -name *.md -not -path */node_modules/* -not -path */.git/*)",
+      "Read(//c/laragon/**)",
+      "Bash(mysql -u root -e \"SHOW CREATE TABLE finans_kalesi.varlik_gecmisi\\\\G\")",
+      "Bash(git remote:*)"
     ]
   }
 }

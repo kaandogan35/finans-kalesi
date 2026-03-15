@@ -46,4 +46,13 @@ class Sirket {
         $stmt->execute([$id]);
         return $stmt->fetch();
     }
+
+    /**
+     * Sirket temasini guncelle
+     */
+    public function tema_guncelle($sirket_id, $tema_adi) {
+        $sql = "UPDATE sirketler SET tema_adi = ? WHERE id = ?";
+        $stmt = $this->db->prepare($sql);
+        $stmt->execute([$tema_adi, $sirket_id]);
+    }
 }

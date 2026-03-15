@@ -1,9 +1,8 @@
 /**
  * CekSenet.jsx — Çek & Senet Yönetimi
- * Obsidian Vault Koyu Premium Tema
+ * 3 Tema Uyumlu (Banking / Earthy / Dark)
  * 5 Tab: Dashboard | Portföydeki | Tahsildeki | Kendi Çekimiz | Cirolanan
  * Bootstrap 5 + Saf React | Finans Kalesi
- * cek- prefix ile self-contained stiller
  */
 
 import { useState, useEffect, useRef, useCallback } from 'react'
@@ -11,6 +10,10 @@ import { createPortal } from 'react-dom'
 import { toast } from 'sonner'
 import cekSenetApi from '../../api/cekSenet'
 import { carilerApi } from '../../api/cariler'
+import useTemaStore from '../../stores/temaStore'
+import { temaRenkleri } from '../../lib/temaRenkleri'
+
+const prefixMap = { banking: 'b', earthy: 'e', dark: 'd' }
 
 // ─── Sabitler ─────────────────────────────────────────────────────────────────
 const BANKALAR = [
@@ -32,30 +35,38 @@ const TUR_API = {
   'Kendi Senedimiz': 'borc_senedi',
 }
 
-// Tab renk → RGB dönüşümü (inline rgba() için)
-const RENK_RGB = {
-  '#f59e0b': '245,158,11',
-  '#10b981': '16,185,129',
-  '#ef4444': '239,68,68',
-  '#d97706': '217,119,6',
+// ─── Hex → rgba dönüştürücü ───────────────────────────────────────────────────
+function hexRgba(hex, alpha) {
+  const r = parseInt(hex.slice(1, 3), 16)
+  const g = parseInt(hex.slice(3, 5), 16)
+  const b = parseInt(hex.slice(5, 7), 16)
+  return `rgba(${r},${g},${b},${alpha})`
 }
 
-// ─── Tür Badge Konfigürasyonu ─────────────────────────────────────────────────
-const TUR_BADGE = {
-  'Müşteri Çeki':    { renk: '#f59e0b', bg: 'rgba(245,158,11,0.12)', icon: 'bi-file-earmark-check'  },
-  'Müşteri Senedi':  { renk: '#10b981', bg: 'rgba(16,185,129,0.12)', icon: 'bi-file-earmark-text'   },
-  'Kendi Çekimiz':   { renk: '#ef4444', bg: 'rgba(239,68,68,0.12)',  icon: 'bi-file-earmark-minus'  },
-  'Kendi Senedimiz': { renk: '#d97706', bg: 'rgba(217,119,6,0.12)',  icon: 'bi-file-earmark-minus'  },
+// ─── Tür Badge Konfigürasyonu (tema renklerinden) ─────────────────────────────
+function turBadgeCfg(tur, rnk) {
+  const map = {
+    'Müşteri Çeki':    { renk: rnk.accent,  icon: 'bi-file-earmark-check'  },
+    'Müşteri Senedi':  { renk: rnk.success, icon: 'bi-file-earmark-text'   },
+    'Kendi Çekimiz':   { renk: rnk.danger,  icon: 'bi-file-earmark-minus'  },
+    'Kendi Senedimiz': { renk: rnk.warning, icon: 'bi-file-earmark-minus'  },
+  }
+  const cfg = map[tur] || { renk: rnk.textSec, icon: 'bi-file-earmark' }
+  return { ...cfg, bg: hexRgba(cfg.renk, 0.12) }
 }
 
-// ─── Arşiv Badge Konfigürasyonu ───────────────────────────────────────────────
-const ARSIV_BADGE = {
-  tahsil_edildi:   { renk: '#10b981', bg: 'rgba(16,185,129,0.12)', label: 'Tahsil Edildi'   },
-  kendi_odendi:    { renk: '#f59e0b', bg: 'rgba(245,158,11,0.12)', label: 'Kendi Ödendi'    },
-  ciro_tamamlandi: { renk: '#d97706', bg: 'rgba(217,119,6,0.12)',  label: 'Ciro Tamamlandı' },
-  iade_edildi:     { renk: '#6366f1', bg: 'rgba(99,102,241,0.12)', label: 'İade Edildi'     },
-  karsiliksiz:     { renk: '#ef4444', bg: 'rgba(239,68,68,0.12)',  label: 'Karşılıksız'    },
-  protestolu:      { renk: '#dc2626', bg: 'rgba(220,38,38,0.12)',  label: 'Protestolu'     },
+// ─── Arşiv Badge Konfigürasyonu (tema renklerinden) ───────────────────────────
+function arsivBadgeCfg(kat, rnk) {
+  const map = {
+    tahsil_edildi:   { renk: rnk.success, label: 'Tahsil Edildi'   },
+    kendi_odendi:    { renk: rnk.accent,  label: 'Kendi Ödendi'    },
+    ciro_tamamlandi: { renk: rnk.warning, label: 'Ciro Tamamlandı' },
+    iade_edildi:     { renk: rnk.info,    label: 'İade Edildi'     },
+    karsiliksiz:     { renk: rnk.danger,  label: 'Karşılıksız'    },
+    protestolu:      { renk: rnk.danger,  label: 'Protestolu'     },
+  }
+  const cfg = map[kat] || { renk: rnk.textSec, label: kat }
+  return { ...cfg, bg: hexRgba(cfg.renk, 0.12) }
 }
 
 function normalize(item) {
@@ -127,7 +138,7 @@ const kendiBosluk = () => ({
 // Alt Bileşenler
 // ─────────────────────────────────────────────────────────────────────────────
 
-function Modal({ open, onClose, children, size = '', scrollable = false }) {
+function Modal({ open, onClose, children, size = '', scrollable = false, p = 'b' }) {
   useEffect(() => {
     if (!open) return
     document.body.style.overflow = 'hidden'
@@ -147,30 +158,12 @@ function Modal({ open, onClose, children, size = '', scrollable = false }) {
 
   return createPortal(
     <>
-      <div
-        style={{
-          position: 'fixed', inset: 0, zIndex: 1040,
-          background: 'rgba(0,0,0,0.7)',
-          backdropFilter: 'blur(8px)', WebkitBackdropFilter: 'blur(8px)',
-          animation: 'cekFadeIn 0.15s ease',
-        }}
-      />
-      <div
-        style={{
-          position: 'fixed', inset: 0, zIndex: 1050,
-          display: 'flex', alignItems: 'center', justifyContent: 'center',
-          padding: 16, animation: 'cekSlideUp 0.2s ease',
-        }}
-      >
-        <div className="cek-modal" style={{
-          width: '100%', maxWidth: maxW,
+      <div className={`${p}-modal-overlay`} />
+      <div className={`${p}-modal-center`}>
+        <div className={`${p}-modal-box`} style={{
+          maxWidth: maxW,
           maxHeight: scrollable ? '90vh' : 'auto',
-          display: 'flex', flexDirection: 'column',
-          borderRadius: 20, overflow: scrollable ? 'auto' : 'hidden',
-          boxShadow: '0 32px 80px rgba(0,0,0,0.5)',
-          background: 'rgba(13,27,46,0.95)',
-          backdropFilter: 'blur(30px)', WebkitBackdropFilter: 'blur(30px)',
-          border: '1px solid rgba(255,255,255,0.1)',
+          overflow: scrollable ? 'auto' : 'hidden',
         }}>
           {children}
         </div>
@@ -180,23 +173,23 @@ function Modal({ open, onClose, children, size = '', scrollable = false }) {
   )
 }
 
-function OnayModal({ open, onClose, onOnayla, baslik, mesaj, ikon, btnRenk = '#ef4444', btnYazi = 'Evet, Devam Et' }) {
+function OnayModal({ open, onClose, onOnayla, baslik, mesaj, ikon, btnRenk = '#ef4444', btnYazi = 'Evet, Devam Et', p = 'b' }) {
   return (
-    <Modal open={open} onClose={onClose} size="sm">
+    <Modal open={open} onClose={onClose} size="sm" p={p}>
       <div style={{ padding: '28px 28px 0', textAlign: 'center' }}>
         {ikon && <div style={{ fontSize: 36, marginBottom: 12 }}>{ikon}</div>}
-        <h6 style={{ fontWeight: 700, marginBottom: 8, color: '#ffffff' }}>{baslik}</h6>
-        <p style={{ fontSize: 14, color: 'rgba(255,255,255,0.5)', marginBottom: 0 }}>{mesaj}</p>
+        <h6 className={`${p}-onay-title`}>{baslik}</h6>
+        <p className={`${p}-onay-mesaj`}>{mesaj}</p>
       </div>
       <div style={{ padding: '20px 28px 28px', display: 'flex', gap: 10, justifyContent: 'flex-end' }}>
-        <button className="btn" onClick={onClose} style={{ minHeight: 44, padding: '0 20px', background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.1)', color: 'rgba(255,255,255,0.7)' }}>İptal</button>
-        <button className="btn text-white" style={{ background: btnRenk, minHeight: 44, padding: '0 20px' }} onClick={onOnayla}>{btnYazi}</button>
+        <button className={`btn ${p}-btn-cancel`} onClick={onClose}>İptal</button>
+        <button className="btn text-white" style={{ background: btnRenk, minHeight: 44, padding: '0 20px', borderRadius: 10 }} onClick={onOnayla}>{btnYazi}</button>
       </div>
     </Modal>
   )
 }
 
-function AutoComplete({ value, onChange, options, placeholder, id, required }) {
+function AutoComplete({ value, onChange, options, placeholder, id, required, p = 'b' }) {
   const [acik, setAcik] = useState(false)
   const ref = useRef(null)
 
@@ -222,19 +215,10 @@ function AutoComplete({ value, onChange, options, placeholder, id, required }) {
         onFocus={() => setAcik(true)}
       />
       {acik && filtered.length > 0 && (
-        <ul style={{
-          position: 'absolute', top: '100%', left: 0, right: 0, zIndex: 2000,
-          background: 'rgba(13,27,46,0.98)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 8,
-          boxShadow: '0 4px 16px rgba(0,0,0,0.4)', listStyle: 'none',
-          padding: '4px 0', margin: 0, maxHeight: 200, overflowY: 'auto',
-        }}>
+        <ul className={`${p}-autocomplete-list`}>
           {filtered.map(o => (
-            <li
-              key={o}
-              style={{ padding: '9px 14px', cursor: 'pointer', fontSize: 13, color: '#ffffff' }}
+            <li key={o} className={`${p}-autocomplete-item`}
               onMouseDown={() => { onChange(o); setAcik(false) }}
-              onMouseEnter={e => e.currentTarget.style.background = 'rgba(255,255,255,0.06)'}
-              onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
             >{o}</li>
           ))}
         </ul>
@@ -243,13 +227,13 @@ function AutoComplete({ value, onChange, options, placeholder, id, required }) {
   )
 }
 
-function FiltreSatiri({ filtre, setFiltre }) {
+function FiltreSatiri({ filtre, setFiltre, p = 'b' }) {
   const AYLAR = ['Ocak','Şubat','Mart','Nisan','Mayıs','Haziran','Temmuz','Ağustos','Eylül','Ekim','Kasım','Aralık']
   const YILLAR = [2024, 2025, 2026, 2027]
   return (
     <div className="d-flex gap-2 align-items-center flex-wrap">
       <select
-        className="form-select form-select-sm cek-select"
+        className={`form-select form-select-sm ${p}-filter-select`}
         style={{ width: 140, minHeight: 38 }}
         value={filtre.tumZamanlar ? 0 : filtre.ay}
         onChange={(e) => {
@@ -262,7 +246,7 @@ function FiltreSatiri({ filtre, setFiltre }) {
         {AYLAR.map((a, i) => <option key={i} value={i + 1}>{a}</option>)}
       </select>
       <select
-        className="form-select form-select-sm cek-select"
+        className={`form-select form-select-sm ${p}-filter-select`}
         style={{ width: 90, minHeight: 38 }}
         value={filtre.yil}
         disabled={filtre.tumZamanlar}
@@ -274,7 +258,7 @@ function FiltreSatiri({ filtre, setFiltre }) {
   )
 }
 
-function AylikTakvim({ ay, yil, tahsilEvents, odemeEvents }) {
+function AylikTakvim({ ay, yil, tahsilEvents, odemeEvents, p = 'b', renkler }) {
   const [tooltip, setTooltip] = useState(null)
   const GUN = ['Pt', 'Sa', 'Ça', 'Pe', 'Cu', 'Ct', 'Pz']
 
@@ -295,7 +279,7 @@ function AylikTakvim({ ay, yil, tahsilEvents, odemeEvents }) {
     <div>
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: 2, marginBottom: 4 }}>
         {GUN.map(g => (
-          <div key={g} style={{ textAlign: 'center', fontSize: 11, fontWeight: 700, color: 'rgba(255,255,255,0.4)', padding: '4px 0' }}>{g}</div>
+          <div key={g} className={`${p}-cal-header`}>{g}</div>
         ))}
       </div>
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: 2 }}>
@@ -306,13 +290,8 @@ function AylikTakvim({ ay, yil, tahsilEvents, odemeEvents }) {
           return (
             <div
               key={i}
-              style={{
-                minHeight: 40, borderRadius: 8,
-                background: isBugun ? 'rgba(245,158,11,0.1)' : gun ? 'rgba(255,255,255,0.03)' : 'transparent',
-                border: isBugun ? '1.5px solid #f59e0b' : gun ? '1px solid rgba(255,255,255,0.06)' : 'none',
-                display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
-                cursor: hasEvt ? 'pointer' : 'default', padding: 2, position: 'relative',
-              }}
+              className={gun ? (isBugun ? `${p}-cal-day ${p}-cal-today` : `${p}-cal-day`) : undefined}
+              style={{ cursor: hasEvt ? 'pointer' : 'default', position: 'relative' }}
               onMouseEnter={(e) => {
                 if (!gun || !hasEvt) return
                 const r = e.currentTarget.getBoundingClientRect()
@@ -320,15 +299,11 @@ function AylikTakvim({ ay, yil, tahsilEvents, odemeEvents }) {
               }}
               onMouseLeave={() => setTooltip(null)}
             >
-              {gun && (
-                <span style={{ fontSize: 12, fontWeight: isBugun ? 700 : 400, color: isBugun ? '#f59e0b' : 'rgba(255,255,255,0.7)' }}>
-                  {gun}
-                </span>
-              )}
+              {gun && <span className={isBugun ? `${p}-cal-num` : undefined} style={{ fontSize: 12 }}>{gun}</span>}
               {gun && hasEvt && (
                 <div style={{ display: 'flex', gap: 2, marginTop: 2 }}>
-                  {evt.t.length > 0 && <span style={{ width: 6, height: 6, borderRadius: '50%', background: '#10b981' }} />}
-                  {evt.o.length > 0 && <span style={{ width: 6, height: 6, borderRadius: '50%', background: '#ef4444' }} />}
+                  {evt.t.length > 0 && <span style={{ width: 6, height: 6, borderRadius: '50%', background: renkler.success }} />}
+                  {evt.o.length > 0 && <span style={{ width: 6, height: 6, borderRadius: '50%', background: renkler.danger }} />}
                 </div>
               )}
             </div>
@@ -337,17 +312,12 @@ function AylikTakvim({ ay, yil, tahsilEvents, odemeEvents }) {
       </div>
 
       {tooltip && createPortal(
-        <div style={{
-          position: 'fixed', left: tooltip.x, top: tooltip.y,
-          background: '#1e293b', color: '#fff', borderRadius: 10, padding: '10px 14px',
-          fontSize: 12, zIndex: 9999, maxWidth: 230, boxShadow: '0 4px 16px rgba(0,0,0,0.3)',
-          pointerEvents: 'none',
-        }}>
+        <div className={`${p}-cal-tooltip`}>
           {tooltip.evt.t.map((e, idx) => (
-            <div key={idx}><span style={{ color: '#4ade80' }}>↑</span> {e.firma} — {TL(e.tutar)}</div>
+            <div key={idx}><span style={{ color: renkler.success }}>↑</span> {e.firma} — {TL(e.tutar)}</div>
           ))}
           {tooltip.evt.o.map((e, idx) => (
-            <div key={idx}><span style={{ color: '#f87171' }}>↓</span> {e.firma} — {TL(e.tutar)}</div>
+            <div key={idx}><span style={{ color: renkler.danger }}>↓</span> {e.firma} — {TL(e.tutar)}</div>
           ))}
         </div>,
         document.body
@@ -356,29 +326,15 @@ function AylikTakvim({ ay, yil, tahsilEvents, odemeEvents }) {
   )
 }
 
-// ─── Renkli Özet Banner ───────────────────────────────────────────────────────
-function Banner({ gradient, children }) {
-  return (
-    <div style={{
-      background: gradient, borderRadius: 16, padding: '22px 24px',
-      color: '#fff', marginBottom: 20,
-      backdropFilter: 'blur(20px)', WebkitBackdropFilter: 'blur(20px)',
-      border: '1px solid rgba(255,255,255,0.1)',
-    }}>
-      {children}
-    </div>
-  )
-}
-
 // ─── Tür Badge ────────────────────────────────────────────────────────────────
-function TurBadge({ tur }) {
-  const cfg = TUR_BADGE[tur] || { renk: 'rgba(255,255,255,0.5)', bg: 'rgba(255,255,255,0.06)', icon: 'bi-file-earmark' }
+function TurBadge({ tur, renkler }) {
+  const cfg = turBadgeCfg(tur, renkler)
   return (
     <span style={{
       display: 'inline-flex', alignItems: 'center', gap: 4,
       background: cfg.bg, color: cfg.renk,
       fontSize: 11, fontWeight: 600, borderRadius: 6, padding: '3px 8px',
-      border: `1px solid ${cfg.renk}30`, whiteSpace: 'nowrap',
+      border: `1px solid ${hexRgba(cfg.renk, 0.18)}`, whiteSpace: 'nowrap',
     }}>
       <i className={`bi ${cfg.icon}`} style={{ fontSize: 10 }} />
       {tur}
@@ -387,34 +343,34 @@ function TurBadge({ tur }) {
 }
 
 // ─── Vade Badge ───────────────────────────────────────────────────────────────
-function VadeBadge({ tarih }) {
-  if (!tarih) return <span style={{ color: 'rgba(255,255,255,0.3)', fontSize: 13 }}>—</span>
+function VadeBadge({ tarih, p = 'b' }) {
+  if (!tarih) return <span className={`${p}-vade-empty`}>—</span>
   const now = new Date(); now.setHours(0, 0, 0, 0)
   const vd  = new Date(tarih + 'T00:00:00')
   const gun = Math.ceil((vd - now) / 86400000)
   if (gun < 0) return (
     <span>
-      <span className="cek-vade-late">{tarihFmt(tarih)}</span>
-      <span style={{ display: 'block', fontSize: 10, color: '#ef4444', fontWeight: 600, marginTop: 2 }}>+{Math.abs(gun)} gün gecikti</span>
+      <span className={`${p}-vade-late`}>{tarihFmt(tarih)}</span>
+      <span className={`${p}-vade-sub-late`}>+{Math.abs(gun)} gün gecikti</span>
     </span>
   )
   if (gun <= 3) return (
     <span>
-      <span className="cek-vade-warn">{tarihFmt(tarih)}</span>
-      <span style={{ display: 'block', fontSize: 10, color: '#d97706', fontWeight: 600, marginTop: 2 }}>{gun === 0 ? 'Bugün!' : `${gun} gün kaldı`}</span>
+      <span className={`${p}-vade-warn`}>{tarihFmt(tarih)}</span>
+      <span className={`${p}-vade-sub-warn`}>{gun === 0 ? 'Bugün!' : `${gun} gün kaldı`}</span>
     </span>
   )
-  return <span style={{ fontSize: 13, color: 'rgba(255,255,255,0.8)' }}>{tarihFmt(tarih)}</span>
+  return <span className={`${p}-vade-normal`}>{tarihFmt(tarih)}</span>
 }
 
 // ─── Form Grubu ───────────────────────────────────────────────────────────────
-function FG({ label, zorunlu, kritik, children }) {
+function FG({ label, zorunlu, kritik, children, p = 'b', renkler }) {
   return (
     <div className="mb-3">
-      <label className="form-label" style={{ fontSize: 13, fontWeight: 600, marginBottom: 6, color: 'rgba(255,255,255,0.7)' }}>
+      <label className={`form-label ${p}-form-label`}>
         {label}
-        {zorunlu && <span style={{ color: '#ef4444' }} className="ms-1">*</span>}
-        {kritik  && <span style={{ color: '#ef4444', fontSize: 11 }} className="ms-1">(Kritik Alan)</span>}
+        {zorunlu && <span style={{ color: renkler?.danger || '#c0392b' }} className="ms-1">*</span>}
+        {kritik  && <span style={{ color: renkler?.danger || '#c0392b', fontSize: 11 }} className="ms-1">(Kritik Alan)</span>}
       </label>
       {children}
     </div>
@@ -425,6 +381,11 @@ function FG({ label, zorunlu, kritik, children }) {
 // Ana Bileşen
 // ─────────────────────────────────────────────────────────────────────────────
 export default function CekSenet() {
+  // ─ Tema ─────────────────────────────────────────────────────────────────────
+  const aktifTema = useTemaStore((s) => s.aktifTema)
+  const p = prefixMap[aktifTema] || 'b'
+  const renkler = temaRenkleri[aktifTema] || temaRenkleri.banking
+
   // ─ Tab & Filtre ─────────────────────────────────────────────────────────────
   const [aktifTab, setAktifTab] = useState(0)
   const [filtre, setFiltre] = useState({
@@ -583,12 +544,12 @@ export default function CekSenet() {
 
   // ─ Tab Sayıları ──────────────────────────────────────────────────────────────
   const TABS = [
-    { label: 'Dashboard',     renk: '#f59e0b', count: null,           icon: 'bi-speedometer2'          },
-    { label: 'Portföydeki',   renk: '#f59e0b', count: portfoy.length, icon: 'bi-collection-fill'       },
-    { label: 'Tahsildeki',    renk: '#10b981', count: tahsil.length,  icon: 'bi-bank'                  },
-    { label: 'Kendi Çekimiz', renk: '#ef4444', count: kendi.length,   icon: 'bi-arrow-up-circle-fill'  },
-    { label: 'Cirolanan',     renk: '#d97706', count: ciro.length,    icon: 'bi-arrow-left-right'      },
-    { label: 'Arşiv',         renk: 'rgba(255,255,255,0.5)', count: arsiv.length, icon: 'bi-archive-fill' },
+    { label: 'Dashboard',     renk: renkler.accent,  count: null,           icon: 'bi-speedometer2'          },
+    { label: 'Portföydeki',   renk: renkler.accent,  count: portfoy.length, icon: 'bi-collection-fill'       },
+    { label: 'Tahsildeki',    renk: renkler.success, count: tahsil.length,  icon: 'bi-bank'                  },
+    { label: 'Kendi Çekimiz', renk: renkler.danger,  count: kendi.length,   icon: 'bi-arrow-up-circle-fill'  },
+    { label: 'Cirolanan',     renk: renkler.warning, count: ciro.length,    icon: 'bi-arrow-left-right'      },
+    { label: 'Arşiv',         renk: renkler.textSec, count: arsiv.length,   icon: 'bi-archive-fill'          },
   ]
 
   // ─ Portföy İşlem Fonksiyonları ───────────────────────────────────────────────
@@ -876,550 +837,110 @@ export default function CekSenet() {
   // RENDER
   // ─────────────────────────────────────────────────────────────────────────────
   if (yuklenIyor) return (
-    <div className="cek-root">
-      <style>{`
-        @keyframes shimmer {
-          0% { background-position: -200% 0 }
-          100% { background-position: 200% 0 }
-        }
-        .cek-sk {
-          background: linear-gradient(90deg,
-            rgba(255,255,255,0.04) 0%,
-            rgba(255,255,255,0.08) 50%,
-            rgba(255,255,255,0.04) 100%
-          );
-          background-size: 200% 100%;
-          animation: shimmer 1.5s infinite;
-          border-radius: 8px;
-        }
-      `}</style>
+    <div className={`${p}-page-root`}>
       {/* Skeleton Header */}
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 16, marginBottom: 24, padding: '20px 24px', background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.07)', borderRadius: 16 }}>
+      <div className={`${p}-cek-header mb-4`}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
-          <div className="cek-sk" style={{ width: 44, height: 44, borderRadius: 12, flexShrink: 0 }} />
+          <div className={`${p}-cek-sk`} style={{ width: 44, height: 44, borderRadius: 12, flexShrink: 0 }} />
           <div>
-            <div className="cek-sk" style={{ width: 200, height: 22, marginBottom: 8 }} />
-            <div className="cek-sk" style={{ width: 280, height: 14 }} />
+            <div className={`${p}-cek-sk`} style={{ width: 200, height: 22, marginBottom: 8 }} />
+            <div className={`${p}-cek-sk`} style={{ width: 280, height: 14 }} />
           </div>
         </div>
         <div className="d-flex gap-2">
-          <div className="cek-sk" style={{ width: 100, height: 44, borderRadius: 10 }} />
-          <div className="cek-sk" style={{ width: 100, height: 44, borderRadius: 10 }} />
-          <div className="cek-sk" style={{ width: 100, height: 44, borderRadius: 10 }} />
+          <div className={`${p}-cek-sk`} style={{ width: 100, height: 44, borderRadius: 10 }} />
+          <div className={`${p}-cek-sk`} style={{ width: 100, height: 44, borderRadius: 10 }} />
+          <div className={`${p}-cek-sk`} style={{ width: 100, height: 44, borderRadius: 10 }} />
         </div>
       </div>
       {/* Skeleton Tab Bar */}
-      <div style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.07)', borderRadius: 14, padding: 8, marginBottom: 24, display: 'flex', gap: 6 }}>
+      <div className={`${p}-tab-bar`} style={{ marginBottom: 24 }}>
         {[120, 100, 110, 130, 100, 80].map((w, i) => (
-          <div key={i} className="cek-sk" style={{ width: w, height: 40, borderRadius: 10, flexShrink: 0 }} />
+          <div key={i} className={`${p}-cek-sk`} style={{ width: w, height: 40, borderRadius: 10, flexShrink: 0 }} />
         ))}
       </div>
       {/* Skeleton KPI Cards */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 16, marginBottom: 24 }}>
+      <div className="row g-3 mb-4">
         {[0, 1, 2, 3].map(i => (
-          <div key={i} style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 16, padding: 24 }}>
-            <div className="cek-sk" style={{ width: '60%', height: 11, marginBottom: 18 }} />
-            <div className="cek-sk" style={{ width: '80%', height: 28, marginBottom: 10 }} />
-            <div className="cek-sk" style={{ width: '50%', height: 12 }} />
+          <div key={i} className="col-12 col-sm-6 col-xl-3">
+            <div className={`${p}-cek-kpi`} style={{ padding: 24 }}>
+              <div className={`${p}-cek-sk`} style={{ width: '60%', height: 11, marginBottom: 18 }} />
+              <div className={`${p}-cek-sk`} style={{ width: '80%', height: 28, marginBottom: 10 }} />
+              <div className={`${p}-cek-sk`} style={{ width: '50%', height: 12 }} />
+            </div>
           </div>
         ))}
       </div>
       {/* Skeleton Table Rows */}
-      <div style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 16, padding: '16px 20px' }}>
+      <div className={`${p}-panel`} style={{ padding: '16px 20px' }}>
         {[0, 1, 2, 3, 4].map(i => (
-          <div key={i} className="cek-sk" style={{ height: 40, borderRadius: 8, marginBottom: i < 4 ? 8 : 0, opacity: 1 - i * 0.12 }} />
+          <div key={i} className={`${p}-cek-sk`} style={{ height: 40, borderRadius: 8, marginBottom: i < 4 ? 8 : 0, opacity: 1 - i * 0.12 }} />
         ))}
       </div>
     </div>
   )
 
   return (
-    <div className="cek-root">
-      <style>{`
-        /* ═══ Çek/Senet — Obsidian Vault ═══ */
-        .cek-root { position: relative; z-index: 1; }
-
-        /* ─── Spinner ─── */
-        .cek-spinner {
-          width: 2.5rem; height: 2.5rem;
-          border: 3px solid rgba(255,255,255,0.08);
-          border-top-color: #f59e0b;
-          border-radius: 50%;
-          animation: spin 1s linear infinite;
-        }
-
-        /* ─── Glass Card ─── */
-        .cek-glass {
-          background: rgba(255,255,255,0.04);
-          backdrop-filter: blur(20px);
-          -webkit-backdrop-filter: blur(20px);
-          border: 1px solid rgba(255,255,255,0.08);
-          border-radius: 16px;
-          overflow: hidden;
-          transition: all 0.2s ease;
-        }
-        .cek-glass:hover {
-          background: rgba(255,255,255,0.06);
-          border-color: rgba(255,255,255,0.12);
-        }
-
-        /* ─── KPI Kart ─── */
-        .cek-kpi {
-          background: rgba(255,255,255,0.04);
-          backdrop-filter: blur(20px);
-          -webkit-backdrop-filter: blur(20px);
-          border: 1px solid rgba(255,255,255,0.08);
-          border-radius: 16px;
-          padding: 22px 24px;
-          transition: all 0.2s ease;
-          position: relative;
-          overflow: hidden;
-          cursor: pointer;
-          height: 100%;
-        }
-        .cek-kpi:hover {
-          background: rgba(255,255,255,0.07);
-          border-color: rgba(255,255,255,0.14);
-          transform: translateY(-2px);
-        }
-        .cek-kpi-deco {
-          position: absolute;
-          top: 16px; right: 16px;
-          font-size: 60px;
-          opacity: 0.20;
-          pointer-events: none;
-        }
-
-        /* ─── Select (Dark) ─── */
-        .cek-select {
-          background: rgba(255,255,255,0.05) !important;
-          border: 1px solid rgba(255,255,255,0.1) !important;
-          color: #ffffff !important;
-          border-radius: 8px !important;
-        }
-        .cek-select:focus {
-          border-color: #f59e0b !important;
-          box-shadow: 0 0 0 3px rgba(245,158,11,0.12) !important;
-        }
-        .cek-select option { background: #0d1b2e; color: #fff; }
-
-        /* ─── Modal Form Override ─── */
-        .cek-modal .form-control,
-        .cek-modal .form-select {
-          background: rgba(255,255,255,0.05) !important;
-          border: 1px solid rgba(255,255,255,0.1) !important;
-          border-radius: 10px !important;
-          color: #ffffff !important;
-          min-height: 44px;
-          font-family: 'Outfit', sans-serif;
-        }
-        .cek-modal .form-control:focus,
-        .cek-modal .form-select:focus {
-          border-color: #f59e0b !important;
-          box-shadow: 0 0 0 3px rgba(245,158,11,0.12) !important;
-          background: rgba(255,255,255,0.07) !important;
-        }
-        .cek-modal .form-control::placeholder {
-          color: rgba(255,255,255,0.25) !important;
-        }
-        .cek-modal select option {
-          background: #0d1b2e;
-          color: #ffffff;
-        }
-        .cek-modal .input-group-text {
-          background: rgba(255,255,255,0.06) !important;
-          border: 1px solid rgba(255,255,255,0.1) !important;
-          color: rgba(255,255,255,0.7) !important;
-          font-weight: 700;
-        }
-        .cek-modal .btn-close { filter: invert(1); }
-        .cek-modal .btn-outline-secondary {
-          background: rgba(255,255,255,0.06) !important;
-          border: 1px solid rgba(255,255,255,0.1) !important;
-          color: rgba(255,255,255,0.7) !important;
-        }
-        .cek-modal .btn-outline-secondary:hover {
-          background: rgba(255,255,255,0.1) !important;
-          color: #ffffff !important;
-        }
-
-        /* ─── Search ─── */
-        .cek-search .form-control {
-          background: rgba(255,255,255,0.05);
-          border: 1px solid rgba(255,255,255,0.1);
-          color: #ffffff;
-          min-height: 44px;
-        }
-        .cek-search .form-control::placeholder { color: rgba(255,255,255,0.25); }
-        .cek-search .form-control:focus {
-          border-color: #f59e0b;
-          box-shadow: 0 0 0 3px rgba(245,158,11,0.12);
-          background: rgba(255,255,255,0.07);
-        }
-        .cek-search .input-group-text {
-          background: rgba(255,255,255,0.04);
-          border: 1px solid rgba(255,255,255,0.1);
-          color: rgba(255,255,255,0.3);
-        }
-        .cek-search .btn-outline-secondary {
-          border-color: rgba(255,255,255,0.1);
-          color: rgba(255,255,255,0.5);
-        }
-
-        /* ─── Table (Dark) ─── */
-        .cek-root .table { --bs-table-bg: transparent; --bs-table-hover-bg: rgba(255,255,255,0.03); --bs-table-border-color: rgba(255,255,255,0.04); color: #ffffff; }
-        .cek-root .table thead th {
-          background: transparent !important;
-          color: rgba(255,255,255,0.4) !important;
-          font-size: 11px !important;
-          text-transform: uppercase;
-          letter-spacing: 0.8px;
-          font-weight: 600 !important;
-          border-bottom: 1px solid rgba(255,255,255,0.06) !important;
-        }
-        .cek-root .table tbody td { border-bottom: 1px solid rgba(255,255,255,0.04); }
-        .cek-root .text-muted { color: rgba(255,255,255,0.4) !important; }
-
-        /* ─── Arsiv Pill ─── */
-        .cek-arsiv-pill {
-          min-height: 44px; padding: 0 14px;
-          border-radius: 20px;
-          border: 1px solid rgba(255,255,255,0.08);
-          background: rgba(255,255,255,0.06);
-          color: rgba(255,255,255,0.6);
-          font-weight: 500;
-          transition: all 0.15s;
-          cursor: pointer;
-        }
-        .cek-arsiv-pill:hover { background: rgba(255,255,255,0.1); color: rgba(255,255,255,0.85); }
-        .cek-arsiv-pill.active {
-          background: rgba(245,158,11,0.15);
-          border-color: rgba(245,158,11,0.3);
-          color: #f59e0b;
-          font-weight: 700;
-        }
-
-        /* ─── Table Action Buttons ─── */
-        .cek-root .btn-outline-secondary {
-          background: rgba(255,255,255,0.04);
-          border-color: rgba(255,255,255,0.1);
-          color: rgba(255,255,255,0.6);
-        }
-        .cek-root .btn-outline-secondary:hover {
-          background: rgba(255,255,255,0.1);
-          border-color: rgba(255,255,255,0.2);
-          color: #ffffff;
-        }
-        .cek-root .btn-outline-danger {
-          background: rgba(239,68,68,0.08);
-          border-color: rgba(239,68,68,0.2);
-          color: #ef4444;
-        }
-        .cek-root .btn-outline-danger:hover {
-          background: #ef4444;
-          border-color: #ef4444;
-          color: #ffffff;
-        }
-
-        /* ─── Animations ─── */
-        @keyframes cekFadeIn { from { opacity: 0 } to { opacity: 1 } }
-        @keyframes cekSlideUp { from { opacity: 0; transform: translateY(16px) } to { opacity: 1; transform: translateY(0) } }
-        @keyframes spin { to { transform: rotate(360deg) } }
-
-        /* ─── Responsive ─── */
-        @media (max-width: 992px) {
-          .cek-kpi .cek-kpi-value { font-size: 20px !important; }
-        }
-        @media (max-width: 768px) {
-          .cek-kpi { padding: 16px; }
-          .cek-kpi .cek-kpi-value { font-size: 20px !important; }
-        }
-        @media (max-width: 480px) {
-          .cek-kpi { padding: 14px !important; border-radius: 12px; }
-          .cek-kpi .cek-kpi-value { font-size: 18px !important; }
-          .cek-glass { border-radius: 12px; }
-        }
-
-        /* ─── Shimmer Skeleton ─── */
-        @keyframes shimmer {
-          0% { background-position: -200% 0 }
-          100% { background-position: 200% 0 }
-        }
-        .cek-sk {
-          background: linear-gradient(90deg,
-            rgba(255,255,255,0.04) 0%,
-            rgba(255,255,255,0.08) 50%,
-            rgba(255,255,255,0.04) 100%
-          );
-          background-size: 200% 100%;
-          animation: shimmer 1.5s infinite;
-          border-radius: 8px;
-        }
-
-        /* ─── Sayfa Header ─── */
-        .cek-page-header {
-          display: flex;
-          align-items: center;
-          justify-content: space-between;
-          flex-wrap: wrap;
-          gap: 16px;
-          padding: 20px 24px;
-          background: rgba(255,255,255,0.03);
-          border: 1px solid rgba(255,255,255,0.07);
-          border-radius: 16px;
-          backdrop-filter: blur(20px);
-          -webkit-backdrop-filter: blur(20px);
-          position: relative;
-          overflow: hidden;
-        }
-        .cek-page-header::before {
-          content: '';
-          position: absolute;
-          top: -40%;
-          left: -5%;
-          width: 240px;
-          height: 240px;
-          background: radial-gradient(ellipse, rgba(245,158,11,0.06) 0%, transparent 70%);
-          pointer-events: none;
-        }
-        .cek-page-header-left {
-          display: flex;
-          align-items: center;
-          gap: 16px;
-        }
-        .cek-page-title {
-          font-size: 24px;
-          font-weight: 700;
-          color: #ffffff;
-          margin: 0 0 4px;
-          line-height: 1.2;
-        }
-        .cek-page-sub {
-          font-size: 14px;
-          color: rgba(255,255,255,0.5);
-          margin: 0;
-          line-height: 1.4;
-        }
-
-        /* ─── Amber Primary Buton ─── */
-        .cek-btn-primary {
-          background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
-          color: #0d1b2e !important;
-          border: none;
-          border-radius: 10px;
-          padding: 0 20px;
-          min-height: 44px;
-          font-size: 14px;
-          font-weight: 700;
-          cursor: pointer;
-          display: inline-flex;
-          align-items: center;
-          box-shadow: 0 4px 20px rgba(245,158,11,0.3);
-          transition: all 0.2s ease;
-          white-space: nowrap;
-        }
-        .cek-btn-primary:hover {
-          box-shadow: 0 6px 28px rgba(245,158,11,0.45);
-          transform: translateY(-1px);
-        }
-
-        /* ─── ERP Aksiyon Satırı Tooltip ─── */
-        .cek-act[title]:hover::after {
-          content: attr(title);
-          position: absolute;
-          bottom: calc(100% + 6px);
-          left: 50%;
-          transform: translateX(-50%);
-          background: rgba(13,27,46,0.97);
-          color: rgba(255,255,255,0.9);
-          font-size: 11px;
-          font-weight: 600;
-          white-space: nowrap;
-          padding: 4px 8px;
-          border-radius: 6px;
-          border: 1px solid rgba(255,255,255,0.1);
-          pointer-events: none;
-          z-index: 100;
-        }
-        .cek-act { position: relative; }
-
-        /* ─── ERP Header Stat Pill ─── */
-        .cek-stat-pill {
-          display: flex;
-          align-items: center;
-          gap: 8px;
-          background: rgba(255,255,255,0.04);
-          border: 1px solid rgba(255,255,255,0.08);
-          border-radius: 12px;
-          padding: 8px 14px;
-          backdrop-filter: blur(12px);
-          -webkit-backdrop-filter: blur(12px);
-          white-space: nowrap;
-        }
-        .cek-stat-label {
-          font-size: 10px;
-          font-weight: 700;
-          color: rgba(255,255,255,0.4);
-          text-transform: uppercase;
-          letter-spacing: 0.06em;
-          line-height: 1;
-          margin-bottom: 3px;
-        }
-        .cek-stat-val {
-          font-size: 13px;
-          font-weight: 800;
-          font-family: 'Inter', sans-serif;
-          line-height: 1;
-          font-variant-numeric: tabular-nums;
-        }
-
-        /* ─── Amber Primary Buton ─── */
-
-        /* ─── Tab Bar ─── */
-        .cek-tab-bar {
-          scrollbar-width: none;
-          -ms-overflow-style: none;
-        }
-        .cek-tab-bar::-webkit-scrollbar { display: none; }
-
-        /* ─── Aksiyon Butonları (32×32 glass) ─── */
-        .cek-act {
-          width: 32px; height: 32px;
-          display: inline-flex; align-items: center; justify-content: center;
-          border-radius: 8px;
-          background: rgba(255,255,255,0.05);
-          border: 1px solid rgba(255,255,255,0.08);
-          color: rgba(255,255,255,0.6);
-          cursor: pointer; font-size: 13px; flex-shrink: 0;
-          transition: all 0.15s;
-        }
-        .cek-act:hover { background: rgba(255,255,255,0.1); border-color: rgba(255,255,255,0.16); color: #ffffff; }
-        .cek-act-danger { background: rgba(239,68,68,0.08); border-color: rgba(239,68,68,0.15); color: #ef4444; }
-        .cek-act-danger:hover { background: #ef4444; border-color: #ef4444; color: #ffffff; }
-        .cek-act-success { background: rgba(16,185,129,0.10); border-color: rgba(16,185,129,0.20); color: #10b981; }
-        .cek-act-success:hover { background: #10b981; border-color: #10b981; color: #ffffff; }
-        .cek-act-amber { background: rgba(245,158,11,0.08); border-color: rgba(245,158,11,0.15); color: #f59e0b; }
-        .cek-act-amber:hover { background: #f59e0b; border-color: #f59e0b; color: #0d1b2e; }
-
-        /* ─── Vade Badge ─── */
-        .cek-vade-late { display: inline-block; color: #ef4444; font-weight: 700; font-size: 13px; }
-        .cek-vade-warn { display: inline-block; color: #d97706; font-weight: 700; font-size: 13px; }
-
-        /* ─── Glow Dot ─── */
-        .cek-dot { width: 8px; height: 8px; border-radius: 50%; display: inline-block; flex-shrink: 0; }
-
-        /* ─── Modal Bottom-Sheet (Mobil) ─── */
-        @media (max-width: 768px) {
-          .cek-modal { border-radius: 16px 16px 0 0 !important; }
-          .cek-page-title { font-size: 20px; }
-          .cek-page-sub { font-size: 13px; }
-        }
-        @media (max-width: 576px) {
-          .cek-page-header { flex-direction: column; align-items: flex-start; }
-          .cek-stat-pill { padding: 6px 10px; }
-          .cek-stat-val { font-size: 12px; }
-        }
-      `}</style>
-
+    <div className={`${p}-page-root`}>
+      {/* STYLE BLOCK REMOVED — tema CSS dosyalarında */}
       {/* ─── Sayfa Başlığı ──────────────────────────────────────────────────── */}
-      <div className="cek-page-header mb-4">
-        <div className="cek-page-header-left">
-          <div style={{ width: 48, height: 48, borderRadius: 14, background: 'linear-gradient(135deg, #f59e0b, #d97706)', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 4px 16px rgba(245,158,11,0.35)', flexShrink: 0 }}>
-            <i className="bi bi-file-earmark-text-fill" style={{ fontSize: 22, color: '#0d1b2e' }} />
+      <div className={`${p}-cek-header mb-4`}>
+        <div className="d-flex align-items-center gap-3">
+          <div className={`${p}-cek-icon`}>
+            <i className="bi bi-file-earmark-text-fill" />
           </div>
           <div>
-            <h4 className="cek-page-title">Çek &amp; Senet Yönetimi</h4>
-            <p className="cek-page-sub">Portföy takibi · Tahsilat · Borç evrakları · Ciro yönetimi</p>
+            <h4 className={`${p}-cek-title`}>Çek &amp; Senet Yönetimi</h4>
+            <p className={`${p}-cek-sub`}>Portföy takibi · Tahsilat · Borç evrakları · Ciro yönetimi</p>
           </div>
         </div>
         {/* ERP Quick Stats */}
         <div className="d-flex align-items-center gap-2 flex-wrap">
-          <div className="cek-stat-pill" style={{ borderColor: 'rgba(245,158,11,0.2)' }}>
-            <i className="bi bi-collection-fill" style={{ color: '#f59e0b', fontSize: 13 }} />
+          <div className={`${p}-stat-pill`} style={{ borderColor: hexRgba(renkler.accent, 0.2) }}>
+            <i className="bi bi-collection-fill" style={{ color: renkler.accent, fontSize: 13 }} />
             <div>
-              <div className="cek-stat-label">Portföy</div>
-              <div className="cek-stat-val" style={{ color: '#f59e0b' }}>{TL(toplam(portfoy))}</div>
+              <div className={`${p}-stat-label`}>Portföy</div>
+              <div className={`${p}-stat-val`} style={{ color: renkler.accent }}>{TL(toplam(portfoy))}</div>
             </div>
           </div>
-          <div className="cek-stat-pill" style={{ borderColor: 'rgba(16,185,129,0.2)' }}>
-            <i className="bi bi-bank" style={{ color: '#10b981', fontSize: 13 }} />
+          <div className={`${p}-stat-pill`} style={{ borderColor: hexRgba(renkler.success, 0.2) }}>
+            <i className="bi bi-bank" style={{ color: renkler.success, fontSize: 13 }} />
             <div>
-              <div className="cek-stat-label">Tahsilde</div>
-              <div className="cek-stat-val" style={{ color: '#10b981' }}>{TL(toplam(tahsil))}</div>
+              <div className={`${p}-stat-label`}>Tahsilde</div>
+              <div className={`${p}-stat-val`} style={{ color: renkler.success }}>{TL(toplam(tahsil))}</div>
             </div>
           </div>
-          <div className="cek-stat-pill" style={{ borderColor: toplam(tahsil) - toplam(kendi) >= 0 ? 'rgba(16,185,129,0.2)' : 'rgba(239,68,68,0.2)' }}>
-            <i className={`bi ${toplam(tahsil) - toplam(kendi) >= 0 ? 'bi-graph-up-arrow' : 'bi-graph-down-arrow'}`} style={{ color: toplam(tahsil) - toplam(kendi) >= 0 ? '#10b981' : '#ef4444', fontSize: 13 }} />
+          <div className={`${p}-stat-pill`} style={{ borderColor: hexRgba(toplam(tahsil) - toplam(kendi) >= 0 ? renkler.success : renkler.danger, 0.2) }}>
+            <i className={`bi ${toplam(tahsil) - toplam(kendi) >= 0 ? 'bi-graph-up-arrow' : 'bi-graph-down-arrow'}`} style={{ color: toplam(tahsil) - toplam(kendi) >= 0 ? renkler.success : renkler.danger, fontSize: 13 }} />
             <div>
-              <div className="cek-stat-label">Net Durum</div>
-              <div className="cek-stat-val" style={{ color: toplam(tahsil) - toplam(kendi) >= 0 ? '#10b981' : '#ef4444' }}>{TL(toplam(tahsil) - toplam(kendi))}</div>
+              <div className={`${p}-stat-label`}>Net Durum</div>
+              <div className={`${p}-stat-val`} style={{ color: toplam(tahsil) - toplam(kendi) >= 0 ? renkler.success : renkler.danger }}>{TL(toplam(tahsil) - toplam(kendi))}</div>
             </div>
           </div>
-          <button
-            onClick={veriYukle}
-            title="Verileri Yenile"
-            style={{ width: 40, height: 40, borderRadius: 10, background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)', color: 'rgba(255,255,255,0.5)', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, transition: 'all 0.15s' }}
-            onMouseEnter={e => { e.currentTarget.style.background = 'rgba(255,255,255,0.08)'; e.currentTarget.style.color = '#ffffff' }}
-            onMouseLeave={e => { e.currentTarget.style.background = 'rgba(255,255,255,0.04)'; e.currentTarget.style.color = 'rgba(255,255,255,0.5)' }}
-          >
+          <button className={`${p}-act`} onClick={veriYukle} title="Verileri Yenile" style={{ width: 40, height: 40 }}>
             <i className="bi bi-arrow-clockwise" style={{ fontSize: 15 }} />
           </button>
         </div>
       </div>
 
       {/* ─── Ana Kart ───────────────────────────────────────────────────────── */}
-      <div className="cek-glass p-0 overflow-hidden" style={{ borderRadius: 16 }}>
+      <div className={`${p}-panel`} style={{ padding: 0, overflow: 'hidden' }}>
 
         {/* Tab Başlıkları */}
-        <div
-          className="cek-tab-bar"
-          style={{
-            display: 'flex',
-            gap: 4,
-            padding: '6px 8px',
-            background: 'rgba(255,255,255,0.02)',
-            borderBottom: '1px solid rgba(255,255,255,0.05)',
-            overflowX: 'auto',
-          }}
-        >
+        <div className={`${p}-tab-bar`}>
           {TABS.map((tab, i) => {
             const isActive = aktifTab === i
-            const rgb = RENK_RGB[tab.renk] || '255,255,255'
             return (
               <button
                 key={i}
+                className={`${p}-tab-btn ${isActive ? 'active' : ''}`}
                 onClick={() => tabDegistir(i)}
-                style={{
-                  border: isActive ? `1px solid rgba(${rgb},0.25)` : '1px solid transparent',
-                  background: isActive ? `rgba(${rgb},0.12)` : 'none',
-                  borderRadius: 10,
-                  cursor: 'pointer',
-                  padding: '7px 14px',
-                  fontSize: 14,
-                  fontWeight: isActive ? 600 : 500,
-                  whiteSpace: 'nowrap',
-                  color: isActive ? tab.renk : 'rgba(255,255,255,0.6)',
-                  minHeight: 40,
-                  transition: 'all 0.15s',
-                  display: 'inline-flex',
-                  alignItems: 'center',
-                  gap: 6,
-                  flexShrink: 0,
-                }}
+                style={isActive ? { color: tab.renk, borderColor: hexRgba(tab.renk, 0.25), background: hexRgba(tab.renk, 0.1) } : undefined}
               >
                 {tab.icon && <i className={`bi ${tab.icon}`} style={{ fontSize: 13 }} />}
                 {tab.label}
                 {tab.count !== null && (
-                  <span style={{
-                    background: isActive ? `rgba(${rgb},0.15)` : 'rgba(255,255,255,0.08)',
-                    color: isActive ? tab.renk : 'rgba(255,255,255,0.5)',
-                    fontSize: 11,
-                    fontWeight: 600,
-                    borderRadius: 20,
-                    padding: '2px 8px',
-                    lineHeight: '1.4',
-                    display: 'inline-block',
-                  }}>
+                  <span className={`${p}-tab-count`} style={isActive ? { background: hexRgba(tab.renk, 0.15), color: tab.renk } : undefined}>
                     {tab.count}
                   </span>
                 )}
@@ -1439,11 +960,11 @@ export default function CekSenet() {
 
               {/* Üst Filtre + Başlık */}
               <div className="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-4">
-                <span style={{ fontSize: 14, fontWeight: 700, color: '#ffffff' }}>
-                  <i className="bi bi-speedometer2 me-2" style={{ color: '#f59e0b' }} />
+                <span style={{ fontSize: 14, fontWeight: 700, color: renkler.text }}>
+                  <i className="bi bi-speedometer2 me-2" style={{ color: renkler.accent }} />
                   Portföy Özeti
                 </span>
-                <FiltreSatiri filtre={filtre} setFiltre={setFiltre} />
+                <FiltreSatiri filtre={filtre} setFiltre={setFiltre} p={p} />
               </div>
 
               {/* 4 KPI Kartı */}
@@ -1451,15 +972,15 @@ export default function CekSenet() {
 
                 {/* Kart 1 — Portföydeki */}
                 <div className="col-12 col-sm-6 col-xl-3">
-                  <div className="cek-kpi" onClick={() => tabDegistir(1)}>
-                    <i className="bi bi-collection-fill cek-kpi-deco" style={{ color: '#f59e0b' }} />
-                    <h6 style={{ fontSize: 11, fontWeight: 600, color: 'rgba(255,255,255,0.75)', textTransform: 'uppercase', letterSpacing: '0.8px', margin: '0 0 12px', position: 'relative', zIndex: 1, textShadow: '0 0 14px rgba(255,255,255,0.08)' }}>
+                  <div className={`${p}-cek-kpi`} onClick={() => tabDegistir(1)}>
+                    <i className={`bi bi-collection-fill ${p}-kpi-deco`} style={{ color: renkler.accent }} />
+                    <h6 style={{ fontSize: 11, fontWeight: 600, color: renkler.textSec, textTransform: 'uppercase', letterSpacing: '0.8px', margin: '0 0 12px' }}>
                       Portföydeki Toplam
                     </h6>
-                    <div className="cek-kpi-value" style={{ fontSize: 26, fontWeight: 500, color: '#f59e0b', lineHeight: 1.15, fontFamily: "'Inter', sans-serif", position: 'relative', zIndex: 1, letterSpacing: '0.01em', fontVariantNumeric: 'tabular-nums', textShadow: '0 0 20px rgba(245,158,11,0.3)', WebkitFontSmoothing: 'antialiased' }}>
+                    <div className={`${p}-td-amount`} style={{ fontSize: 26, color: renkler.accent }}>
                       {TL(portfoyToplam)}
                     </div>
-                    <p style={{ fontSize: 12, color: 'rgba(255,255,255,0.5)', fontWeight: 500, margin: '8px 0 0', position: 'relative', zIndex: 1 }}>
+                    <p style={{ fontSize: 12, color: renkler.textSec, fontWeight: 500, margin: '8px 0 0' }}>
                       {portfoy.length} adet evrak
                     </p>
                   </div>
@@ -1467,52 +988,52 @@ export default function CekSenet() {
 
                 {/* Kart 2 — Tahsildeki */}
                 <div className="col-12 col-sm-6 col-xl-3">
-                  <div className="cek-kpi" onClick={() => tabDegistir(2)}>
-                    <i className="bi bi-bank cek-kpi-deco" style={{ color: '#10b981' }} />
-                    <h6 style={{ fontSize: 11, fontWeight: 600, color: 'rgba(255,255,255,0.75)', textTransform: 'uppercase', letterSpacing: '0.8px', margin: '0 0 12px', position: 'relative', zIndex: 1, textShadow: '0 0 14px rgba(255,255,255,0.08)' }}>
+                  <div className={`${p}-cek-kpi`} onClick={() => tabDegistir(2)}>
+                    <i className={`bi bi-bank ${p}-kpi-deco`} style={{ color: renkler.success }} />
+                    <h6 style={{ fontSize: 11, fontWeight: 600, color: renkler.textSec, textTransform: 'uppercase', letterSpacing: '0.8px', margin: '0 0 12px' }}>
                       Tahsildeki
                     </h6>
-                    <div className="cek-kpi-value" style={{ fontSize: 26, fontWeight: 500, color: '#10b981', lineHeight: 1.15, fontFamily: "'Inter', sans-serif", position: 'relative', zIndex: 1, letterSpacing: '0.01em', fontVariantNumeric: 'tabular-nums', textShadow: '0 0 20px rgba(16,185,129,0.3)', WebkitFontSmoothing: 'antialiased' }}>
+                    <div className={`${p}-td-amount`} style={{ fontSize: 26, color: renkler.success }}>
                       {TL(tahsilToplam)}
                     </div>
-                    <div style={{ display: 'flex', gap: 16, marginTop: 8, position: 'relative', zIndex: 1 }}>
-                      <span style={{ fontSize: 11, color: '#10b981', fontWeight: 500 }}>● {TL(tahsilBekleyen)} Bekleyen</span>
-                      <span style={{ fontSize: 11, color: '#ef4444', fontWeight: 700 }}>● {TL(tahsilGecmis)} Gecikmiş</span>
+                    <div style={{ display: 'flex', gap: 16, marginTop: 8 }}>
+                      <span style={{ fontSize: 11, color: renkler.success, fontWeight: 500 }}>● {TL(tahsilBekleyen)} Bekleyen</span>
+                      <span style={{ fontSize: 11, color: renkler.danger, fontWeight: 700 }}>● {TL(tahsilGecmis)} Gecikmiş</span>
                     </div>
                   </div>
                 </div>
 
                 {/* Kart 3 — Kendi Çekimiz */}
                 <div className="col-12 col-sm-6 col-xl-3">
-                  <div className="cek-kpi" onClick={() => tabDegistir(3)}>
-                    <i className="bi bi-arrow-up-circle-fill cek-kpi-deco" style={{ color: '#ef4444' }} />
-                    <h6 style={{ fontSize: 11, fontWeight: 600, color: 'rgba(255,255,255,0.75)', textTransform: 'uppercase', letterSpacing: '0.8px', margin: '0 0 12px', position: 'relative', zIndex: 1, textShadow: '0 0 14px rgba(255,255,255,0.08)' }}>
+                  <div className={`${p}-cek-kpi`} onClick={() => tabDegistir(3)}>
+                    <i className={`bi bi-arrow-up-circle-fill ${p}-kpi-deco`} style={{ color: renkler.danger }} />
+                    <h6 style={{ fontSize: 11, fontWeight: 600, color: renkler.textSec, textTransform: 'uppercase', letterSpacing: '0.8px', margin: '0 0 12px' }}>
                       Kendi Çekimiz
                     </h6>
-                    <div className="cek-kpi-value" style={{ fontSize: 26, fontWeight: 500, color: '#ef4444', lineHeight: 1.15, fontFamily: "'Inter', sans-serif", position: 'relative', zIndex: 1, letterSpacing: '0.01em', fontVariantNumeric: 'tabular-nums', textShadow: '0 0 20px rgba(239,68,68,0.3)', WebkitFontSmoothing: 'antialiased' }}>
+                    <div className={`${p}-td-amount`} style={{ fontSize: 26, color: renkler.danger }}>
                       {TL(kendiToplam)}
                     </div>
-                    <div style={{ display: 'flex', gap: 16, marginTop: 8, position: 'relative', zIndex: 1 }}>
-                      <span style={{ fontSize: 11, color: '#10b981', fontWeight: 500 }}>● {TL(kendiBekleyen)} Bekleyen</span>
-                      <span style={{ fontSize: 11, color: '#ef4444', fontWeight: 700 }}>● {TL(kendiGecmis)} Gecikmiş</span>
+                    <div style={{ display: 'flex', gap: 16, marginTop: 8 }}>
+                      <span style={{ fontSize: 11, color: renkler.success, fontWeight: 500 }}>● {TL(kendiBekleyen)} Bekleyen</span>
+                      <span style={{ fontSize: 11, color: renkler.danger, fontWeight: 700 }}>● {TL(kendiGecmis)} Gecikmiş</span>
                     </div>
                   </div>
                 </div>
 
                 {/* Kart 4 — Net Durum */}
                 <div className="col-12 col-sm-6 col-xl-3">
-                  <div className="cek-kpi">
+                  <div className={`${p}-cek-kpi`}>
                     <i
-                      className={`bi ${netDurum >= 0 ? 'bi-graph-up-arrow' : 'bi-exclamation-triangle-fill'} cek-kpi-deco`}
-                      style={{ color: netDurum >= 0 ? '#10b981' : '#ef4444' }}
+                      className={`bi ${netDurum >= 0 ? 'bi-graph-up-arrow' : 'bi-exclamation-triangle-fill'} ${p}-kpi-deco`}
+                      style={{ color: netDurum >= 0 ? renkler.success : renkler.danger }}
                     />
-                    <h6 style={{ fontSize: 11, fontWeight: 600, color: 'rgba(255,255,255,0.75)', textTransform: 'uppercase', letterSpacing: '0.8px', margin: '0 0 12px', position: 'relative', zIndex: 1, textShadow: '0 0 14px rgba(255,255,255,0.08)' }}>
+                    <h6 style={{ fontSize: 11, fontWeight: 600, color: renkler.textSec, textTransform: 'uppercase', letterSpacing: '0.8px', margin: '0 0 12px' }}>
                       Net Durum
                     </h6>
-                    <div className="cek-kpi-value" style={{ fontSize: 26, fontWeight: 500, color: netDurum >= 0 ? '#10b981' : '#ef4444', lineHeight: 1.15, fontFamily: "'Inter', sans-serif", position: 'relative', zIndex: 1, letterSpacing: '0.01em', fontVariantNumeric: 'tabular-nums', textShadow: `0 0 20px ${netDurum >= 0 ? 'rgba(16,185,129,0.3)' : 'rgba(239,68,68,0.3)'}`, WebkitFontSmoothing: 'antialiased' }}>
+                    <div className={`${p}-td-amount`} style={{ fontSize: 26, color: netDurum >= 0 ? renkler.success : renkler.danger }}>
                       {TL(netDurum)}
                     </div>
-                    <p style={{ fontSize: 12, color: 'rgba(255,255,255,0.5)', fontWeight: 500, margin: '8px 0 0', position: 'relative', zIndex: 1 }}>
+                    <p style={{ fontSize: 12, color: renkler.textSec, fontWeight: 500, margin: '8px 0 0' }}>
                       Alacak − Borç farkı
                     </p>
                   </div>
@@ -1527,28 +1048,28 @@ export default function CekSenet() {
                   {/* Blok A — Gecikmiş Tahsilat */}
                   {gecikenTahsil.length > 0 && (
                     <div className="col-md-6">
-                      <div className="cek-glass p-3 h-100" style={{ borderLeft: '3px solid #ef4444', background: 'rgba(239,68,68,0.06)' }}>
+                      <div className={`${p}-panel p-3 h-100`} style={{ borderLeft: `3px solid ${renkler.danger}`, background: hexRgba(renkler.danger, 0.06) }}>
                         <div className="d-flex align-items-center gap-2 mb-3">
-                          <i className="bi bi-exclamation-triangle-fill" style={{ color: '#ef4444', fontSize: 14 }} />
-                          <span style={{ fontWeight: 700, fontSize: 13, color: '#ef4444' }}>Gecikmiş Tahsilat</span>
-                          <span style={{ background: 'rgba(239,68,68,0.15)', color: '#ef4444', fontSize: 11, fontWeight: 600, borderRadius: 20, padding: '2px 8px' }}>
+                          <i className="bi bi-exclamation-triangle-fill" style={{ color: renkler.danger, fontSize: 14 }} />
+                          <span style={{ fontWeight: 700, fontSize: 13, color: renkler.danger }}>Gecikmiş Tahsilat</span>
+                          <span style={{ background: hexRgba(renkler.danger, 0.15), color: renkler.danger, fontSize: 11, fontWeight: 600, borderRadius: 20, padding: '2px 8px' }}>
                             {gecikenTahsil.length} evrak
                           </span>
                         </div>
                         {gecikenTahsil.slice(0, 5).map(item => (
-                          <div key={item.id} className="d-flex justify-content-between align-items-center mb-2 pb-2" style={{ borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
+                          <div key={item.id} className="d-flex justify-content-between align-items-center mb-2 pb-2" style={{ borderBottom: `1px solid ${hexRgba(renkler.textSec, 0.1)}` }}>
                             <div>
-                              <div style={{ fontSize: 13, fontWeight: 600, color: '#ffffff' }}>{item.firma_adi}</div>
-                              <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.4)' }}>{tarihFmt(item.vade_tarihi)}</div>
+                              <div style={{ fontSize: 13, fontWeight: 600, color: renkler.text }}>{item.firma_adi}</div>
+                              <div style={{ fontSize: 11, color: renkler.textSec }}>{tarihFmt(item.vade_tarihi)}</div>
                             </div>
                             <div style={{ textAlign: 'right' }}>
-                              <div style={{ fontSize: 13, fontWeight: 700, color: '#ef4444', fontFamily: "'Inter', sans-serif" }}>{TL(item.tutar)}</div>
-                              <span style={{ fontSize: 10, background: 'rgba(239,68,68,0.12)', color: '#ef4444', borderRadius: 6, padding: '1px 6px' }}>+{gunFark(item.vade_tarihi)} gün</span>
+                              <div style={{ fontSize: 13, fontWeight: 700, color: renkler.danger }}>{TL(item.tutar)}</div>
+                              <span style={{ fontSize: 10, background: hexRgba(renkler.danger, 0.12), color: renkler.danger, borderRadius: 6, padding: '1px 6px' }}>+{gunFark(item.vade_tarihi)} gün</span>
                             </div>
                           </div>
                         ))}
                         {gecikenTahsil.length > 5 && (
-                          <button onClick={() => tabDegistir(2)} style={{ background: 'none', border: 'none', color: '#ef4444', fontSize: 12, cursor: 'pointer', padding: 0, marginTop: 4 }}>
+                          <button onClick={() => tabDegistir(2)} style={{ background: 'none', border: 'none', color: renkler.danger, fontSize: 12, cursor: 'pointer', padding: 0, marginTop: 4 }}>
                             Tümünü gör ({gecikenTahsil.length}) <i className="bi bi-arrow-right" />
                           </button>
                         )}
@@ -1559,28 +1080,28 @@ export default function CekSenet() {
                   {/* Blok B — Gecikmiş Ödemelerimiz */}
                   {gecikenKendi.length > 0 && (
                     <div className="col-md-6">
-                      <div className="cek-glass p-3 h-100" style={{ borderLeft: '3px solid #d97706', background: 'rgba(217,119,6,0.06)' }}>
+                      <div className={`${p}-panel p-3 h-100`} style={{ borderLeft: `3px solid ${renkler.warning}`, background: hexRgba(renkler.warning, 0.06) }}>
                         <div className="d-flex align-items-center gap-2 mb-3">
-                          <i className="bi bi-exclamation-triangle-fill" style={{ color: '#d97706', fontSize: 14 }} />
-                          <span style={{ fontWeight: 700, fontSize: 13, color: '#d97706' }}>Gecikmiş Ödemelerimiz</span>
-                          <span style={{ background: 'rgba(217,119,6,0.15)', color: '#d97706', fontSize: 11, fontWeight: 600, borderRadius: 20, padding: '2px 8px' }}>
+                          <i className="bi bi-exclamation-triangle-fill" style={{ color: renkler.warning, fontSize: 14 }} />
+                          <span style={{ fontWeight: 700, fontSize: 13, color: renkler.warning }}>Gecikmiş Ödemelerimiz</span>
+                          <span style={{ background: hexRgba(renkler.warning, 0.15), color: renkler.warning, fontSize: 11, fontWeight: 600, borderRadius: 20, padding: '2px 8px' }}>
                             {gecikenKendi.length} evrak
                           </span>
                         </div>
                         {gecikenKendi.slice(0, 5).map(item => (
-                          <div key={item.id} className="d-flex justify-content-between align-items-center mb-2 pb-2" style={{ borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
+                          <div key={item.id} className="d-flex justify-content-between align-items-center mb-2 pb-2" style={{ borderBottom: `1px solid ${hexRgba(renkler.textSec, 0.1)}` }}>
                             <div>
-                              <div style={{ fontSize: 13, fontWeight: 600, color: '#ffffff' }}>{item.firma_adi}</div>
-                              <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.4)' }}>{tarihFmt(item.vade_tarihi)}</div>
+                              <div style={{ fontSize: 13, fontWeight: 600, color: renkler.text }}>{item.firma_adi}</div>
+                              <div style={{ fontSize: 11, color: renkler.textSec }}>{tarihFmt(item.vade_tarihi)}</div>
                             </div>
                             <div style={{ textAlign: 'right' }}>
-                              <div style={{ fontSize: 13, fontWeight: 700, color: '#d97706', fontFamily: "'Inter', sans-serif" }}>{TL(item.tutar)}</div>
-                              <span style={{ fontSize: 10, background: 'rgba(217,119,6,0.12)', color: '#d97706', borderRadius: 6, padding: '1px 6px' }}>+{gunFark(item.vade_tarihi)} gün</span>
+                              <div style={{ fontSize: 13, fontWeight: 700, color: renkler.warning }}>{TL(item.tutar)}</div>
+                              <span style={{ fontSize: 10, background: hexRgba(renkler.warning, 0.12), color: renkler.warning, borderRadius: 6, padding: '1px 6px' }}>+{gunFark(item.vade_tarihi)} gün</span>
                             </div>
                           </div>
                         ))}
                         {gecikenKendi.length > 5 && (
-                          <button onClick={() => tabDegistir(3)} style={{ background: 'none', border: 'none', color: '#d97706', fontSize: 12, cursor: 'pointer', padding: 0, marginTop: 4 }}>
+                          <button onClick={() => tabDegistir(3)} style={{ background: 'none', border: 'none', color: renkler.warning, fontSize: 12, cursor: 'pointer', padding: 0, marginTop: 4 }}>
                             Tümünü gör ({gecikenKendi.length}) <i className="bi bi-arrow-right" />
                           </button>
                         )}
@@ -1591,11 +1112,11 @@ export default function CekSenet() {
                 </div>
               ) : (
                 /* Yeşil Onay Banner */
-                <div className="cek-glass d-flex align-items-center gap-3 p-3 mb-4" style={{ borderColor: 'rgba(16,185,129,0.25)', background: 'rgba(16,185,129,0.05)' }}>
-                  <i className="bi bi-check-circle-fill" style={{ color: '#10b981', fontSize: 24, flexShrink: 0 }} />
+                <div className={`${p}-panel d-flex align-items-center gap-3 p-3 mb-4`} style={{ borderColor: hexRgba(renkler.success, 0.25), background: hexRgba(renkler.success, 0.05) }}>
+                  <i className="bi bi-check-circle-fill" style={{ color: renkler.success, fontSize: 24, flexShrink: 0 }} />
                   <div>
-                    <div style={{ fontSize: 14, fontWeight: 600, color: '#10b981' }}>Tüm evraklar vadeli</div>
-                    <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.5)' }}>Gecikmiş tahsilat veya ödeme bulunmuyor</div>
+                    <div style={{ fontSize: 14, fontWeight: 600, color: renkler.success }}>Tüm evraklar vadeli</div>
+                    <div style={{ fontSize: 12, color: renkler.textSec }}>Gecikmiş tahsilat veya ödeme bulunmuyor</div>
                   </div>
                 </div>
               )}
@@ -1605,19 +1126,19 @@ export default function CekSenet() {
 
                 {/* Vade Takvimi */}
                 <div className="col-lg-6">
-                  <div className="cek-glass p-3 h-100">
-                    <div style={{ fontSize: 14, fontWeight: 700, color: '#ffffff', marginBottom: 14 }}>
-                      <i className="bi bi-calendar3 me-2" style={{ color: '#f59e0b' }} />
+                  <div className={`${p}-panel p-3 h-100`}>
+                    <div style={{ fontSize: 14, fontWeight: 700, color: renkler.text, marginBottom: 14 }}>
+                      <i className="bi bi-calendar3 me-2" style={{ color: renkler.accent }} />
                       Vade Takvimi
                     </div>
-                    <AylikTakvim ay={filtre.ay} yil={filtre.yil} tahsilEvents={takvimTahsil} odemeEvents={takvimOdeme} />
+                    <AylikTakvim ay={filtre.ay} yil={filtre.yil} tahsilEvents={takvimTahsil} odemeEvents={takvimOdeme} p={p} renkler={renkler} />
                     <div className="d-flex gap-4 mt-3">
-                      <span style={{ fontSize: 12, color: 'rgba(255,255,255,0.5)', display: 'flex', alignItems: 'center', gap: 6 }}>
-                        <span style={{ width: 8, height: 8, borderRadius: '50%', background: '#10b981', display: 'inline-block', boxShadow: '0 0 6px rgba(16,185,129,0.5)' }} />
+                      <span style={{ fontSize: 12, color: renkler.textSec, display: 'flex', alignItems: 'center', gap: 6 }}>
+                        <span style={{ width: 8, height: 8, borderRadius: '50%', background: renkler.success, display: 'inline-block' }} />
                         Tahsil Vadesi
                       </span>
-                      <span style={{ fontSize: 12, color: 'rgba(255,255,255,0.5)', display: 'flex', alignItems: 'center', gap: 6 }}>
-                        <span style={{ width: 8, height: 8, borderRadius: '50%', background: '#ef4444', display: 'inline-block', boxShadow: '0 0 6px rgba(239,68,68,0.5)' }} />
+                      <span style={{ fontSize: 12, color: renkler.textSec, display: 'flex', alignItems: 'center', gap: 6 }}>
+                        <span style={{ width: 8, height: 8, borderRadius: '50%', background: renkler.danger, display: 'inline-block' }} />
                         Ödeme Vadesi
                       </span>
                     </div>
@@ -1626,18 +1147,18 @@ export default function CekSenet() {
 
                 {/* Son 6 Ay SVG Grafiği */}
                 <div className="col-lg-6">
-                  <div className="cek-glass p-3 h-100">
+                  <div className={`${p}-panel p-3 h-100`}>
                     <div className="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
-                      <span style={{ fontSize: 14, fontWeight: 700, color: '#ffffff' }}>
-                        <i className="bi bi-bar-chart-line me-2" style={{ color: '#f59e0b' }} />
+                      <span style={{ fontSize: 14, fontWeight: 700, color: renkler.text }}>
+                        <i className="bi bi-bar-chart-line me-2" style={{ color: renkler.accent }} />
                         Son 6 Ay Özeti
                       </span>
                       <div className="d-flex gap-3">
-                        <span style={{ fontSize: 11, color: 'rgba(255,255,255,0.5)', display: 'flex', alignItems: 'center', gap: 5 }}>
-                          <span style={{ width: 10, height: 10, borderRadius: 2, background: '#10b981', display: 'inline-block' }} /> Tahsil
+                        <span style={{ fontSize: 11, color: renkler.textSec, display: 'flex', alignItems: 'center', gap: 5 }}>
+                          <span style={{ width: 10, height: 10, borderRadius: 2, background: renkler.success, display: 'inline-block' }} /> Tahsil
                         </span>
-                        <span style={{ fontSize: 11, color: 'rgba(255,255,255,0.5)', display: 'flex', alignItems: 'center', gap: 5 }}>
-                          <span style={{ width: 10, height: 10, borderRadius: 2, background: '#ef4444', display: 'inline-block' }} /> Ödeme
+                        <span style={{ fontSize: 11, color: renkler.textSec, display: 'flex', alignItems: 'center', gap: 5 }}>
+                          <span style={{ width: 10, height: 10, borderRadius: 2, background: renkler.danger, display: 'inline-block' }} /> Ödeme
                         </span>
                       </div>
                     </div>
@@ -1660,27 +1181,27 @@ export default function CekSenet() {
                             return (
                               <g key={i}>
                                 {/* Tahsil bar */}
-                                <rect x={x} y={chartH - th} width={barW} height={th} rx={4} fill="#10b981" opacity={0.85} />
+                                <rect x={x} y={chartH - th} width={barW} height={th} rx={4} fill={renkler.success} opacity={0.85} />
                                 {r.tahsil > 0 && (
-                                  <text x={x + barW / 2} y={chartH - th - 4} textAnchor="middle" fontSize={9} fill="#10b981" fontFamily="Inter,sans-serif">
+                                  <text x={x + barW / 2} y={chartH - th - 4} textAnchor="middle" fontSize={9} fill={renkler.success}>
                                     {fmtK(r.tahsil)}
                                   </text>
                                 )}
                                 {/* Ödeme bar */}
-                                <rect x={x + barW + intraGap} y={chartH - oh} width={barW} height={oh} rx={4} fill="#ef4444" opacity={0.85} />
+                                <rect x={x + barW + intraGap} y={chartH - oh} width={barW} height={oh} rx={4} fill={renkler.danger} opacity={0.85} />
                                 {r.odeme > 0 && (
-                                  <text x={x + barW + intraGap + barW / 2} y={chartH - oh - 4} textAnchor="middle" fontSize={9} fill="#ef4444" fontFamily="Inter,sans-serif">
+                                  <text x={x + barW + intraGap + barW / 2} y={chartH - oh - 4} textAnchor="middle" fontSize={9} fill={renkler.danger}>
                                     {fmtK(r.odeme)}
                                   </text>
                                 )}
                                 {/* Ay etiketi */}
-                                <text x={x + groupW / 2} y={chartH + 18} textAnchor="middle" fontSize={10} fill="rgba(255,255,255,0.4)" fontFamily="Outfit,sans-serif">
+                                <text x={x + groupW / 2} y={chartH + 18} textAnchor="middle" fontSize={10} fill={renkler.textSec}>
                                   {r.ay.split(' ')[0]}
                                 </text>
                               </g>
                             )
                           })}
-                          <line x1={padX} y1={chartH} x2={totalW - padX} y2={chartH} stroke="rgba(255,255,255,0.08)" strokeWidth={1} />
+                          <line x1={padX} y1={chartH} x2={totalW - padX} y2={chartH} stroke={hexRgba(renkler.textSec, 0.15)} strokeWidth={1} />
                         </svg>
                       )
                     })()}
@@ -1698,33 +1219,29 @@ export default function CekSenet() {
           {aktifTab === 1 && (
             <div>
               {/* Gradient Banner */}
-              <div style={{
-                background: 'linear-gradient(135deg, rgba(245,158,11,0.18) 0%, rgba(217,119,6,0.06) 100%)',
-                border: '1px solid rgba(245,158,11,0.2)', borderRadius: 16,
-                padding: '22px 24px', marginBottom: 20,
-              }}>
+              <div className={`${p}-banner ${p}-banner-amber`}>
                 <div className="d-flex justify-content-between align-items-start flex-wrap gap-3">
                   <div>
-                    <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.6)', textTransform: 'uppercase', letterSpacing: '0.8px', fontWeight: 600, marginBottom: 8 }}>Toplam Portföy</div>
-                    <div style={{ fontSize: 30, fontWeight: 500, lineHeight: 1, fontFamily: "'Inter', sans-serif", color: '#f59e0b', textShadow: '0 0 20px rgba(245,158,11,0.3)', fontVariantNumeric: 'tabular-nums' }}>{TL(portfoyToplam)}</div>
-                    <div style={{ fontSize: 13, color: 'rgba(255,255,255,0.5)', marginTop: 6 }}>
-                      <i className="bi bi-collection-fill me-1" style={{ color: '#f59e0b' }} />
+                    <div className={`${p}-banner-label`}>Toplam Portföy</div>
+                    <div className={`${p}-banner-value-lg`} style={{ color: renkler.accent }}>{TL(portfoyToplam)}</div>
+                    <div className={`${p}-banner-hint`}>
+                      <i className="bi bi-collection-fill me-1" style={{ color: renkler.accent }} />
                       {portfoy.length} adet evrak
                     </div>
                   </div>
-                  <FiltreSatiri filtre={filtre} setFiltre={setFiltre} />
+                  <FiltreSatiri filtre={filtre} setFiltre={setFiltre} p={p} />
                 </div>
               </div>
 
               {/* Arama + Yeni Buton */}
               <div className="d-flex gap-2 mb-3 flex-wrap">
-                <div className="input-group flex-grow-1 cek-search" style={{ minWidth: 220 }}>
+                <div className={`input-group flex-grow-1 ${p}-search`} style={{ minWidth: 220 }}>
                   <span className="input-group-text"><i className="bi bi-search" style={{ color: 'rgba(255,255,255,0.3)' }} /></span>
                   <input className="form-control" style={{ minHeight: 44 }} placeholder="Müşteri, evrak no veya vade tarihi ara..."
                     value={aramaMetni} onChange={e => setAramaMetni(e.target.value)} />
                   {aramaMetni && <button className="btn btn-outline-secondary" onClick={() => setAramaMetni('')}><i className="bi bi-x" /></button>}
                 </div>
-                <button className="cek-btn-primary"
+                <button className={`${p}-btn-accent`}
                   onClick={() => { setPortfoyForm(portfoyBosluk()); setPortfoyDzlId(null); setPortfoyModal(true) }}>
                   <i className="bi bi-plus-lg me-2" /> Yeni Evrak
                 </button>
@@ -1732,56 +1249,56 @@ export default function CekSenet() {
 
               {/* Tablo */}
               <div className="table-responsive">
-                <table className="table table-hover align-middle" style={{ fontSize: 13 }}>
+                <table className={`table table-hover align-middle ${p}-table`}>
                   <thead>
                     <tr>
-                      <th style={{ padding: '10px 12px' }}>Vade Tarihi</th>
-                      <th style={{ padding: '10px 12px' }}>İşlem Tarihi</th>
-                      <th style={{ padding: '10px 12px' }}>Tutar</th>
-                      <th style={{ padding: '10px 12px' }}>Firma / Asıl Borçlu</th>
-                      <th style={{ padding: '10px 12px' }}>Tür / Banka</th>
-                      <th style={{ padding: '10px 12px' }}>Evrak No</th>
-                      <th style={{ padding: '10px 12px', textAlign: 'right' }}>İşlemler</th>
+                      <th>Vade Tarihi</th>
+                      <th>İşlem Tarihi</th>
+                      <th>Tutar</th>
+                      <th>Firma / Asıl Borçlu</th>
+                      <th>Tür / Banka</th>
+                      <th>Evrak No</th>
+                      <th style={{ textAlign: 'right' }}>İşlemler</th>
                     </tr>
                   </thead>
                   <tbody>
                     {fP.length === 0 && (
                       <tr>
-                        <td colSpan={7} className="py-5 text-center">
-                          <i className="bi bi-file-earmark-x" style={{ fontSize: 36, color: 'rgba(255,255,255,0.15)', display: 'block', marginBottom: 10 }} />
-                          <div style={{ fontSize: 14, color: 'rgba(255,255,255,0.4)', fontWeight: 500 }}>Bu dönemde evrak bulunamadı</div>
-                          <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.25)', marginTop: 4 }}>Filtre değiştirin veya yeni evrak ekleyin</div>
+                        <td colSpan={7} className={`py-5 text-center ${p}-empty-state`}>
+                          <i className="bi bi-file-earmark-x" style={{ fontSize: 36, color: renkler.textSec, display: 'block', marginBottom: 10 }} />
+                          <div style={{ fontSize: 14, color: renkler.textSec, fontWeight: 500 }}>Bu dönemde evrak bulunamadı</div>
+                          <div style={{ fontSize: 12, color: renkler.textSec, marginTop: 4 }}>Filtre değiştirin veya yeni evrak ekleyin</div>
                         </td>
                       </tr>
                     )}
                     {fP.map(item => (
                       <tr key={item.id}>
-                        <td style={{ padding: '12px' }}><VadeBadge tarih={item.vade_tarihi} /></td>
-                        <td style={{ padding: '12px', color: 'rgba(255,255,255,0.45)', fontSize: 13 }}>{tarihFmt(item.islem_tarihi)}</td>
-                        <td style={{ padding: '12px', fontWeight: 700, color: '#f59e0b', fontFamily: "'Inter', sans-serif", fontSize: 14 }}>{TL(item.tutar)}</td>
+                        <td style={{ padding: '12px' }}><VadeBadge tarih={item.vade_tarihi} p={p} /></td>
+                        <td className={`${p}-td-muted`} style={{ padding: '12px' }}>{tarihFmt(item.islem_tarihi)}</td>
+                        <td className={`${p}-td-amount`} style={{ padding: '12px', color: renkler.accent }}>{TL(item.tutar)}</td>
                         <td style={{ padding: '12px' }}>
-                          <div style={{ fontWeight: 600, color: '#ffffff', fontSize: 13 }}>{item.firma_adi}</div>
-                          {item.asil_borclu && <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.4)', marginTop: 2 }}>{item.asil_borclu}</div>}
+                          <div className={`${p}-td-firma`}>{item.firma_adi}</div>
+                          {item.asil_borclu && <div className={`${p}-td-firma-sub`}>{item.asil_borclu}</div>}
                         </td>
                         <td style={{ padding: '12px' }}>
-                          <TurBadge tur={item.tur} />
-                          {item.banka && <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.4)', marginTop: 4 }}><i className="bi bi-bank me-1" />{item.banka}</div>}
+                          <TurBadge tur={item.tur} renkler={renkler} />
+                          {item.banka && <div className={`${p}-td-firma-sub`} style={{ marginTop: 4 }}><i className="bi bi-bank me-1" />{item.banka}</div>}
                         </td>
-                        <td style={{ padding: '12px', fontFamily: 'monospace', fontSize: 11, color: 'rgba(255,255,255,0.4)', letterSpacing: '0.5px' }}>{item.evrak_no || '—'}</td>
+                        <td className={`${p}-td-mono`} style={{ padding: '12px' }}>{item.evrak_no || '—'}</td>
                         <td style={{ padding: '12px' }}>
                           <div className="d-flex gap-1 justify-content-end">
-                            <button className="cek-act cek-act-success" title="Tahsile Ver"
+                            <button className={`${p}-act ${p}-act-success`} title="Tahsile Ver"
                               onClick={() => { setTahsileId(item.id); setTahsileForm({ banka: '', tarih: bugunStr() }); setTahsileModal(true) }}>
                               <i className="bi bi-bank" />
                             </button>
-                            <button className="cek-act cek-act-amber" title="Cirola"
+                            <button className={`${p}-act ${p}-act-amber`} title="Cirola"
                               onClick={() => { setCirolaId(item.id); setCirolaForm({ firma: '', tarih: bugunStr() }); setCirolaModal(true) }}>
                               <i className="bi bi-arrow-left-right" />
                             </button>
-                            <button className="cek-act" title="Düzenle" onClick={() => portfoyDzlAc(item)}>
+                            <button className={`${p}-act`} title="Düzenle" onClick={() => portfoyDzlAc(item)}>
                               <i className="bi bi-pencil" />
                             </button>
-                            <button className="cek-act cek-act-danger" title="Sil" onClick={() => portfoySil(item.id)}>
+                            <button className={`${p}-act ${p}-act-danger`} title="Sil" onClick={() => portfoySil(item.id)}>
                               <i className="bi bi-trash" />
                             </button>
                           </div>
@@ -1792,9 +1309,9 @@ export default function CekSenet() {
                 </table>
               </div>
               {fP.length > 0 && (
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: 12, padding: '10px 16px', background: 'rgba(245,158,11,0.05)', border: '1px solid rgba(245,158,11,0.12)', borderRadius: 10 }}>
-                  <span style={{ fontSize: 12, color: 'rgba(255,255,255,0.4)' }}>{fP.length} evrak listeleniyor</span>
-                  <span style={{ fontSize: 13, fontWeight: 700, color: '#f59e0b', fontFamily: "'Inter', sans-serif" }}>Toplam: {TL(portfoyToplam)}</span>
+                <div className={`${p}-list-footer ${p}-list-footer-amber`}>
+                  <span className={`${p}-list-footer-count`}>{fP.length} evrak listeleniyor</span>
+                  <span className={`${p}-list-footer-total`} style={{ color: renkler.accent }}>Toplam: {TL(portfoyToplam)}</span>
                 </div>
               )}
             </div>
@@ -1806,32 +1323,28 @@ export default function CekSenet() {
           {aktifTab === 2 && (
             <div>
               {/* Gradient Banner */}
-              <div style={{
-                background: 'linear-gradient(135deg, rgba(16,185,129,0.15) 0%, rgba(5,150,105,0.05) 100%)',
-                border: '1px solid rgba(16,185,129,0.2)', borderRadius: 16,
-                padding: '22px 24px', marginBottom: 20,
-              }}>
+              <div className={`${p}-banner ${p}-banner-green`}>
                 <div className="d-flex justify-content-between align-items-start flex-wrap gap-3">
                   <div className="d-flex gap-4 flex-wrap">
                     <div>
-                      <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.6)', textTransform: 'uppercase', letterSpacing: '0.8px', fontWeight: 600 }}>Bekleyen Vade</div>
-                      <div style={{ fontSize: 22, fontWeight: 500, fontFamily: "'Inter', sans-serif", color: '#10b981', textShadow: '0 0 20px rgba(16,185,129,0.3)', fontVariantNumeric: 'tabular-nums', marginTop: 4 }}>{TL(tahsilBekleyen)}</div>
+                      <div className={`${p}-banner-label`}>Bekleyen Vade</div>
+                      <div className={`${p}-banner-value`} style={{ color: renkler.success }}>{TL(tahsilBekleyen)}</div>
                     </div>
                     <div>
-                      <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.6)', textTransform: 'uppercase', letterSpacing: '0.8px', fontWeight: 600 }}>Vadesi Geçen</div>
-                      <div style={{ fontSize: 22, fontWeight: 500, fontFamily: "'Inter', sans-serif", color: '#ef4444', textShadow: '0 0 20px rgba(239,68,68,0.3)', fontVariantNumeric: 'tabular-nums', marginTop: 4 }}>{TL(tahsilGecmis)}</div>
+                      <div className={`${p}-banner-label`}>Vadesi Geçen</div>
+                      <div className={`${p}-banner-value`} style={{ color: renkler.danger }}>{TL(tahsilGecmis)}</div>
                     </div>
                     <div>
-                      <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.6)', textTransform: 'uppercase', letterSpacing: '0.8px', fontWeight: 600 }}>Toplam Tahsilde</div>
-                      <div style={{ fontSize: 22, fontWeight: 500, fontFamily: "'Inter', sans-serif", color: '#ffffff', fontVariantNumeric: 'tabular-nums', marginTop: 4 }}>{TL(tahsilToplam)}</div>
+                      <div className={`${p}-banner-label`}>Toplam Tahsilde</div>
+                      <div className={`${p}-banner-value`} style={{ color: renkler.text }}>{TL(tahsilToplam)}</div>
                     </div>
                   </div>
-                  <FiltreSatiri filtre={filtre} setFiltre={setFiltre} />
+                  <FiltreSatiri filtre={filtre} setFiltre={setFiltre} p={p} />
                 </div>
               </div>
 
               {/* Arama */}
-              <div className="input-group mb-3 cek-search">
+              <div className={`input-group mb-3 ${p}-search`}>
                 <span className="input-group-text"><i className="bi bi-search" style={{ color: 'rgba(255,255,255,0.3)' }} /></span>
                 <input className="form-control" style={{ minHeight: 44 }} placeholder="Müşteri, evrak no veya vade tarihi ara..."
                   value={aramaMetni} onChange={e => setAramaMetni(e.target.value)} />
@@ -1839,51 +1352,51 @@ export default function CekSenet() {
               </div>
 
               <div className="table-responsive">
-                <table className="table table-hover align-middle" style={{ fontSize: 13 }}>
+                <table className={`table table-hover align-middle ${p}-table`}>
                   <thead>
                     <tr>
-                      <th style={{ padding: '10px 12px' }}>Ödeme Tarihi (Vade)</th>
-                      <th style={{ padding: '10px 12px' }}>Tahsile Veriş</th>
-                      <th style={{ padding: '10px 12px' }}>Tutar</th>
-                      <th style={{ padding: '10px 12px' }}>Firma / Asıl Borçlu</th>
-                      <th style={{ padding: '10px 12px' }}>Tür / Banka</th>
-                      <th style={{ padding: '10px 12px' }}>Evrak No</th>
-                      <th style={{ padding: '10px 12px', textAlign: 'right' }}>İşlemler</th>
+                      <th>Ödeme Tarihi (Vade)</th>
+                      <th>Tahsile Veriş</th>
+                      <th>Tutar</th>
+                      <th>Firma / Asıl Borçlu</th>
+                      <th>Tür / Banka</th>
+                      <th>Evrak No</th>
+                      <th style={{ textAlign: 'right' }}>İşlemler</th>
                     </tr>
                   </thead>
                   <tbody>
                     {fT.length === 0 && (
                       <tr>
-                        <td colSpan={7} className="py-5 text-center">
-                          <i className="bi bi-bank" style={{ fontSize: 36, color: 'rgba(255,255,255,0.15)', display: 'block', marginBottom: 10 }} />
-                          <div style={{ fontSize: 14, color: 'rgba(255,255,255,0.4)', fontWeight: 500 }}>Bu dönemde tahsildeki evrak bulunamadı</div>
-                          <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.25)', marginTop: 4 }}>Portföyden evrak tahsile gönderin</div>
+                        <td colSpan={7} className={`py-5 text-center ${p}-empty-state`}>
+                          <i className="bi bi-bank" style={{ fontSize: 36, color: renkler.textSec, display: 'block', marginBottom: 10 }} />
+                          <div style={{ fontSize: 14, color: renkler.textSec, fontWeight: 500 }}>Bu dönemde tahsildeki evrak bulunamadı</div>
+                          <div style={{ fontSize: 12, color: renkler.textSec, marginTop: 4 }}>Portföyden evrak tahsile gönderin</div>
                         </td>
                       </tr>
                     )}
                     {fT.map(item => (
                       <tr key={item.id}>
-                        <td style={{ padding: '12px' }}><VadeBadge tarih={item.vade_tarihi} /></td>
-                        <td style={{ padding: '12px', color: 'rgba(255,255,255,0.45)', fontSize: 13 }}>{tarihFmt(item.tahsil_tarihi)}</td>
-                        <td style={{ padding: '12px', fontWeight: 700, color: '#10b981', fontFamily: "'Inter', sans-serif", fontSize: 14 }}>{TL(item.tutar)}</td>
+                        <td style={{ padding: '12px' }}><VadeBadge tarih={item.vade_tarihi} p={p} /></td>
+                        <td className={`${p}-td-muted`} style={{ padding: '12px' }}>{tarihFmt(item.tahsil_tarihi)}</td>
+                        <td className={`${p}-td-amount`} style={{ padding: '12px', color: renkler.success }}>{TL(item.tutar)}</td>
                         <td style={{ padding: '12px' }}>
-                          <div style={{ fontWeight: 600, color: '#ffffff', fontSize: 13 }}>{item.firma_adi}</div>
-                          {item.asil_borclu && <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.4)', marginTop: 2 }}>{item.asil_borclu}</div>}
+                          <div className={`${p}-td-firma`}>{item.firma_adi}</div>
+                          {item.asil_borclu && <div className={`${p}-td-firma-sub`}>{item.asil_borclu}</div>}
                         </td>
                         <td style={{ padding: '12px' }}>
-                          <TurBadge tur={item.tur} />
-                          {item.banka && <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.4)', marginTop: 4 }}><i className="bi bi-bank me-1" />{item.banka}</div>}
+                          <TurBadge tur={item.tur} renkler={renkler} />
+                          {item.banka && <div className={`${p}-td-firma-sub`} style={{ marginTop: 4 }}><i className="bi bi-bank me-1" />{item.banka}</div>}
                         </td>
-                        <td style={{ padding: '12px', fontFamily: 'monospace', fontSize: 11, color: 'rgba(255,255,255,0.4)', letterSpacing: '0.5px' }}>{item.evrak_no || '—'}</td>
+                        <td className={`${p}-td-mono`} style={{ padding: '12px' }}>{item.evrak_no || '—'}</td>
                         <td style={{ padding: '12px' }}>
                           <div className="d-flex gap-1 justify-content-end">
-                            <button className="cek-act cek-act-success" title="Ödendi" onClick={() => tahsilOdendi(item.id)}>
+                            <button className={`${p}-act ${p}-act-success`} title="Ödendi" onClick={() => tahsilOdendi(item.id)}>
                               <i className="bi bi-check-lg" />
                             </button>
-                            <button className="cek-act" title="Portföye İade Et" onClick={() => tahsilIade(item.id)}>
+                            <button className={`${p}-act`} title="Portföye İade Et" onClick={() => tahsilIade(item.id)}>
                               <i className="bi bi-arrow-counterclockwise" />
                             </button>
-                            <button className="cek-act" title="Düzenle" onClick={() => tahsilDzlAc(item)}>
+                            <button className={`${p}-act`} title="Düzenle" onClick={() => tahsilDzlAc(item)}>
                               <i className="bi bi-pencil" />
                             </button>
                           </div>
@@ -1894,9 +1407,9 @@ export default function CekSenet() {
                 </table>
               </div>
               {fT.length > 0 && (
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: 12, padding: '10px 16px', background: 'rgba(16,185,129,0.05)', border: '1px solid rgba(16,185,129,0.12)', borderRadius: 10 }}>
-                  <span style={{ fontSize: 12, color: 'rgba(255,255,255,0.4)' }}>{fT.length} evrak listeleniyor</span>
-                  <span style={{ fontSize: 13, fontWeight: 700, color: '#10b981', fontFamily: "'Inter', sans-serif" }}>Toplam: {TL(tahsilToplam)}</span>
+                <div className={`${p}-list-footer ${p}-list-footer-green`}>
+                  <span className={`${p}-list-footer-count`}>{fT.length} evrak listeleniyor</span>
+                  <span className={`${p}-list-footer-total`} style={{ color: renkler.success }}>Toplam: {TL(tahsilToplam)}</span>
                 </div>
               )}
             </div>
@@ -1908,87 +1421,83 @@ export default function CekSenet() {
           {aktifTab === 3 && (
             <div>
               {/* Gradient Banner */}
-              <div style={{
-                background: 'linear-gradient(135deg, rgba(239,68,68,0.15) 0%, rgba(185,28,28,0.05) 100%)',
-                border: '1px solid rgba(239,68,68,0.2)', borderRadius: 16,
-                padding: '22px 24px', marginBottom: 20,
-              }}>
+              <div className={`${p}-banner ${p}-banner-red`}>
                 <div className="d-flex justify-content-between align-items-start flex-wrap gap-3">
                   <div className="d-flex gap-4 flex-wrap">
                     <div>
-                      <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.6)', textTransform: 'uppercase', letterSpacing: '0.8px', fontWeight: 600 }}>Bekleyen Borç</div>
-                      <div style={{ fontSize: 22, fontWeight: 500, fontFamily: "'Inter', sans-serif", color: '#ef4444', textShadow: '0 0 20px rgba(239,68,68,0.3)', fontVariantNumeric: 'tabular-nums', marginTop: 4 }}>{TL(kendiBekleyen)}</div>
+                      <div className={`${p}-banner-label`}>Bekleyen Borç</div>
+                      <div className={`${p}-banner-value`} style={{ color: renkler.danger }}>{TL(kendiBekleyen)}</div>
                     </div>
                     <div>
-                      <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.6)', textTransform: 'uppercase', letterSpacing: '0.8px', fontWeight: 600 }}>Vadesi Geçen</div>
-                      <div style={{ fontSize: 22, fontWeight: 500, fontFamily: "'Inter', sans-serif", color: '#d97706', textShadow: '0 0 20px rgba(217,119,6,0.3)', fontVariantNumeric: 'tabular-nums', marginTop: 4 }}>{TL(kendiGecmis)}</div>
+                      <div className={`${p}-banner-label`}>Vadesi Geçen</div>
+                      <div className={`${p}-banner-value`} style={{ color: renkler.warning }}>{TL(kendiGecmis)}</div>
                     </div>
                     <div>
-                      <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.6)', textTransform: 'uppercase', letterSpacing: '0.8px', fontWeight: 600 }}>Toplam Çıkış</div>
-                      <div style={{ fontSize: 22, fontWeight: 500, fontFamily: "'Inter', sans-serif", color: '#ffffff', fontVariantNumeric: 'tabular-nums', marginTop: 4 }}>{TL(kendiToplam)}</div>
+                      <div className={`${p}-banner-label`}>Toplam Çıkış</div>
+                      <div className={`${p}-banner-value`} style={{ color: renkler.text }}>{TL(kendiToplam)}</div>
                     </div>
                   </div>
-                  <FiltreSatiri filtre={filtre} setFiltre={setFiltre} />
+                  <FiltreSatiri filtre={filtre} setFiltre={setFiltre} p={p} />
                 </div>
               </div>
 
               {/* Arama + Yeni Buton */}
               <div className="d-flex gap-2 mb-3 flex-wrap">
-                <div className="input-group flex-grow-1 cek-search" style={{ minWidth: 220 }}>
+                <div className={`input-group flex-grow-1 ${p}-search`} style={{ minWidth: 220 }}>
                   <span className="input-group-text"><i className="bi bi-search" style={{ color: 'rgba(255,255,255,0.3)' }} /></span>
                   <input className="form-control" style={{ minHeight: 44 }} placeholder="Firma, evrak no, banka veya vade tarihi ara..."
                     value={aramaMetni} onChange={e => setAramaMetni(e.target.value)} />
                   {aramaMetni && <button className="btn btn-outline-secondary" onClick={() => setAramaMetni('')}><i className="bi bi-x" /></button>}
                 </div>
-                <button className="cek-btn-primary"
+                <button className={`${p}-btn-accent`}
                   onClick={() => { setKendiForm(kendiBosluk()); setKendiDzlId(null); setKendiModal(true) }}>
                   <i className="bi bi-plus-lg me-2" /> Yeni Borç Ekle
                 </button>
               </div>
 
               <div className="table-responsive">
-                <table className="table table-hover align-middle" style={{ fontSize: 13 }}>
+                <table className={`table table-hover align-middle ${p}-table`}>
                   <thead>
                     <tr>
-                      <th style={{ padding: '10px 12px' }}>Ödeme Tarihi (Vade)</th>
-                      <th style={{ padding: '10px 12px' }}>İşlem Tarihi</th>
-                      <th style={{ padding: '10px 12px' }}>Tutar</th>
-                      <th style={{ padding: '10px 12px' }}>Firma (Ödeme Yapılan)</th>
-                      <th style={{ padding: '10px 12px' }}>Tür / Banka</th>
-                      <th style={{ padding: '10px 12px' }}>Evrak No</th>
-                      <th style={{ padding: '10px 12px', textAlign: 'right' }}>İşlemler</th>
+                      <th>Ödeme Tarihi (Vade)</th>
+                      <th>İşlem Tarihi</th>
+                      <th>Tutar</th>
+                      <th>Firma (Ödeme Yapılan)</th>
+                      <th>Tür / Banka</th>
+                      <th>Evrak No</th>
+                      <th style={{ textAlign: 'right' }}>İşlemler</th>
                     </tr>
                   </thead>
                   <tbody>
                     {fK.length === 0 && (
                       <tr>
-                        <td colSpan={7} className="py-5 text-center">
-                          <i className="bi bi-arrow-up-circle" style={{ fontSize: 36, color: 'rgba(255,255,255,0.15)', display: 'block', marginBottom: 10 }} />
-                          <div style={{ fontSize: 14, color: 'rgba(255,255,255,0.4)', fontWeight: 500 }}>Bu dönemde borç evrakı bulunamadı</div>
-                          <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.25)', marginTop: 4 }}>Yeni borç evrakı ekleyin</div>
+                        <td colSpan={7} className={`py-5 text-center ${p}-empty-state`}>
+                          <i className="bi bi-arrow-up-circle" style={{ fontSize: 36, color: renkler.textSec, display: 'block', marginBottom: 10 }} />
+                          <div style={{ fontSize: 14, color: renkler.textSec, fontWeight: 500 }}>Bu dönemde borç evrakı bulunamadı</div>
+                          <div style={{ fontSize: 12, color: renkler.textSec, marginTop: 4 }}>Yeni borç evrakı ekleyin</div>
                         </td>
                       </tr>
                     )}
                     {fK.map(item => (
                       <tr key={item.id}>
-                        <td style={{ padding: '12px' }}><VadeBadge tarih={item.vade_tarihi} /></td>
-                        <td style={{ padding: '12px', color: 'rgba(255,255,255,0.45)', fontSize: 13 }}>{tarihFmt(item.islem_tarihi)}</td>
-                        <td style={{ padding: '12px', fontWeight: 700, color: '#ef4444', fontFamily: "'Inter', sans-serif", fontSize: 14 }}>{TL(item.tutar)}</td>
-                        <td style={{ padding: '12px', fontWeight: 600, color: '#ffffff', fontSize: 13 }}>{item.firma_adi}</td>
+                        <td style={{ padding: '12px' }}><VadeBadge tarih={item.vade_tarihi} p={p} /></td>
+                        <td className={`${p}-td-muted`} style={{ padding: '12px' }}>{tarihFmt(item.islem_tarihi)}</td>
+                        <td className={`${p}-td-amount`} style={{ padding: '12px', color: renkler.danger }}>{TL(item.tutar)}</td>
+                        <td className={`${p}-td-firma`} style={{ padding: '12px' }}>{item.firma_adi}</td>
                         <td style={{ padding: '12px' }}>
-                          <TurBadge tur={item.tur} />
-                          {item.banka && <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.4)', marginTop: 4 }}><i className="bi bi-bank me-1" />{item.banka}</div>}
+                          <TurBadge tur={item.tur} renkler={renkler} />
+                          {item.banka && <div className={`${p}-td-firma-sub`} style={{ marginTop: 4 }}><i className="bi bi-bank me-1" />{item.banka}</div>}
                         </td>
-                        <td style={{ padding: '12px', fontFamily: 'monospace', fontSize: 11, color: 'rgba(255,255,255,0.4)', letterSpacing: '0.5px' }}>{item.evrak_no || '—'}</td>
+                        <td className={`${p}-td-mono`} style={{ padding: '12px' }}>{item.evrak_no || '—'}</td>
                         <td style={{ padding: '12px' }}>
                           <div className="d-flex gap-1 justify-content-end">
-                            <button className="cek-act cek-act-success" title="Ödendi" onClick={() => kendiOdendi(item.id)}>
+                            <button className={`${p}-act ${p}-act-success`} title="Ödendi" onClick={() => kendiOdendi(item.id)}>
                               <i className="bi bi-check-lg" />
                             </button>
-                            <button className="cek-act" title="Düzenle" onClick={() => kendiDzlAc(item)}>
+                            <button className={`${p}-act`} title="Düzenle" onClick={() => kendiDzlAc(item)}>
                               <i className="bi bi-pencil" />
                             </button>
-                            <button className="cek-act cek-act-danger" title="Sil" onClick={() => kendiSil(item.id)}>
+                            <button className={`${p}-act ${p}-act-danger`} title="Sil" onClick={() => kendiSil(item.id)}>
                               <i className="bi bi-trash" />
                             </button>
                           </div>
@@ -1999,9 +1508,9 @@ export default function CekSenet() {
                 </table>
               </div>
               {fK.length > 0 && (
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: 12, padding: '10px 16px', background: 'rgba(239,68,68,0.05)', border: '1px solid rgba(239,68,68,0.12)', borderRadius: 10 }}>
-                  <span style={{ fontSize: 12, color: 'rgba(255,255,255,0.4)' }}>{fK.length} evrak listeleniyor</span>
-                  <span style={{ fontSize: 13, fontWeight: 700, color: '#ef4444', fontFamily: "'Inter', sans-serif" }}>Toplam: {TL(kendiToplam)}</span>
+                <div className={`${p}-list-footer ${p}-list-footer-red`}>
+                  <span className={`${p}-list-footer-count`}>{fK.length} evrak listeleniyor</span>
+                  <span className={`${p}-list-footer-total`} style={{ color: renkler.danger }}>Toplam: {TL(kendiToplam)}</span>
                 </div>
               )}
             </div>
@@ -2013,32 +1522,28 @@ export default function CekSenet() {
           {aktifTab === 4 && (
             <div>
               {/* Gradient Banner */}
-              <div style={{
-                background: 'linear-gradient(135deg, rgba(217,119,6,0.15) 0%, rgba(146,64,14,0.05) 100%)',
-                border: '1px solid rgba(217,119,6,0.2)', borderRadius: 16,
-                padding: '22px 24px', marginBottom: 20,
-              }}>
+              <div className={`${p}-banner ${p}-banner-orange`}>
                 <div className="d-flex justify-content-between align-items-start flex-wrap gap-3">
                   <div className="d-flex gap-4 flex-wrap">
                     <div>
-                      <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.6)', textTransform: 'uppercase', letterSpacing: '0.8px', fontWeight: 600 }}>Bekleyen Vade</div>
-                      <div style={{ fontSize: 22, fontWeight: 500, fontFamily: "'Inter', sans-serif", color: '#d97706', textShadow: '0 0 20px rgba(217,119,6,0.3)', fontVariantNumeric: 'tabular-nums', marginTop: 4 }}>{TL(ciroBekleyen)}</div>
+                      <div className={`${p}-banner-label`}>Bekleyen Vade</div>
+                      <div className={`${p}-banner-value`} style={{ color: renkler.warning }}>{TL(ciroBekleyen)}</div>
                     </div>
                     <div>
-                      <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.6)', textTransform: 'uppercase', letterSpacing: '0.8px', fontWeight: 600 }}>Vadesi Geçen</div>
-                      <div style={{ fontSize: 22, fontWeight: 500, fontFamily: "'Inter', sans-serif", color: '#ef4444', textShadow: '0 0 20px rgba(239,68,68,0.3)', fontVariantNumeric: 'tabular-nums', marginTop: 4 }}>{TL(ciroGecmis)}</div>
+                      <div className={`${p}-banner-label`}>Vadesi Geçen</div>
+                      <div className={`${p}-banner-value`} style={{ color: renkler.danger }}>{TL(ciroGecmis)}</div>
                     </div>
                     <div>
-                      <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.6)', textTransform: 'uppercase', letterSpacing: '0.8px', fontWeight: 600 }}>Toplam Cirolanan</div>
-                      <div style={{ fontSize: 22, fontWeight: 500, fontFamily: "'Inter', sans-serif", color: '#ffffff', fontVariantNumeric: 'tabular-nums', marginTop: 4 }}>{TL(ciroToplam)}</div>
+                      <div className={`${p}-banner-label`}>Toplam Cirolanan</div>
+                      <div className={`${p}-banner-value`} style={{ color: renkler.text }}>{TL(ciroToplam)}</div>
                     </div>
                   </div>
-                  <FiltreSatiri filtre={filtre} setFiltre={setFiltre} />
+                  <FiltreSatiri filtre={filtre} setFiltre={setFiltre} p={p} />
                 </div>
               </div>
 
               {/* Arama */}
-              <div className="input-group mb-3 cek-search">
+              <div className={`input-group mb-3 ${p}-search`}>
                 <span className="input-group-text"><i className="bi bi-search" style={{ color: 'rgba(255,255,255,0.3)' }} /></span>
                 <input className="form-control" style={{ minHeight: 44 }} placeholder="Firma, teslim yeri, evrak no veya vade tarihi ara..."
                   value={aramaMetni} onChange={e => setAramaMetni(e.target.value)} />
@@ -2046,55 +1551,55 @@ export default function CekSenet() {
               </div>
 
               <div className="table-responsive">
-                <table className="table table-hover align-middle" style={{ fontSize: 13 }}>
+                <table className={`table table-hover align-middle ${p}-table`}>
                   <thead>
                     <tr>
-                      <th style={{ padding: '10px 12px' }}>Ödeme Tarihi (Vade)</th>
-                      <th style={{ padding: '10px 12px' }}>Ciro Tarihi</th>
-                      <th style={{ padding: '10px 12px' }}>Tutar</th>
-                      <th style={{ padding: '10px 12px' }}>Asıl Firma (Müşteri)</th>
-                      <th style={{ padding: '10px 12px' }}>Teslim Edilen Yer</th>
-                      <th style={{ padding: '10px 12px' }}>Tür / Evrak No</th>
-                      <th style={{ padding: '10px 12px', textAlign: 'right' }}>İşlemler</th>
+                      <th>Ödeme Tarihi (Vade)</th>
+                      <th>Ciro Tarihi</th>
+                      <th>Tutar</th>
+                      <th>Asıl Firma (Müşteri)</th>
+                      <th>Teslim Edilen Yer</th>
+                      <th>Tür / Evrak No</th>
+                      <th style={{ textAlign: 'right' }}>İşlemler</th>
                     </tr>
                   </thead>
                   <tbody>
                     {fC.length === 0 && (
                       <tr>
-                        <td colSpan={7} className="py-5 text-center">
-                          <i className="bi bi-arrow-left-right" style={{ fontSize: 36, color: 'rgba(255,255,255,0.15)', display: 'block', marginBottom: 10 }} />
-                          <div style={{ fontSize: 14, color: 'rgba(255,255,255,0.4)', fontWeight: 500 }}>Bu dönemde cirolanan evrak bulunamadı</div>
-                          <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.25)', marginTop: 4 }}>Portföyden evrak cirolandığında burada görünür</div>
+                        <td colSpan={7} className={`py-5 text-center ${p}-empty-state`}>
+                          <i className="bi bi-arrow-left-right" style={{ fontSize: 36, color: renkler.textSec, display: 'block', marginBottom: 10 }} />
+                          <div style={{ fontSize: 14, color: renkler.textSec, fontWeight: 500 }}>Bu dönemde cirolanan evrak bulunamadı</div>
+                          <div style={{ fontSize: 12, color: renkler.textSec, marginTop: 4 }}>Portföyden evrak cirolandığında burada görünür</div>
                         </td>
                       </tr>
                     )}
                     {fC.map(item => (
                       <tr key={item.id}>
-                        <td style={{ padding: '12px' }}><VadeBadge tarih={item.vade_tarihi} /></td>
-                        <td style={{ padding: '12px', color: 'rgba(255,255,255,0.45)', fontSize: 13 }}>{tarihFmt(item.ciro_tarihi)}</td>
-                        <td style={{ padding: '12px', fontWeight: 700, color: '#d97706', fontFamily: "'Inter', sans-serif", fontSize: 14 }}>{TL(item.tutar)}</td>
-                        <td style={{ padding: '12px', fontWeight: 600, color: '#ffffff', fontSize: 13 }}>{item.asil_firma}</td>
-                        <td style={{ padding: '12px', color: 'rgba(255,255,255,0.6)', fontSize: 13 }}>
+                        <td style={{ padding: '12px' }}><VadeBadge tarih={item.vade_tarihi} p={p} /></td>
+                        <td className={`${p}-td-muted`} style={{ padding: '12px' }}>{tarihFmt(item.ciro_tarihi)}</td>
+                        <td className={`${p}-td-amount`} style={{ padding: '12px', color: renkler.warning }}>{TL(item.tutar)}</td>
+                        <td className={`${p}-td-firma`} style={{ padding: '12px' }}>{item.asil_firma}</td>
+                        <td style={{ padding: '12px' }} className={`${p}-td-muted`}>
                           {item.teslim_yeri ? (
-                            <span><i className="bi bi-arrow-right me-1" style={{ color: '#d97706' }} />{item.teslim_yeri}</span>
+                            <span><i className="bi bi-arrow-right me-1" style={{ color: renkler.warning }} />{item.teslim_yeri}</span>
                           ) : '—'}
                         </td>
                         <td style={{ padding: '12px' }}>
-                          <TurBadge tur={item.tur} />
-                          {item.evrak_no && <div style={{ fontFamily: 'monospace', fontSize: 11, color: 'rgba(255,255,255,0.4)', letterSpacing: '0.5px', marginTop: 4 }}>{item.evrak_no}</div>}
+                          <TurBadge tur={item.tur} renkler={renkler} />
+                          {item.evrak_no && <div className={`${p}-td-mono`} style={{ marginTop: 4 }}>{item.evrak_no}</div>}
                         </td>
                         <td style={{ padding: '12px' }}>
                           <div className="d-flex gap-1 justify-content-end">
-                            <button className="cek-act cek-act-success" title="Tamamlandı" onClick={() => ciroTamamlandi(item.id)}>
+                            <button className={`${p}-act ${p}-act-success`} title="Tamamlandı" onClick={() => ciroTamamlandi(item.id)}>
                               <i className="bi bi-check-lg" />
                             </button>
-                            <button className="cek-act" title="Portföye İade Et" onClick={() => ciroIade(item.id)}>
+                            <button className={`${p}-act`} title="Portföye İade Et" onClick={() => ciroIade(item.id)}>
                               <i className="bi bi-arrow-counterclockwise" />
                             </button>
-                            <button className="cek-act" title="Düzenle" onClick={() => ciroDzlAc(item)}>
+                            <button className={`${p}-act`} title="Düzenle" onClick={() => ciroDzlAc(item)}>
                               <i className="bi bi-pencil" />
                             </button>
-                            <button className="cek-act cek-act-danger" title="Sil" onClick={() => ciroSil(item.id)}>
+                            <button className={`${p}-act ${p}-act-danger`} title="Sil" onClick={() => ciroSil(item.id)}>
                               <i className="bi bi-trash" />
                             </button>
                           </div>
@@ -2105,9 +1610,9 @@ export default function CekSenet() {
                 </table>
               </div>
               {fC.length > 0 && (
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: 12, padding: '10px 16px', background: 'rgba(217,119,6,0.05)', border: '1px solid rgba(217,119,6,0.12)', borderRadius: 10 }}>
-                  <span style={{ fontSize: 12, color: 'rgba(255,255,255,0.4)' }}>{fC.length} evrak listeleniyor</span>
-                  <span style={{ fontSize: 13, fontWeight: 700, color: '#d97706', fontFamily: "'Inter', sans-serif" }}>Toplam: {TL(ciroToplam)}</span>
+                <div className={`${p}-list-footer ${p}-list-footer-orange`}>
+                  <span className={`${p}-list-footer-count`}>{fC.length} evrak listeleniyor</span>
+                  <span className={`${p}-list-footer-total`} style={{ color: renkler.warning }}>Toplam: {TL(ciroToplam)}</span>
                 </div>
               )}
             </div>
@@ -2119,28 +1624,24 @@ export default function CekSenet() {
           {aktifTab === 5 && (
             <div>
               {/* Banner */}
-              <div style={{
-                background: 'rgba(255,255,255,0.03)',
-                border: '1px solid rgba(255,255,255,0.07)', borderRadius: 16,
-                padding: '22px 24px', marginBottom: 20,
-              }}>
+              <div className={`${p}-banner ${p}-banner-neutral`}>
                 <div className="d-flex justify-content-between align-items-start flex-wrap gap-3">
                   <div className="d-flex gap-4 flex-wrap">
                     <div>
-                      <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.5)', textTransform: 'uppercase', letterSpacing: '0.8px', fontWeight: 600 }}>Tahsil Edilen</div>
-                      <div style={{ fontSize: 20, fontWeight: 500, fontFamily: "'Inter', sans-serif", color: '#10b981', fontVariantNumeric: 'tabular-nums', marginTop: 4 }}>{TL(arsiv.filter(i => i.tur_kategori === 'tahsil_edildi').reduce((s, i) => s + i.tutar, 0))}</div>
+                      <div className={`${p}-banner-label`}>Tahsil Edilen</div>
+                      <div className={`${p}-banner-value`} style={{ color: renkler.success }}>{TL(arsiv.filter(i => i.tur_kategori === 'tahsil_edildi').reduce((s, i) => s + i.tutar, 0))}</div>
                     </div>
                     <div>
-                      <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.5)', textTransform: 'uppercase', letterSpacing: '0.8px', fontWeight: 600 }}>Kendi Ödenen</div>
-                      <div style={{ fontSize: 20, fontWeight: 500, fontFamily: "'Inter', sans-serif", color: '#f59e0b', fontVariantNumeric: 'tabular-nums', marginTop: 4 }}>{TL(arsiv.filter(i => i.tur_kategori === 'kendi_odendi').reduce((s, i) => s + i.tutar, 0))}</div>
+                      <div className={`${p}-banner-label`}>Kendi Ödenen</div>
+                      <div className={`${p}-banner-value`} style={{ color: renkler.accent }}>{TL(arsiv.filter(i => i.tur_kategori === 'kendi_odendi').reduce((s, i) => s + i.tutar, 0))}</div>
                     </div>
                     <div>
-                      <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.5)', textTransform: 'uppercase', letterSpacing: '0.8px', fontWeight: 600 }}>Ciro Tamamlanan</div>
-                      <div style={{ fontSize: 20, fontWeight: 500, fontFamily: "'Inter', sans-serif", color: '#d97706', fontVariantNumeric: 'tabular-nums', marginTop: 4 }}>{TL(arsiv.filter(i => i.tur_kategori === 'ciro_tamamlandi').reduce((s, i) => s + i.tutar, 0))}</div>
+                      <div className={`${p}-banner-label`}>Ciro Tamamlanan</div>
+                      <div className={`${p}-banner-value`} style={{ color: renkler.warning }}>{TL(arsiv.filter(i => i.tur_kategori === 'ciro_tamamlandi').reduce((s, i) => s + i.tutar, 0))}</div>
                     </div>
                   </div>
-                  <div style={{ fontSize: 13, color: 'rgba(255,255,255,0.4)', display: 'flex', alignItems: 'center', gap: 6 }}>
-                    <i className="bi bi-archive-fill" style={{ color: 'rgba(255,255,255,0.3)' }} />
+                  <div className={`${p}-banner-hint`}>
+                    <i className="bi bi-archive-fill" style={{ color: renkler.textSec }} />
                     Toplam {arsiv.length} kayıt
                   </div>
                 </div>
@@ -2148,7 +1649,7 @@ export default function CekSenet() {
 
               {/* Arama + 6 Kategori Pill */}
               <div className="d-flex gap-2 mb-3 flex-wrap align-items-center">
-                <div className="input-group flex-grow-1 cek-search" style={{ minWidth: 220 }}>
+                <div className={`input-group flex-grow-1 ${p}-search`} style={{ minWidth: 220 }}>
                   <span className="input-group-text"><i className="bi bi-search" style={{ color: 'rgba(255,255,255,0.3)' }} /></span>
                   <input className="form-control" style={{ minHeight: 44 }} placeholder="Firma, evrak no veya vade tarihi ara..."
                     value={aramaMetni} onChange={e => setAramaMetni(e.target.value)} />
@@ -2166,7 +1667,7 @@ export default function CekSenet() {
                   ].map(({ v, label }) => (
                     <button
                       key={v}
-                      className={`btn btn-sm cek-arsiv-pill ${arsivKategori === v ? 'active' : ''}`}
+                      className={`btn btn-sm ${p}-arsiv-pill ${arsivKategori === v ? 'active' : ''}`}
                       onClick={() => setArsivKategori(v)}
                     >{label}</button>
                   ))}
@@ -2174,51 +1675,51 @@ export default function CekSenet() {
               </div>
 
               <div className="table-responsive">
-                <table className="table table-hover align-middle" style={{ fontSize: 13 }}>
+                <table className={`table table-hover align-middle ${p}-table`}>
                   <thead>
                     <tr>
-                      <th style={{ padding: '10px 12px' }}>Kapatma Tarihi</th>
-                      <th style={{ padding: '10px 12px' }}>Vade Tarihi</th>
-                      <th style={{ padding: '10px 12px' }}>Tutar</th>
-                      <th style={{ padding: '10px 12px' }}>Firma</th>
-                      <th style={{ padding: '10px 12px' }}>Tür / Evrak No</th>
-                      <th style={{ padding: '10px 12px' }}>Durum</th>
+                      <th>Kapatma Tarihi</th>
+                      <th>Vade Tarihi</th>
+                      <th>Tutar</th>
+                      <th>Firma</th>
+                      <th>Tür / Evrak No</th>
+                      <th>Durum</th>
                     </tr>
                   </thead>
                   <tbody>
                     {fA.length === 0 && (
                       <tr>
-                        <td colSpan={6} className="py-5 text-center">
-                          <i className="bi bi-archive" style={{ fontSize: 36, color: 'rgba(255,255,255,0.15)', display: 'block', marginBottom: 10 }} />
-                          <div style={{ fontSize: 14, color: 'rgba(255,255,255,0.4)', fontWeight: 500 }}>Arşivde kayıt bulunamadı</div>
-                          <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.25)', marginTop: 4 }}>Tamamlanan evraklar burada görünür</div>
+                        <td colSpan={6} className={`py-5 text-center ${p}-empty-state`}>
+                          <i className="bi bi-archive" style={{ fontSize: 36, color: renkler.textSec, display: 'block', marginBottom: 10 }} />
+                          <div style={{ fontSize: 14, color: renkler.textSec, fontWeight: 500 }}>Arşivde kayıt bulunamadı</div>
+                          <div style={{ fontSize: 12, color: renkler.textSec, marginTop: 4 }}>Tamamlanan evraklar burada görünür</div>
                         </td>
                       </tr>
                     )}
                     {fA.map(item => {
-                      const cfg = ARSIV_BADGE[item.tur_kategori] || { renk: 'rgba(255,255,255,0.5)', bg: 'rgba(255,255,255,0.06)', label: item.tur_kategori }
+                      const cfg = arsivBadgeCfg(item.tur_kategori, renkler)
                       return (
                         <tr key={item.id}>
-                          <td style={{ padding: '12px', color: 'rgba(255,255,255,0.45)', fontSize: 13 }}>{tarihFmt(item.kapanis_tarihi)}</td>
-                          <td style={{ padding: '12px', color: 'rgba(255,255,255,0.45)', fontSize: 13 }}>{tarihFmt(item.vade_tarihi)}</td>
-                          <td style={{ padding: '12px', fontWeight: 700, color: cfg.renk, fontFamily: "'Inter', sans-serif", fontSize: 14 }}>{TL(item.tutar)}</td>
+                          <td className={`${p}-td-muted`} style={{ padding: '12px' }}>{tarihFmt(item.kapanis_tarihi)}</td>
+                          <td className={`${p}-td-muted`} style={{ padding: '12px' }}>{tarihFmt(item.vade_tarihi)}</td>
+                          <td className={`${p}-td-amount`} style={{ padding: '12px', color: cfg.renk }}>{TL(item.tutar)}</td>
                           <td style={{ padding: '12px' }}>
-                            <div style={{ fontWeight: 600, color: '#ffffff', fontSize: 13 }}>{item.firma_adi}</div>
-                            {item.asil_borclu && <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.4)', marginTop: 2 }}>{item.asil_borclu}</div>}
-                            {item.teslim_yeri && <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.4)', marginTop: 2 }}><i className="bi bi-arrow-right me-1" />{item.teslim_yeri}</div>}
+                            <div className={`${p}-td-firma`}>{item.firma_adi}</div>
+                            {item.asil_borclu && <div className={`${p}-td-firma-sub`}>{item.asil_borclu}</div>}
+                            {item.teslim_yeri && <div className={`${p}-td-firma-sub`}><i className="bi bi-arrow-right me-1" />{item.teslim_yeri}</div>}
                           </td>
                           <td style={{ padding: '12px' }}>
-                            <TurBadge tur={item.tur} />
-                            {item.evrak_no && <div style={{ fontFamily: 'monospace', fontSize: 11, color: 'rgba(255,255,255,0.4)', letterSpacing: '0.5px', marginTop: 4 }}>{item.evrak_no}</div>}
+                            <TurBadge tur={item.tur} renkler={renkler} />
+                            {item.evrak_no && <div className={`${p}-td-mono`} style={{ marginTop: 4 }}>{item.evrak_no}</div>}
                           </td>
                           <td style={{ padding: '12px' }}>
                             <span style={{
                               display: 'inline-flex', alignItems: 'center', gap: 6,
                               background: cfg.bg, color: cfg.renk,
                               fontSize: 11, fontWeight: 700, borderRadius: 20, padding: '4px 10px',
-                              border: `1px solid ${cfg.renk}30`,
+                              border: `1px solid ${hexRgba(cfg.renk, 0.18)}`,
                             }}>
-                              <span className="cek-dot" style={{ background: cfg.renk, boxShadow: `0 0 6px ${cfg.renk}80` }} />
+                              <span className="cek-dot" style={{ background: cfg.renk, boxShadow: `0 0 6px ${hexRgba(cfg.renk, 0.5)}` }} />
                               {cfg.label}
                             </span>
                           </td>
@@ -2229,9 +1730,9 @@ export default function CekSenet() {
                 </table>
               </div>
               {fA.length > 0 && (
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: 12, padding: '10px 16px', background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.07)', borderRadius: 10 }}>
-                  <span style={{ fontSize: 12, color: 'rgba(255,255,255,0.4)' }}>{fA.length} kayıt gösteriliyor</span>
-                  <span style={{ fontSize: 13, fontWeight: 700, color: 'rgba(255,255,255,0.6)', fontFamily: "'Inter', sans-serif" }}>Toplam: {TL(fA.reduce((s, i) => s + i.tutar, 0))}</span>
+                <div className={`${p}-list-footer ${p}-list-footer-neutral`}>
+                  <span className={`${p}-list-footer-count`}>{fA.length} kayıt gösteriliyor</span>
+                  <span className={`${p}-list-footer-total`} style={{ color: renkler.textSec }}>Toplam: {TL(fA.reduce((s, i) => s + i.tutar, 0))}</span>
                 </div>
               )}
             </div>
@@ -2257,32 +1758,31 @@ export default function CekSenet() {
       />
 
       {/* ─── Portföy: Yeni / Düzenle ────────────────────────────────────────── */}
-      <Modal open={portfoyModal} onClose={() => { setPortfoyModal(false); setPortfoyDzlId(null) }} scrollable>
-        {/* Premium Gradient Header */}
-        <div style={{ padding: '20px 24px', background: 'linear-gradient(135deg, rgba(245,158,11,0.15), rgba(217,119,6,0.08))', borderBottom: '2px solid rgba(245,158,11,0.3)', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexShrink: 0 }}>
+      <Modal open={portfoyModal} onClose={() => { setPortfoyModal(false); setPortfoyDzlId(null) }} scrollable p={p}>
+        <div className={`${p}-modal-header ${p}-mh-amber`}>
           <div className="d-flex align-items-center gap-3">
-            <div style={{ width: 42, height: 42, borderRadius: 12, background: 'linear-gradient(135deg,#f59e0b,#d97706)', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 4px 12px rgba(245,158,11,0.35)', flexShrink: 0 }}>
-              <i className={`bi ${portfoyDzlId ? 'bi-pencil-square' : 'bi-file-earmark-plus'}`} style={{ color: '#fff', fontSize: 18 }} />
+            <div className={`${p}-modal-icon ${p}-modal-icon-amber`}>
+              <i className={`bi ${portfoyDzlId ? 'bi-pencil-square' : 'bi-file-earmark-plus'}`} />
             </div>
             <div>
-              <div style={{ fontSize: 16, fontWeight: 800, color: '#fff', lineHeight: 1.2 }}>{portfoyDzlId ? 'Evrak Düzenle' : 'Yeni Evrak — Portföy'}</div>
-              <div style={{ fontSize: 11, fontWeight: 600, color: 'rgba(255,255,255,0.45)', marginTop: 2 }}>Müşteri çeki veya senedi</div>
+              <div className={`${p}-modal-title`}>{portfoyDzlId ? 'Evrak Düzenle' : 'Yeni Evrak — Portföy'}</div>
+              <div className={`${p}-modal-sub`}>Müşteri çeki veya senedi</div>
             </div>
           </div>
-          <button style={{ background: 'rgba(255,255,255,0.08)', border: '1px solid rgba(255,255,255,0.1)', width: 36, height: 36, borderRadius: 10, color: 'rgba(255,255,255,0.6)', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }} onClick={() => { setPortfoyModal(false); setPortfoyDzlId(null) }}>
-            <i className="bi bi-x-lg" style={{ fontSize: 14 }} />
+          <button className={`${p}-modal-close`} onClick={() => { setPortfoyModal(false); setPortfoyDzlId(null) }}>
+            <i className="bi bi-x-lg" />
           </button>
         </div>
-        <div style={{ padding: '20px 24px', overflowY: 'auto' }}>
+        <div className={`${p}-modal-body`}>
           {/* Bölüm: Evrak Bilgileri */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 14 }}>
-            <div style={{ width: 4, height: 18, borderRadius: 2, background: '#f59e0b' }} />
-            <span style={{ fontSize: 11, fontWeight: 700, color: '#f59e0b', textTransform: 'uppercase', letterSpacing: '0.06em' }}>Cari & Evrak Bilgileri</span>
+          <div className={`${p}-section-bar`}>
+            <div className={`${p}-section-mark`} />
+            <span className={`${p}-section-label`}>Cari & Evrak Bilgileri</span>
           </div>
           <div className="row g-3 mb-3">
             <div className="col-12">
-              <FG label="Evrak Tipi" zorunlu>
-                <select className="form-select" style={{ minHeight: 44 }}
+              <FG label="Evrak Tipi" zorunlu p={p} renkler={renkler}>
+                <select className="form-select"
                   value={portfoyForm.tur} onChange={(e) => setPortfoyForm({ ...portfoyForm, tur: e.target.value })}>
                   <option>Müşteri Çeki</option>
                   <option>Müşteri Senedi</option>
@@ -2290,70 +1790,69 @@ export default function CekSenet() {
               </FG>
             </div>
             <div className="col-md-6">
-              <FG label="Firma / Müşteri" zorunlu>
+              <FG label="Firma / Müşteri" zorunlu p={p} renkler={renkler}>
                 <AutoComplete value={portfoyForm.firma_adi}
                   onChange={(v) => setPortfoyForm({ ...portfoyForm, firma_adi: v, cari_id: cariIdBul(v) })}
-                  options={cariSecenekleri} placeholder="Cari seç..." id="pf-firma" required />
+                  options={cariSecenekleri} placeholder="Cari seç..." id="pf-firma" required p={p} />
               </FG>
             </div>
             <div className="col-md-6">
-              <FG label="Asıl Borçlu">
-                <input className="form-control" style={{ minHeight: 44 }} value={portfoyForm.asil_borclu}
+              <FG label="Asıl Borçlu" p={p} renkler={renkler}>
+                <input className="form-control" value={portfoyForm.asil_borclu}
                   placeholder="Asıl borçlu adı (opsiyonel)"
                   onChange={(e) => setPortfoyForm({ ...portfoyForm, asil_borclu: e.target.value })} />
               </FG>
             </div>
           </div>
           {/* Bölüm: Evrak Detayları */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 14 }}>
-            <div style={{ width: 4, height: 18, borderRadius: 2, background: '#3b82f6' }} />
-            <span style={{ fontSize: 11, fontWeight: 700, color: '#3b82f6', textTransform: 'uppercase', letterSpacing: '0.06em' }}>Evrak Detayları</span>
+          <div className={`${p}-section-bar`}>
+            <div className={`${p}-section-mark`} />
+            <span className={`${p}-section-label`}>Evrak Detayları</span>
           </div>
           <div className="row g-3">
             <div className="col-md-6">
-              <FG label="Evrak / Çek No">
-                <input className="form-control" style={{ minHeight: 44 }} value={portfoyForm.evrak_no}
+              <FG label="Evrak / Çek No" p={p} renkler={renkler}>
+                <input className="form-control" value={portfoyForm.evrak_no}
                   placeholder="Evrak numarası"
                   onChange={(e) => setPortfoyForm({ ...portfoyForm, evrak_no: e.target.value })} />
               </FG>
             </div>
             <div className="col-md-6">
-              <FG label="Banka Adı">
+              <FG label="Banka Adı" p={p} renkler={renkler}>
                 <AutoComplete value={portfoyForm.banka} onChange={(v) => setPortfoyForm({ ...portfoyForm, banka: v })}
-                  options={BANKALAR} placeholder="Banka seç veya yaz..." id="pf-banka" />
+                  options={BANKALAR} placeholder="Banka seç veya yaz..." id="pf-banka" p={p} />
               </FG>
             </div>
             <div className="col-md-6">
-              <FG label="Vade Tarihi" zorunlu kritik>
-                <input type="date" className="form-control" style={{ minHeight: 44, borderColor: 'rgba(239,68,68,0.5)' }}
+              <FG label="Vade Tarihi" zorunlu kritik p={p} renkler={renkler}>
+                <input type="date" className="form-control"
                   value={portfoyForm.vade_tarihi}
                   onChange={(e) => setPortfoyForm({ ...portfoyForm, vade_tarihi: e.target.value })} />
               </FG>
             </div>
             <div className="col-md-6">
-              <FG label="Düzenlenme / Alınma Tarihi">
-                <input type="date" className="form-control" style={{ minHeight: 44 }}
+              <FG label="Düzenlenme / Alınma Tarihi" p={p} renkler={renkler}>
+                <input type="date" className="form-control"
                   value={portfoyForm.islem_tarihi}
                   onChange={(e) => setPortfoyForm({ ...portfoyForm, islem_tarihi: e.target.value })} />
               </FG>
             </div>
             <div className="col-12">
-              <FG label="Tutar" zorunlu>
+              <FG label="Tutar" zorunlu p={p} renkler={renkler}>
                 <div className="input-group">
-                  <input className="form-control" style={{ minHeight: 44, fontSize: 16, fontWeight: 700 }} placeholder="0,00"
+                  <input className="form-control" placeholder="0,00"
                     value={portfoyForm.tutarStr}
                     onChange={(e) => setPortfoyForm({ ...portfoyForm, tutarStr: formatParaInput(e.target.value) })} />
-                  <span className="input-group-text" style={{ fontWeight: 700, fontSize: 15 }}>₺</span>
+                  <span className="input-group-text">₺</span>
                 </div>
               </FG>
             </div>
           </div>
         </div>
-        {/* Premium Footer */}
-        <div style={{ padding: '14px 24px', borderTop: '1px solid rgba(255,255,255,0.08)', background: 'rgba(13,27,46,0.98)', display: 'flex', gap: 10, justifyContent: 'flex-end', flexShrink: 0 }}>
-          <button style={{ minHeight: 44, padding: '0 20px', background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.12)', borderRadius: 10, color: 'rgba(255,255,255,0.7)', cursor: 'pointer', fontSize: 14, fontWeight: 600 }}
+        <div className={`${p}-modal-footer`}>
+          <button className={`${p}-btn-cancel`}
             onClick={() => { setPortfoyModal(false); setPortfoyDzlId(null) }}>İptal</button>
-          <button style={{ minHeight: 44, padding: '0 28px', background: 'linear-gradient(135deg,#f59e0b,#d97706)', border: 'none', borderRadius: 10, color: '#0d1b2e', fontWeight: 700, fontSize: 14, cursor: 'pointer', boxShadow: '0 4px 16px rgba(245,158,11,0.3)' }}
+          <button className={`${p}-btn-save ${p}-btn-save-amber`}
             onClick={portfoyKaydet}>
             <i className="bi bi-floppy me-2" />Kaydet
           </button>
@@ -2361,103 +1860,102 @@ export default function CekSenet() {
       </Modal>
 
       {/* ─── Tahsile Ver Modalı ─────────────────────────────────────────────── */}
-      <Modal open={tahsileModal} onClose={() => setTahsileModal(false)} size="sm">
-        <div style={{ padding: '20px 24px', background: 'linear-gradient(135deg, rgba(16,185,129,0.18), rgba(5,150,105,0.08))', borderBottom: '2px solid rgba(16,185,129,0.35)', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+      <Modal open={tahsileModal} onClose={() => setTahsileModal(false)} size="sm" p={p}>
+        <div className={`${p}-modal-header ${p}-mh-green`}>
           <div className="d-flex align-items-center gap-3">
-            <div style={{ width: 42, height: 42, borderRadius: 12, background: 'linear-gradient(135deg,#10b981,#059669)', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 4px 12px rgba(16,185,129,0.35)', flexShrink: 0 }}>
-              <i className="bi bi-bank" style={{ color: '#fff', fontSize: 18 }} />
+            <div className={`${p}-modal-icon ${p}-modal-icon-green`}>
+              <i className="bi bi-bank" />
             </div>
             <div>
-              <div style={{ fontSize: 16, fontWeight: 800, color: '#fff', lineHeight: 1.2 }}>Tahsile Ver</div>
-              <div style={{ fontSize: 11, fontWeight: 600, color: 'rgba(255,255,255,0.45)', marginTop: 2 }}>Banka tahsilatına gönder</div>
+              <div className={`${p}-modal-title`}>Tahsile Ver</div>
+              <div className={`${p}-modal-sub`}>Banka tahsilatına gönder</div>
             </div>
           </div>
-          <button style={{ background: 'rgba(255,255,255,0.08)', border: '1px solid rgba(255,255,255,0.1)', width: 36, height: 36, borderRadius: 10, color: 'rgba(255,255,255,0.6)', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }} onClick={() => setTahsileModal(false)}>
-            <i className="bi bi-x-lg" style={{ fontSize: 14 }} />
+          <button className={`${p}-modal-close`} onClick={() => setTahsileModal(false)}>
+            <i className="bi bi-x-lg" />
           </button>
         </div>
-        <div style={{ padding: '20px 24px' }}>
-          <FG label="Banka Adı" zorunlu>
+        <div className={`${p}-modal-body`}>
+          <FG label="Banka Adı" zorunlu p={p} renkler={renkler}>
             <AutoComplete value={tahsileForm.banka} onChange={(v) => setTahsileForm({ ...tahsileForm, banka: v })}
-              options={BANKALAR} placeholder="Banka seç veya yaz..." id="tv-banka" required />
+              options={BANKALAR} placeholder="Banka seç veya yaz..." id="tv-banka" required p={p} />
           </FG>
-          <FG label="Tahsile Veriş Tarihi" zorunlu>
-            <input type="date" className="form-control" style={{ minHeight: 44 }}
+          <FG label="Tahsile Veriş Tarihi" zorunlu p={p} renkler={renkler}>
+            <input type="date" className="form-control"
               value={tahsileForm.tarih}
               onChange={(e) => setTahsileForm({ ...tahsileForm, tarih: e.target.value })} />
           </FG>
         </div>
-        <div style={{ padding: '0 24px 20px', display: 'flex', gap: 10, justifyContent: 'flex-end' }}>
-          <button style={{ minHeight: 44, padding: '0 20px', background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.12)', borderRadius: 10, color: 'rgba(255,255,255,0.7)', cursor: 'pointer', fontSize: 14, fontWeight: 600 }} onClick={() => setTahsileModal(false)}>İptal</button>
-          <button style={{ minHeight: 44, padding: '0 24px', background: 'linear-gradient(135deg,#10b981,#059669)', border: 'none', borderRadius: 10, color: '#fff', fontWeight: 700, fontSize: 14, cursor: 'pointer', boxShadow: '0 4px 16px rgba(16,185,129,0.3)' }} onClick={tahsileVer}>
+        <div className={`${p}-modal-footer`}>
+          <button className={`${p}-btn-cancel`} onClick={() => setTahsileModal(false)}>İptal</button>
+          <button className={`${p}-btn-save ${p}-btn-save-green`} onClick={tahsileVer}>
             <i className="bi bi-check-circle me-2" />İşlemi Tamamla
           </button>
         </div>
       </Modal>
 
       {/* ─── Cirola Modalı ──────────────────────────────────────────────────── */}
-      <Modal open={cirolaModal} onClose={() => setCirolaModal(false)} size="sm">
-        <div style={{ padding: '20px 24px', background: 'linear-gradient(135deg, rgba(217,119,6,0.18), rgba(146,64,14,0.08))', borderBottom: '2px solid rgba(217,119,6,0.35)', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+      <Modal open={cirolaModal} onClose={() => setCirolaModal(false)} size="sm" p={p}>
+        <div className={`${p}-modal-header ${p}-mh-orange`}>
           <div className="d-flex align-items-center gap-3">
-            <div style={{ width: 42, height: 42, borderRadius: 12, background: 'linear-gradient(135deg,#d97706,#b45309)', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 4px 12px rgba(217,119,6,0.35)', flexShrink: 0 }}>
-              <i className="bi bi-arrow-left-right" style={{ color: '#fff', fontSize: 18 }} />
+            <div className={`${p}-modal-icon ${p}-modal-icon-orange`}>
+              <i className="bi bi-arrow-left-right" />
             </div>
             <div>
-              <div style={{ fontSize: 16, fontWeight: 800, color: '#fff', lineHeight: 1.2 }}>Evrakı Ciroyla</div>
-              <div style={{ fontSize: 11, fontWeight: 600, color: 'rgba(255,255,255,0.45)', marginTop: 2 }}>Başka firmaya devret</div>
+              <div className={`${p}-modal-title`}>Evrakı Ciroyla</div>
+              <div className={`${p}-modal-sub`}>Başka firmaya devret</div>
             </div>
           </div>
-          <button style={{ background: 'rgba(255,255,255,0.08)', border: '1px solid rgba(255,255,255,0.1)', width: 36, height: 36, borderRadius: 10, color: 'rgba(255,255,255,0.6)', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }} onClick={() => setCirolaModal(false)}>
-            <i className="bi bi-x-lg" style={{ fontSize: 14 }} />
+          <button className={`${p}-modal-close`} onClick={() => setCirolaModal(false)}>
+            <i className="bi bi-x-lg" />
           </button>
         </div>
-        <div style={{ padding: '20px 24px' }}>
-          <FG label="Teslim Edilecek Firma (Cari)" zorunlu>
+        <div className={`${p}-modal-body`}>
+          <FG label="Teslim Edilecek Firma (Cari)" zorunlu p={p} renkler={renkler}>
             <AutoComplete value={cirolaForm.firma}
               onChange={(v) => setCirolaForm({ ...cirolaForm, firma: v, cari_id: cariIdBul(v) })}
-              options={cariSecenekleri} placeholder="Cari seç..." id="ci-firma" required />
+              options={cariSecenekleri} placeholder="Cari seç..." id="ci-firma" required p={p} />
           </FG>
-          <FG label="Ciro Tarihi" zorunlu>
-            <input type="date" className="form-control" style={{ minHeight: 44 }}
+          <FG label="Ciro Tarihi" zorunlu p={p} renkler={renkler}>
+            <input type="date" className="form-control"
               value={cirolaForm.tarih}
               onChange={(e) => setCirolaForm({ ...cirolaForm, tarih: e.target.value })} />
           </FG>
         </div>
-        <div style={{ padding: '0 24px 20px', display: 'flex', gap: 10, justifyContent: 'flex-end' }}>
-          <button style={{ minHeight: 44, padding: '0 20px', background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.12)', borderRadius: 10, color: 'rgba(255,255,255,0.7)', cursor: 'pointer', fontSize: 14, fontWeight: 600 }} onClick={() => setCirolaModal(false)}>İptal</button>
-          <button style={{ minHeight: 44, padding: '0 24px', background: 'linear-gradient(135deg,#d97706,#b45309)', border: 'none', borderRadius: 10, color: '#fff', fontWeight: 700, fontSize: 14, cursor: 'pointer', boxShadow: '0 4px 16px rgba(217,119,6,0.3)' }} onClick={cirolaKaydet}>
+        <div className={`${p}-modal-footer`}>
+          <button className={`${p}-btn-cancel`} onClick={() => setCirolaModal(false)}>İptal</button>
+          <button className={`${p}-btn-save ${p}-btn-save-orange`} onClick={cirolaKaydet}>
             <i className="bi bi-arrow-left-right me-2" />Ciroyu Tamamla
           </button>
         </div>
       </Modal>
 
       {/* ─── Kendi Çekimiz: Yeni / Düzenle ─────────────────────────────────── */}
-      <Modal open={kendiModal} onClose={() => { setKendiModal(false); setKendiDzlId(null) }} scrollable>
-        {/* Premium Red Header */}
-        <div style={{ padding: '20px 24px', background: 'linear-gradient(135deg, rgba(239,68,68,0.15), rgba(185,28,28,0.08))', borderBottom: '2px solid rgba(239,68,68,0.3)', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexShrink: 0 }}>
+      <Modal open={kendiModal} onClose={() => { setKendiModal(false); setKendiDzlId(null) }} scrollable p={p}>
+        <div className={`${p}-modal-header ${p}-mh-red`}>
           <div className="d-flex align-items-center gap-3">
-            <div style={{ width: 42, height: 42, borderRadius: 12, background: 'linear-gradient(135deg,#ef4444,#dc2626)', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 4px 12px rgba(239,68,68,0.35)', flexShrink: 0 }}>
-              <i className={`bi ${kendiDzlId ? 'bi-pencil-square' : 'bi-file-earmark-minus'}`} style={{ color: '#fff', fontSize: 18 }} />
+            <div className={`${p}-modal-icon ${p}-modal-icon-red`}>
+              <i className={`bi ${kendiDzlId ? 'bi-pencil-square' : 'bi-file-earmark-minus'}`} />
             </div>
             <div>
-              <div style={{ fontSize: 16, fontWeight: 800, color: '#fff', lineHeight: 1.2 }}>{kendiDzlId ? 'Borç Evrakı Düzenle' : 'Yeni Borç Evrakı'}</div>
-              <div style={{ fontSize: 11, fontWeight: 600, color: 'rgba(255,255,255,0.45)', marginTop: 2 }}>Kendi çekimiz / senedimiz</div>
+              <div className={`${p}-modal-title`}>{kendiDzlId ? 'Borç Evrakı Düzenle' : 'Yeni Borç Evrakı'}</div>
+              <div className={`${p}-modal-sub`}>Kendi çekimiz / senedimiz</div>
             </div>
           </div>
-          <button style={{ background: 'rgba(255,255,255,0.08)', border: '1px solid rgba(255,255,255,0.1)', width: 36, height: 36, borderRadius: 10, color: 'rgba(255,255,255,0.6)', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }} onClick={() => { setKendiModal(false); setKendiDzlId(null) }}>
-            <i className="bi bi-x-lg" style={{ fontSize: 14 }} />
+          <button className={`${p}-modal-close`} onClick={() => { setKendiModal(false); setKendiDzlId(null) }}>
+            <i className="bi bi-x-lg" />
           </button>
         </div>
-        <div style={{ padding: '20px 24px', overflowY: 'auto' }}>
+        <div className={`${p}-modal-body`}>
           {/* Bölüm: Cari & Evrak Bilgileri */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 14 }}>
-            <div style={{ width: 4, height: 18, borderRadius: 2, background: '#ef4444' }} />
-            <span style={{ fontSize: 11, fontWeight: 700, color: '#ef4444', textTransform: 'uppercase', letterSpacing: '0.06em' }}>Cari & Evrak Bilgileri</span>
+          <div className={`${p}-section-bar`}>
+            <div className={`${p}-section-mark`} />
+            <span className={`${p}-section-label`}>Cari & Evrak Bilgileri</span>
           </div>
           <div className="row g-3 mb-3">
             <div className="col-12">
-              <FG label="Evrak Tipi" zorunlu>
-                <select className="form-select" style={{ minHeight: 44 }}
+              <FG label="Evrak Tipi" zorunlu p={p} renkler={renkler}>
+                <select className="form-select"
                   value={kendiForm.tur} onChange={(e) => setKendiForm({ ...kendiForm, tur: e.target.value })}>
                   <option>Kendi Çekimiz</option>
                   <option>Kendi Senedimiz</option>
@@ -2465,70 +1963,69 @@ export default function CekSenet() {
               </FG>
             </div>
             <div className="col-md-6">
-              <FG label="Firma / Tedarikçi" zorunlu>
+              <FG label="Firma / Tedarikçi" zorunlu p={p} renkler={renkler}>
                 <AutoComplete value={kendiForm.firma_adi}
                   onChange={(v) => setKendiForm({ ...kendiForm, firma_adi: v, cari_id: cariIdBul(v) })}
-                  options={cariSecenekleri} placeholder="Cari seç..." id="ke-firma" required />
+                  options={cariSecenekleri} placeholder="Cari seç..." id="ke-firma" required p={p} />
               </FG>
             </div>
             <div className="col-md-6">
-              <FG label="Asıl Borçlu">
-                <input className="form-control" style={{ minHeight: 44 }} value={kendiForm.asil_borclu}
+              <FG label="Asıl Borçlu" p={p} renkler={renkler}>
+                <input className="form-control" value={kendiForm.asil_borclu}
                   placeholder="İsteğe bağlı"
                   onChange={(e) => setKendiForm({ ...kendiForm, asil_borclu: e.target.value })} />
               </FG>
             </div>
           </div>
           {/* Bölüm: Ödeme Detayları */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 14 }}>
-            <div style={{ width: 4, height: 18, borderRadius: 2, background: '#3b82f6' }} />
-            <span style={{ fontSize: 11, fontWeight: 700, color: '#3b82f6', textTransform: 'uppercase', letterSpacing: '0.06em' }}>Ödeme Detayları</span>
+          <div className={`${p}-section-bar`}>
+            <div className={`${p}-section-mark`} />
+            <span className={`${p}-section-label`}>Ödeme Detayları</span>
           </div>
           <div className="row g-3">
             <div className="col-md-6">
-              <FG label="Evrak / Çek No">
-                <input className="form-control" style={{ minHeight: 44 }} value={kendiForm.evrak_no}
+              <FG label="Evrak / Çek No" p={p} renkler={renkler}>
+                <input className="form-control" value={kendiForm.evrak_no}
                   placeholder="Evrak numarası"
                   onChange={(e) => setKendiForm({ ...kendiForm, evrak_no: e.target.value })} />
               </FG>
             </div>
             <div className="col-md-6">
-              <FG label="Banka Adı" zorunlu>
+              <FG label="Banka Adı" zorunlu p={p} renkler={renkler}>
                 <AutoComplete value={kendiForm.banka} onChange={(v) => setKendiForm({ ...kendiForm, banka: v })}
-                  options={BANKALAR} placeholder="Banka seç..." id="ke-banka" required />
+                  options={BANKALAR} placeholder="Banka seç..." id="ke-banka" required p={p} />
               </FG>
             </div>
             <div className="col-md-6">
-              <FG label="Vade Tarihi" zorunlu kritik>
-                <input type="date" className="form-control" style={{ minHeight: 44, borderColor: 'rgba(239,68,68,0.5)' }}
+              <FG label="Vade Tarihi" zorunlu kritik p={p} renkler={renkler}>
+                <input type="date" className="form-control"
                   value={kendiForm.vade_tarihi}
                   onChange={(e) => setKendiForm({ ...kendiForm, vade_tarihi: e.target.value })} />
               </FG>
             </div>
             <div className="col-md-6">
-              <FG label="Düzenlenme / Veriliş Tarihi">
-                <input type="date" className="form-control" style={{ minHeight: 44 }}
+              <FG label="Düzenlenme / Veriliş Tarihi" p={p} renkler={renkler}>
+                <input type="date" className="form-control"
                   value={kendiForm.islem_tarihi}
                   onChange={(e) => setKendiForm({ ...kendiForm, islem_tarihi: e.target.value })} />
               </FG>
             </div>
             <div className="col-12">
-              <FG label="Tutar" zorunlu>
+              <FG label="Tutar" zorunlu p={p} renkler={renkler}>
                 <div className="input-group">
-                  <input className="form-control" style={{ minHeight: 44, fontSize: 16, fontWeight: 700 }} placeholder="0,00"
+                  <input className="form-control" placeholder="0,00"
                     value={kendiForm.tutarStr}
                     onChange={(e) => setKendiForm({ ...kendiForm, tutarStr: formatParaInput(e.target.value) })} />
-                  <span className="input-group-text" style={{ fontWeight: 700, fontSize: 15 }}>₺</span>
+                  <span className="input-group-text">₺</span>
                 </div>
               </FG>
             </div>
           </div>
         </div>
-        {/* Premium Footer */}
-        <div style={{ padding: '14px 24px', borderTop: '1px solid rgba(255,255,255,0.08)', background: 'rgba(13,27,46,0.98)', display: 'flex', gap: 10, justifyContent: 'flex-end', flexShrink: 0 }}>
-          <button style={{ minHeight: 44, padding: '0 20px', background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.12)', borderRadius: 10, color: 'rgba(255,255,255,0.7)', cursor: 'pointer', fontSize: 14, fontWeight: 600 }}
+        <div className={`${p}-modal-footer`}>
+          <button className={`${p}-btn-cancel`}
             onClick={() => { setKendiModal(false); setKendiDzlId(null) }}>İptal</button>
-          <button style={{ minHeight: 44, padding: '0 28px', background: 'linear-gradient(135deg,#ef4444,#dc2626)', border: 'none', borderRadius: 10, color: '#fff', fontWeight: 700, fontSize: 14, cursor: 'pointer', boxShadow: '0 4px 16px rgba(239,68,68,0.3)' }}
+          <button className={`${p}-btn-save ${p}-btn-save-red`}
             onClick={kendiKaydet}>
             <i className="bi bi-floppy me-2" />Kaydet
           </button>
@@ -2536,64 +2033,64 @@ export default function CekSenet() {
       </Modal>
 
       {/* ─── Tahsil Düzenle Modalı ──────────────────────────────────────────── */}
-      <Modal open={tahsilDzlModal} onClose={() => setTahsilDzlModal(false)} scrollable>
-        <div style={{ padding: '20px 24px', background: 'linear-gradient(135deg, rgba(16,185,129,0.15), rgba(5,150,105,0.07))', borderBottom: '2px solid rgba(16,185,129,0.3)', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexShrink: 0 }}>
+      <Modal open={tahsilDzlModal} onClose={() => setTahsilDzlModal(false)} scrollable p={p}>
+        <div className={`${p}-modal-header ${p}-mh-green`}>
           <div className="d-flex align-items-center gap-3">
-            <div style={{ width: 42, height: 42, borderRadius: 12, background: 'linear-gradient(135deg,#10b981,#059669)', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 4px 12px rgba(16,185,129,0.35)', flexShrink: 0 }}>
-              <i className="bi bi-pencil-square" style={{ color: '#fff', fontSize: 18 }} />
+            <div className={`${p}-modal-icon ${p}-modal-icon-green`}>
+              <i className="bi bi-pencil-square" />
             </div>
             <div>
-              <div style={{ fontSize: 16, fontWeight: 800, color: '#fff', lineHeight: 1.2 }}>Tahsildeki Evrak Düzenle</div>
-              <div style={{ fontSize: 11, fontWeight: 600, color: 'rgba(255,255,255,0.45)', marginTop: 2 }}>Tahsil bilgilerini güncelle</div>
+              <div className={`${p}-modal-title`}>Tahsildeki Evrak Düzenle</div>
+              <div className={`${p}-modal-sub`}>Tahsil bilgilerini güncelle</div>
             </div>
           </div>
-          <button style={{ background: 'rgba(255,255,255,0.08)', border: '1px solid rgba(255,255,255,0.1)', width: 36, height: 36, borderRadius: 10, color: 'rgba(255,255,255,0.6)', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }} onClick={() => setTahsilDzlModal(false)}>
-            <i className="bi bi-x-lg" style={{ fontSize: 14 }} />
+          <button className={`${p}-modal-close`} onClick={() => setTahsilDzlModal(false)}>
+            <i className="bi bi-x-lg" />
           </button>
         </div>
-        <div style={{ padding: '20px 24px', overflowY: 'auto' }}>
+        <div className={`${p}-modal-body`}>
           <div className="row g-3">
             <div className="col-md-6">
-              <FG label="Firma / Müşteri" zorunlu>
+              <FG label="Firma / Müşteri" zorunlu p={p} renkler={renkler}>
                 <AutoComplete value={tahsilDzlForm.firma_adi || ''}
                   onChange={(v) => setTahsilDzlForm({ ...tahsilDzlForm, firma_adi: v, cari_id: cariIdBul(v) })}
-                  options={cariSecenekleri} placeholder="Cari seç..." id="td-firma" />
+                  options={cariSecenekleri} placeholder="Cari seç..." id="td-firma" p={p} />
               </FG>
             </div>
             <div className="col-md-6">
-              <FG label="Asıl Borçlu">
-                <input className="form-control" style={{ minHeight: 44 }} value={tahsilDzlForm.asil_borclu || ''}
+              <FG label="Asıl Borçlu" p={p} renkler={renkler}>
+                <input className="form-control" value={tahsilDzlForm.asil_borclu || ''}
                   onChange={(e) => setTahsilDzlForm({ ...tahsilDzlForm, asil_borclu: e.target.value })} />
               </FG>
             </div>
             <div className="col-md-6">
-              <FG label="Evrak No">
-                <input className="form-control" style={{ minHeight: 44 }} value={tahsilDzlForm.evrak_no || ''}
+              <FG label="Evrak No" p={p} renkler={renkler}>
+                <input className="form-control" value={tahsilDzlForm.evrak_no || ''}
                   onChange={(e) => setTahsilDzlForm({ ...tahsilDzlForm, evrak_no: e.target.value })} />
               </FG>
             </div>
             <div className="col-md-6">
-              <FG label="Banka Adı">
+              <FG label="Banka Adı" p={p} renkler={renkler}>
                 <AutoComplete value={tahsilDzlForm.banka || ''} onChange={(v) => setTahsilDzlForm({ ...tahsilDzlForm, banka: v })}
-                  options={BANKALAR} placeholder="Banka seç..." id="td-banka" />
+                  options={BANKALAR} placeholder="Banka seç..." id="td-banka" p={p} />
               </FG>
             </div>
             <div className="col-md-6">
-              <FG label="Vade Tarihi" zorunlu>
-                <input type="date" className="form-control" style={{ minHeight: 44 }} value={tahsilDzlForm.vade_tarihi || ''}
+              <FG label="Vade Tarihi" zorunlu p={p} renkler={renkler}>
+                <input type="date" className="form-control" value={tahsilDzlForm.vade_tarihi || ''}
                   onChange={(e) => setTahsilDzlForm({ ...tahsilDzlForm, vade_tarihi: e.target.value })} />
               </FG>
             </div>
             <div className="col-md-6">
-              <FG label="Tahsile Veriş Tarihi">
-                <input type="date" className="form-control" style={{ minHeight: 44 }} value={tahsilDzlForm.tahsil_tarihi || ''}
+              <FG label="Tahsile Veriş Tarihi" p={p} renkler={renkler}>
+                <input type="date" className="form-control" value={tahsilDzlForm.tahsil_tarihi || ''}
                   onChange={(e) => setTahsilDzlForm({ ...tahsilDzlForm, tahsil_tarihi: e.target.value })} />
               </FG>
             </div>
             <div className="col-12">
-              <FG label="Tutar" zorunlu>
+              <FG label="Tutar" zorunlu p={p} renkler={renkler}>
                 <div className="input-group">
-                  <input className="form-control" style={{ minHeight: 44 }} placeholder="0,00"
+                  <input className="form-control" placeholder="0,00"
                     value={tahsilDzlForm.tutarStr || ''}
                     onChange={(e) => setTahsilDzlForm({ ...tahsilDzlForm, tutarStr: formatParaInput(e.target.value) })} />
                   <span className="input-group-text">₺</span>
@@ -2602,55 +2099,55 @@ export default function CekSenet() {
             </div>
           </div>
         </div>
-        <div style={{ padding: '14px 24px', borderTop: '1px solid rgba(255,255,255,0.08)', background: 'rgba(13,27,46,0.98)', display: 'flex', gap: 10, justifyContent: 'flex-end', flexShrink: 0 }}>
-          <button style={{ minHeight: 44, padding: '0 20px', background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.12)', borderRadius: 10, color: 'rgba(255,255,255,0.7)', cursor: 'pointer', fontSize: 14, fontWeight: 600 }} onClick={() => setTahsilDzlModal(false)}>İptal</button>
-          <button style={{ minHeight: 44, padding: '0 28px', background: 'linear-gradient(135deg,#10b981,#059669)', border: 'none', borderRadius: 10, color: '#fff', fontWeight: 700, fontSize: 14, cursor: 'pointer', boxShadow: '0 4px 16px rgba(16,185,129,0.3)' }} onClick={tahsilDzlKaydet}>
+        <div className={`${p}-modal-footer`}>
+          <button className={`${p}-btn-cancel`} onClick={() => setTahsilDzlModal(false)}>İptal</button>
+          <button className={`${p}-btn-save ${p}-btn-save-green`} onClick={tahsilDzlKaydet}>
             <i className="bi bi-floppy me-2" />Güncelle
           </button>
         </div>
       </Modal>
 
       {/* ─── Ciro Düzenle Modalı ────────────────────────────────────────────── */}
-      <Modal open={ciroDzlModal} onClose={() => setCiroDzlModal(false)} scrollable>
-        <div style={{ padding: '20px 24px', background: 'linear-gradient(135deg, rgba(217,119,6,0.15), rgba(146,64,14,0.07))', borderBottom: '2px solid rgba(217,119,6,0.3)', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexShrink: 0 }}>
+      <Modal open={ciroDzlModal} onClose={() => setCiroDzlModal(false)} scrollable p={p}>
+        <div className={`${p}-modal-header ${p}-mh-orange`}>
           <div className="d-flex align-items-center gap-3">
-            <div style={{ width: 42, height: 42, borderRadius: 12, background: 'linear-gradient(135deg,#d97706,#b45309)', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 4px 12px rgba(217,119,6,0.35)', flexShrink: 0 }}>
-              <i className="bi bi-pencil-square" style={{ color: '#fff', fontSize: 18 }} />
+            <div className={`${p}-modal-icon ${p}-modal-icon-orange`}>
+              <i className="bi bi-pencil-square" />
             </div>
             <div>
-              <div style={{ fontSize: 16, fontWeight: 800, color: '#fff', lineHeight: 1.2 }}>Cirolanan Evrak Düzenle</div>
-              <div style={{ fontSize: 11, fontWeight: 600, color: 'rgba(255,255,255,0.45)', marginTop: 2 }}>Ciro bilgilerini güncelle</div>
+              <div className={`${p}-modal-title`}>Cirolanan Evrak Düzenle</div>
+              <div className={`${p}-modal-sub`}>Ciro bilgilerini güncelle</div>
             </div>
           </div>
-          <button style={{ background: 'rgba(255,255,255,0.08)', border: '1px solid rgba(255,255,255,0.1)', width: 36, height: 36, borderRadius: 10, color: 'rgba(255,255,255,0.6)', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }} onClick={() => setCiroDzlModal(false)}>
-            <i className="bi bi-x-lg" style={{ fontSize: 14 }} />
+          <button className={`${p}-modal-close`} onClick={() => setCiroDzlModal(false)}>
+            <i className="bi bi-x-lg" />
           </button>
         </div>
-        <div style={{ padding: '20px 24px', overflowY: 'auto' }}>
+        <div className={`${p}-modal-body`}>
           <div className="row g-3">
             <div className="col-md-6">
-              <FG label="Asıl Firma (Müşteri)" zorunlu>
+              <FG label="Asıl Firma (Müşteri)" zorunlu p={p} renkler={renkler}>
                 <AutoComplete value={ciroDzlForm.asil_firma || ''}
                   onChange={(v) => setCiroDzlForm({ ...ciroDzlForm, asil_firma: v, cari_id: cariIdBul(v) })}
-                  options={cariSecenekleri} placeholder="Müşteri firması..." id="cd-firma" />
+                  options={cariSecenekleri} placeholder="Müşteri firması..." id="cd-firma" p={p} />
               </FG>
             </div>
             <div className="col-md-6">
-              <FG label="Teslim Edilen Yer">
+              <FG label="Teslim Edilen Yer" p={p} renkler={renkler}>
                 <AutoComplete value={ciroDzlForm.teslim_yeri || ''}
                   onChange={(v) => setCiroDzlForm({ ...ciroDzlForm, teslim_yeri: v, ciro_edilen_cari_id: cariIdBul(v) })}
-                  options={cariSecenekleri} placeholder="Teslim edilen firma..." id="cd-teslim" />
+                  options={cariSecenekleri} placeholder="Teslim edilen firma..." id="cd-teslim" p={p} />
               </FG>
             </div>
             <div className="col-md-6">
-              <FG label="Evrak No">
-                <input className="form-control" style={{ minHeight: 44 }} value={ciroDzlForm.evrak_no || ''}
+              <FG label="Evrak No" p={p} renkler={renkler}>
+                <input className="form-control" value={ciroDzlForm.evrak_no || ''}
                   onChange={(e) => setCiroDzlForm({ ...ciroDzlForm, evrak_no: e.target.value })} />
               </FG>
             </div>
             <div className="col-md-6">
-              <FG label="Evrak Tipi">
-                <select className="form-select" style={{ minHeight: 44 }} value={ciroDzlForm.tur || 'Müşteri Çeki'}
+              <FG label="Evrak Tipi" p={p} renkler={renkler}>
+                <select className="form-select" value={ciroDzlForm.tur || 'Müşteri Çeki'}
                   onChange={(e) => setCiroDzlForm({ ...ciroDzlForm, tur: e.target.value })}>
                   <option>Müşteri Çeki</option>
                   <option>Müşteri Senedi</option>
@@ -2658,21 +2155,21 @@ export default function CekSenet() {
               </FG>
             </div>
             <div className="col-md-6">
-              <FG label="Vade Tarihi" zorunlu>
-                <input type="date" className="form-control" style={{ minHeight: 44 }} value={ciroDzlForm.vade_tarihi || ''}
+              <FG label="Vade Tarihi" zorunlu p={p} renkler={renkler}>
+                <input type="date" className="form-control" value={ciroDzlForm.vade_tarihi || ''}
                   onChange={(e) => setCiroDzlForm({ ...ciroDzlForm, vade_tarihi: e.target.value })} />
               </FG>
             </div>
             <div className="col-md-6">
-              <FG label="Ciro Tarihi">
-                <input type="date" className="form-control" style={{ minHeight: 44 }} value={ciroDzlForm.ciro_tarihi || ''}
+              <FG label="Ciro Tarihi" p={p} renkler={renkler}>
+                <input type="date" className="form-control" value={ciroDzlForm.ciro_tarihi || ''}
                   onChange={(e) => setCiroDzlForm({ ...ciroDzlForm, ciro_tarihi: e.target.value })} />
               </FG>
             </div>
             <div className="col-12">
-              <FG label="Tutar" zorunlu>
+              <FG label="Tutar" zorunlu p={p} renkler={renkler}>
                 <div className="input-group">
-                  <input className="form-control" style={{ minHeight: 44 }} placeholder="0,00"
+                  <input className="form-control" placeholder="0,00"
                     value={ciroDzlForm.tutarStr || ''}
                     onChange={(e) => setCiroDzlForm({ ...ciroDzlForm, tutarStr: formatParaInput(e.target.value) })} />
                   <span className="input-group-text">₺</span>
@@ -2681,9 +2178,9 @@ export default function CekSenet() {
             </div>
           </div>
         </div>
-        <div style={{ padding: '14px 24px', borderTop: '1px solid rgba(255,255,255,0.08)', background: 'rgba(13,27,46,0.98)', display: 'flex', gap: 10, justifyContent: 'flex-end', flexShrink: 0 }}>
-          <button style={{ minHeight: 44, padding: '0 20px', background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.12)', borderRadius: 10, color: 'rgba(255,255,255,0.7)', cursor: 'pointer', fontSize: 14, fontWeight: 600 }} onClick={() => setCiroDzlModal(false)}>İptal</button>
-          <button style={{ minHeight: 44, padding: '0 28px', background: 'linear-gradient(135deg,#d97706,#b45309)', border: 'none', borderRadius: 10, color: '#fff', fontWeight: 700, fontSize: 14, cursor: 'pointer', boxShadow: '0 4px 16px rgba(217,119,6,0.3)' }} onClick={ciroDzlKaydet}>
+        <div className={`${p}-modal-footer`}>
+          <button className={`${p}-btn-cancel`} onClick={() => setCiroDzlModal(false)}>İptal</button>
+          <button className={`${p}-btn-save ${p}-btn-save-orange`} onClick={ciroDzlKaydet}>
             <i className="bi bi-floppy me-2" />Güncelle
           </button>
         </div>

@@ -16,6 +16,7 @@ const menuOgeleri = [
   { yol: '/odemeler',  etiket: 'Ödemeler',        icon: 'bi-credit-card-2-front-fill', renk: '#a78bfa', rgb: '167,139,250' },
   { yol: '/kasa',             etiket: 'Varlık & Kasa',    icon: 'bi-safe-fill',                renk: '#f59e0b', rgb: '245,158,11'  },
   { yol: '/vade-hesaplayici', etiket: 'Vade Hesaplayıcı', icon: 'bi-calculator-fill',          renk: '#06b6d4', rgb: '6,182,212'   },
+  { yol: '/ayarlar/tema',     etiket: 'Tema Ayarları',    icon: 'bi-palette-fill',             renk: '#8b5cf6', rgb: '139,92,246'  },
 ]
 
 // ─── Aktif Sayfa Başlığı ──────────────────────────────────────────────────────

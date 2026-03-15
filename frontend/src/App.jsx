@@ -18,7 +18,7 @@ import useAuthStore from './stores/authStore'
 
 // Layout
 import KorunanSayfa from './components/layout/KorunanSayfa'
-import AppLayout    from './components/layout/AppLayout'
+import TemaLayout   from './components/layout/TemaLayout'
 
 // Auth sayfaları
 import GirisYap from './pages/auth/GirisYap'
@@ -31,6 +31,7 @@ import VarlikKasa     from './pages/kasa/VarlikKasa'
 import CekSenet       from './pages/cek-senet/CekSenet'
 import OdemeTakip       from './pages/odeme-takip/OdemeTakip'
 import VadeHesaplayici  from './pages/vade-hesaplayici/VadeHesaplayici'
+import TemaSecimi       from './pages/ayarlar/TemaSecimi'
 
 // axios.js → auth:logout olayını dinle, React Router ile yönlendir
 function AuthLogoutListener() {
@@ -89,16 +90,17 @@ export default function App() {
 
         {/* ─── Korumalı sayfalar (JWT gerekli) ───────────────────────── */}
         <Route element={<KorunanSayfa />}>
-          <Route element={<AppLayout />}>
+          <Route element={<TemaLayout />}>
             <Route path="/dashboard"             element={<Dashboard />} />
             <Route path="/cariler"               element={<CariYonetimi />} />
             <Route path="/cariler/yeni"          element={<Navigate to="/cariler" replace />} />
             <Route path="/cariler/:id"           element={<Navigate to="/cariler" replace />} />
             <Route path="/cariler/:id/duzenle"   element={<Navigate to="/cariler" replace />} />
-            <Route path="/cek-senet" element={<CekSenet />} />
-            <Route path="/odemeler" element={<OdemeTakip />} />
-            <Route path="/kasa" element={<VarlikKasa />} />
-            <Route path="/vade-hesaplayici" element={<VadeHesaplayici />} />
+            <Route path="/cek-senet"             element={<CekSenet />} />
+            <Route path="/odemeler"              element={<OdemeTakip />} />
+            <Route path="/kasa"                  element={<VarlikKasa />} />
+            <Route path="/vade-hesaplayici"      element={<VadeHesaplayici />} />
+            <Route path="/ayarlar/tema"          element={<TemaSecimi />} />
           </Route>
         </Route>
 

@@ -1,33 +1,35 @@
 # Finans Kalesi — Apache URL Yönlendirme Kuralları
-# 
-# Bu dosya ne yapıyor?
-# Gelen TÜM istekleri index.php'ye yönlendiriyor.
-# Eski sistemde her sayfa ayrı dosyaydı (cariler.php, login.php).
-# Yeni sistemde tek giriş noktası var: index.php
-# index.php gelen URL'e bakarak doğru controller'ı çağırıyor.
 #
-# Benzetme: Dükkanda tek bir giriş kapısı var.
-# Kapıdaki görevli (index.php) müşteriyi doğru reyona yönlendiriyor.
+# İki iş yapıyor:
+# 1. /api/ ile başlayan istekler → PHP backend (index.php)
+# 2. Diğer istekler → React frontend (frontend-build/index.html)
 
 # URL yeniden yazma motorunu aç
 RewriteEngine On
 
 # Authorization başlığını PHP'ye ilet (PHP-CGI/FastCGI için zorunlu)
-# Apache CGI modunda Authorization header'ı otomatik iletmez.
-# Bu kural olmadan JWT token PHP'ye ulaşmaz → her istek 401 döner.
 RewriteRule .* - [E=HTTP_AUTHORIZATION:%{HTTP:Authorization}]
 
-# Gerçekten var olan dosyalara dokunma (CSS, JS, resim gibi)
+# ─── 1. API İSTEKLERİ → index.php ───────────────────────────
+# /api/ ile başlayan tüm istekler PHP backend'e gider
+RewriteRule ^api(/.*)?$ index.php [QSA,L]
+
+# ─── 2. GERÇEK DOSYALAR → Doğrudan sun ──────────────────────
+# CSS, JS, resim gibi gerçek dosyalar varsa dokunma
+RewriteCond %{REQUEST_FILENAME} -f
+RewriteRule ^ - [L]
+
+# ─── 3. Frontend asset'leri → frontend-build klasöründen sun ─
+# /assets/ isteklerini frontend-build/assets/ klasörüne yönlendir
+RewriteRule ^assets/(.*)$ frontend-build/assets/$1 [L]
+
+# ─── 4. DİĞER HER ŞEY → React SPA ──────────────────────────
+# React Router'ın çalışması için tüm sayfaları index.html'e yönlendir
 RewriteCond %{REQUEST_FILENAME} !-f
-# Gerçekten var olan klasörlere dokunma
 RewriteCond %{REQUEST_FILENAME} !-d
+RewriteRule ^ frontend-build/index.html [QSA,L]
 
-# Geri kalan her şeyi index.php'ye yönlendir
-# [QSA] = Query string'i de taşı (?sayfa=1 gibi parametreler)
-# [L] = Bu son kural, başka kurala bakma
-RewriteRule ^(.*)$ index.php [QSA,L]
-
-# Güvenlik: .env ve config dosyalarına dışarıdan erişimi engelle
+# Güvenlik: .env ve gizli dosyalara erişimi engelle
 <FilesMatch "^\.">
     Require all denied
 </FilesMatch>
@@ -35,8 +37,3 @@ RewriteRule ^(.*)$ index.php [QSA,L]
 # PHP hata gösterimini kapat (production güvenliği)
 php_flag display_errors Off
 php_flag log_errors On
-
-# cPanel PHP handler - sadece cPanel hosting'de aktif, lokalde devre dışı
-# <IfModule mime_module>
-#   AddHandler application/x-httpd-ea-php74 .php .php7 .phtml
-# </IfModule>

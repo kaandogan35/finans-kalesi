@@ -40,6 +40,7 @@ class JWTHelper {
             'sub' => $kullanici['id'],          // Kullanici ID
             'sirket_id' => $kullanici['sirket_id'], // Hangi sirkete ait (multi-tenant)
             'rol' => $kullanici['rol'],         // Yetki rolu (admin, kullanici vb.)
+            'tema_adi' => $kullanici['tema_adi'] ?? 'banking', // Arayuz temasi
             'tip' => 'access'                   // Token tipi
         ];
         

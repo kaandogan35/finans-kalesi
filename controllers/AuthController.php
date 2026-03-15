@@ -88,7 +88,8 @@ class AuthController {
             $kullanici_bilgi = [
                 'id'        => $kullanici_id,
                 'sirket_id' => $sirket_id,
-                'rol'       => 'sahip'
+                'rol'       => 'sahip',
+                'tema_adi'  => 'banking'  // Yeni sirket varsayilan tema
             ];
             
             $access_token = JWTHelper::access_token_olustur($kullanici_bilgi);
@@ -116,7 +117,8 @@ class AuthController {
                     'sirket_id' => $sirket_id,
                     'ad_soyad'  => $girdi['ad_soyad'],
                     'email'     => $girdi['email'],
-                    'rol'       => 'sahip'
+                    'rol'       => 'sahip',
+                    'tema_adi'  => 'banking'
                 ],
                 'tokenlar' => [
                     'access_token'  => $access_token,
@@ -189,27 +191,31 @@ class AuthController {
         }
 
         try {
-            // 6. Tokenlar olustur
+            // 6. Sirket temasini al
+            $sirket = $this->sirket_model->id_ile_bul($kullanici['sirket_id']);
+
+            // 7. Tokenlar olustur
             $kullanici_bilgi = [
                 'id'        => $kullanici['id'],
                 'sirket_id' => $kullanici['sirket_id'],
-                'rol'       => $kullanici['rol']
+                'rol'       => $kullanici['rol'],
+                'tema_adi'  => $sirket['tema_adi'] ?? 'banking'
             ];
 
             $access_token = JWTHelper::access_token_olustur($kullanici_bilgi);
             $refresh = JWTHelper::refresh_token_olustur($kullanici_bilgi);
 
-            // 7. Refresh token kaydet
+            // 8. Refresh token kaydet
             $this->kullanici_model->refresh_token_kaydet(
                 $kullanici['id'],
                 $refresh['token'],
                 $refresh['son_kullanim']
             );
 
-            // 8. Son giris zamanini guncelle
+            // 9. Son giris zamanini guncelle
             $this->kullanici_model->son_giris_guncelle($kullanici['id']);
 
-            // 9. Basarili girisi logla
+            // 10. Basarili girisi logla
             SistemLog::kaydet(
                 SistemLog::GIRIS_BASARILI,
                 'email: ' . $kullanici['email'],
@@ -217,14 +223,15 @@ class AuthController {
                 (int)$kullanici['id']
             );
 
-            // 10. Basarili yanit
+            // 11. Basarili yanit
             Response::basarili([
                 'kullanici' => [
                     'id'        => (int) $kullanici['id'],
                     'sirket_id' => (int) $kullanici['sirket_id'],
                     'ad_soyad'  => $kullanici['ad_soyad'],
                     'email'     => $kullanici['email'],
-                    'rol'       => $kullanici['rol']
+                    'rol'       => $kullanici['rol'],
+                    'tema_adi'  => $sirket['tema_adi'] ?? 'banking'
                 ],
                 'tokenlar' => [
                     'access_token'  => $access_token,
@@ -275,10 +282,12 @@ class AuthController {
             $this->kullanici_model->refresh_token_sil($girdi['refresh_token']);
             
             // 5. Yeni tokenlar olustur
+            $sirket = $this->sirket_model->id_ile_bul($token_kayit['sirket_id']);
             $kullanici_bilgi = [
                 'id'        => (int) $token_kayit['kullanici_id'],
                 'sirket_id' => (int) $token_kayit['sirket_id'],
-                'rol'       => $token_kayit['rol']
+                'rol'       => $token_kayit['rol'],
+                'tema_adi'  => $sirket['tema_adi'] ?? 'banking'
             ];
             
             $yeni_access = JWTHelper::access_token_olustur($kullanici_bilgi);
@@ -334,14 +343,18 @@ class AuthController {
      */
     public function ben() {
         $payload = AuthMiddleware::dogrula();
-        
+
         $kullanici = $this->kullanici_model->id_ile_bul($payload['sub']);
-        
+
         if (!$kullanici) {
             Response::bulunamadi('Kullanici bulunamadi');
             return;
         }
-        
+
+        // Sirket temasini ekle
+        $sirket = $this->sirket_model->id_ile_bul($kullanici['sirket_id']);
+        $kullanici['tema_adi'] = $sirket['tema_adi'] ?? 'banking';
+
         Response::basarili(['kullanici' => $kullanici]);
     }
 }

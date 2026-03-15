@@ -7,6 +7,7 @@
 
 import { create } from 'zustand'
 import { authApi } from '../api/auth'
+import useTemaStore from './temaStore'
 
 const useAuthStore = create((set, get) => ({
   // ─── State ───────────────────────────────────────────────────────────
@@ -43,11 +44,10 @@ const useAuthStore = create((set, get) => ({
     }
     try {
       const yanit = await authApi.ben()
-      set({
-        kullanici: yanit.data.veri.kullanici,
-        girisYapildi: true,
-        yukleniyor: false,
-      })
+      const kullanici = yanit.data.veri.kullanici
+      set({ kullanici, girisYapildi: true, yukleniyor: false })
+      // Tema store'u güncelle
+      useTemaStore.getState().temaAyarla(kullanici.tema_adi || 'banking')
     } catch {
       get().tokenlarıTemizle()
       set({ yukleniyor: false, girisYapildi: false })
@@ -62,8 +62,9 @@ const useAuthStore = create((set, get) => ({
     const { kullanici, tokenlar } = yanit.data.veri
 
     get().tokenlariAyarla(tokenlar.access_token, tokenlar.refresh_token)
-
     set({ kullanici, girisYapildi: true })
+    // Tema store'u güncelle
+    useTemaStore.getState().temaAyarla(kullanici.tema_adi || 'banking')
     return kullanici
   },
 
@@ -79,6 +80,7 @@ const useAuthStore = create((set, get) => ({
     } finally {
       get().tokenlarıTemizle()
       set({ kullanici: null, girisYapildi: false })
+      useTemaStore.getState().temaAyarla('banking')
     }
   },
 }))

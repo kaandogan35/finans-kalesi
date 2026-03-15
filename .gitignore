@@ -32,3 +32,7 @@ tmp/
 
 # (Eğer varsa) Klasik Node.js gereksizleri
 node_modules/
+
+# Gereksiz dosyalar
+frontend.zip
+public/admin-olustur.php

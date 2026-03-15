@@ -151,6 +151,11 @@ try {
             require_once BASE_PATH . '/routes/dashboard.php';
             break;
 
+        // ─── Ayarlar (Tema seçimi vb.) ───
+        case 'ayarlar':
+            require_once BASE_PATH . '/routes/ayarlar.php';
+            break;
+
         // ─── API Ana Sayfa ───
         case '':
             Response::basarili([
