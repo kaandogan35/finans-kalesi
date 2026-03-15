@@ -97,7 +97,7 @@ $stmt = $pdo->prepare("SELECT * FROM tablo WHERE id = :id");
 
 | Anahtar Kelime | Okunacak Skill |
 |----------------|----------------|
-| "jsx", "bileşen", "sayfa", "modal", "UI", "tasarım" | `react-bootstrap-ui.md` |
+| "jsx", "bileşen", "sayfa", "modal", "UI", "tasarım", "grafik", "KPI", "tutar", "renk" | `react-bootstrap-ui.md` + `ikas-tasarim.md` |
 | "controller", "endpoint", "route", "api", "php" | `php-api-gelistirici.md` |
 | "sil", "temizle", "birleştir", "refactor", "kaldır" | `kod-temizligi-refactor.md` |
 | "yeni modül", "yeni sayfa", "modül ekle" | `yeni-modul-ekle.md` |

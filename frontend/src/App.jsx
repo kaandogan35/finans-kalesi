@@ -43,6 +43,14 @@ import FontKarsilastir from './pages/tasarim-demo/FontKarsilastir'
 // V2 Tasarım Demo
 import TasarimDemoV2 from './pages/tasarim-demo-v2/TasarimDemoV2'
 
+// V3 Tasarım Demo (ikas ilhamlı)
+import NakitAkisDemo from './pages/tasarim-demo-v3/NakitAkisDemo'
+import Palet1VolkanikDemo from './pages/tasarim-demo-v3/Palet1VolkanikDemo'
+import Palet2OrmanDemo from './pages/tasarim-demo-v3/Palet2OrmanDemo'
+import Palet3MurekkeDemo from './pages/tasarim-demo-v3/Palet3MurekkeDemo'
+import Palet4ColDemo from './pages/tasarim-demo-v3/Palet4ColDemo'
+import DashboardDemo from './pages/tasarim-demo-v3/DashboardDemo'
+
 // axios.js → auth:logout olayını dinle, React Router ile yönlendir
 function AuthLogoutListener() {
   const navigate = useNavigate()
@@ -96,6 +104,12 @@ export default function App() {
         <Route path="/demo-c" element={<DemoC />} />
         <Route path="/tasarim-demo/font-karsilastir" element={<FontKarsilastir />} />
         <Route path="/tasarim-demo-v2" element={<TasarimDemoV2 />} />
+        <Route path="/tasarim-demo-v3" element={<NakitAkisDemo />} />
+        <Route path="/tasarim-demo-v3/palet-1" element={<Palet1VolkanikDemo />} />
+        <Route path="/tasarim-demo-v3/palet-2" element={<Palet2OrmanDemo />} />
+        <Route path="/tasarim-demo-v3/palet-3" element={<Palet3MurekkeDemo />} />
+        <Route path="/tasarim-demo-v3/palet-4" element={<Palet4ColDemo />} />
+        <Route path="/tasarim-demo-v3/dashboard" element={<DashboardDemo />} />
 
         {/* ─── Public sayfalar ───────────────────────────────────────── */}
         <Route path="/giris" element={<GirisYap />} />

@@ -1,11 +1,11 @@
 # PROJE.md — Finans Kalesi Canlı Durum ve Yol Haritası
-# Son Güncelleme: 14 Mart 2026 — Oturum #11
+# Son Güncelleme: 14 Mart 2026 — Oturum #13
 
 ---
 
-## GÜNCEL DURUM: 🏗️ Sprint 2C — Kasa & Çek/Senet UI Tamamlandı (Mock)
-Kasa ve Çek/Senet sayfaları mock veri ile yazıldı. API bağlantıları bekliyor.
-Sıradaki iş: Kasa mock verilerini gerçek API'ye bağlamak.
+## GÜNCEL DURUM: 🎨 Aşama 2F — Obsidian Vault Tasarım Dönüşümü DEVAM EDİYOR
+Tüm frontend sayfaları "Obsidian Vault" koyu premium tasarım sistemine geçiriliyor.
+5 aşamalı plan uygulanıyor. Her aşama sonunda kullanıcı onayı alınıyor.
 
 ---
 
@@ -31,16 +31,16 @@ Sıradaki iş: Kasa mock verilerini gerçek API'ye bağlamak.
 
 #### Sprint 2A — Temizlik ✅ TAMAMLANDI
 #### Sprint 2B — UI Standardizasyonu ✅ BÜYÜK ÖLÇÜDE TAMAMLANDI
-#### Sprint 2C — API Entegrasyonu 🏗️ DEVAM EDİYOR
+#### Sprint 2C — API Entegrasyonu ✅ TAMAMLANDI
 
 | Durum | Görev | Notlar |
 |-------|-------|--------|
 | ✅ | 2C-1: Axios Interceptor | localStorage → Zustand. lucide-react kaldırıldı. |
 | ✅ | 2C-2: Cari API + Düzeltmeler | API bağlı. 4 hata düzeltildi (stat kartları, tarih parse, vergi_dairesi, her_ikisi türü) |
 | ✅ | 2C-4: Kasa UI | VarlikKasa.jsx yazıldı. Mock veri ile çalışıyor. api/kasa.js oluşturuldu. |
-| ⬜ | **2C-4b: Kasa API Bağlantısı** | Mock veriler gerçek backend'e bağlanacak — ŞU ANKİ GÖREV |
-| 🔶 | 2C-3: Çek/Senet UI + API | CekSenet.jsx + api/cekSenet.js yazıldı. Mock veri aşamasında. API bağlantısı bekliyor. |
-| ⬜ | 2C-5: Ödemeler UI + API | Henüz başlanmadı |
+| ✅ | **2C-4b: Kasa API Bağlantısı** | API bağlandı. Yatırım güncelle hatası düzeltildi. Aylık hareket filtresi eklendi. Kayıt testleri geçti. |
+| ✅ | **2C-3: Çek/Senet API Bağlantısı** | API bağlandı. Tüm tab'lar gerçek veri. Durum değişimleri (tahsil/ciro/iade/ödendi) API'ye bağlı. Cari seçimi entegre edildi. |
+| 🔶 | 2C-5: Ödemeler UI + API | Henüz başlanmadı — ŞU ANKİ GÖREV |
 
 ---
 
@@ -48,11 +48,11 @@ Sıradaki iş: Kasa mock verilerini gerçek API'ye bağlamak.
 
 | Sekme | UI | API |
 |-------|-----|-----|
-| Gösterge Paneli | ✅ Mock | ⬜ |
-| Nakit Akışı | ✅ Mock | ⬜ |
-| Aylık Bilanço | ✅ Local state | ⬜ Backend endpoint yok — ileriye bırakıldı |
-| Ortak Carisi | ✅ Mock | ⬜ |
-| Yatırım Kalesi | ✅ Mock | ⬜ |
+| Gösterge Paneli | ✅ | ✅ Hareketlerden hesaplanıyor |
+| Nakit Akışı | ✅ | ✅ Aylık filtreli, ekle/sil çalışıyor |
+| Aylık Bilanço | ✅ | ⬜ Backend endpoint yok — local state, ileriye bırakıldı |
+| Ortak Carisi | ✅ | ✅ Ekle/sil çalışıyor |
+| Yatırım Kalesi | ✅ | ✅ Ekle/güncelle/sil çalışıyor |
 
 **Kasa Özel Notlar:**
 - X-Kasa-Sifre header'ı KULLANILMIYOR — şifre ekranı kaldırıldı
@@ -72,11 +72,28 @@ Sıradaki iş: Kasa mock verilerini gerçek API'ye bağlamak.
 
 ---
 
-### Aşama 2E — Dashboard ⬜ EN SONA BIRAKILDI
-### Aşama 2F — Komple UI Rebrand ⬜ TÜM MODÜLLER BİTİNCE
-> Tüm modüller çalışır hale geldikten sonra yapılacak.
-> 21st.dev'den ilham alınacak, Bootstrap 5.3 korunacak.
-> Tailwind ve Shadcn YASAK — CSS manuel yazılacak.
+### Aşama 2E — Dashboard ✅ Obsidian Vault stiliyle tamamlandı (Aşama 2F içinde)
+
+### Aşama 2F — Obsidian Vault Tasarım Dönüşümü 🏗️ DEVAM EDİYOR
+> 5 aşamalı plan: `.claude/plans/adaptive-tumbling-wren.md`
+> Tasarım kuralları: `.claude/skills/obsidian-vault-tasarim.md`
+> Bootstrap 5.3 korunuyor, Tailwind/Shadcn YASAK — CSS manuel.
+
+| Aşama | Dosyalar | Durum |
+|-------|----------|-------|
+| 1: Global CSS + Sidebar + Giriş | index.css, App.css, AppLayout.jsx, GirisYap.jsx | ✅ Tamamlandı + onaylandı |
+| 2: Dashboard | Dashboard.jsx | ✅ Tamamlandı + onaylandı |
+| 3: Cari Hesaplar | CariYonetimi.jsx | ✅ Tamamlandı + onaylandı |
+| 4: Çek/Senet | CekSenet.jsx | ✅ Tamamlandı + onaylandı |
+| 5: Varlık & Kasa | VarlikKasa.jsx | ✅ Tamamlandı — kullanıcı onayı bekleniyor |
+| **Temizlik** | **tasarim-demo/ sil, kullanılmayan CSS temizle** | **🔶 SIRADA** |
+
+**Yeni oturumda "tasarıma devam ediyoruz" dendiğinde:**
+1. Bu tablodan kaldığın aşamayı bul
+2. Plan dosyasını oku: `.claude/plans/adaptive-tumbling-wren.md`
+3. Skill dosyalarını oku: `obsidian-vault-tasarim.md` + `react-bootstrap-ui.md`
+4. `frontend-design` skill'ini kullan
+5. Aşama tamamlanınca kullanıcı onayı al, skill dosyasını güncelle
 
 ### Aşama 3 — Canlıya Çıkış Hazırlığı ⬜ BEKLEMEDE
 ### Aşama 4 — Mobil (Capacitor.js) ⬜ Web kararlı olduktan sonra
@@ -101,15 +118,15 @@ finans-kalesi/
 │   │   ├── cariler.js       ✅ ozet() eklendi
 │   │   ├── dashboard.js     ✅
 │   │   ├── kasa.js          ✅ Oluşturuldu
-│   │   ├── cekSenet.js      🔶 Oluşturuldu, API bağlantısı bekliyor
+│   │   ├── cekSenet.js      ✅ API bağlı
 │   │   └── odeme.js         ⬜ Oluşturulacak
 │   ├── pages/
 │   │   ├── auth/GirisYap.jsx          ✅
 │   │   ├── cariler/CariYonetimi.jsx   ✅ API bağlı, 4 hata düzeltildi
 │   │   ├── cariler/CarilerListesi.jsx ✅
 │   │   ├── dashboard/Dashboard.jsx    ✅ (UI en sona)
-│   │   ├── kasa/VarlikKasa.jsx        🔶 UI tamam, mock veri, API bekliyor
-│   │   ├── cek-senet/CekSenet.jsx     🔶 UI tamam, mock veri, API bekliyor
+│   │   ├── kasa/VarlikKasa.jsx        ✅ API bağlı, testler geçti
+│   │   ├── cek-senet/CekSenet.jsx     ✅ API bağlı, gerçek veri
 │   │   ├── odeme-takip/               ⬜ Oluşturulacak
 │   │   └── vade-hesaplayici/          ⬜ Oluşturulacak
 │   ├── stores/authStore.js   ✅
@@ -149,9 +166,7 @@ finans-kalesi/
 
 | # | Sorun | Öncelik |
 |---|-------|---------|
-| 1 | Kasa mock verileri gerçek API'ye bağlanmadı | 🔴 Sıradaki görev |
-| 2 | Çek/Senet mock verileri gerçek API'ye bağlanmadı | 🔴 Kritik — UI hazır |
-| 3 | Ödemeler sayfası henüz başlanmadı | 🟡 Sprint 2C-5 |
+| 1 | Ödemeler sayfası henüz başlanmadı | 🔴 Sıradaki görev |
 | 4 | Aylık Bilanço backend endpoint yok | 🟡 İleride eklenecek |
 | 5 | Vade Hesaplayıcı DB sütunları yok | 🟡 Sprint 2D |
 | 6 | public/htaccess noktasız kopya | 🟡 Silinecek |
