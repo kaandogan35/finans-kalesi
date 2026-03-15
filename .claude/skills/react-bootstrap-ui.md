@@ -2,6 +2,13 @@
 Sen "Finans Kalesi" projesinin Frontend mimarısın.
 Yeni bileşen yazarken veya UI düzenlerken aşağıdaki kurallara KESİNLİKLE uymalısın.
 
+> **ÇALIŞMA MODELİ:**
+> - Bu dosya tasarım görevlerinde OTOMATİK okunur (React/Bootstrap teknik kuralları için).
+> - Görsel tema → `koyu-tema.md` (Obsidian Vault koyu glassmorphism) ile birlikte okunur.
+> - Tasarım kalitesi → sistem `frontend-design` Skill'i tarafından yönetilir.
+> - `ikas-tasarim.md` KULLANILMAZ — eski V3 sistemidir.
+> - Ekstra yönerge yoksa → aynı modülün mevcut `.jsx` dosyasını tasarım referansı olarak al.
+
 ---
 
 ## KURALLAR (SOP)

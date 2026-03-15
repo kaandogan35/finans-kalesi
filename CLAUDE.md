@@ -1,6 +1,6 @@
 # CLAUDE.md — Finans Kalesi Proje Anayasası
 # Bu dosya her oturumun başında otomatik okunur. Tüm kurallar bağlayıcıdır.
-# Son Güncelleme: 13 Mart 2026 — Oturum #9
+# Son Güncelleme: 15 Mart 2026 — Oturum #10
 
 ---
 
@@ -90,21 +90,45 @@ $stmt = $pdo->prepare("SELECT * FROM tablo WHERE id = :id");
 
 ---
 
-## AGENT YETENEKLERİ (SKILLS) — OTOMATİK TETİKLEYİCİLER
+## AGENT YETENEKLERİ (SKILLS) — KULLANIM KURALLARI
 
-`.claude/skills/` altındaki dosyalar göreve özel protokollerdir.
-**Aşağıdaki anahtar kelimeler mesajda geçiyorsa ilgili skill OKUNMADAN işe başlama:**
+`.claude/skills/` altındaki dosyalar ve sistem Skill'leri göreve özel protokollerdir.
 
-| Anahtar Kelime | Okunacak Skill |
-|----------------|----------------|
-| "jsx", "bileşen", "sayfa", "modal", "UI", "tasarım", "grafik", "KPI", "tutar", "renk" | `react-bootstrap-ui.md` + `ikas-tasarim.md` |
-| "controller", "endpoint", "route", "api", "php" | `php-api-gelistirici.md` |
-| "sil", "temizle", "birleştir", "refactor", "kaldır" | `kod-temizligi-refactor.md` |
-| "yeni modül", "yeni sayfa", "modül ekle" | `yeni-modul-ekle.md` |
-| "durum", "analiz", "rapor", "nerede", "kontrol et" | `sistem-analisti.md` |
-| Deploy, "canlıya çık", "yükle", "production" | `kod-temizligi-refactor.md` |
+---
 
-Birden fazla anahtar kelime varsa ilgili tüm skill'ler okunur.
+### 🎨 OTOMATİK TETİKLENEN — Tasarım (Her Zaman)
+
+Aşağıdaki anahtar kelimelerden **herhangi biri** mesajda geçiyorsa **üç şey birlikte yapılır:**
+1. `.claude/skills/react-bootstrap-ui.md` OKUNUR (React/Bootstrap teknik kuralları)
+2. `.claude/skills/koyu-tema.md` OKUNUR (Obsidian Vault koyu tema görsel dili)
+3. Sistem `frontend-design` Skill'i ÇAĞIRILIR (tasarım kalitesi ve yaratıcılık için)
+
+> "jsx", "bileşen", "sayfa", "modal", "UI", "tasarım", "grafik",
+> "KPI", "tutar", "renk", "tablo", "kart", "buton", "form", "stil"
+
+**Ekstra tasarım yönergesi verilmemişse:** Aynı modülün mevcut `.jsx` dosyasını veya
+en son tamamlanmış sayfayı referans al — aynı dil, aynı renk, aynı bileşen yapısı.
+
+> **Aktif tasarım sistemi:** Obsidian Vault koyu glassmorphism.
+> Görsel tema → `koyu-tema.md`
+> Teknik kurallar → `react-bootstrap-ui.md`
+> Tasarım kalitesi → `frontend-design` Skill
+>
+> **ESKİ (kullanılmaz):** `ikas-tasarim.md`
+
+---
+
+### 🔧 SADECE AÇIK KOMUTLA TETİKLENEN — Diğer Skill'ler
+
+Aşağıdaki skill'ler **yalnızca kullanıcı açıkça istediğinde** devreye girer.
+Anahtar kelime geçse bile OTOMATİK ÇAĞRILMAZ:
+
+| Skill / Dosya | Ne Zaman Kullan |
+|--------------|-----------------|
+| `php-api-gelistirici.md` | Kullanıcı "php skill", "api yaz", "controller" gibi açık komut verirse |
+| `kod-temizligi-refactor.md` | Kullanıcı "refactor yap", "temizle", "canlıya çık" derse |
+| `yeni-modul-ekle.md` | Kullanıcı "yeni modül ekle" derse |
+| `sistem-analisti.md` | Kullanıcı "analiz et", "rapor ver" derse |
 
 ---
 

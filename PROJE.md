@@ -76,7 +76,7 @@ Tüm frontend sayfaları "Obsidian Vault" koyu premium tasarım sistemine geçir
 
 ### Aşama 2F — Obsidian Vault Tasarım Dönüşümü 🏗️ DEVAM EDİYOR
 > 5 aşamalı plan: `.claude/plans/adaptive-tumbling-wren.md`
-> Tasarım kuralları: `.claude/skills/obsidian-vault-tasarim.md`
+> Tasarım kuralları: `.claude/skills/koyu-tema.md`
 > Bootstrap 5.3 korunuyor, Tailwind/Shadcn YASAK — CSS manuel.
 
 | Aşama | Dosyalar | Durum |
@@ -91,7 +91,7 @@ Tüm frontend sayfaları "Obsidian Vault" koyu premium tasarım sistemine geçir
 **Yeni oturumda "tasarıma devam ediyoruz" dendiğinde:**
 1. Bu tablodan kaldığın aşamayı bul
 2. Plan dosyasını oku: `.claude/plans/adaptive-tumbling-wren.md`
-3. Skill dosyalarını oku: `obsidian-vault-tasarim.md` + `react-bootstrap-ui.md`
+3. Skill dosyalarını oku: `koyu-tema.md` + `react-bootstrap-ui.md`
 4. `frontend-design` skill'ini kullan
 5. Aşama tamamlanınca kullanıcı onayı al, skill dosyasını güncelle
 

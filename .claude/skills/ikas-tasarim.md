@@ -1,484 +1,251 @@
 ---
 name: ikas-tasarim
 description: >
-  Finans Kalesi V3 Tasarim Sistemi — ikas ilhamli modern fintech + kurumsal bankacilik paleti.
-  Elektrik indigo (#3034ff) primary, temiz beyaz yuzeyler, katmanli golge sistemi, Inter font,
-  3D butonlar (inset shadow). Dashboard grafik ve KPI kartlarinda klasik bankacilik renkleri
-  (derin zumrut #0a6e52, derin kirmizi #b41c1c, lacivert kasa #1a4d8f) kullanilir.
-  Yeni sayfa, bilesen veya modul yazarken bu dosyadaki tum kurallar KESINLIKLE uygulanir.
-  Anahtar kelimeler: tasarim, UI, sayfa, bilesen, modal, kart, tablo, stil, tema,
-  renk, v3, ikas, grafik, chart, KPI, tutar, para, bankaci. Bu skill tetiklendiginde
-  react-bootstrap-ui.md ile birlikte okunmalidir.
+  Finans Kalesi projesinin "Açık Tema" tasarım sistemi.
+  İçerik alanları beyaz/açık gri arka planla tasarlanır; sidebar koyu kalır.
+  Anahtar kelimeler: açık tema, light, beyaz kart, ödemeler, bilanço,
+  analitik, tablo, KPI, liste, varlık, kasa, dashboard satırı.
+  VarlikKasa Aylık Bilanço bölümü bu sistemin referans tasarımıdır.
 ---
 
-# Finans Kalesi — ikas Tasarim Sistemi
+# Finans Kalesi — Açık Tema Tasarım Sistemi
 
-Bu dosya, Finans Kalesi'nin onaylanmis gorsel dilini tanimlar.
-**Ilham:** ikas.com tasarim dili (birebir renk paleti + buton/golge sistemi)
-**Ruh:** Cesur, temiz, premium fintech + kurumsal bankacilik guveni
-Demo: `frontend/src/pages/tasarim-demo-v3/DashboardDemo.jsx`
+Bu dosya, koyu Obsidian Vault temasının **YASAK** olduğu sayfalarda
+uygulanacak açık tema kurallarını tanımlar.
+Referans uygulama: `frontend/src/pages/odeme-takip/OdemeTakip.jsx`
+Referans bölüm: `VarlikKasa.jsx → AylikBilanco` (KPI kart + performans satırı yapısı)
 
 ---
 
-## 1. RENK PALETI
+## 1. RENK PALETİ
 
-Yeni renk uydurmak YASAKTIR. Sadece asagidaki renkler kullanilir.
+Yeni renk uydurmak YASAKTIR. Sadece aşağıdaki değerler kullanılır:
 
-### 1A. Marka Renkleri (ikas Paleti)
-| Degisken | HEX | Kullanim |
-|----------|-----|----------|
-| Primary (Indigo) | `#3034ff` | Primary buton bg, aktif tab, link, focus ring |
-| Primary hover | `#2020e2` | Buton hover, aktif state |
-| Primary light | `#6e87ff` | Border accent, secondary link |
-| Primary soluk | `#bed2ff` | Disabled buton bg |
-| Primary cok soluk | `#ebf3ff` | Alert bilgi bg, badge bg |
-| Koyu (Near Black) | `#14141a` | Koyu buton bg, sidebar bg, modal header |
-| Koyu hover | `#2e2e33` | Koyu buton hover |
-| Koyu border | `#727276` | Koyu buton hover border |
+### Zemin & Kart
+| Eleman              | Değer     | Kullanım                        |
+|---------------------|-----------|---------------------------------|
+| Sayfa arka planı    | `#f1f5f9` | `<body>` / sayfa wrapper        |
+| Kart arka planı     | `#ffffff` | Tüm kartlar                     |
+| Kart kenarı         | `#e2e8f0` | border                          |
+| Kart kenarı hover   | `#cbd5e1` | hover state                     |
+| İç arka plan        | `#f8fafc` | tablo thead, drawer header, input bg |
+| Çizgi / ayırıcı     | `#f1f5f9` | satır altı, bölüm ayırıcı      |
 
-### 1B. Fonksiyonel Renkler
-| Degisken | HEX | Kullanim |
-|----------|-----|----------|
-| Yesil (gelir) | `#10b981` | Pozitif tutar, basarili durum, giris (standart) |
-| Yesil acik bg | `#ecfdf5` | Basari alert arka plani |
-| Kirmizi (gider) | `#ef4444` | Negatif tutar, hata, silme (standart) |
-| Kirmizi acik bg | `#fef2f2` | Hata alert arka plani |
-| Turuncu (uyari) | `#f59e0b` | Uyari durumu |
-| Turuncu acik bg | `#fffbeb` | Uyari alert arka plani |
-| Neon badge | `#cce85f` | "Yeni" badge border |
-| Neon badge bg | `#ebfbac` | "Yeni" badge arka plani |
+### Metin Renkleri
+| Seviye       | Değer     | Kullanım                     |
+|--------------|-----------|------------------------------|
+| Birincil     | `#0f172a` | Başlıklar, sayfa başlığı     |
+| Güçlü        | `#1e293b` | Firma adı, kart başlığı      |
+| Normal       | `#334155` | Tablo hücre metni            |
+| İkincil      | `#475569` | Alt başlık, açıklama         |
+| Üçüncül      | `#64748b` | Tarih, yardımcı metin        |
+| Soluk        | `#94a3b8` | Etiket, placeholder, ikon    |
+| Çok soluk    | `#cbd5e1` | Input placeholder            |
 
-#### Bankacılık Paleti (Dashboard KPI + Grafik)
-Klasik bankacılık uygulamalarında (Garanti, HSBC, Yapı Kredi gibi) parlak/neon renkler
-yerine derin, doymuş, "güven" hissettiren tonlar kullanılır. Dashboard grafik barları ve
-KPI para değerleri bu paleti kullanır.
+### Amber (Ana Vurgu — Sidebar ile uyumlu)
+| Değer     | Kullanım                              |
+|-----------|---------------------------------------|
+| `#f59e0b` | Primary buton gradient başlangıç      |
+| `#d97706` | Primary buton gradient bitiş, KPI     |
+| `#92400e` | Koyu amber metin (açık bg üzerinde)   |
+| `#fffbeb` | Amber arka plan                       |
+| `#fef3c7` | Amber orta arka plan                  |
+| `#fde68a` | Amber kenar                           |
 
-| Degisken | HEX | Arka Plan | Kullanim |
-|----------|-----|-----------|----------|
-| Yesil bankaci (gelir) | `#0a6e52` | `#e8f5ef` | KPI Alacak degeri, grafik giris bari, txn giris tutari |
-| Kirmizi bankaci (gider) | `#b41c1c` | `#fdf1f1` | KPI Borc degeri, grafik cikis bari, txn cikis tutari |
-| Lacivert (kasa) | `#1a4d8f` | `#e8f0fa` | KPI Kasa Bakiye degeri |
-| Kurumsal mavi (cek) | `#1e40af` | `#eff6ff` | KPI Cek/Senet degeri |
-
-**Grafik bar stilleri (linear-gradient ile derinlik):**
-```css
-/* Giris (gelir) bari */
-.bar-giris {
-  background: linear-gradient(180deg, #0d8a67 0%, #0a6e52 100%);
-  box-shadow: 0 -2px 8px rgba(10,110,82,0.25);
-}
-/* Cikis (gider) bari */
-.bar-cikis {
-  background: linear-gradient(180deg, #cc2020 0%, #b41c1c 100%);
-  box-shadow: 0 -2px 8px rgba(180,28,28,0.2);
-}
-```
-
-**CSS degiskeni ornegi (bir sayfa icin):**
-```css
---green: #0a6e52;
---green-light: #e8f5ef;
---red: #b41c1c;
---red-light: #fdf1f1;
---blue: #1e40af;
-```
-
-### 1C. Yuzey Renkleri
-| Degisken | HEX | Kullanim |
-|----------|-----|----------|
-| Sayfa zemini | `#f6f7fb` | Sayfa arka plani |
-| Kart bg | `#ffffff` | Kart, modal body, sidebar arka plani |
-| Kenar rengi | `#e3e8ef` | Kart kenari, input kenari, tablo cizgisi |
-| Kenar hover | `#cdd5df` | Hover state kenarlar |
-| Acik zemin | `#eef2f6` | Hover buton bg, tab container bg, striped row |
-| Cok acik zemin | `#f8fafc` | Disabled input bg |
-
-### 1D. Metin Renkleri
-| Degisken | HEX | Kullanim |
-|----------|-----|----------|
-| Ana metin | `#121926` | Baslik, birincil metin |
-| Ikincil metin | `#697586` | Aciklama, placeholder, pasif tab |
-| Soluk metin | `#9aa4b2` | Yardimci metin, copyright |
+### Durum Renkleri (Açık bg uyumlu)
+| Durum   | Metin     | Arka Plan | Kenar     |
+|---------|-----------|-----------|-----------|
+| Başarı  | `#065f46` | `#d1fae5` | `#6ee7b7` |
+| Uyarı   | `#92400e` | `#fffbeb` | `#fde68a` |
+| Tehlike | `#991b1b` | `#fee2e2` | `#fca5a5` |
+| Bilgi   | `#1e40af` | `#eff6ff` | `#bfdbfe` |
+| Mor     | `#5b21b6` | `#f5f3ff` | `#c4b5fd` |
+| Teal    | `#0e7490` | `#ecfeff` | `#67e8f9` |
 
 ---
 
-## 2. TIPOGRAFI
+## 2. TİPOGRAFİ
 
-### Font Yigini
+Font yığını koyu temayla aynıdır:
 ```css
-/* TEK FONT — Her yerde Inter */
+/* Gövde / etiket */
+font-family: 'Outfit', sans-serif;
+
+/* Finansal rakamlar */
 font-family: 'Inter', sans-serif;
+font-variant-numeric: tabular-nums;
 ```
 
-Google Fonts import (index.html `<link>` ile yuklenir):
-```html
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+### Boyutlar (Açık Tema Uyarlaması)
+| Eleman            | Boyut | Ağırlık | Renk      |
+|-------------------|-------|---------|-----------|
+| Sayfa başlığı     | 22px  | 700     | `#0f172a` |
+| Kart başlığı      | 14px  | 700     | `#0f172a` |
+| KPI değeri        | 24px  | 700     | Aksan rengi |
+| KPI etiketi       | 11px uppercase | 600 | `#94a3b8` |
+| Tablo header      | 11px uppercase, 0.7px spacing | 600 | `#94a3b8` |
+| Tablo hücre       | 14px  | normal  | `#334155` |
+| Tutar             | 13–15px | 700   | `#0f172a` / durum rengi |
+| Küçük metin       | 12px  | normal  | `#64748b` |
+| Badge             | 11px  | 600     | Durum rengi |
+
+---
+
+## 3. KPI KART YAPISI (VarlikKasa DortKart Referansı)
+
+```jsx
+/* Her kartın üstünde 3px solid renkli şerit */
+<div style={{ borderTop: `3px solid ${numColor}`, borderRadius: 14, background: '#fff', border: '1px solid #e2e8f0', padding: '18px 20px', position: 'relative', overflow: 'hidden' }}>
+  {/* Dekoratif arka plan ikon — opacity 0.07 (açık temada daha düşük) */}
+  <i className={`bi ${icon}`} style={{ position: 'absolute', top: 12, right: 14, fontSize: 52, opacity: 0.07, color: numColor }} />
+  <div style={{ fontSize: 11, fontWeight: 600, textTransform: 'uppercase', letterSpacing: 0.7, color: '#94a3b8' }}>{label}</div>
+  <div style={{ fontFamily: 'Inter, sans-serif', fontSize: 24, fontWeight: 700, color: numColor }}>{deger}</div>
+</div>
 ```
 
-### Font Boyutlari
-| Eleman | Boyut | Agirlik | Letter-spacing |
-|--------|-------|---------|----------------|
-| Sayfa basligi | 22px | 700 | -0.44px |
-| Kart basligi | 14px | 600 | -0.28px |
-| KPI degeri | 28px (desktop), 22px (mobil) | 700 | -0.56px |
-| KPI etiketi | 12px | 500 | -0.24px |
-| Tablo header | 12px | 600 | -0.24px |
-| Tablo hucre | 14px | 400 | -0.28px |
-| Tutar | 14px | 600 | -0.28px |
-| Sidebar menu | 14px | 500 | -0.28px |
-| Badge / etiket | 12px | 600 | -0.24px |
-| Input metin | 16px | 400 | -0.32px |
-| Buton | 16px | 600 | -0.32px |
+Grid: `repeat(4, 1fr)` → tablet `repeat(2,1fr)` → mobil `1fr`
 
-### Font Ozellik (feature-settings)
-Tum metinlerde:
-```css
-font-feature-settings: "cv01" on, "cv02" on, "cv03" on, "cv04" on, "cv11" on;
+---
+
+## 4. BİLANÇO SATIRI (VarlikKasa AylikBilanco Referansı)
+
+İki kolonlu grid: `grid-template-columns: 1fr 1fr`
+- **Sol kart**: Yaşlandırma / kategori analizi (progress bar listesi)
+- **Sağ kart**: Takvim / yaklaşan liste
+
+### Progress Bar Satırı
+```jsx
+<div style={{ background: '#f1f5f9', borderRadius: 6, height: 7, overflow: 'hidden' }}>
+  <div style={{ width: `${oran}%`, height: '100%', borderRadius: 6, background: renk }} />
+</div>
+```
+
+### Alt Bilgi Şeridi (DSO / özet)
+```jsx
+<div style={{ padding: '11px 14px', background: '#f8fafc', borderRadius: 10, border: '1px solid #e2e8f0' }}>
+  {/* ikon + açıklama  +  sağda değer */}
+</div>
 ```
 
 ---
 
-## 3. BUTON SISTEMI (ikas Birebir)
+## 5. TABLO
 
-Tum butonlar: `border-radius: 8px`, `font-size: 16px`, `font-weight: 600`, `letter-spacing: -0.32px`, `padding: 10px 16px`, `cursor: pointer`, `transition: all 300ms ease`.
-
-### 3A. Primary (Indigo)
+Açık temada tablo stilleri:
 ```css
-.fk-btn-primary {
-  border: 1px solid #6e87ff;
-  background: #3034ff;
-  color: #ffffff;
-  box-shadow:
-    0px -3px 2px 0px rgba(19,20,83,0.25) inset,
-    0px 2px 1px 0px rgba(38,69,109,0.01),
-    0px 1px 1px 0px rgba(38,69,109,0.02);
-}
-.fk-btn-primary:hover {
-  background: #2020e2;
-  box-shadow:
-    0px -3px 2px 0px rgba(19,20,83,0.25) inset,
-    0px 6px 4px 0px rgba(32,32,226,0.07),
-    0px 3px 3px 0px rgba(32,32,226,0.11);
-}
-```
+.tablo-wrap { background: #fff; border: 1px solid #e2e8f0; border-radius: 14px; overflow: hidden }
 
-### 3B. Secondary (Beyaz)
-```css
-.fk-btn-secondary {
-  border: 1px solid #e3e8ef;
-  background: #ffffff;
-  color: #121926;
-  box-shadow:
-    0px -3px 1px 0px rgba(238,242,246,0.5) inset,
-    0px 2px 1px 0px rgba(38,69,109,0.01);
-}
-.fk-btn-secondary:hover {
+thead th {
   background: #f8fafc;
-  box-shadow:
-    0px -3px 1px 0px rgba(221,231,242,0.5) inset,
-    0px 4px 3px 0px rgba(81,114,148,0.02),
-    0px 2px 2px 0px rgba(81,114,148,0.04);
+  font-size: 11px; font-weight: 600; text-transform: uppercase;
+  letter-spacing: 0.7px; color: #94a3b8;
+  border-bottom: 1px solid #f1f5f9;
+  padding: 11px 14px;
 }
+
+tbody td { color: #334155; padding: 13px 14px; border-bottom: 1px solid #f8fafc }
+tbody tr:hover { background: #f8fafc }
+tbody tr.secili { background: #fffbeb }
 ```
 
-### 3C. Dark (Koyu/Near Black)
-```css
-.fk-btn-dark {
-  border: 1px solid #2e2e33;
-  background: #14141a;
-  color: #ffffff;
-  box-shadow:
-    0px -3px 1px 0px rgba(71,71,71,0.5) inset,
-    0px 2px 1px 0px rgba(38,69,109,0.01);
-}
-.fk-btn-dark:hover {
-  border-color: #727276;
-  background: #2e2e33;
-  box-shadow:
-    0px -3px 2px 0px rgba(34,34,34,0.5) inset,
-    0px 3px 2px 0px rgba(46,46,51,0.05),
-    0px 1px 1px 0px rgba(46,46,51,0.08);
-}
-```
-
-### 3D. Ghost (Sadece Metin)
-```css
-.fk-btn-ghost {
-  background: transparent;
-  border: none;
-  color: #3034ff;
-  box-shadow: none;
-}
-.fk-btn-ghost:hover { opacity: 0.8; }
-```
+Sol kenarlık hücresi: 4px geniş, durum rengini taşır.
 
 ---
 
-## 4. KART SISTEMI
-
-### Standart Kart
-```css
-.fk-card {
-  background: #ffffff;
-  border: 1px solid #e3e8ef;
-  border-radius: 10px;
-  padding: 20px;
-  box-shadow:
-    0px 2px 1px 0px rgba(38,69,109,0.01),
-    0px 1px 1px 0px rgba(38,69,109,0.02);
-  transition: all 300ms ease;
-}
-.fk-card:hover {
-  box-shadow:
-    0px 12px 3px 0px rgba(81,114,148,0),
-    0px 8px 3px 0px rgba(81,114,148,0.01),
-    0px 4px 3px 0px rgba(81,114,148,0.02),
-    0px 2px 2px 0px rgba(81,114,148,0.04);
-  border-color: #cdd5df;
-}
-```
-
-### KPI Karti — Bankaci Renkleri
-```jsx
-// Renk atamalari (bankaci paleti)
-const KPI_RENKLER = {
-  alacak: { color: '#0a6e52', bg: '#e8f5ef' },  // derin zumrut
-  borc:   { color: '#b41c1c', bg: '#fdf1f1' },  // derin kirmizi
-  kasa:   { color: '#1a4d8f', bg: '#e8f0fa' },  // lacivert
-  cek:    { color: '#1e40af', bg: '#eff6ff' },  // kurumsal mavi
-}
-
-// KPI ikon kutusu
-<div style={{ background: `${kpi.color}12`, color: kpi.color }}>
-  <i className={`bi ${kpi.icon}`}></i>
-</div>
-
-// KPI para degeri
-<div style={{ color: kpi.color, fontVariantNumeric: 'tabular-nums' }}>
-  {TL(kpi.value)} ₺
-</div>
-```
-
----
-
-## 5. INPUT SISTEMI
+## 6. BADGE SİSTEMİ
 
 ```css
-.fk-input {
-  padding: 12px;
-  border-radius: 8px;
-  outline: none;
-  font-family: 'Inter', sans-serif;
-  font-size: 16px;
-  background: #fff;
-  border: 1px solid #e3e8ef;
-  color: #121926;
-  min-height: 44px;
+.badge {
+  padding: 3px 9px; border-radius: 7px;
+  font-size: 11px; font-weight: 600;
+  display: inline-flex; align-items: center; gap: 4px;
 }
-.fk-input:focus {
-  border-color: #3034ff;
-  box-shadow: 0px 0px 0px 2px rgba(48,52,255,0.25);
-}
+/* Renk çiftleri: color + bg (durum tablosundan) */
 ```
+
+Öncelik badge'larına ek olarak `border: 1px solid {kenar rengi}` eklenir.
 
 ---
 
-## 6. TABLO SISTEMI
+## 7. BUTONLAR
+
+### Amber Primary
+```css
+background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+color: #0d1b2e;   /* koyu metin — kontrast */
+border-radius: 10px; min-height: 44px; font-weight: 700;
+box-shadow: 0 4px 14px rgba(245,158,11,0.3);
+```
+
+### Light Secondary
+```css
+background: #f1f5f9; border: 1px solid #e2e8f0; color: #475569;
+border-radius: 10px; min-height: 44px;
+```
+
+### Icon Buton
+```css
+width: 34px; height: 34px; border-radius: 8px;
+border: 1px solid #e2e8f0; background: #f8fafc; color: #64748b;
+```
+Amber varyant: `border-color: #fde68a; background: #fffbeb; color: #d97706`
+Emerald varyant: `border-color: #6ee7b7; background: #ecfdf5; color: #059669`
+
+---
+
+## 8. MODAL
+
+Modal her zaman **koyu glassmorphism** kalır (backdrop üzerinde kontrastı korur):
+```css
+background: rgba(13,27,46,0.97);
+border: 1px solid rgba(255,255,255,0.1);
+border-radius: 18px;
+/* header alt çizgi: border-bottom: 2px solid #f59e0b */
+```
+
+Backdrop: `background: rgba(0,0,0,0.65); backdrop-filter: blur(8px)`
+ESC ile kapanır, backdrop tıklamayla KAPANMAZ.
+
+---
+
+## 9. DRAWER (Sağ Panel)
 
 ```css
-.fk-table thead th {
-  font-size: 12px;
-  font-weight: 600;
-  color: #9aa4b2;
-  padding: 12px 16px;
-  border-bottom: 1px solid #e3e8ef;
-}
-.fk-table tbody td {
-  font-size: 14px;
-  color: #121926;
-  padding: 14px 16px;
-  border-bottom: 1px solid #eef2f6;
-}
-.fk-table tbody tr:hover { background: #f8fafc; }
+background: #fff; border: 1px solid #e2e8f0; border-radius: 14px;
+flex: 0 0 340px; width: 340px;
+position: sticky; top: 20px;
 ```
 
-`table-responsive` wrapper ZORUNLUDUR.
-
-### Para Formati (Bankaci Rengi)
-```jsx
-// Pozitif (gelir/alacak)
-<span style={{ color: '#0a6e52', fontWeight: 600 }}>
-  +{TL(tutar)} ₺
-</span>
-
-// Negatif (gider/borc)
-<span style={{ color: '#b41c1c', fontWeight: 600 }}>
-  -{TL(Math.abs(tutar))} ₺
-</span>
-```
+Header: `background: #f8fafc; border-bottom: 1px solid #f1f5f9`
+Mobil: `position: fixed; bottom: 0; border-radius: 14px 14px 0 0; height: 85vh`
 
 ---
 
-## 7. TAB SISTEMI
+## 10. RESPONSIVE BREAKPOINT'LER
 
-```css
-.fk-tab-container {
-  display: inline-flex;
-  background: #eef2f6;
-  border-radius: 10px;
-  padding: 4px;
-}
-.fk-tab {
-  padding: 8px 16px;
-  border-radius: 8px;
-  font-size: 14px;
-  font-weight: 500;
-  color: #697586;
-  background: transparent;
-  border: none;
-  cursor: pointer;
-  min-height: 40px;
-}
-.fk-tab.active {
-  background: #ffffff;
-  color: #121926;
-  font-weight: 600;
-  box-shadow: 0px 2px 4px rgba(0,0,0,0.06);
-}
-```
+| Breakpoint | Değişiklikler                                                   |
+|------------|-----------------------------------------------------------------|
+| `<991px`   | KPI grid → 2 kolon, sayfa padding: 20px 16px                   |
+| `<767px`   | Analitik satır → tek kolon, filtre panel → tek kolon           |
+| `<480px`   | KPI grid → 1 kolon, sayfa padding: 14px 12px, KPI font: 18px  |
 
 ---
 
-## 8. BADGE SISTEMI
+## 11. CSS CLASS PREFIX KURALI
 
-```css
-.fk-badge { padding: 2px 8px; border-radius: 6px; font-size: 12px; font-weight: 600; }
-.fk-badge-primary { background: #ebf3ff; color: #3034ff; }
-.fk-badge-success { background: #e8f5ef; color: #0a6e52; }  /* bankaci yesil */
-.fk-badge-danger  { background: #fdf1f1; color: #b41c1c; }  /* bankaci kirmizi */
-.fk-badge-warning { background: #fffbeb; color: #d97706; }
-```
+Bu tema için: `odm-` (Ödemeler), `kasa-` (Kasa) vb. mevcut prefix'ler korunur.
+Genel açık tema bileşenleri: `fk-light-` prefix kullanır.
+
+Tüm stiller `<style>{``}</style>` tag içinde self-contained tutulur.
 
 ---
 
-## 9. MODAL
+## 12. ÇAPRAZ KURAL: SIDEBAR UYUMU
 
-- React `useState` ile acilir/kapanir
-- ESC ile kapanir (`useEffect + keydown` zorunlu)
-- Backdrop tiklama KAPATMAZ
-- Body scroll lock: `document.body.style.overflow = 'hidden'`
+Sidebar her zaman koyu kalır (`rgba(13,27,46,0.92)`).
+İçerik alanı açık (`#f1f5f9`).
+Bu kontrast amaçlıdır — değiştirilemez.
 
-```css
-.fk-modal-backdrop {
-  position: fixed; inset: 0;
-  background: rgba(0,0,0,0.5);
-  backdrop-filter: blur(4px);
-  display: flex; align-items: center; justify-content: center;
-  z-index: 2000;
-}
-.fk-modal {
-  background: #ffffff; border-radius: 12px;
-  max-width: 520px; width: 90%; max-height: 90vh;
-  box-shadow: 0px 24px 48px rgba(0,0,0,0.12);
-  overflow: hidden;
-}
-.fk-modal-header { background: #14141a; color: #ffffff; padding: 18px 24px; }
-.fk-modal-body   { padding: 24px; overflow-y: auto; }
-.fk-modal-footer { padding: 16px 24px; border-top: 1px solid #e3e8ef; }
-```
-
----
-
-## 10. SIDEBAR
-
-```css
-.fk-sidebar {
-  width: 260px; height: 100vh;
-  position: fixed; left: 0; top: 0;
-  background: #14141a;
-  z-index: 1100; overflow-y: auto;
-  transition: transform 0.3s cubic-bezier(0.4,0,0.2,1);
-}
-.fk-menu-item {
-  display: flex; align-items: center; gap: 12px;
-  padding: 10px 14px; border-radius: 8px;
-  font-size: 14px; font-weight: 500;
-  color: #ececed; min-height: 44px; cursor: pointer;
-}
-.fk-menu-item:hover { background: rgba(255,255,255,0.06); color: #ffffff; }
-.fk-menu-item.active {
-  background: var(--indigo);   /* #b0d12a lime */
-  color: #14141a; font-weight: 600;
-}
-```
-
-Mobil `<992px`: `transform: translateX(-100%)` ile gizli, hamburger ile acilir.
-
----
-
-## 11. GOLGE SISTEMI (ikas Katmanli)
-
-```css
-/* Kart */
---fk-shadow-sm: 0px 2px 1px 0px rgba(38,69,109,0.01), 0px 1px 1px 0px rgba(38,69,109,0.02);
-/* Kart hover */
---fk-shadow-md: 0px 8px 3px 0px rgba(81,114,148,0.01), 0px 4px 3px 0px rgba(81,114,148,0.02), 0px 2px 2px 0px rgba(81,114,148,0.04);
-/* Modal */
---fk-shadow-lg: 0px 24px 48px rgba(0,0,0,0.12), 0px 8px 16px rgba(0,0,0,0.08);
-```
-
----
-
-## 12. RESPONSIVE BREAKPOINTS
-
-| Breakpoint | Hedef | Degisiklikler |
-|------------|-------|--------------|
-| `>=992px` | Desktop | Sidebar gorunur, content margin-left: 260px |
-| `<992px` | Tablet | Sidebar gizli, hamburger aktif |
-| `<768px` | Mobil | Padding: 16px, KPI 2 sutun, modal bottom-sheet |
-| `<480px` | Kucuk mobil | Padding: 12px, KPI tek sutun |
-
----
-
-## 13. CSS CLASS PREFIX KURALI
-
-Genel sistem: `fk-`
-- Dashboard: `fk-dash-` veya `db-` (demo dosyasinda `db-`)
-- Cari: `fk-cari-`
-- Cek/Senet: `fk-cek-`
-- Kasa: `fk-kasa-`
-- Odemeler: `fk-odm-`
-
-Tum stiller `<style>{``}</style>` tag'i icinde self-contained tutulur.
-
----
-
-## 14. IKON KULLANIMI
-
-Sadece Bootstrap Icons (`bi-*`). Diger ikon kutuphaneleri YASAKTIR.
-
-| Modul | Ikon |
-|-------|------|
-| Dashboard | `bi-speedometer2` |
-| Cari | `bi-people-fill` |
-| Cek/Senet | `bi-file-earmark-text-fill` |
-| Odemeler | `bi-credit-card-2-fill` |
-| Kasa | `bi-safe-fill` |
-| Logo | `bi-shield-lock-fill` |
-| Ekle | `bi-plus-lg` |
-| Kapat | `bi-x-lg` |
-| Menu | `bi-list` |
-
----
-
-## 15. PARA FORMATI
-
-```jsx
-const TL = (n) =>
-  new Intl.NumberFormat('tr-TR', {
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 2,
-  }).format(n)
-// Kullanim: {TL(tutar)} ₺
-// Bankaci pozitif: #0a6e52 | Bankaci negatif: #b41c1c
-```
+Amber (`#f59e0b`) her iki temada da birincil vurgu rengidir.
+Positive tutarlar: `#059669` (açık temada metin rengi olarak)
+Negative tutarlar: `#dc2626`

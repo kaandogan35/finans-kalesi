@@ -29,6 +29,7 @@ import CarilerListesi  from './pages/cariler/CarilerListesi'
 import CariYonetimi   from './pages/cariler/CariYonetimi'
 import VarlikKasa     from './pages/kasa/VarlikKasa'
 import CekSenet       from './pages/cek-senet/CekSenet'
+import OdemeTakip     from './pages/odeme-takip/OdemeTakip'
 
 // GEÇİCİ — Tasarım Demo (Sprint D0 onay sonrası silinecek)
 import TasarimDemo from './pages/tasarim-demo/TasarimDemo'
@@ -118,11 +119,13 @@ export default function App() {
         {/* ─── Korumalı sayfalar (JWT gerekli) ───────────────────────── */}
         <Route element={<KorunanSayfa />}>
           <Route element={<AppLayout />}>
-            <Route path="/dashboard" element={<Dashboard />} />
-            <Route path="/cariler"   element={<CariYonetimi />} />
-            <Route path="/cariler/*" element={<YakindaGeliyor sayfa="Cari Detay / Yeni" />} />
+            <Route path="/dashboard"             element={<Dashboard />} />
+            <Route path="/cariler"               element={<CariYonetimi />} />
+            <Route path="/cariler/yeni"          element={<Navigate to="/cariler" replace />} />
+            <Route path="/cariler/:id"           element={<Navigate to="/cariler" replace />} />
+            <Route path="/cariler/:id/duzenle"   element={<Navigate to="/cariler" replace />} />
             <Route path="/cek-senet" element={<CekSenet />} />
-            <Route path="/odemeler/*" element={<YakindaGeliyor sayfa="Ödeme Takip" />} />
+            <Route path="/odemeler" element={<OdemeTakip />} />
             <Route path="/kasa" element={<VarlikKasa />} />
           </Route>
         </Route>

@@ -502,7 +502,7 @@ export default function CariYonetimi() {
 
   // ─── RENDER ──────────────────────────────────────────────────────────────
   return (
-    <div className="cari-root">
+    <div className="cari-root page-container">
       <style>{`
         /* ═══ Cari Hesaplar — Obsidian Vault ═══ */
         .cari-root { position: relative; z-index: 1; }
@@ -518,6 +518,7 @@ export default function CariYonetimi() {
           position: relative;
           overflow: hidden;
           height: 100%;
+          container-type: inline-size;
         }
         .cari-kpi-card:hover {
           background: rgba(255,255,255,0.07);
@@ -526,24 +527,23 @@ export default function CariYonetimi() {
         }
         .cari-kpi-label {
           font-size: 11px;
-          font-weight: 600;
-          color: rgba(255,255,255,0.75);
+          font-weight: 700;
+          color: rgba(255,255,255,0.5);
           text-transform: uppercase;
-          letter-spacing: 0.8px;
-          margin: 0 0 12px;
+          letter-spacing: 0.06em;
+          margin: 0 0 10px;
           position: relative;
           z-index: 1;
-          text-shadow: 0 0 14px rgba(255,255,255,0.08);
         }
         .cari-kpi-value {
           font-family: 'Inter', sans-serif;
-          font-size: 26px;
-          font-weight: 500;
+          font-size: clamp(13px, 6.5cqw, 28px);
+          font-weight: 800;
           margin: 0;
           line-height: 1.15;
           position: relative;
           z-index: 1;
-          letter-spacing: 0.01em;
+          letter-spacing: -0.01em;
           word-break: break-word;
           font-variant-numeric: tabular-nums;
           -webkit-font-smoothing: antialiased;
@@ -725,10 +725,10 @@ export default function CariYonetimi() {
       {/* ─── Sayfa Başlığı ──────────────────────────────────────────── */}
       <div className="d-flex align-items-center justify-content-between mb-4 flex-wrap gap-3">
         <div>
-          <h1 style={{ fontSize: 24, fontWeight: 700, color: '#ffffff', marginBottom: 2, letterSpacing: '-0.3px' }}>
-            Cari & Finans Yönetimi
+          <h1 style={{ fontSize: '1.1rem', fontWeight: 800, color: '#ffffff', marginBottom: 2, letterSpacing: '-0.01em' }}>
+            Cari Hesaplar
           </h1>
-          <p style={{ fontSize: 14, color: 'rgba(255,255,255,0.6)', marginBottom: 0, fontWeight: 400, textShadow: '0 0 12px rgba(255,255,255,0.05)' }}>
+          <p style={{ fontSize: 13, color: 'rgba(255,255,255,0.45)', marginBottom: 0, fontWeight: 500 }}>
             {cariler.length} toplam cari · {cariler.filter(c => c.durum === 'aktif').length} aktif
           </p>
         </div>
@@ -743,18 +743,21 @@ export default function CariYonetimi() {
         <div className="col-12 col-md-6">
           <div className="cari-kpi-card" style={{ padding: '22px 24px' }}>
             <i className="bi bi-arrow-down-circle-fill" style={{
-              position: 'absolute', top: 16, right: 16,
-              fontSize: 60, opacity: 0.20, color: '#10b981',
+              position: 'absolute', top: 12, right: 14,
+              fontSize: 64, opacity: 0.07, color: '#10b981',
               pointerEvents: 'none',
             }} />
-            <h6 className="cari-kpi-label">Toplam Alacak</h6>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 12, position: 'relative', zIndex: 1 }}>
+              <div style={{ width: 4, height: 18, borderRadius: 2, background: '#10b981', flexShrink: 0 }} />
+              <h6 className="cari-kpi-label" style={{ margin: 0 }}>Toplam Alacak</h6>
+            </div>
             <h2 className="cari-kpi-value" style={{
               color: '#10b981',
-              textShadow: '0 0 20px rgba(16,185,129,0.3)',
+              textShadow: '0 0 24px rgba(16,185,129,0.35)',
             }}>
               {TL(stats.toplamAlacak)}
             </h2>
-            <p style={{ fontSize: 12, color: 'rgba(255,255,255,0.5)', fontWeight: 500, margin: '8px 0 0', position: 'relative', zIndex: 1, textShadow: '0 0 12px rgba(255,255,255,0.06)' }}>
+            <p style={{ fontSize: 11, color: 'rgba(255,255,255,0.4)', fontWeight: 500, margin: '8px 0 0', position: 'relative', zIndex: 1 }}>
               Müşterilerden toplanacak tutar
             </p>
           </div>
@@ -764,18 +767,21 @@ export default function CariYonetimi() {
         <div className="col-12 col-md-6">
           <div className="cari-kpi-card" style={{ padding: '22px 24px' }}>
             <i className="bi bi-arrow-up-circle-fill" style={{
-              position: 'absolute', top: 16, right: 16,
-              fontSize: 60, opacity: 0.20, color: '#ef4444',
+              position: 'absolute', top: 12, right: 14,
+              fontSize: 64, opacity: 0.07, color: '#ef4444',
               pointerEvents: 'none',
             }} />
-            <h6 className="cari-kpi-label">Toplam Borç</h6>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 12, position: 'relative', zIndex: 1 }}>
+              <div style={{ width: 4, height: 18, borderRadius: 2, background: '#ef4444', flexShrink: 0 }} />
+              <h6 className="cari-kpi-label" style={{ margin: 0 }}>Toplam Borç</h6>
+            </div>
             <h2 className="cari-kpi-value" style={{
               color: '#ef4444',
-              textShadow: '0 0 20px rgba(239,68,68,0.3)',
+              textShadow: '0 0 24px rgba(239,68,68,0.35)',
             }}>
               {TL(stats.toplamBorc)}
             </h2>
-            <p style={{ fontSize: 12, color: 'rgba(255,255,255,0.5)', fontWeight: 500, margin: '8px 0 0', position: 'relative', zIndex: 1, textShadow: '0 0 12px rgba(255,255,255,0.06)' }}>
+            <p style={{ fontSize: 11, color: 'rgba(255,255,255,0.4)', fontWeight: 500, margin: '8px 0 0', position: 'relative', zIndex: 1 }}>
               Tedarikçilere ödenecek tutar
             </p>
           </div>
@@ -1502,15 +1508,19 @@ export default function CariYonetimi() {
                                 <td style={{ ...tdS, textAlign: 'right' }}>
                                   <div className="d-flex justify-content-end gap-1">
                                     <button title="Düzenle" onClick={() => hareketDuzenleAc(h)}
-                                      style={{ width: 28, height: 28, padding: 0, border: 'none', borderRadius: 6, cursor: 'pointer',
+                                      style={{ width: 34, height: 34, padding: 0, border: '1px solid rgba(245,158,11,0.2)', borderRadius: 8, cursor: 'pointer',
                                         background: 'rgba(245,158,11,0.1)', color: '#f59e0b', fontSize: 13, display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
-                                        transition: 'all 0.15s' }}>
+                                        transition: 'all 0.15s' }}
+                                      onMouseEnter={e => { e.currentTarget.style.background = 'rgba(245,158,11,0.2)' }}
+                                      onMouseLeave={e => { e.currentTarget.style.background = 'rgba(245,158,11,0.1)' }}>
                                       <i className="bi bi-pencil" />
                                     </button>
                                     <button title="Sil" onClick={() => setSilHareketId(h.id)}
-                                      style={{ width: 28, height: 28, padding: 0, border: 'none', borderRadius: 6, cursor: 'pointer',
+                                      style={{ width: 34, height: 34, padding: 0, border: '1px solid rgba(239,68,68,0.2)', borderRadius: 8, cursor: 'pointer',
                                         background: 'rgba(239,68,68,0.08)', color: '#ef4444', fontSize: 13, display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
-                                        transition: 'all 0.15s' }}>
+                                        transition: 'all 0.15s' }}
+                                      onMouseEnter={e => { e.currentTarget.style.background = 'rgba(239,68,68,0.18)' }}
+                                      onMouseLeave={e => { e.currentTarget.style.background = 'rgba(239,68,68,0.08)' }}>
                                       <i className="bi bi-trash" />
                                     </button>
                                   </div>
@@ -1568,12 +1578,12 @@ export default function CariYonetimi() {
 function AkBtn({ title, color, icon, onClick }) {
   return (
     <button title={title} onClick={onClick} style={{
-      width: 34, height: 34, padding: 0, cursor: 'pointer',
+      width: 38, height: 38, padding: 0, cursor: 'pointer',
       display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
-      borderRadius: 8, border: `1px solid ${color}28`, background: `${color}12`, color, fontSize: 15, transition: 'all 0.15s',
+      borderRadius: 10, border: `1px solid ${color}30`, background: `${color}14`, color, fontSize: 15, transition: 'all 0.15s',
     }}
-      onMouseEnter={e => { e.currentTarget.style.background = `${color}25`; e.currentTarget.style.transform = 'scale(1.12)' }}
-      onMouseLeave={e => { e.currentTarget.style.background = `${color}12`; e.currentTarget.style.transform = 'scale(1)' }}>
+      onMouseEnter={e => { e.currentTarget.style.background = `${color}28`; e.currentTarget.style.transform = 'scale(1.08)'; e.currentTarget.style.boxShadow = `0 4px 12px ${color}30` }}
+      onMouseLeave={e => { e.currentTarget.style.background = `${color}14`; e.currentTarget.style.transform = 'scale(1)'; e.currentTarget.style.boxShadow = 'none' }}>
       <i className={`bi ${icon}`} />
     </button>
   )

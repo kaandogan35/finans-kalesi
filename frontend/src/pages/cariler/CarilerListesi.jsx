@@ -1,7 +1,7 @@
 /**
  * CarilerListesi — Cari Hesaplar Ana Sayfası
- * Bootstrap 5 + Premium CSS — Login/Dashboard ile uyumlu kurumsal tasarım
- * Silme onayı: Bootstrap Modal (window.confirm yasak)
+ * Obsidian Vault Koyu Glassmorphism Tema
+ * Silme onayı: Saf React state (Bootstrap JS yasak)
  */
 
 import { useEffect, useState, useCallback } from 'react'
@@ -22,17 +22,17 @@ function paraBicimlendir(tutar) {
 // ─── Cari Tipi Rozeti ─────────────────────────────────────────────────────────
 function CariTipiRozeti({ tur }) {
   const harita = {
-    musteri:              { etiket: 'Müşteri',     bg: '#eff6ff', color: '#1d4ed8' },
-    tedarikci:            { etiket: 'Tedarikçi',   bg: '#fefce8', color: '#a16207' },
-    musteri_tedarikci:    { etiket: 'Müşt./Ted.',  bg: '#f0fdf4', color: '#15803d' },
+    musteri:           { etiket: 'Müşteri',    bg: 'rgba(59,130,246,0.12)',  color: '#3b82f6',  border: 'rgba(59,130,246,0.25)' },
+    tedarikci:         { etiket: 'Tedarikçi',  bg: 'rgba(245,158,11,0.12)', color: '#f59e0b',  border: 'rgba(245,158,11,0.25)' },
+    musteri_tedarikci: { etiket: 'Müşt./Ted.', bg: 'rgba(16,185,129,0.12)', color: '#10b981',  border: 'rgba(16,185,129,0.25)' },
   }
-  const d = harita[tur] || { etiket: tur || '—', bg: '#f1f5f9', color: '#475569' }
+  const d = harita[tur] || { etiket: tur || '—', bg: 'rgba(255,255,255,0.06)', color: 'rgba(255,255,255,0.5)', border: 'rgba(255,255,255,0.1)' }
   return (
     <span style={{
       background: d.bg, color: d.color,
       fontSize: 11, fontWeight: 700,
       padding: '3px 10px', borderRadius: 20,
-      border: `1px solid ${d.color}22`,
+      border: `1px solid ${d.border}`,
       whiteSpace: 'nowrap',
     }}>
       {d.etiket}
@@ -56,15 +56,16 @@ function SiralamaBaslik({ label, alan, siralama, setSiralama }) {
         display: 'inline-flex', alignItems: 'center', gap: 4,
         fontSize: 11, fontWeight: 800, letterSpacing: '0.07em',
         textTransform: 'uppercase',
-        color: aktif ? 'var(--brand-dark)' : '#94a3b8',
+        color: aktif ? '#f59e0b' : 'rgba(255,255,255,0.4)',
+        transition: 'color 0.15s',
       }}
     >
       {label}
       <span style={{ display: 'flex', flexDirection: 'column', lineHeight: 1 }}>
         <i className="bi bi-caret-up-fill"
-          style={{ fontSize: 8, opacity: aktif && yon === 'asc' ? 1 : 0.25 }} />
+          style={{ fontSize: 8, opacity: aktif && yon === 'asc' ? 1 : 0.3 }} />
         <i className="bi bi-caret-down-fill"
-          style={{ fontSize: 8, opacity: aktif && yon === 'desc' ? 1 : 0.25 }} />
+          style={{ fontSize: 8, opacity: aktif && yon === 'desc' ? 1 : 0.3 }} />
       </span>
     </button>
   )
@@ -80,11 +81,11 @@ function AksiyonMenusu({ cari, onSilIste, navigate }) {
         onClick={() => setAcik(v => !v)}
         style={{
           background: 'none', border: 'none', cursor: 'pointer',
-          color: '#94a3b8', padding: '4px 6px', borderRadius: 8,
+          color: 'rgba(255,255,255,0.35)', padding: '4px 6px', borderRadius: 8,
           transition: 'all 0.15s',
         }}
-        onMouseEnter={e => { e.currentTarget.style.background = '#f1f5f9'; e.currentTarget.style.color = '#475569' }}
-        onMouseLeave={e => { e.currentTarget.style.background = 'none'; e.currentTarget.style.color = '#94a3b8' }}
+        onMouseEnter={e => { e.currentTarget.style.background = 'rgba(255,255,255,0.08)'; e.currentTarget.style.color = 'rgba(255,255,255,0.8)' }}
+        onMouseLeave={e => { e.currentTarget.style.background = 'none'; e.currentTarget.style.color = 'rgba(255,255,255,0.35)' }}
       >
         <i className="bi bi-three-dots-vertical" style={{ fontSize: 15 }} />
       </button>
@@ -97,36 +98,52 @@ function AksiyonMenusu({ cari, onSilIste, navigate }) {
           />
           <div style={{
             position: 'absolute', right: 0, top: 32, zIndex: 20,
-            width: 156, background: '#fff',
-            border: '1px solid #e2e8f0', borderRadius: 14,
-            boxShadow: '0 8px 24px rgba(0,0,0,0.12)',
+            width: 160,
+            background: 'rgba(10,22,40,0.98)',
+            backdropFilter: 'blur(20px)',
+            WebkitBackdropFilter: 'blur(20px)',
+            border: '1px solid rgba(255,255,255,0.1)',
+            borderRadius: 12,
+            boxShadow: '0 12px 40px rgba(0,0,0,0.5)',
             overflow: 'hidden',
           }}>
             <button
               onClick={() => { setAcik(false); navigate(`/cariler/${cari.id}`) }}
               className="d-flex align-items-center gap-2 w-100"
-              style={{ background: 'none', border: 'none', padding: '10px 14px', fontSize: 13, color: '#374151', cursor: 'pointer', fontWeight: 600 }}
-              onMouseEnter={e => e.currentTarget.style.background = '#f8fafc'}
-              onMouseLeave={e => e.currentTarget.style.background = 'none'}
+              style={{
+                background: 'none', border: 'none', padding: '10px 14px',
+                fontSize: 13, color: 'rgba(255,255,255,0.75)', cursor: 'pointer', fontWeight: 600,
+                transition: 'all 0.15s',
+              }}
+              onMouseEnter={e => { e.currentTarget.style.background = 'rgba(255,255,255,0.06)'; e.currentTarget.style.color = '#fff' }}
+              onMouseLeave={e => { e.currentTarget.style.background = 'none'; e.currentTarget.style.color = 'rgba(255,255,255,0.75)' }}
             >
-              <i className="bi bi-eye" style={{ color: '#94a3b8', fontSize: 14 }} /> Detay
+              <i className="bi bi-eye" style={{ color: 'rgba(255,255,255,0.4)', fontSize: 14 }} /> Detay
             </button>
             <button
               onClick={() => { setAcik(false); navigate(`/cariler/${cari.id}/duzenle`) }}
               className="d-flex align-items-center gap-2 w-100"
-              style={{ background: 'none', border: 'none', padding: '10px 14px', fontSize: 13, color: '#374151', cursor: 'pointer', fontWeight: 600 }}
-              onMouseEnter={e => e.currentTarget.style.background = '#f8fafc'}
-              onMouseLeave={e => e.currentTarget.style.background = 'none'}
+              style={{
+                background: 'none', border: 'none', padding: '10px 14px',
+                fontSize: 13, color: 'rgba(255,255,255,0.75)', cursor: 'pointer', fontWeight: 600,
+                transition: 'all 0.15s',
+              }}
+              onMouseEnter={e => { e.currentTarget.style.background = 'rgba(255,255,255,0.06)'; e.currentTarget.style.color = '#fff' }}
+              onMouseLeave={e => { e.currentTarget.style.background = 'none'; e.currentTarget.style.color = 'rgba(255,255,255,0.75)' }}
             >
-              <i className="bi bi-pencil" style={{ color: '#94a3b8', fontSize: 14 }} /> Düzenle
+              <i className="bi bi-pencil" style={{ color: 'rgba(255,255,255,0.4)', fontSize: 14 }} /> Düzenle
             </button>
-            <div style={{ borderTop: '1px solid #f1f5f9' }} />
+            <div style={{ borderTop: '1px solid rgba(255,255,255,0.06)' }} />
             <button
               onClick={() => { setAcik(false); onSilIste(cari) }}
               className="d-flex align-items-center gap-2 w-100"
-              style={{ background: 'none', border: 'none', padding: '10px 14px', fontSize: 13, color: '#f43f5e', cursor: 'pointer', fontWeight: 600 }}
-              onMouseEnter={e => e.currentTarget.style.background = '#fff1f2'}
-              onMouseLeave={e => e.currentTarget.style.background = 'none'}
+              style={{
+                background: 'none', border: 'none', padding: '10px 14px',
+                fontSize: 13, color: '#ef4444', cursor: 'pointer', fontWeight: 600,
+                transition: 'all 0.15s',
+              }}
+              onMouseEnter={e => { e.currentTarget.style.background = 'rgba(239,68,68,0.1)' }}
+              onMouseLeave={e => { e.currentTarget.style.background = 'none' }}
             >
               <i className="bi bi-trash3" style={{ fontSize: 14 }} /> Sil
             </button>
@@ -149,49 +166,76 @@ function SilmeOnayModal({ cari, onOnayla, onIptal, yukleniyor }) {
   if (!cari) return null
   return (
     <>
-      {/* Backdrop */}
-      <div
-        style={{
-          position: 'fixed', inset: 0, zIndex: 1050,
-          background: 'rgba(15,23,42,0.45)',
-          backdropFilter: 'blur(3px)',
-        }}
-        onClick={onIptal}
-      />
+      {/* Backdrop — tıklamayla kapanmaz, sadece ESC ve İptal butonu */}
+      <div style={{
+        position: 'fixed', inset: 0, zIndex: 1050,
+        background: 'rgba(0,0,0,0.7)',
+        backdropFilter: 'blur(8px)',
+        WebkitBackdropFilter: 'blur(8px)',
+      }} />
       {/* Modal */}
       <div style={{
-        position: 'fixed', top: '50%', left: '50%',
-        transform: 'translate(-50%, -50%)',
-        zIndex: 1055, width: '100%', maxWidth: 420,
+        position: 'fixed', inset: 0, zIndex: 1055,
+        display: 'flex', alignItems: 'center', justifyContent: 'center',
         padding: '0 16px',
       }}>
-        <div className="premium-card" style={{ padding: '32px 28px' }}>
-          {/* İkon */}
-          <div className="text-center mb-3">
+        <div style={{
+          width: '100%', maxWidth: 420,
+          background: 'rgba(13,27,46,0.97)',
+          backdropFilter: 'blur(30px)',
+          WebkitBackdropFilter: 'blur(30px)',
+          borderRadius: 20,
+          border: '1px solid rgba(255,255,255,0.1)',
+          boxShadow: '0 32px 80px rgba(0,0,0,0.5)',
+          overflow: 'hidden',
+        }}>
+          {/* Header */}
+          <div style={{
+            padding: '20px 24px',
+            background: 'linear-gradient(135deg, rgba(239,68,68,0.12), rgba(220,38,38,0.06))',
+            borderBottom: '1px solid rgba(239,68,68,0.2)',
+            display: 'flex', alignItems: 'center', gap: 14,
+          }}>
             <div style={{
-              width: 56, height: 56, borderRadius: 16,
-              background: '#fff1f2',
-              display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
-              marginBottom: 12,
+              width: 42, height: 42, borderRadius: 12, flexShrink: 0,
+              background: 'linear-gradient(135deg, #ef4444, #dc2626)',
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              boxShadow: '0 4px 12px rgba(239,68,68,0.35)',
             }}>
-              <i className="bi bi-trash3-fill" style={{ fontSize: 24, color: '#f43f5e' }} />
+              <i className="bi bi-trash3-fill" style={{ fontSize: 18, color: '#fff' }} />
             </div>
-            <h5 style={{ fontSize: 16, fontWeight: 800, color: '#0f172a', marginBottom: 8 }}>
-              Cariyi Sil
-            </h5>
-            <p style={{ fontSize: 13, color: '#64748b', fontWeight: 500, margin: 0 }}>
-              <strong style={{ color: '#0f172a' }}>{cari.cari_adi}</strong> adlı cari
-              kalıcı olarak silinecektir. Bu işlem geri alınamaz.
+            <div>
+              <div style={{ fontSize: 16, fontWeight: 800, color: '#fff' }}>Cariyi Sil</div>
+              <div style={{ fontSize: 11, fontWeight: 600, color: 'rgba(255,255,255,0.45)' }}>Bu işlem geri alınamaz</div>
+            </div>
+          </div>
+
+          {/* Gövde */}
+          <div style={{ padding: '24px' }}>
+            <p style={{ fontSize: 14, color: 'rgba(255,255,255,0.6)', fontWeight: 500, margin: 0, lineHeight: 1.6 }}>
+              <strong style={{ color: '#fff', fontWeight: 700 }}>{cari.cari_adi}</strong> adlı cari
+              kalıcı olarak silinecektir.
             </p>
           </div>
 
-          {/* Butonlar */}
-          <div className="d-flex gap-2 mt-4">
+          {/* Footer */}
+          <div style={{
+            padding: '0 24px 24px',
+            display: 'flex', gap: 10,
+          }}>
             <button
               onClick={onIptal}
               disabled={yukleniyor}
-              className="btn btn-outline-brand flex-fill"
-              style={{ borderRadius: 12, height: 44, fontWeight: 700, fontSize: 14 }}
+              style={{
+                flex: 1, height: 44, borderRadius: 12,
+                background: 'rgba(255,255,255,0.06)',
+                border: '1px solid rgba(255,255,255,0.12)',
+                color: 'rgba(255,255,255,0.7)',
+                fontWeight: 700, fontSize: 14, cursor: 'pointer',
+                transition: 'all 0.15s',
+              }}
+              onMouseEnter={e => { e.currentTarget.style.background = 'rgba(255,255,255,0.1)'; e.currentTarget.style.color = '#fff' }}
+              onMouseLeave={e => { e.currentTarget.style.background = 'rgba(255,255,255,0.06)'; e.currentTarget.style.color = 'rgba(255,255,255,0.7)' }}
             >
               İptal
             </button>
@@ -200,10 +244,12 @@ function SilmeOnayModal({ cari, onOnayla, onIptal, yukleniyor }) {
               disabled={yukleniyor}
               style={{
                 flex: 1, height: 44, borderRadius: 12,
-                background: 'linear-gradient(135deg, #f43f5e, #e11d48)',
+                background: 'linear-gradient(135deg, #ef4444, #dc2626)',
                 border: 'none', color: '#fff',
                 fontWeight: 700, fontSize: 14, cursor: 'pointer',
                 opacity: yukleniyor ? 0.7 : 1,
+                boxShadow: '0 4px 16px rgba(239,68,68,0.3)',
+                transition: 'all 0.15s',
               }}
             >
               {yukleniyor
@@ -234,7 +280,7 @@ export default function CarilerListesi() {
   const sayfaBasi = 20
 
   // Silme modal state
-  const [silAday, setSilAday]           = useState(null)
+  const [silAday, setSilAday]             = useState(null)
   const [silYukleniyor, setSilYukleniyor] = useState(false)
 
   const veriYukle = useCallback(async () => {
@@ -250,7 +296,7 @@ export default function CarilerListesi() {
       setCariler(yanit.data.veri?.liste || [])
       setToplam(yanit.data.veri?.toplam || 0)
     } catch (err) {
-      setHata(err.response?.data?.mesaj || 'Veriler yüklenemedi.')
+      setHata(err.response?.data?.hata || 'Veriler yüklenemedi.')
     } finally {
       setYukleniyor(false)
     }
@@ -273,7 +319,7 @@ export default function CarilerListesi() {
       setSilAday(null)
       veriYukle()
     } catch (err) {
-      toast.error(err.response?.data?.mesaj || 'Silme işlemi başarısız.')
+      toast.error(err.response?.data?.hata || 'Silme işlemi başarısız.')
     } finally {
       setSilYukleniyor(false)
     }
@@ -283,7 +329,7 @@ export default function CarilerListesi() {
 
   // ─── Render ───────────────────────────────────────────────────────────────
   return (
-    <div style={{ padding: '28px', maxWidth: 1280, margin: '0 auto' }}>
+    <div className="page-container" style={{ maxWidth: 1280, margin: '0 auto' }}>
 
       {/* Silme Onay Modalı */}
       <SilmeOnayModal
@@ -296,10 +342,10 @@ export default function CarilerListesi() {
       {/* ─── Başlık ─────────────────────────────────────────────────── */}
       <div className="d-flex align-items-start justify-content-between mb-4">
         <div>
-          <h1 style={{ fontSize: '1.45rem', fontWeight: 800, color: '#0f172a', margin: 0 }}>
+          <h1 style={{ fontSize: '1.1rem', fontWeight: 800, color: '#ffffff', margin: 0 }}>
             Cari Hesaplar
           </h1>
-          <p style={{ fontSize: 14, color: '#64748b', margin: '4px 0 0', fontWeight: 500 }}>
+          <p style={{ fontSize: 13, color: 'rgba(255,255,255,0.45)', margin: '4px 0 0', fontWeight: 500 }}>
             {toplam > 0 ? `${toplam} kayıt` : 'Müşteri ve tedarikçi hesaplarınız'}
           </p>
         </div>
@@ -318,9 +364,9 @@ export default function CarilerListesi() {
       <div className="mb-3">
         <div style={{ position: 'relative', maxWidth: 340 }}>
           <i className="bi bi-search" style={{
-            position: 'absolute', left: 14, top: '50%',
+            position: 'absolute', left: 12, top: '50%',
             transform: 'translateY(-50%)',
-            color: '#94a3b8', fontSize: 14, pointerEvents: 'none',
+            color: 'rgba(255,255,255,0.3)', fontSize: 14, pointerEvents: 'none',
           }} />
           <input
             type="text"
@@ -329,19 +375,22 @@ export default function CarilerListesi() {
             onChange={e => setAramaInput(e.target.value)}
             style={{
               width: '100%', height: 40,
-              paddingLeft: 38, paddingRight: 14,
-              background: '#ffffff', border: '1px solid #e2e8f0',
-              borderRadius: 12, fontSize: 13, fontWeight: 500,
-              color: '#374151', fontFamily: 'inherit',
+              paddingLeft: 36, paddingRight: 14,
+              background: 'rgba(255,255,255,0.05)',
+              border: '1px solid rgba(255,255,255,0.1)',
+              borderRadius: 10, fontSize: 13, fontWeight: 500,
+              color: '#ffffff', fontFamily: 'inherit',
               outline: 'none', transition: 'all 0.2s',
             }}
             onFocus={e => {
-              e.target.style.borderColor = 'var(--brand-dark)'
-              e.target.style.boxShadow = '0 0 0 3px rgba(18,63,89,0.1)'
+              e.target.style.borderColor = '#f59e0b'
+              e.target.style.boxShadow = '0 0 0 3px rgba(245,158,11,0.12)'
+              e.target.style.background = 'rgba(255,255,255,0.07)'
             }}
             onBlur={e => {
-              e.target.style.borderColor = '#e2e8f0'
+              e.target.style.borderColor = 'rgba(255,255,255,0.1)'
               e.target.style.boxShadow = 'none'
+              e.target.style.background = 'rgba(255,255,255,0.05)'
             }}
           />
         </div>
@@ -355,9 +404,9 @@ export default function CarilerListesi() {
           display: 'grid',
           gridTemplateColumns: '1fr 130px 155px 155px 48px',
           gap: 16,
-          padding: '12px 20px',
-          background: '#f8fafc',
-          borderBottom: '1px solid #e2e8f0',
+          padding: '11px 20px',
+          background: 'rgba(255,255,255,0.03)',
+          borderBottom: '1px solid rgba(255,255,255,0.06)',
         }}>
           <SiralamaBaslik label="Cari Adı"  alan="cari_adi"      siralama={siralama} setSiralama={setSiralama} />
           <SiralamaBaslik label="Tür"       alan="cari_turu"     siralama={siralama} setSiralama={setSiralama} />
@@ -374,18 +423,18 @@ export default function CarilerListesi() {
                 display: 'grid',
                 gridTemplateColumns: '1fr 130px 155px 155px 48px',
                 gap: 16, padding: '14px 20px',
-                borderBottom: '1px solid #f1f5f9',
+                borderBottom: '1px solid rgba(255,255,255,0.04)',
               }}>
                 <div className="d-flex align-items-center gap-3">
-                  <div className="animate-pulse" style={{ width: 38, height: 38, borderRadius: 12, background: '#f1f5f9', flexShrink: 0 }} />
+                  <div className="animate-pulse" style={{ width: 38, height: 38, borderRadius: 12, background: 'rgba(255,255,255,0.06)', flexShrink: 0 }} />
                   <div>
-                    <div className="animate-pulse" style={{ height: 13, width: 140, background: '#f1f5f9', borderRadius: 6, marginBottom: 6 }} />
-                    <div className="animate-pulse" style={{ height: 11, width: 90, background: '#f1f5f9', borderRadius: 6 }} />
+                    <div className="animate-pulse" style={{ height: 13, width: 140, background: 'rgba(255,255,255,0.06)', borderRadius: 6, marginBottom: 6 }} />
+                    <div className="animate-pulse" style={{ height: 11, width: 90, background: 'rgba(255,255,255,0.04)', borderRadius: 6 }} />
                   </div>
                 </div>
-                <div className="animate-pulse" style={{ height: 22, width: 70, background: '#f1f5f9', borderRadius: 20, alignSelf: 'center' }} />
-                <div className="animate-pulse" style={{ height: 13, width: 100, background: '#f1f5f9', borderRadius: 6, alignSelf: 'center' }} />
-                <div className="animate-pulse" style={{ height: 13, width: 100, background: '#f1f5f9', borderRadius: 6, alignSelf: 'center' }} />
+                <div className="animate-pulse" style={{ height: 22, width: 70, background: 'rgba(255,255,255,0.06)', borderRadius: 20, alignSelf: 'center' }} />
+                <div className="animate-pulse" style={{ height: 13, width: 100, background: 'rgba(255,255,255,0.06)', borderRadius: 6, alignSelf: 'center' }} />
+                <div className="animate-pulse" style={{ height: 13, width: 100, background: 'rgba(255,255,255,0.06)', borderRadius: 6, alignSelf: 'center' }} />
               </div>
             ))}
           </div>
@@ -397,16 +446,22 @@ export default function CarilerListesi() {
             style={{ padding: '60px 24px' }}>
             <div style={{
               width: 48, height: 48, borderRadius: 14,
-              background: '#fff1f2', border: '1px solid #fecdd3',
+              background: 'rgba(239,68,68,0.12)', border: '1px solid rgba(239,68,68,0.2)',
               display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: 12,
             }}>
-              <i className="bi bi-exclamation-circle" style={{ fontSize: 22, color: '#f43f5e' }} />
+              <i className="bi bi-exclamation-circle" style={{ fontSize: 22, color: '#ef4444' }} />
             </div>
-            <p style={{ fontSize: 13, color: '#f43f5e', fontWeight: 600, margin: '0 0 12px' }}>{hata}</p>
+            <p style={{ fontSize: 13, color: '#ef4444', fontWeight: 600, margin: '0 0 12px' }}>{hata}</p>
             <button
               onClick={veriYukle}
-              className="btn btn-outline-brand"
-              style={{ borderRadius: 10, fontSize: 13, height: 36, padding: '0 16px' }}
+              style={{
+                background: 'transparent', border: '1px solid rgba(245,158,11,0.4)',
+                color: '#f59e0b', fontWeight: 700, fontSize: 13,
+                borderRadius: 10, height: 36, padding: '0 16px', cursor: 'pointer',
+                transition: 'all 0.15s',
+              }}
+              onMouseEnter={e => { e.currentTarget.style.background = 'rgba(245,158,11,0.08)'; e.currentTarget.style.borderColor = '#f59e0b' }}
+              onMouseLeave={e => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.borderColor = 'rgba(245,158,11,0.4)' }}
             >
               Tekrar Dene
             </button>
@@ -419,15 +474,15 @@ export default function CarilerListesi() {
             style={{ padding: '60px 24px' }}>
             <div style={{
               width: 56, height: 56, borderRadius: 16,
-              background: '#f8fafc', border: '1px solid #e2e8f0',
+              background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)',
               display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: 14,
             }}>
-              <i className="bi bi-people" style={{ fontSize: 24, color: '#cbd5e1' }} />
+              <i className="bi bi-people" style={{ fontSize: 24, color: 'rgba(255,255,255,0.2)' }} />
             </div>
-            <p style={{ fontSize: 14, fontWeight: 700, color: '#475569', margin: '0 0 4px' }}>
+            <p style={{ fontSize: 14, fontWeight: 700, color: 'rgba(255,255,255,0.7)', margin: '0 0 4px' }}>
               {arama ? 'Arama sonucu bulunamadı' : 'Henüz cari kaydı yok'}
             </p>
-            <p style={{ fontSize: 13, color: '#94a3b8', margin: '0 0 16px' }}>
+            <p style={{ fontSize: 13, color: 'rgba(255,255,255,0.35)', margin: '0 0 16px' }}>
               {arama ? `"${arama}" için eşleşen kayıt yok.` : 'İlk müşteri veya tedarikçinizi ekleyin.'}
             </p>
             {!arama && (
@@ -445,117 +500,123 @@ export default function CarilerListesi() {
         {/* ── Tablo Satırları ── */}
         {!yukleniyor && !hata && cariler.length > 0 && (
           <ul style={{ listStyle: 'none', margin: 0, padding: 0 }}>
-            {cariler.map((cari) => {
-              const bakiye = parseFloat(cari.bakiye ?? 0)
-              return (
-                <li
-                  key={cari.id}
-                  style={{
-                    display: 'grid',
-                    gridTemplateColumns: '1fr 130px 155px 155px 48px',
-                    gap: 16, padding: '13px 20px',
-                    borderBottom: '1px solid #f1f5f9',
-                    alignItems: 'center',
-                    transition: 'background 0.1s',
-                  }}
-                  onMouseEnter={e => e.currentTarget.style.background = '#fafbfc'}
-                  onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
-                >
-                  {/* Cari Adı */}
-                  <div className="d-flex align-items-center gap-3" style={{ minWidth: 0 }}>
-                    <div style={{
-                      width: 40, height: 40, borderRadius: 12,
-                      background: 'var(--brand-dark)',
-                      display: 'flex', alignItems: 'center', justifyContent: 'center',
-                      flexShrink: 0,
-                      boxShadow: '0 3px 10px rgba(18,63,89,0.22)',
-                    }}>
-                      <span style={{ color: '#fff', fontSize: 13, fontWeight: 800 }}>
-                        {cari.cari_adi?.charAt(0)?.toUpperCase() || '?'}
-                      </span>
-                    </div>
-                    <div style={{ minWidth: 0 }}>
-                      <Link
-                        to={`/cariler/${cari.id}`}
-                        style={{
-                          fontSize: 14, fontWeight: 700, color: '#1e293b',
-                          textDecoration: 'none', display: 'block',
-                          overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
-                        }}
-                        onMouseEnter={e => e.currentTarget.style.color = 'var(--brand-dark)'}
-                        onMouseLeave={e => e.currentTarget.style.color = '#1e293b'}
-                      >
-                        {cari.cari_adi}
-                      </Link>
-                      {cari.vergi_no && (
-                        <p style={{
-                          margin: '2px 0 0', fontSize: 12, color: '#94a3b8',
-                          fontWeight: 500, overflow: 'hidden', textOverflow: 'ellipsis',
-                        }}>
-                          {cari.vergi_no}
-                        </p>
-                      )}
-                    </div>
-                  </div>
-
-                  {/* Tür */}
-                  <div>
-                    <CariTipiRozeti tur={cari.cari_turu} />
-                  </div>
-
-                  {/* Alacak — YEŞİL (finansal standart) */}
-                  <div className="d-flex align-items-center gap-1">
-                    <i className="bi bi-arrow-down-circle-fill" style={{ fontSize: 14, color: '#059669' }} />
-                    <span className="financial-num" style={{ fontSize: 14, color: '#059669' }}>
-                      {paraBicimlendir(cari.toplam_alacak)}
+            {cariler.map((cari) => (
+              <li
+                key={cari.id}
+                style={{
+                  display: 'grid',
+                  gridTemplateColumns: '1fr 130px 155px 155px 48px',
+                  gap: 16, padding: '13px 20px',
+                  borderBottom: '1px solid rgba(255,255,255,0.04)',
+                  alignItems: 'center',
+                  transition: 'background 0.1s',
+                }}
+                onMouseEnter={e => e.currentTarget.style.background = 'rgba(255,255,255,0.03)'}
+                onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
+              >
+                {/* Cari Adı */}
+                <div className="d-flex align-items-center gap-3" style={{ minWidth: 0 }}>
+                  <div style={{
+                    width: 40, height: 40, borderRadius: 12, flexShrink: 0,
+                    background: 'rgba(245,158,11,0.12)',
+                    border: '1px solid rgba(245,158,11,0.2)',
+                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  }}>
+                    <span style={{ color: '#f59e0b', fontSize: 14, fontWeight: 800 }}>
+                      {cari.cari_adi?.charAt(0)?.toUpperCase() || '?'}
                     </span>
                   </div>
-
-                  {/* Borç — KIRMIZI (finansal standart) */}
-                  <div className="d-flex align-items-center gap-1">
-                    <i className="bi bi-arrow-up-circle-fill" style={{ fontSize: 14, color: '#dc2626' }} />
-                    <span className="financial-num" style={{
-                      fontSize: 14,
-                      color: '#dc2626',
-                    }}>
-                      {paraBicimlendir(cari.toplam_borc)}
-                    </span>
+                  <div style={{ minWidth: 0 }}>
+                    <Link
+                      to={`/cariler/${cari.id}`}
+                      style={{
+                        fontSize: 14, fontWeight: 700, color: 'rgba(255,255,255,0.9)',
+                        textDecoration: 'none', display: 'block',
+                        overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
+                        transition: 'color 0.15s',
+                      }}
+                      onMouseEnter={e => e.currentTarget.style.color = '#f59e0b'}
+                      onMouseLeave={e => e.currentTarget.style.color = 'rgba(255,255,255,0.9)'}
+                    >
+                      {cari.cari_adi}
+                    </Link>
+                    {cari.vergi_no && (
+                      <p style={{
+                        margin: '2px 0 0', fontSize: 12, color: 'rgba(255,255,255,0.35)',
+                        fontWeight: 500, overflow: 'hidden', textOverflow: 'ellipsis',
+                      }}>
+                        {cari.vergi_no}
+                      </p>
+                    )}
                   </div>
+                </div>
 
-                  {/* Aksiyon */}
-                  <div className="d-flex justify-content-center">
-                    <AksiyonMenusu cari={cari} onSilIste={setSilAday} navigate={navigate} />
-                  </div>
-                </li>
-              )
-            })}
+                {/* Tür */}
+                <div>
+                  <CariTipiRozeti tur={cari.cari_turu} />
+                </div>
+
+                {/* Alacak */}
+                <div className="d-flex align-items-center gap-1">
+                  <i className="bi bi-arrow-down-circle-fill" style={{ fontSize: 14, color: '#059669' }} />
+                  <span className="financial-num" style={{ fontSize: 14, color: '#059669' }}>
+                    {paraBicimlendir(cari.toplam_alacak)}
+                  </span>
+                </div>
+
+                {/* Borç */}
+                <div className="d-flex align-items-center gap-1">
+                  <i className="bi bi-arrow-up-circle-fill" style={{ fontSize: 14, color: '#dc2626' }} />
+                  <span className="financial-num" style={{ fontSize: 14, color: '#dc2626' }}>
+                    {paraBicimlendir(cari.toplam_borc)}
+                  </span>
+                </div>
+
+                {/* Aksiyon */}
+                <div className="d-flex justify-content-center">
+                  <AksiyonMenusu cari={cari} onSilIste={setSilAday} navigate={navigate} />
+                </div>
+              </li>
+            ))}
           </ul>
         )}
 
         {/* ── Sayfalama ── */}
         {!yukleniyor && toplamSayfa > 1 && (
           <div className="d-flex align-items-center justify-content-between"
-            style={{ padding: '12px 20px', borderTop: '1px solid #e2e8f0', background: '#fafbfc' }}>
-            <p style={{ margin: 0, fontSize: 12, color: '#94a3b8', fontWeight: 600 }}>
+            style={{ padding: '12px 20px', borderTop: '1px solid rgba(255,255,255,0.06)', background: 'rgba(255,255,255,0.02)' }}>
+            <p style={{ margin: 0, fontSize: 12, color: 'rgba(255,255,255,0.35)', fontWeight: 600 }}>
               {(sayfa - 1) * sayfaBasi + 1}–{Math.min(sayfa * sayfaBasi, toplam)} / {toplam} kayıt
             </p>
             <div className="d-flex align-items-center gap-2">
               <button
-                className="btn btn-outline-brand"
-                style={{ borderRadius: 10, fontSize: 12, height: 34, padding: '0 14px' }}
+                style={{
+                  background: 'transparent', border: '1px solid rgba(255,255,255,0.1)',
+                  borderRadius: 8, fontSize: 12, height: 34, padding: '0 14px',
+                  color: 'rgba(255,255,255,0.5)', cursor: 'pointer', transition: 'all 0.15s',
+                  opacity: sayfa <= 1 ? 0.4 : 1,
+                }}
                 disabled={sayfa <= 1}
                 onClick={() => setSayfa(s => s - 1)}
+                onMouseEnter={e => { if (sayfa > 1) { e.currentTarget.style.borderColor = 'rgba(245,158,11,0.4)'; e.currentTarget.style.color = '#f59e0b' } }}
+                onMouseLeave={e => { e.currentTarget.style.borderColor = 'rgba(255,255,255,0.1)'; e.currentTarget.style.color = 'rgba(255,255,255,0.5)' }}
               >
                 <i className="bi bi-chevron-left me-1" /> Önceki
               </button>
-              <span style={{ fontSize: 12, fontWeight: 700, color: '#475569', padding: '0 8px' }}>
+              <span style={{ fontSize: 12, fontWeight: 700, color: 'rgba(255,255,255,0.5)', padding: '0 8px' }}>
                 {sayfa} / {toplamSayfa}
               </span>
               <button
-                className="btn btn-outline-brand"
-                style={{ borderRadius: 10, fontSize: 12, height: 34, padding: '0 14px' }}
+                style={{
+                  background: 'transparent', border: '1px solid rgba(255,255,255,0.1)',
+                  borderRadius: 8, fontSize: 12, height: 34, padding: '0 14px',
+                  color: 'rgba(255,255,255,0.5)', cursor: 'pointer', transition: 'all 0.15s',
+                  opacity: sayfa >= toplamSayfa ? 0.4 : 1,
+                }}
                 disabled={sayfa >= toplamSayfa}
                 onClick={() => setSayfa(s => s + 1)}
+                onMouseEnter={e => { if (sayfa < toplamSayfa) { e.currentTarget.style.borderColor = 'rgba(245,158,11,0.4)'; e.currentTarget.style.color = '#f59e0b' } }}
+                onMouseLeave={e => { e.currentTarget.style.borderColor = 'rgba(255,255,255,0.1)'; e.currentTarget.style.color = 'rgba(255,255,255,0.5)' }}
               >
                 Sonraki <i className="bi bi-chevron-right ms-1" />
               </button>
