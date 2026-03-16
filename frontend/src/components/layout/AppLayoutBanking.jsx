@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import { Outlet, NavLink, useNavigate, useLocation } from 'react-router-dom'
 import useAuthStore from '../../stores/authStore'
 import '../../temalar/banking.css'
+import UpgradeBildirim from '../UpgradeBildirim'
 
 // ─── Navigasyon menüsü ────────────────────────────────────────────────────────
 const menuItems = [
@@ -119,6 +120,14 @@ export default function AppLayoutBanking() {
             <span className="b-nav-section-label">Sistem</span>
           </div>
           <NavLink
+            to="/abonelik"
+            className={({ isActive }) => `b-nav-btn${isActive ? ' b-nav-active' : ''}`}
+            onClick={() => setSidebarOpen(false)}
+          >
+            <i className="bi bi-credit-card b-nav-icon" aria-hidden="true" />
+            <span>Aboneliğim</span>
+          </NavLink>
+          <NavLink
             to="/ayarlar/tema"
             className={({ isActive }) => `b-nav-btn${isActive ? ' b-nav-active' : ''}`}
             onClick={() => setSidebarOpen(false)}
@@ -195,6 +204,9 @@ export default function AppLayoutBanking() {
             </div>
           </div>
         </header>
+
+        {/* Upgrade bildirimi (ücretsiz plan) */}
+        <UpgradeBildirim />
 
         {/* Sayfa içeriği */}
         <main className="b-content">

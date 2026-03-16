@@ -1,11 +1,17 @@
 # PROJE.md — Finans Kalesi Canlı Durum ve Yol Haritası
-# Son Güncelleme: 16 Mart 2026 — Oturum #16
+# Son Güncelleme: 16 Mart 2026 — Oturum #20
 
 ---
 
-## GÜNCEL DURUM: ✅ Aşama 2F Temizlik TAMAMLANDI — Canlıya Çıkış Hazır
-Demo dosyaları silindi, tema CSS'leri `temalar/` klasörüne taşındı, frontend yeniden build edildi.
-Sıradaki: Aşama 3 — cPanel'e deploy.
+## GÜNCEL DURUM: 🔄 Aşama 4 DEVAM EDİYOR — Abonelik Sistemi
+Kayıt + giriş sistemi çalışıyor. Ücretsiz plan kullanım sınırları (4D) tamamlandı.
+Sıradaki: Ödeme entegrasyonu (4E — İyzico/Stripe) — sağlayıcı seçimi bekleniyor.
+
+---
+
+## ⚠️ SQL KURALI
+Veritabanı değişikliği gerektiren her işlemde SQL kodu mesajda verilir.
+Kaan bunu cPanel phpMyAdmin (hosting) ve Laragon (local) üzerinden kendisi çalıştırır.
 
 ---
 
@@ -95,26 +101,107 @@ Sıradaki: Aşama 3 — cPanel'e deploy.
 | 3: Cari Hesaplar | CariYonetimi.jsx | ✅ Tamamlandı |
 | 4: Çek/Senet | CekSenet.jsx | ✅ Tamamlandı |
 | 5: Varlık & Kasa | VarlikKasa.jsx | ✅ Tamamlandı |
-| Temizlik | Demo klasörleri silindi, tema CSS'leri `temalar/` klasörüne taşındı | ✅ Tamamlandı |
+| Temizlik | Tema CSS'leri `temalar/` klasörüne taşındı | ✅ Tamamlandı |
+| Demo Temizliği | `tasarim-demo/`, `tasarim-demo-v2/`, `tasarim-demo-v3/` silindi (15 dosya) | ✅ Tamamlandı |
 
 **Tema sistemi:** 3 tema (banking, earthy, dark) — CSS dosyaları `frontend/src/temalar/` altında.
 
 ---
 
-### Aşama 3 — Canlıya Çıkış Hazırlığı 🏗️ DEVAM EDİYOR
+### Aşama 3 — Canlıya Çıkış ✅ TAMAMLANDI
 **Hedef domain:** kaandogan.com.tr
 
-| Kontrol | Durum |
-|---------|-------|
-| Demo/debug dosyaları temizlendi | ✅ |
-| Frontend build hazır | ✅ |
-| .env production ayarları | ⬜ cPanel'de yapılacak |
-| Veritabanı oluşturma + schema import | ⬜ cPanel'de yapılacak |
-| SSL sertifikası | ⬜ cPanel'de kontrol edilecek |
-| PHP 8.4 + mod_rewrite | ⬜ cPanel'de doğrulanacak |
+| # | Kontrol | Durum |
+|---|---------|-------|
+| 1 | Demo klasörleri silindi (tasarim-demo, v2, v3) | ✅ Yapıldı |
+| 2 | Frontend rebuild (demo silindikten sonra) | ✅ Yapıldı |
+| 3 | .env production ayarları | ✅ Canlıda ayrı .env düzenlendi |
+| 4 | Veritabanı oluşturma + schema import | ✅ Yapıldı |
+| 5 | SSL sertifikası | ✅ Aktif |
+| 6 | PHP 8.4 + mod_rewrite | ✅ Doğrulandı |
 
-### Aşama 4 — Mobil (Capacitor.js) ⬜ Web kararlı olduktan sonra
-### Aşama 5 — Büyüme Modülleri ⬜ UZAK DÖNEM
+---
+
+### Aşama 4 — Abonelik & SaaS Altyapısı 🔄 DEVAM EDİYOR
+
+#### 4A — Veritabanı + Plan Sistemi ✅ TAMAMLANDI
+DB migration çalıştırıldı (hosting + local). Mevcut kullanıcılar `ucretsiz` plana geçirildi.
+
+| # | İş | Durum |
+|---|-----|-------|
+| 1 | `abonelikler` ve `odeme_gecmisi` tabloları oluşturuldu | ✅ |
+| 2 | `sirketler.abonelik_plani` ENUM güncellendi (ucretsiz/standart/kurumsal) | ✅ |
+| 3 | `sirketler.kampanya_kullanici` kolonu eklendi | ✅ |
+| 4 | Mevcut tüm kullanıcılar ucretsiz plana geçirildi | ✅ |
+| 5 | `.env` → `LANSMAN_BITIS_TARIHI=2026-06-14 23:59:59` eklendi | ✅ |
+
+#### 4B — Backend API ✅ TAMAMLANDI
+
+| Dosya | İş | Durum |
+|-------|-----|-------|
+| `middleware/PlanKontrol.php` | Özellik bazlı izin kontrolü (pdf, excel, api vb.) | ✅ |
+| `middleware/SinirKontrol.php` | Kullanım sınırı kontrolü + sayım + durum özeti | ✅ |
+| `models/Abonelik.php` | Plan güncelleme, ödeme geçmişi, kampanya kontrolü | ✅ |
+| `controllers/AbonelikController.php` | Plan listesi, durum, geçmiş, yükseltme (placeholder) | ✅ |
+| `controllers/WebhookController.php` | Web/Apple/Google webhook placeholder'ları | ✅ |
+| `controllers/SinirController.php` | `GET /api/sinir/durum` — kullanım özeti | ✅ |
+| `routes/abonelik.php` | `/api/abonelik/*` ve `/api/webhook/*` | ✅ |
+| `routes/sinir.php` | `/api/sinir/durum` | ✅ |
+| `models/Sirket.php` | Yeni kayıtta `abonelik_plani='ucretsiz'` düzeltmesi | ✅ |
+| `controllers/CariController.php` | `olustur()` içinde cari sınırı kontrolü (25) | ✅ |
+| `controllers/CekSenetController.php` | `olustur()` içinde aylık çek sınırı kontrolü (10) | ✅ |
+| `controllers/AuthController.php` | Kayıtta abonelik + kampanya oluşturma, JWT'ye plan eklendi | ✅ |
+
+#### 4C — Frontend ✅ TAMAMLANDI
+
+| Dosya | İş | Durum |
+|-------|-----|-------|
+| `pages/auth/KayitOl.jsx` | 2 adımlı kayıt formu (GirisYap tasarımıyla aynı) | ✅ |
+| `pages/abonelik/PlanSecim.jsx` | Plan karşılaştırma + mevcut plan + ödeme geçmişi | ✅ |
+| `components/PlanYukseltModal.jsx` | Kısıtlı özelliğe tıklanınca çıkan yükseltme modalı | ✅ |
+| `hooks/usePlanKontrol.js` | Özellik bazlı izin hook'u (`izinVarMi('pdf_rapor')`) | ✅ |
+| `hooks/useSinirler.js` | Kullanım sınırı durum hook'u (`uyariDurum('cari')`) | ✅ |
+| `api/abonelik.js` | Abonelik API çağrıları | ✅ |
+| `api/sinir.js` | Sinir durum API çağrısı | ✅ |
+| `App.jsx` | `/kayit` route → KayitOl, `/abonelik` route → PlanSecim | ✅ |
+| AppLayout (3 tema) | Sidebar'a "Aboneliğim" linki eklendi | ✅ |
+
+#### 4D — Kullanım Sınırları (Ücretsiz Plan) ✅ TAMAMLANDI
+
+| Sınır | Değer | Backend | Frontend |
+|-------|-------|---------|---------|
+| Toplam cari | 25 | ✅ 403 döner | ✅ Buton disable + ilerleme çubuğu (CariYonetimi) |
+| Aylık çek/senet | 10 | ✅ 403 döner | ✅ Buton disable + ilerleme çubuğu (CekSenet, 2 tab) |
+| Kasa geçmişi | 2 ay görüntüleme | ✅ KasaController'a filtre + gecmis_kisitli flag | ✅ Nakit Akışı'nda uyarı banner'ı |
+| PDF/Excel rapor | Yok | ✅ PlanKontrol.php hazır | ⬜ usePlanKontrol hook hazır |
+| Çok kullanıcı | Yok | ✅ PlanKontrol.php hazır | ⬜ |
+
+#### 4E — Ödeme Entegrasyonu ⬜ SIRADA
+
+| # | İş | Durum |
+|---|-----|-------|
+| 1 | Ödeme sağlayıcısı seç (İyzico / Param / Stripe) | ⬜ Karar verilecek |
+| 2 | `WebhookController.php` → gerçek ödeme işleme | ⬜ Placeholder hazır |
+| 3 | Başarılı ödemede `planGuncelle()` çağır + JWT yenile | ⬜ |
+| 4 | Frontend "Abone Ol" butonu → ödeme sayfasına yönlendir | ⬜ |
+| 5 | Apple IAP entegrasyonu (Capacitor sonrası) | ⬜ Uzak dönem |
+| 6 | Google Play entegrasyonu (Capacitor sonrası) | ⬜ Uzak dönem |
+
+#### 4F — Upgrade Bildirimleri ✅ TAMAMLANDI
+
+| # | İş | Durum |
+|---|-----|-------|
+| 1 | Login sonrası upgrade banner (ücretsiz plan, oturum başına 1 kez) | ✅ |
+| 2 | Sınıra yaklaşınca uyarı (%80 — mevcut/limit + ilerleme çubuğu) | ✅ |
+| 3 | Sınır dolunca `PlanYukseltModal` otomatik açılması (oturum başına 1 kez) | ✅ |
+| 4 | Dashboard'da plan durumu widget'ı | ⬜ Opsiyonel — sonraya bırakıldı |
+
+**Dosya:** `components/UpgradeBildirim.jsx` — 4 layout'a eklendi (AppLayout, Banking, Earthy, Dark)
+
+---
+
+### Aşama 5 — Mobil (Capacitor.js) ⬜ Web kararlı olduktan sonra
+### Aşama 6 — Büyüme Modülleri ⬜ UZAK DÖNEM
 
 ---
 

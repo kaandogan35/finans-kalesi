@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import { Outlet, NavLink, useNavigate, useLocation } from 'react-router-dom'
 import useAuthStore from '../../stores/authStore'
 import '../../temalar/earthy.css'
+import UpgradeBildirim from '../UpgradeBildirim'
 
 // ─── Navigasyon menüsü ────────────────────────────────────────────────────────
 const menuItems = [
@@ -119,6 +120,14 @@ export default function AppLayoutEarthy() {
             <span className="e-nav-section-label">Sistem</span>
           </div>
           <NavLink
+            to="/abonelik"
+            className={({ isActive }) => `e-nav-btn${isActive ? ' e-nav-active' : ''}`}
+            onClick={() => setSidebarOpen(false)}
+          >
+            <i className="bi bi-credit-card e-nav-icon" aria-hidden="true" />
+            <span>Aboneliğim</span>
+          </NavLink>
+          <NavLink
             to="/ayarlar/tema"
             className={({ isActive }) => `e-nav-btn${isActive ? ' e-nav-active' : ''}`}
             onClick={() => setSidebarOpen(false)}
@@ -195,6 +204,9 @@ export default function AppLayoutEarthy() {
             </div>
           </div>
         </header>
+
+        {/* Upgrade bildirimi (ücretsiz plan) */}
+        <UpgradeBildirim />
 
         {/* Sayfa içeriği */}
         <main className="e-content">

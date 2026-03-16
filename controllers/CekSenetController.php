@@ -140,6 +140,9 @@ class CekSenetController {
                 }
             }
 
+            // Plan sınırı kontrolü
+            SinirKontrol::kontrol($payload, 'cek');
+
             $cek = $this->cekSenet->olustur($payload['sirket_id'], $veri, $payload['sub']);
             Response::basarili($cek, 'Cek/senet kaydedildi', 201);
         } catch (Exception $e) {

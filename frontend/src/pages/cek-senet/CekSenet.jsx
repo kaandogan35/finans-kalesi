@@ -12,6 +12,8 @@ import cekSenetApi from '../../api/cekSenet'
 import { carilerApi } from '../../api/cariler'
 import useTemaStore from '../../stores/temaStore'
 import { temaRenkleri } from '../../lib/temaRenkleri'
+import { useSinirler } from '../../hooks/useSinirler'
+import useAuthStore from '../../stores/authStore'
 
 const prefixMap = { banking: 'b', earthy: 'e', dark: 'd' }
 
@@ -385,6 +387,13 @@ export default function CekSenet() {
   const aktifTema = useTemaStore((s) => s.aktifTema)
   const p = prefixMap[aktifTema] || 'b'
   const renkler = temaRenkleri[aktifTema] || temaRenkleri.banking
+
+  // ─ Kullanım Sınırları ───────────────────────────────────────────────────────
+  const { kullanici } = useAuthStore()
+  const { sinirler, uyariDurum } = useSinirler()
+  const cekDurum  = uyariDurum('cek_aylik')
+  const cekBilgi  = sinirler?.cek_aylik
+  const cekLimitDolu = cekDurum === 'dolu'
 
   // ─ Tab & Filtre ─────────────────────────────────────────────────────────────
   const [aktifTab, setAktifTab] = useState(0)
@@ -1241,10 +1250,25 @@ export default function CekSenet() {
                     value={aramaMetni} onChange={e => setAramaMetni(e.target.value)} />
                   {aramaMetni && <button className="btn btn-outline-secondary" onClick={() => setAramaMetni('')}><i className="bi bi-x" /></button>}
                 </div>
-                <button className={`${p}-btn-accent`}
-                  onClick={() => { setPortfoyForm(portfoyBosluk()); setPortfoyDzlId(null); setPortfoyModal(true) }}>
-                  <i className="bi bi-plus-lg me-2" /> Yeni Evrak
-                </button>
+                <div className="d-flex flex-column align-items-end gap-1">
+                  {kullanici?.plan === 'ucretsiz' && cekBilgi && !cekBilgi.sinirsiz && (cekDurum === 'uyari' || cekDurum === 'dolu') && (
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 11, fontWeight: 600,
+                      color: cekLimitDolu ? renkler.danger : renkler.warning }}>
+                      <div style={{ width: 60, height: 3, borderRadius: 2, background: hexRgba(renkler.textSec, 0.15), overflow: 'hidden' }}>
+                        <div style={{ height: '100%', width: `${Math.min(cekBilgi.yuzde, 100)}%`,
+                          background: cekLimitDolu ? renkler.danger : renkler.warning, borderRadius: 2 }} />
+                      </div>
+                      {cekBilgi.mevcut}/{cekBilgi.sinir} bu ay
+                    </div>
+                  )}
+                  <button className={`${p}-btn-accent`}
+                    onClick={() => { setPortfoyForm(portfoyBosluk()); setPortfoyDzlId(null); setPortfoyModal(true) }}
+                    disabled={cekLimitDolu}
+                    title={cekLimitDolu ? 'Aylık çek/senet limiti doldu. Planı yükseltin.' : 'Yeni evrak ekle'}
+                    style={cekLimitDolu ? { opacity: 0.5, cursor: 'not-allowed' } : undefined}>
+                    <i className="bi bi-plus-lg me-2" /> Yeni Evrak
+                  </button>
+                </div>
               </div>
 
               {/* Tablo */}
@@ -1449,10 +1473,25 @@ export default function CekSenet() {
                     value={aramaMetni} onChange={e => setAramaMetni(e.target.value)} />
                   {aramaMetni && <button className="btn btn-outline-secondary" onClick={() => setAramaMetni('')}><i className="bi bi-x" /></button>}
                 </div>
-                <button className={`${p}-btn-accent`}
-                  onClick={() => { setKendiForm(kendiBosluk()); setKendiDzlId(null); setKendiModal(true) }}>
-                  <i className="bi bi-plus-lg me-2" /> Yeni Borç Ekle
-                </button>
+                <div className="d-flex flex-column align-items-end gap-1">
+                  {kullanici?.plan === 'ucretsiz' && cekBilgi && !cekBilgi.sinirsiz && (cekDurum === 'uyari' || cekDurum === 'dolu') && (
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 11, fontWeight: 600,
+                      color: cekLimitDolu ? renkler.danger : renkler.warning }}>
+                      <div style={{ width: 60, height: 3, borderRadius: 2, background: hexRgba(renkler.textSec, 0.15), overflow: 'hidden' }}>
+                        <div style={{ height: '100%', width: `${Math.min(cekBilgi.yuzde, 100)}%`,
+                          background: cekLimitDolu ? renkler.danger : renkler.warning, borderRadius: 2 }} />
+                      </div>
+                      {cekBilgi.mevcut}/{cekBilgi.sinir} bu ay
+                    </div>
+                  )}
+                  <button className={`${p}-btn-accent`}
+                    onClick={() => { setKendiForm(kendiBosluk()); setKendiDzlId(null); setKendiModal(true) }}
+                    disabled={cekLimitDolu}
+                    title={cekLimitDolu ? 'Aylık çek/senet limiti doldu. Planı yükseltin.' : 'Yeni borç evrakı ekle'}
+                    style={cekLimitDolu ? { opacity: 0.5, cursor: 'not-allowed' } : undefined}>
+                    <i className="bi bi-plus-lg me-2" /> Yeni Borç Ekle
+                  </button>
+                </div>
               </div>
 
               <div className="table-responsive">

@@ -28,10 +28,23 @@ class KasaController {
     // ─── GET /api/kasa/hareketler ───
     public function hareketler_listele($payload) {
         try {
+            $plan = isset($payload['plan']) ? $payload['plan'] : 'ucretsiz';
+            $gecmis_kisitli = false;
+
+            // Ücretsiz planda geçmiş verisi son 2 ay ile sınırlı
+            $baslangic = isset($_GET['baslangic_tarihi']) ? $_GET['baslangic_tarihi'] : null;
+            if ($plan === 'ucretsiz') {
+                $sinir = date('Y-m-d', strtotime('-2 months'));
+                if ($baslangic === null || $baslangic < $sinir) {
+                    $baslangic = $sinir;
+                    $gecmis_kisitli = true;
+                }
+            }
+
             $filtreler = array(
                 'islem_tipi'       => isset($_GET['islem_tipi']) ? $_GET['islem_tipi'] : null,
                 'kategori'         => isset($_GET['kategori']) ? $_GET['kategori'] : null,
-                'baslangic_tarihi' => isset($_GET['baslangic_tarihi']) ? $_GET['baslangic_tarihi'] : null,
+                'baslangic_tarihi' => $baslangic,
                 'bitis_tarihi'     => isset($_GET['bitis_tarihi']) ? $_GET['bitis_tarihi'] : null,
                 'sayfa'            => isset($_GET['sayfa']) ? $_GET['sayfa'] : 1,
                 'adet'             => isset($_GET['adet']) ? $_GET['adet'] : 50,
@@ -39,6 +52,7 @@ class KasaController {
 
             $kasa = new Kasa($this->db);
             $sonuc = $kasa->hareketler_listele($payload['sirket_id'], $filtreler);
+            $sonuc['gecmis_kisitli'] = $gecmis_kisitli;
             Response::basarili($sonuc);
         } catch (Exception $e) {
             error_log('Kasa hareketler_listele hatasi: ' . $e->getMessage());

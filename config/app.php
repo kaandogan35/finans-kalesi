@@ -89,4 +89,11 @@ return [
     'sistem_sifreleme' => [
         'anahtar' => env('APP_ENCRYPTION_KEY'),
     ],
+
+    // Abonelik — Lansman Kampanyası
+    // .env'de LANSMAN_BITIS_TARIHI tanımlanmışsa kampanya aktif sayılır.
+    // Örnek: LANSMAN_BITIS_TARIHI=2026-06-14 23:59:59
+    'lansman' => [
+        'bitis_tarihi' => env('LANSMAN_BITIS_TARIHI', null),
+    ],
 ];

@@ -1,0 +1,132 @@
+<?php
+// =============================================================
+// SinirKontrol.php — Ücretsiz Plan Kullanım Sınırları
+// Finans Kalesi SaaS
+//
+// Plan başına işlem sınırlarını tanımlar ve kontrol eder.
+// Kullanım:
+//   SinirKontrol::kontrol($payload, 'cari');   // 403 + exit
+//   SinirKontrol::cariSayisi($payload);        // int döner
+// =============================================================
+
+class SinirKontrol {
+
+    // ─── Plan Başına Sınırlar ───────────────────────────────
+    // -1 = sınırsız
+    const SINIRLAR = [
+        'ucretsiz' => [
+            'cari_toplam'    => 25,   // Toplam cari kart
+            'cek_aylik'      => 10,   // Aylık çek/senet ekleme
+            'kasa_gecmis_ay' => 2,    // Kasa geçmişi (ay)
+        ],
+        'standart' => [
+            'cari_toplam'    => 500,
+            'cek_aylik'      => 200,
+            'kasa_gecmis_ay' => 24,
+        ],
+        'kurumsal' => [
+            'cari_toplam'    => -1,
+            'cek_aylik'      => -1,
+            'kasa_gecmis_ay' => -1,
+        ],
+    ];
+
+    // ─── Mevcut Cari Sayısı ─────────────────────────────────
+    public static function cariSayisi(int $sirket_id): int {
+        $db = Database::baglan();
+        $stmt = $db->prepare(
+            "SELECT COUNT(*) FROM cari_kartlar
+             WHERE sirket_id = :sid AND silindi_mi = 0"
+        );
+        $stmt->execute([':sid' => $sirket_id]);
+        return (int) $stmt->fetchColumn();
+    }
+
+    // ─── Bu Ayki Çek/Senet Sayısı ──────────────────────────
+    public static function cekAylikSayisi(int $sirket_id): int {
+        $db = Database::baglan();
+        $stmt = $db->prepare(
+            "SELECT COUNT(*) FROM cek_senetler
+             WHERE sirket_id = :sid
+               AND silindi_mi = 0
+               AND YEAR(olusturma_tarihi)  = YEAR(NOW())
+               AND MONTH(olusturma_tarihi) = MONTH(NOW())"
+        );
+        $stmt->execute([':sid' => $sirket_id]);
+        return (int) $stmt->fetchColumn();
+    }
+
+    // ─── Kontrol + 403 (Sınır Aşılmışsa) ──────────────────
+    // $tur: 'cari' | 'cek'
+    public static function kontrol(array $payload, string $tur): void {
+        $plan     = $payload['plan'] ?? 'ucretsiz';
+        $sinirlar = self::SINIRLAR[$plan] ?? self::SINIRLAR['ucretsiz'];
+        $sirket   = (int) $payload['sirket_id'];
+
+        if ($tur === 'cari') {
+            $sinir = $sinirlar['cari_toplam'];
+            if ($sinir === -1) return;
+            $mevcut = self::cariSayisi($sirket);
+            if ($mevcut >= $sinir) {
+                Response::json([
+                    'basarili' => false,
+                    'hata'     => "Ücretsiz planda en fazla {$sinir} cari kart açabilirsiniz. Mevcut: {$mevcut}. Planınızı yükseltin.",
+                    'kod'      => 'SINIR_ASILDI',
+                    'sinir'    => $sinir,
+                    'mevcut'   => $mevcut,
+                ], 403);
+                exit;
+            }
+        }
+
+        if ($tur === 'cek') {
+            $sinir = $sinirlar['cek_aylik'];
+            if ($sinir === -1) return;
+            $mevcut = self::cekAylikSayisi($sirket);
+            if ($mevcut >= $sinir) {
+                Response::json([
+                    'basarili' => false,
+                    'hata'     => "Bu ay {$sinir} çek/senet limitine ulaştınız. Mevcut: {$mevcut}. Planınızı yükseltin.",
+                    'kod'      => 'SINIR_ASILDI',
+                    'sinir'    => $sinir,
+                    'mevcut'   => $mevcut,
+                ], 403);
+                exit;
+            }
+        }
+    }
+
+    // ─── Durum Özeti (API için) ─────────────────────────────
+    public static function durumOzeti(array $payload): array {
+        $plan     = $payload['plan'] ?? 'ucretsiz';
+        $sinirlar = self::SINIRLAR[$plan] ?? self::SINIRLAR['ucretsiz'];
+        $sirket   = (int) $payload['sirket_id'];
+
+        $cari_mevcut = self::cariSayisi($sirket);
+        $cek_mevcut  = self::cekAylikSayisi($sirket);
+
+        $cari_sinir = $sinirlar['cari_toplam'];
+        $cek_sinir  = $sinirlar['cek_aylik'];
+        $kasa_ay    = $sinirlar['kasa_gecmis_ay'];
+
+        return [
+            'plan' => $plan,
+            'cari' => [
+                'mevcut'  => $cari_mevcut,
+                'sinir'   => $cari_sinir,
+                'yuzde'   => $cari_sinir === -1 ? 0 : round(($cari_mevcut / $cari_sinir) * 100),
+                'sinirsiz'=> $cari_sinir === -1,
+            ],
+            'cek_aylik' => [
+                'mevcut'  => $cek_mevcut,
+                'sinir'   => $cek_sinir,
+                'yuzde'   => $cek_sinir === -1 ? 0 : round(($cek_mevcut / $cek_sinir) * 100),
+                'sinirsiz'=> $cek_sinir === -1,
+            ],
+            'kasa_gecmis_ay' => [
+                'sinir'   => $kasa_ay,
+                'sinirsiz'=> $kasa_ay === -1,
+            ],
+        ];
+    }
+}

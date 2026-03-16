@@ -12,6 +12,8 @@ import { toast } from 'sonner'
 import { carilerApi } from '../../api/cariler'
 import useTemaStore from '../../stores/temaStore'
 import { temaRenkleri, hexRgba } from '../../lib/temaRenkleri'
+import { useSinirler } from '../../hooks/useSinirler'
+import useAuthStore from '../../stores/authStore'
 
 const prefixMap = { banking: 'b', earthy: 'e', dark: 'd' }
 
@@ -189,6 +191,12 @@ export default function CariYonetimi() {
   const aktifTema = useTemaStore((s) => s.aktifTema)
   const p = prefixMap[aktifTema] || 'b'
   const renkler = temaRenkleri[aktifTema] || temaRenkleri.banking
+
+  const { kullanici } = useAuthStore()
+  const { sinirler, uyariDurum } = useSinirler()
+  const cariDurum = uyariDurum('cari')
+  const cariBilgi = sinirler?.cari
+  const limitDolu = cariDurum === 'dolu'
 
   const [cariler, setCariler]           = useState([])
   const [listYukleniyor, setListYukleniyor] = useState(true)
@@ -485,9 +493,27 @@ export default function CariYonetimi() {
             {cariler.length} toplam cari · {cariler.filter(c => c.durum === 'aktif').length} aktif
           </p>
         </div>
-        <button onClick={cariEkleAc} className={`${p}-cym-btn-new d-flex align-items-center gap-2`}>
-          <i className="bi bi-plus-lg" /> Yeni Cari Ekle
-        </button>
+        <div className="d-flex flex-column align-items-end gap-2">
+          {kullanici?.plan === 'ucretsiz' && cariBilgi && !cariBilgi.sinirsiz && (cariDurum === 'uyari' || cariDurum === 'dolu') && (
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 12, fontWeight: 600,
+              color: cariDurum === 'dolu' ? renkler.danger : renkler.warning }}>
+              <div style={{ width: 80, height: 4, borderRadius: 3, background: hexRgba(renkler.textSec, 0.15), overflow: 'hidden' }}>
+                <div style={{ height: '100%', width: `${Math.min(cariBilgi.yuzde, 100)}%`,
+                  background: cariDurum === 'dolu' ? renkler.danger : renkler.warning, borderRadius: 3 }} />
+              </div>
+              {cariBilgi.mevcut}/{cariBilgi.sinir} cari
+            </div>
+          )}
+          <button
+            onClick={cariEkleAc}
+            className={`${p}-cym-btn-new d-flex align-items-center gap-2`}
+            disabled={limitDolu}
+            title={limitDolu ? 'Cari limiti doldu. Planı yükseltin.' : 'Yeni cari ekle'}
+            style={limitDolu ? { opacity: 0.5, cursor: 'not-allowed' } : undefined}
+          >
+            <i className="bi bi-plus-lg" /> Yeni Cari Ekle
+          </button>
+        </div>
       </div>
 
       {/* ═══ KPI Kartları ═══ */}

@@ -22,6 +22,7 @@ import TemaLayout   from './components/layout/TemaLayout'
 
 // Auth sayfaları
 import GirisYap from './pages/auth/GirisYap'
+import KayitOl  from './pages/auth/KayitOl'
 
 // Uygulama sayfaları
 import Dashboard       from './pages/dashboard/Dashboard'
@@ -31,6 +32,7 @@ import CekSenet       from './pages/cek-senet/CekSenet'
 import OdemeTakip       from './pages/odeme-takip/OdemeTakip'
 import VadeHesaplayici  from './pages/vade-hesaplayici/VadeHesaplayici'
 import TemaSecimi       from './pages/ayarlar/TemaSecimi'
+import PlanSecim        from './pages/abonelik/PlanSecim'
 
 // axios.js → auth:logout olayını dinle, React Router ile yönlendir
 function AuthLogoutListener() {
@@ -77,7 +79,7 @@ export default function App() {
 
         {/* ─── Public sayfalar ───────────────────────────────────────── */}
         <Route path="/giris" element={<GirisYap />} />
-        <Route path="/kayit" element={<YakindaGeliyor sayfa="Kayıt Sayfası" />} />
+        <Route path="/kayit" element={<KayitOl />} />
 
         {/* ─── Korumalı sayfalar (JWT gerekli) ───────────────────────── */}
         <Route element={<KorunanSayfa />}>
@@ -92,6 +94,7 @@ export default function App() {
             <Route path="/kasa"                  element={<VarlikKasa />} />
             <Route path="/vade-hesaplayici"      element={<VadeHesaplayici />} />
             <Route path="/ayarlar/tema"          element={<TemaSecimi />} />
+            <Route path="/abonelik"              element={<PlanSecim />} />
           </Route>
         </Route>
 

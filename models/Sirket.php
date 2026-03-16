@@ -21,8 +21,8 @@ class Sirket {
      * Yeni sirket olustur
      */
     public function olustur($veri) {
-        $sql = "INSERT INTO sirketler (firma_adi, vergi_no, telefon, email, adres, sektor, abonelik_plani, aktif_mi) 
-                VALUES (?, ?, ?, ?, ?, ?, 'deneme', 1)";
+        $sql = "INSERT INTO sirketler (firma_adi, vergi_no, telefon, email, adres, sektor, abonelik_plani, aktif_mi)
+                VALUES (?, ?, ?, ?, ?, ?, 'ucretsiz', 1)";
         
         $stmt = $this->db->prepare($sql);
         $stmt->execute([

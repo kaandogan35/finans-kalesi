@@ -59,6 +59,9 @@ class CariController {
                 return;
             }
 
+            // Plan sınırı kontrolü
+            SinirKontrol::kontrol($payload, 'cari');
+
             $cari = $this->cariKart->olustur($payload['sirket_id'], $veri);
             Response::basarili($cari, 'Cari kart olusturuldu', 201);
         } catch (Exception $e) {

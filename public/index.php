@@ -47,6 +47,9 @@ require_once BASE_PATH . '/middleware/CorsMiddleware.php';
 require_once BASE_PATH . '/middleware/AuthMiddleware.php';
 require_once BASE_PATH . '/models/Kullanici.php';
 require_once BASE_PATH . '/models/Sirket.php';
+require_once BASE_PATH . '/models/Abonelik.php';
+require_once BASE_PATH . '/middleware/PlanKontrol.php';
+require_once BASE_PATH . '/middleware/SinirKontrol.php';
 require_once BASE_PATH . '/controllers/AuthController.php';
 
 // ============================================
@@ -154,6 +157,21 @@ try {
         // ─── Ayarlar (Tema seçimi vb.) ───
         case 'ayarlar':
             require_once BASE_PATH . '/routes/ayarlar.php';
+            break;
+
+        // ─── Abonelik (Plan yönetimi) ───
+        case 'abonelik':
+            require_once BASE_PATH . '/routes/abonelik.php';
+            break;
+
+        // ─── Webhook (Ödeme sağlayıcı bildirimleri) ───
+        case 'webhook':
+            require_once BASE_PATH . '/routes/abonelik.php';
+            break;
+
+        // ─── Kullanım Sınırları ───
+        case 'sinir':
+            require_once BASE_PATH . '/routes/sinir.php';
             break;
 
         // ─── API Ana Sayfa ───

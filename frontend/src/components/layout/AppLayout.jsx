@@ -7,6 +7,7 @@
 import { useState } from 'react'
 import { NavLink, Outlet, useNavigate, useLocation } from 'react-router-dom'
 import useAuthStore from '../../stores/authStore'
+import UpgradeBildirim from '../UpgradeBildirim'
 
 // ─── Menü Öğeleri ─────────────────────────────────────────────────────────────
 const menuOgeleri = [
@@ -529,6 +530,9 @@ export default function AppLayout() {
             />
           </div>
         </header>
+
+        {/* Upgrade bildirimi (ücretsiz plan) */}
+        <UpgradeBildirim />
 
         {/* ── İçerik Alanı ── */}
         <main className="flex-grow-1 overflow-auto" style={{ position: 'relative', zIndex: 1 }}>

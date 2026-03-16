@@ -8,8 +8,10 @@
 import { useState, useMemo, useEffect, useRef, Fragment } from 'react'
 import { createPortal } from 'react-dom'
 import { toast } from 'sonner'
+import { useNavigate } from 'react-router-dom'
 import useTemaStore from '../../stores/temaStore'
 import { temaRenkleri, hexRgba } from '../../lib/temaRenkleri'
+import useAuthStore from '../../stores/authStore'
 import {
   hareketleriGetir, hareketEkle, hareketSil,
   yatirimlariGetir, yatirimEkle, yatirimGuncelle as yatirimGuncelleApi, yatirimSil,
@@ -3311,11 +3313,15 @@ export default function VarlikKasa() {
   const p = prefixMap[aktifTema] || 'b'
   const renkler = temaRenkleri[aktifTema] || temaRenkleri.banking
 
+  const { kullanici } = useAuthStore()
+  const navigate = useNavigate()
+
   const bugun = new Date()
   const [aktifSekme,  setAktifSekme]  = useState('gosterge')
   const [secilenAy,   setSecilenAy]   = useState(bugun.getMonth() + 1)
   const [secilenYil,  setSecilenYil]  = useState(bugun.getFullYear())
   const [hareketler,  setHareketler]  = useState([])
+  const [gecmisKisitli, setGecmisKisitli] = useState(false)
   const [kapanislar,      setKapanislar]      = useState([])
   const [ortakHareketler, setOrtakHareketler] = useState([])
   const [yatirimlar,      setYatirimlar]      = useState([])
@@ -3340,7 +3346,12 @@ export default function VarlikKasa() {
     const bit = `${secilenYil}-${ay}-${String(son).padStart(2, '0')}`
     setYukleniyor(true)
     hareketleriGetir({ baslangic_tarihi: bas, bitis_tarihi: bit, adet: 500 })
-      .then(res => { if (res.data.basarili) setHareketler(res.data.veri.hareketler ?? []) })
+      .then(res => {
+        if (res.data.basarili) {
+          setHareketler(res.data.veri.hareketler ?? [])
+          setGecmisKisitli(res.data.veri.gecmis_kisitli === true)
+        }
+      })
       .catch(() => toast.error('Hareketler yüklenemedi.'))
       .finally(() => setYukleniyor(false))
   }, [secilenAy, secilenYil])
@@ -3385,7 +3396,38 @@ export default function VarlikKasa() {
 
         {/* ─── Sekme İçerikleri ─── */}
         {aktifSekme === 'gosterge' && <GostergePaneli hareketler={hareketler} kapanislar={kapanislar} yatirimGuncelDeger={yatirimGuncelDeger} secilenAy={secilenAy} secilenYil={secilenYil} p={p} renkler={renkler} />}
-        {aktifSekme === 'nakit'    && <NakitAkisi    {...shared} p={p} renkler={renkler} />}
+        {aktifSekme === 'nakit' && (
+          <>
+            {gecmisKisitli && kullanici?.plan === 'ucretsiz' && (
+              <div style={{
+                display: 'flex', alignItems: 'center', gap: 10, marginBottom: 16,
+                padding: '10px 16px', borderRadius: 10, fontSize: 13, fontWeight: 500,
+                background: hexRgba(renkler.warning, 0.1),
+                border: `1px solid ${hexRgba(renkler.warning, 0.25)}`,
+                color: renkler.warning,
+              }}>
+                <i className="bi bi-clock-history" style={{ fontSize: 15, flexShrink: 0 }} />
+                <span style={{ flexGrow: 1 }}>
+                  Ücretsiz planda kasa geçmişi <strong>son 2 ay</strong> ile sınırlıdır.
+                  Daha eski kayıtları görmek için planı yükseltin.
+                </span>
+                <button
+                  onClick={() => navigate('/abonelik')}
+                  style={{
+                    background: hexRgba(renkler.warning, 0.15),
+                    border: `1px solid ${hexRgba(renkler.warning, 0.3)}`,
+                    color: renkler.warning, borderRadius: 7,
+                    padding: '4px 12px', fontSize: 12, fontWeight: 700,
+                    cursor: 'pointer', whiteSpace: 'nowrap', flexShrink: 0,
+                  }}
+                >
+                  <i className="bi bi-arrow-up-circle me-1" />Planı Yükselt
+                </button>
+              </div>
+            )}
+            <NakitAkisi {...shared} p={p} renkler={renkler} />
+          </>
+        )}
         {aktifSekme === 'bilanco'  && <AylikBilanco kapanislar={kapanislar} setKapanislar={setKapanislar} yatirimGuncelDeger={yatirimGuncelDeger} p={p} renkler={renkler} />}
         {aktifSekme === 'ortak'    && <OrtakCarisi ortakHareketler={ortakHareketler} setOrtakHareketler={setOrtakHareketler} p={p} renkler={renkler} />}
         {aktifSekme === 'yatirim'  && <YatirimKalesi yatirimlar={yatirimlar} setYatirimlar={setYatirimlar} p={p} renkler={renkler} />}

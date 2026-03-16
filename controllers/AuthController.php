@@ -10,13 +10,16 @@
  */
 
 class AuthController {
-    
+
     private $kullanici_model;
     private $sirket_model;
-    
+    private $abonelik_model;
+
     public function __construct() {
         $this->kullanici_model = new Kullanici();
         $this->sirket_model = new Sirket();
+        $db = Database::baglan();
+        $this->abonelik_model = new Abonelik($db);
     }
     
     /**
@@ -84,18 +87,37 @@ class AuthController {
                 'rol'       => 'sahip'  // Ilk kullanici = sirket sahibi
             ]);
             
-            // 7. Tokenlar olustur
+            // 7. Abonelik oluştur (ücretsiz plan + kampanya kontrolü)
+            $kampanya = $this->abonelik_model->kampanyaAktifMi();
+            $this->abonelik_model->planGuncelle(
+                (int) $sirket_id,
+                'ucretsiz',
+                null,
+                null,
+                null,
+                false
+            );
+
+            // Kampanya aktifse şirketi işaretle
+            if ($kampanya) {
+                $db = Database::baglan();
+                $stmt = $db->prepare("UPDATE sirketler SET kampanya_kullanici = 1 WHERE id = :id");
+                $stmt->execute([':id' => $sirket_id]);
+            }
+
+            // 8. Tokenlar olustur
             $kullanici_bilgi = [
                 'id'        => $kullanici_id,
                 'sirket_id' => $sirket_id,
                 'rol'       => 'sahip',
-                'tema_adi'  => 'banking'  // Yeni sirket varsayilan tema
+                'tema_adi'  => 'banking',
+                'plan'      => 'ucretsiz',
             ];
-            
+
             $access_token = JWTHelper::access_token_olustur($kullanici_bilgi);
             $refresh = JWTHelper::refresh_token_olustur($kullanici_bilgi);
-            
-            // 8. Refresh token'i veritabanina kaydet
+
+            // 9. Refresh token'i veritabanina kaydet
             $this->kullanici_model->refresh_token_kaydet(
                 $kullanici_id,
                 $refresh['token'],
@@ -118,7 +140,8 @@ class AuthController {
                     'ad_soyad'  => $girdi['ad_soyad'],
                     'email'     => $girdi['email'],
                     'rol'       => 'sahip',
-                    'tema_adi'  => 'banking'
+                    'tema_adi'  => 'banking',
+                    'plan'      => 'ucretsiz',
                 ],
                 'tokenlar' => [
                     'access_token'  => $access_token,
@@ -194,12 +217,13 @@ class AuthController {
             // 6. Sirket temasini al
             $sirket = $this->sirket_model->id_ile_bul($kullanici['sirket_id']);
 
-            // 7. Tokenlar olustur
+            // 7. Tokenlar olustur (plan bilgisi de JWT'ye ekleniyor)
             $kullanici_bilgi = [
                 'id'        => $kullanici['id'],
                 'sirket_id' => $kullanici['sirket_id'],
                 'rol'       => $kullanici['rol'],
-                'tema_adi'  => $sirket['tema_adi'] ?? 'banking'
+                'tema_adi'  => $sirket['tema_adi'] ?? 'banking',
+                'plan'      => $sirket['abonelik_plani'] ?? 'ucretsiz',
             ];
 
             $access_token = JWTHelper::access_token_olustur($kullanici_bilgi);
@@ -213,6 +237,7 @@ class AuthController {
             );
 
             // 9. Son giris zamanini guncelle
+            // (numara kayması: eski 9→11, şimdi 10→12)
             $this->kullanici_model->son_giris_guncelle($kullanici['id']);
 
             // 10. Basarili girisi logla
@@ -231,7 +256,8 @@ class AuthController {
                     'ad_soyad'  => $kullanici['ad_soyad'],
                     'email'     => $kullanici['email'],
                     'rol'       => $kullanici['rol'],
-                    'tema_adi'  => $sirket['tema_adi'] ?? 'banking'
+                    'tema_adi'  => $sirket['tema_adi'] ?? 'banking',
+                    'plan'      => $sirket['abonelik_plani'] ?? 'ucretsiz',
                 ],
                 'tokenlar' => [
                     'access_token'  => $access_token,
@@ -287,7 +313,8 @@ class AuthController {
                 'id'        => (int) $token_kayit['kullanici_id'],
                 'sirket_id' => (int) $token_kayit['sirket_id'],
                 'rol'       => $token_kayit['rol'],
-                'tema_adi'  => $sirket['tema_adi'] ?? 'banking'
+                'tema_adi'  => $sirket['tema_adi'] ?? 'banking',
+                'plan'      => $sirket['abonelik_plani'] ?? 'ucretsiz',
             ];
             
             $yeni_access = JWTHelper::access_token_olustur($kullanici_bilgi);
@@ -351,9 +378,10 @@ class AuthController {
             return;
         }
 
-        // Sirket temasini ekle
+        // Sirket tema ve plan bilgisini ekle
         $sirket = $this->sirket_model->id_ile_bul($kullanici['sirket_id']);
         $kullanici['tema_adi'] = $sirket['tema_adi'] ?? 'banking';
+        $kullanici['plan']     = $sirket['abonelik_plani'] ?? 'ucretsiz';
 
         Response::basarili(['kullanici' => $kullanici]);
     }
