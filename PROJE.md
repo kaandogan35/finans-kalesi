@@ -1,11 +1,11 @@
 # PROJE.md — Finans Kalesi Canlı Durum ve Yol Haritası
-# Son Güncelleme: 15 Mart 2026 — Oturum #15
+# Son Güncelleme: 16 Mart 2026 — Oturum #16
 
 ---
 
-## GÜNCEL DURUM: ✅ Vade Hesaplayıcı Modülü TAMAMLANDI (Sprint 2D)
-Tamamen frontend-only, 4 sekme, ağırlıklı ortalama vade hesaplama aracı.
-Sıradaki: Aşama 2F temizlik adımı (tasarim-demo/ silme, kullanılmayan CSS temizleme).
+## GÜNCEL DURUM: ✅ Aşama 2F Temizlik TAMAMLANDI — Canlıya Çıkış Hazır
+Demo dosyaları silindi, tema CSS'leri `temalar/` klasörüne taşındı, frontend yeniden build edildi.
+Sıradaki: Aşama 3 — cPanel'e deploy.
 
 ---
 
@@ -15,7 +15,6 @@ Sıradaki: Aşama 2F temizlik adımı (tasarim-demo/ silme, kullanılmayan CSS t
 |-------|----------|
 | Mobil Strateji | Capacitor.js — Web bittikten sonra mevcut React kodu iOS/Android'e dönüştürülür |
 | Dashboard | En sona bırakıldı — tüm modüller tamamlandıktan sonra gerçek veriyle tasarlanacak |
-| Canlıya Çıkış | Uygulama tamamen bitmeden canlıya çıkılmaz |
 | Modül Sırası | Kasa API → Çek/Senet → Ödemeler → Vade Hesaplayıcı → Tasarım → Dashboard |
 
 ---
@@ -23,14 +22,24 @@ Sıradaki: Aşama 2F temizlik adımı (tasarim-demo/ silme, kullanılmayan CSS t
 ## AŞAMA DURUMU
 
 ### Aşama 1 — PHP REST API ✅ TAMAMLANDI & KİLİTLENDİ
-51 endpoint, 6 modül. Değiştirilmeden önce onay istenir.
+48 endpoint, 7 modül. Değiştirilmeden önce onay istenir.
+
+| Modül | Controller | Route | Endpoint |
+|-------|-----------|-------|----------|
+| Auth | AuthController.php | routes/auth.php | 5 |
+| Cari Hesaplar | CariController.php | routes/cari.php | 10 |
+| Çek / Senet | CekSenetController.php | routes/cek_senet.php | 7 |
+| Ödeme Takip | OdemeTakipController.php | routes/odeme.php | 7 |
+| Kasa | KasaController.php | routes/kasa.php | 16 |
+| Dashboard | DashboardController.php | routes/dashboard.php | 1 |
+| Ayarlar | AyarlarController.php | routes/ayarlar.php | 1 |
 
 ---
 
-### Aşama 2 — React Frontend 🏗️ DEVAM EDİYOR
+### Aşama 2 — React Frontend ✅ TAMAMLANDI
 
 #### Sprint 2A — Temizlik ✅ TAMAMLANDI
-#### Sprint 2B — UI Standardizasyonu ✅ BÜYÜK ÖLÇÜDE TAMAMLANDI
+#### Sprint 2B — UI Standardizasyonu ✅ TAMAMLANDI
 #### Sprint 2C — API Entegrasyonu ✅ TAMAMLANDI
 
 | Durum | Görev | Notlar |
@@ -73,30 +82,37 @@ Sıradaki: Aşama 2F temizlik adımı (tasarim-demo/ silme, kullanılmayan CSS t
 
 ---
 
-### Aşama 2E — Dashboard ✅ Obsidian Vault stiliyle tamamlandı (Aşama 2F içinde)
+### Aşama 2E — Dashboard ✅ Obsidian Vault stiliyle tamamlandı
 
-### Aşama 2F — Obsidian Vault Tasarım Dönüşümü 🏗️ DEVAM EDİYOR
-> 5 aşamalı plan: `.claude/plans/adaptive-tumbling-wren.md`
+### Aşama 2F — Obsidian Vault Tasarım Dönüşümü ✅ TAMAMLANDI
 > Tasarım kuralları: `.claude/skills/koyu-tema.md`
 > Bootstrap 5.3 korunuyor, Tailwind/Shadcn YASAK — CSS manuel.
 
 | Aşama | Dosyalar | Durum |
 |-------|----------|-------|
-| 1: Global CSS + Sidebar + Giriş | index.css, App.css, AppLayout.jsx, GirisYap.jsx | ✅ Tamamlandı + onaylandı |
-| 2: Dashboard | Dashboard.jsx | ✅ Tamamlandı + onaylandı |
-| 3: Cari Hesaplar | CariYonetimi.jsx | ✅ Tamamlandı + onaylandı |
-| 4: Çek/Senet | CekSenet.jsx | ✅ Tamamlandı + onaylandı |
-| 5: Varlık & Kasa | VarlikKasa.jsx | ✅ Tamamlandı — kullanıcı onayı bekleniyor |
-| **Temizlik** | **tasarim-demo/ sil, kullanılmayan CSS temizle** | **🔶 SIRADA** |
+| 1: Global CSS + Sidebar + Giriş | index.css, App.css, AppLayout.jsx, GirisYap.jsx | ✅ Tamamlandı |
+| 2: Dashboard | Dashboard.jsx | ✅ Tamamlandı |
+| 3: Cari Hesaplar | CariYonetimi.jsx | ✅ Tamamlandı |
+| 4: Çek/Senet | CekSenet.jsx | ✅ Tamamlandı |
+| 5: Varlık & Kasa | VarlikKasa.jsx | ✅ Tamamlandı |
+| Temizlik | Demo klasörleri silindi, tema CSS'leri `temalar/` klasörüne taşındı | ✅ Tamamlandı |
 
-**Yeni oturumda "tasarıma devam ediyoruz" dendiğinde:**
-1. Bu tablodan kaldığın aşamayı bul
-2. Plan dosyasını oku: `.claude/plans/adaptive-tumbling-wren.md`
-3. Skill dosyalarını oku: `koyu-tema.md` + `react-bootstrap-ui.md`
-4. `frontend-design` skill'ini kullan
-5. Aşama tamamlanınca kullanıcı onayı al, skill dosyasını güncelle
+**Tema sistemi:** 3 tema (banking, earthy, dark) — CSS dosyaları `frontend/src/temalar/` altında.
 
-### Aşama 3 — Canlıya Çıkış Hazırlığı ⬜ BEKLEMEDE
+---
+
+### Aşama 3 — Canlıya Çıkış Hazırlığı 🏗️ DEVAM EDİYOR
+**Hedef domain:** kaandogan.com.tr
+
+| Kontrol | Durum |
+|---------|-------|
+| Demo/debug dosyaları temizlendi | ✅ |
+| Frontend build hazır | ✅ |
+| .env production ayarları | ⬜ cPanel'de yapılacak |
+| Veritabanı oluşturma + schema import | ⬜ cPanel'de yapılacak |
+| SSL sertifikası | ⬜ cPanel'de kontrol edilecek |
+| PHP 8.4 + mod_rewrite | ⬜ cPanel'de doğrulanacak |
+
 ### Aşama 4 — Mobil (Capacitor.js) ⬜ Web kararlı olduktan sonra
 ### Aşama 5 — Büyüme Modülleri ⬜ UZAK DÖNEM
 
@@ -105,38 +121,88 @@ Sıradaki: Aşama 2F temizlik adımı (tasarim-demo/ silme, kullanılmayan CSS t
 ## 📂 GÜNCEL DOSYA YAPISI
 ```
 finans-kalesi/
+├── config/
+│   ├── app.php                    ✅
+│   └── database.php               ✅
 ├── controllers/
-│   ├── AuthController.php       ✅
-│   ├── CariController.php       ✅
-│   ├── CekSenetController.php   ✅
-│   ├── DashboardController.php  ✅
-│   ├── KasaController.php       ✅
-│   └── OdemeTakipController.php ✅
+│   ├── AuthController.php         ✅
+│   ├── AyarlarController.php      ✅
+│   ├── CariController.php         ✅
+│   ├── CekSenetController.php     ✅
+│   ├── DashboardController.php    ✅
+│   ├── KasaController.php         ✅
+│   └── OdemeTakipController.php   ✅
+├── middleware/
+│   ├── AuthMiddleware.php         ✅
+│   └── CorsMiddleware.php         ✅
+├── models/
+│   ├── CariHareket.php            ✅
+│   ├── CariKart.php               ✅
+│   ├── CekSenet.php               ✅
+│   ├── Kasa.php                   ✅
+│   ├── Kullanici.php              ✅
+│   ├── OdemeTakip.php             ✅
+│   └── Sirket.php                 ✅
+├── routes/
+│   ├── auth.php                   ✅
+│   ├── ayarlar.php                ✅
+│   ├── cari.php                   ✅
+│   ├── cek_senet.php              ✅
+│   ├── dashboard.php              ✅
+│   ├── kasa.php                   ✅
+│   └── odeme.php                  ✅
+├── utils/
+│   ├── JWTHelper.php              ✅
+│   ├── KriptoHelper.php           ✅
+│   ├── RateLimiter.php            ✅
+│   ├── Response.php               ✅
+│   ├── SistemKripto.php           ✅
+│   └── SistemLog.php              ✅
+├── database/
+│   └── finans_kalesi_schema.sql   ✅
 ├── frontend/src/
 │   ├── api/
-│   │   ├── auth.js          ✅
-│   │   ├── axios.js         ✅
-│   │   ├── cariler.js       ✅ ozet() eklendi
-│   │   ├── dashboard.js     ✅
-│   │   ├── kasa.js          ✅ bilanco CRUD eklendi
-│   │   ├── cekSenet.js      ✅ API bağlı
-│   │   └── odeme.js         ✅ API bağlı
+│   │   ├── auth.js                ✅
+│   │   ├── axios.js               ✅
+│   │   ├── ayarlar.js             ✅
+│   │   ├── cariler.js             ✅
+│   │   ├── cekSenet.js            ✅
+│   │   ├── dashboard.js           ✅
+│   │   ├── kasa.js                ✅
+│   │   └── odeme.js               ✅
+│   ├── components/layout/
+│   │   ├── AppLayout.jsx          ✅
+│   │   ├── AppLayoutBanking.jsx   ✅
+│   │   ├── AppLayoutDark.jsx      ✅
+│   │   ├── AppLayoutEarthy.jsx    ✅
+│   │   ├── KorunanSayfa.jsx       ✅
+│   │   └── TemaLayout.jsx         ✅
+│   ├── temalar/
+│   │   ├── banking.css            ✅ Tema CSS (önceden tasarim-demo/ içindeydi)
+│   │   ├── earthy.css             ✅
+│   │   └── dark.css               ✅
+│   ├── lib/
+│   │   ├── temaRenkleri.js        ✅
+│   │   └── temaPrefix.js          ✅
+│   ├── stores/
+│   │   ├── authStore.js           ✅
+│   │   └── temaStore.js           ✅
 │   ├── pages/
-│   │   ├── auth/GirisYap.jsx          ✅
-│   │   ├── cariler/CariYonetimi.jsx   ✅ API bağlı, 4 hata düzeltildi
-│   │   ├── cariler/CarilerListesi.jsx ✅
-│   │   ├── dashboard/Dashboard.jsx    ✅ Gerçek veri bağlı, 3 alan uyuşmazlığı düzeltildi
-│   │   ├── kasa/VarlikKasa.jsx        ✅ Tüm sekmeler API bağlı (bilanco dahil)
-│   │   ├── cek-senet/CekSenet.jsx     ✅ API bağlı, gerçek veri
-│   │   ├── odeme-takip/               ✅ API bağlı
-│   │   └── vade-hesaplayici/
-│   │       └── VadeHesaplayici.jsx    ✅ 4 sekme, frontend-only hesap aracı
-│   ├── stores/authStore.js   ✅
-│   ├── App.jsx               ✅
-│   └── App.css
+│   │   ├── auth/GirisYap.jsx            ✅
+│   │   ├── ayarlar/TemaSecimi.jsx       ✅
+│   │   ├── cariler/CariYonetimi.jsx     ✅
+│   │   ├── cariler/CarilerListesi.jsx   ✅
+│   │   ├── cek-senet/CekSenet.jsx       ✅
+│   │   ├── dashboard/Dashboard.jsx      ✅
+│   │   ├── kasa/VarlikKasa.jsx          ✅
+│   │   ├── odeme-takip/OdemeTakip.jsx   ✅
+│   │   └── vade-hesaplayici/VadeHesaplayici.jsx ✅
+│   ├── App.jsx                    ✅
+│   └── App.css                    ✅
 ├── public/
-│   ├── .htaccess            ✅
-│   └── ⚠️ htaccess          Silinecek
+│   ├── index.php                  ✅ Tek giriş noktası
+│   ├── .htaccess                  ✅
+│   └── frontend-build/            ✅ Vite build çıktısı
 ├── .env / .env.example
 ├── CLAUDE.md
 └── PROJE.md
@@ -158,17 +224,14 @@ finans-kalesi/
 | HTTP | Axios | v1 |
 | UI | Bootstrap + Bootstrap Icons | 5.3 |
 | PDF | html2pdf.js | 0.14 |
-| Toast | sonner | v2 (değerlendirilecek) |
+| Toast | sonner | v2 |
 | Mobil (gelecek) | Capacitor.js | — |
 | Hosting | cPanel Shared Hosting | — |
 
 ---
 
-## 🚨 AKTİF TEKNİK BORÇLAR (Öncelik Sırasına Göre)
+## 🚨 AKTİF TEKNİK BORÇLAR
 
 | # | Sorun | Öncelik |
 |---|-------|---------|
-| 1 | 2F Temizlik: tasarim-demo/ silme, kullanılmayan CSS | 🔴 Sıradaki görev |
-| 2 | public/htaccess noktasız kopya | 🟡 Silinecek |
-| 4 | sonner toast Bootstrap dışı | 🟡 Değerlendirilecek |
-| 5 | hooks/ ve lib/ boş klasörler | 🟢 Temizlenebilir |
+| 1 | sonner toast Bootstrap dışı — gerekirse Bootstrap toast'a geçilecek | 🟡 Değerlendirilecek |

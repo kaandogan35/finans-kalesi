@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
 import { Outlet, NavLink, useNavigate, useLocation } from 'react-router-dom'
 import useAuthStore from '../../stores/authStore'
-import '../../tasarim-demo/tema-3-earthy/tema.css'
+import '../../temalar/earthy.css'
 
 // ─── Navigasyon menüsü ────────────────────────────────────────────────────────
 const menuItems = [
@@ -205,62 +205,65 @@ export default function AppLayoutEarthy() {
 
       {/* ── Hızlı İşlem Modalı ─────────────────────────────────────────── */}
       {showModal && (
-        <div
-          className="e-modal-overlay"
-          role="dialog"
-          aria-modal="true"
-          aria-labelledby="e-modal-title"
-          onClick={(e) => e.target === e.currentTarget && setShowModal(false)}
-        >
-          <div className="e-modal">
-            <div className="e-modal-header">
-              <h2 className="e-modal-title" id="e-modal-title">
-                <i className="bi bi-lightning-charge" aria-hidden="true" />
-                Hızlı İşlem Oluştur
-              </h2>
-              <button
-                className="e-modal-close"
-                onClick={() => setShowModal(false)}
-                type="button"
-                aria-label="Kapat"
-              >
-                <i className="bi bi-x-lg" aria-hidden="true" />
-              </button>
-            </div>
+        <>
+          <div className="e-modal-overlay" onClick={() => setShowModal(false)} aria-hidden="true" />
+          <div
+            className="e-modal-center"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="e-modal-title"
+            onClick={(e) => e.target === e.currentTarget && setShowModal(false)}
+          >
+            <div className="e-modal-box" style={{ maxWidth: 440 }}>
+              <div className="e-modal-header">
+                <h2 className="e-modal-title" id="e-modal-title">
+                  <i className="bi bi-lightning-charge" aria-hidden="true" />
+                  Hızlı İşlem Oluştur
+                </h2>
+                <button
+                  className="e-modal-close"
+                  onClick={() => setShowModal(false)}
+                  type="button"
+                  aria-label="Kapat"
+                >
+                  <i className="bi bi-x-lg" aria-hidden="true" />
+                </button>
+              </div>
 
-            <div className="e-modal-body">
-              <p style={{ fontSize: 12.5, color: 'var(--e-text-muted)', marginBottom: 14, fontFamily: 'var(--e-font-body)' }}>
-                Hangi işlemi gerçekleştirmek istiyorsunuz?
-              </p>
-              <div className="e-modal-options">
-                {hizliIslemler.map((islem) => (
-                  <button
-                    key={islem.label}
-                    className="e-modal-option"
-                    type="button"
-                    onClick={() => handleHizliIslem(islem.path)}
-                  >
-                    <div
-                      className="e-modal-opt-icon"
-                      style={{ background: islem.bg, color: islem.color }}
-                      aria-hidden="true"
+              <div className="e-modal-body">
+                <p className="e-modal-desc">
+                  Hangi işlemi gerçekleştirmek istiyorsunuz?
+                </p>
+                <div className="e-modal-options">
+                  {hizliIslemler.map((islem) => (
+                    <button
+                      key={islem.label}
+                      className="e-modal-option"
+                      type="button"
+                      onClick={() => handleHizliIslem(islem.path)}
                     >
-                      <i className={`bi ${islem.icon}`} />
-                    </div>
-                    <span>{islem.label}</span>
-                    <i className="bi bi-chevron-right ms-auto" style={{ color: 'var(--e-text-muted)', fontSize: 12 }} aria-hidden="true" />
-                  </button>
-                ))}
+                      <div
+                        className="e-modal-opt-icon"
+                        style={{ background: islem.bg, color: islem.color }}
+                        aria-hidden="true"
+                      >
+                        <i className={`bi ${islem.icon}`} />
+                      </div>
+                      <span>{islem.label}</span>
+                      <i className="bi bi-chevron-right ms-auto e-modal-opt-arrow" aria-hidden="true" />
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              <div className="e-modal-footer">
+                <button className="e-btn-cancel" onClick={() => setShowModal(false)} type="button">
+                  Vazgeç
+                </button>
               </div>
             </div>
-
-            <div className="e-modal-footer">
-              <button className="e-btn-outline" onClick={() => setShowModal(false)} type="button">
-                Vazgeç
-              </button>
-            </div>
           </div>
-        </div>
+        </>
       )}
 
     </div>

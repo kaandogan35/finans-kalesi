@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
 import { Outlet, NavLink, useNavigate, useLocation } from 'react-router-dom'
 import useAuthStore from '../../stores/authStore'
-import '../../tasarim-demo/tema-5-dark/tema.css'
+import '../../temalar/dark.css'
 
 // ─── Navigasyon menüsü ────────────────────────────────────────────────────────
 const menuItems = [
@@ -205,59 +205,62 @@ export default function AppLayoutDark() {
 
       {/* ── Hızlı İşlem Modalı ─────────────────────────────────────────── */}
       {showModal && (
-        <div
-          className="d-modal-overlay"
-          role="dialog"
-          aria-modal="true"
-          aria-labelledby="d-modal-title"
-          onClick={(e) => e.target === e.currentTarget && setShowModal(false)}
-        >
-          <div className="d-modal">
-            <div className="d-modal-header">
-              <h2 className="d-modal-title" id="d-modal-title">
-                <i className="bi bi-lightning-charge" aria-hidden="true" />
-                Hızlı İşlem
-              </h2>
-              <button
-                className="d-modal-close"
-                onClick={() => setShowModal(false)}
-                type="button"
-                aria-label="Kapat"
-              >
-                <i className="bi bi-x-lg" aria-hidden="true" />
-              </button>
-            </div>
+        <>
+          <div className="d-modal-overlay" onClick={() => setShowModal(false)} aria-hidden="true" />
+          <div
+            className="d-modal-center"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="d-modal-title"
+            onClick={(e) => e.target === e.currentTarget && setShowModal(false)}
+          >
+            <div className="d-modal-box" style={{ maxWidth: 440 }}>
+              <div className="d-modal-header">
+                <h2 className="d-modal-title" id="d-modal-title">
+                  <i className="bi bi-lightning-charge" aria-hidden="true" />
+                  Hızlı İşlem
+                </h2>
+                <button
+                  className="d-modal-close"
+                  onClick={() => setShowModal(false)}
+                  type="button"
+                  aria-label="Kapat"
+                >
+                  <i className="bi bi-x-lg" aria-hidden="true" />
+                </button>
+              </div>
 
-            <div className="d-modal-body">
-              <div className="d-modal-options">
-                {hizliIslemler.map((islem) => (
-                  <button
-                    key={islem.label}
-                    className="d-modal-option"
-                    type="button"
-                    onClick={() => handleHizliIslem(islem.path)}
-                  >
-                    <div
-                      className="d-modal-opt-icon"
-                      style={{ background: islem.bg, color: islem.color }}
-                      aria-hidden="true"
+              <div className="d-modal-body">
+                <div className="d-modal-options">
+                  {hizliIslemler.map((islem) => (
+                    <button
+                      key={islem.label}
+                      className="d-modal-option"
+                      type="button"
+                      onClick={() => handleHizliIslem(islem.path)}
                     >
-                      <i className={`bi ${islem.icon}`} />
-                    </div>
-                    <span>{islem.label}</span>
-                    <i className="bi bi-chevron-right ms-auto" style={{ color: 'var(--d-text-muted)', fontSize: 12 }} aria-hidden="true" />
-                  </button>
-                ))}
+                      <div
+                        className="d-modal-opt-icon"
+                        style={{ background: islem.bg, color: islem.color }}
+                        aria-hidden="true"
+                      >
+                        <i className={`bi ${islem.icon}`} />
+                      </div>
+                      <span>{islem.label}</span>
+                      <i className="bi bi-chevron-right ms-auto d-modal-opt-arrow" aria-hidden="true" />
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              <div className="d-modal-footer">
+                <button className="d-btn-ghost" onClick={() => setShowModal(false)} type="button">
+                  Vazgeç
+                </button>
               </div>
             </div>
-
-            <div className="d-modal-footer">
-              <button className="d-btn-ghost" onClick={() => setShowModal(false)} type="button">
-                Vazgeç
-              </button>
-            </div>
           </div>
-        </div>
+        </>
       )}
 
     </div>

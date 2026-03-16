@@ -25,7 +25,6 @@ import GirisYap from './pages/auth/GirisYap'
 
 // Uygulama sayfaları
 import Dashboard       from './pages/dashboard/Dashboard'
-import CarilerListesi  from './pages/cariler/CarilerListesi'
 import CariYonetimi   from './pages/cariler/CariYonetimi'
 import VarlikKasa     from './pages/kasa/VarlikKasa'
 import CekSenet       from './pages/cek-senet/CekSenet'
@@ -43,14 +42,6 @@ function AuthLogoutListener() {
   }, [navigate])
   return null
 }
-
-// Tasarım demoları (auth gerekmez)
-import DemoIndex    from './tasarim-demo/DemoIndex'
-import DemoGlass    from './tasarim-demo/tema-1-glass/AppLayout'
-import DemoBanking  from './tasarim-demo/tema-2-banking/AppLayout'
-import DemoEarthy   from './tasarim-demo/tema-3-earthy/AppLayout'
-import DemoMinimal  from './tasarim-demo/tema-4-minimal/AppLayout'
-import DemoDark     from './tasarim-demo/tema-5-dark/AppLayout'
 
 // Henüz yazılmamış sayfalar için geçici bileşen
 function YakindaGeliyor({ sayfa }) {
@@ -103,14 +94,6 @@ export default function App() {
             <Route path="/ayarlar/tema"          element={<TemaSecimi />} />
           </Route>
         </Route>
-
-        {/* ─── Tasarım demoları (auth gerekmez) ──────────────────────── */}
-        <Route path="/demo"         element={<DemoIndex />} />
-        <Route path="/demo/glass"   element={<DemoGlass />} />
-        <Route path="/demo/banking" element={<DemoBanking />} />
-        <Route path="/demo/earthy"  element={<DemoEarthy />} />
-        <Route path="/demo/minimal" element={<DemoMinimal />} />
-        <Route path="/demo/dark"    element={<DemoDark />} />
 
         {/* ─── Kök'ü dashboard'a yönlendir ───────────────────────────── */}
         <Route path="/" element={<Navigate to="/dashboard" replace />} />
