@@ -70,6 +70,10 @@ class CariKart {
             $where[] = "ck.bakiye > 0";
         }
 
+        if (!empty($filtreler['sadece_vadesi_gecmis'])) {
+            $where[] = "EXISTS (SELECT 1 FROM odeme_takip ot2 WHERE ot2.cari_id = ck.id AND ot2.soz_tarihi < CURDATE() AND ot2.durum = 'bekliyor' AND ot2.silindi_mi = 0 AND ot2.sirket_id = ck.sirket_id)";
+        }
+
         $where_sql = implode(" AND ", $where);
 
         // Sıralama — cari_adi artık şifreli, ad_* sıralamalar olusturma_tarihi'ne yönlenir

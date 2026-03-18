@@ -16,6 +16,7 @@ class OdemeTakipController {
     // ─── GET /api/odemeler ───
     public function listele($payload) {
         try {
+            $adet = isset($_GET['adet']) ? min((int)$_GET['adet'], 500) : 50;
             $filtreler = array(
                 'yon'                   => isset($_GET['yon']) ? $_GET['yon'] : null,
                 'durum'                 => isset($_GET['durum']) ? $_GET['durum'] : null,
@@ -28,7 +29,7 @@ class OdemeTakipController {
                 'sadece_gecmis'         => isset($_GET['sadece_gecmis']) ? $_GET['sadece_gecmis'] : null,
                 'siralama'              => isset($_GET['siralama']) ? $_GET['siralama'] : 'oncelik_desc',
                 'sayfa'                 => isset($_GET['sayfa']) ? $_GET['sayfa'] : 1,
-                'adet'                  => isset($_GET['adet']) ? $_GET['adet'] : 50,
+                'adet'                  => $adet,
             );
 
             $sonuc = $this->odemeTakip->listele($payload['sirket_id'], $filtreler);
@@ -85,7 +86,7 @@ class OdemeTakipController {
 
             $gecerli_yonler = array('tahsilat', 'odeme');
             if (!in_array($veri['yon'], $gecerli_yonler)) {
-                Response::dogrulama_hatasi(array('yon' => 'Gecerli degerler: tahsilat, odeme'));
+                Response::dogrulama_hatasi(array('yon' => 'Geçerli değerler: tahsilat, odeme'));
                 return;
             }
 
@@ -104,7 +105,7 @@ class OdemeTakipController {
             if (!empty($veri['durum'])) {
                 $gecerli_durumlar = array('bekliyor', 'tamamlandi', 'iptal', 'ertelendi');
                 if (!in_array($veri['durum'], $gecerli_durumlar)) {
-                    Response::dogrulama_hatasi(array('durum' => 'Gecerli degerler: bekliyor, tamamlandi, iptal, ertelendi'));
+                    Response::dogrulama_hatasi(array('durum' => 'Geçerli değerler: bekliyor, tamamlandi, iptal, ertelendi'));
                     return;
                 }
             }
@@ -112,7 +113,7 @@ class OdemeTakipController {
             if (!empty($veri['oncelik'])) {
                 $gecerli_oncelikler = array('dusuk', 'normal', 'yuksek', 'kritik');
                 if (!in_array($veri['oncelik'], $gecerli_oncelikler)) {
-                    Response::dogrulama_hatasi(array('oncelik' => 'Gecerli degerler: dusuk, normal, yuksek, kritik'));
+                    Response::dogrulama_hatasi(array('oncelik' => 'Geçerli değerler: dusuk, normal, yuksek, kritik'));
                     return;
                 }
             }
@@ -120,7 +121,7 @@ class OdemeTakipController {
             if (!empty($veri['doviz_kodu'])) {
                 $gecerli_dovizler = array('TRY', 'USD', 'EUR', 'GBP');
                 if (!in_array(strtoupper($veri['doviz_kodu']), $gecerli_dovizler)) {
-                    Response::dogrulama_hatasi(array('doviz_kodu' => 'Gecerli: TRY, USD, EUR, GBP'));
+                    Response::dogrulama_hatasi(array('doviz_kodu' => 'Geçerli: TRY, USD, EUR, GBP'));
                     return;
                 }
             }
@@ -147,7 +148,7 @@ class OdemeTakipController {
             if (!empty($veri['yon'])) {
                 $gecerli_yonler = array('tahsilat', 'odeme');
                 if (!in_array($veri['yon'], $gecerli_yonler)) {
-                    Response::dogrulama_hatasi(array('yon' => 'Gecersiz yon degeri'));
+                    Response::dogrulama_hatasi(array('yon' => 'Geçersiz yön değeri'));
                     return;
                 }
             }
@@ -155,7 +156,7 @@ class OdemeTakipController {
             if (!empty($veri['durum'])) {
                 $gecerli_durumlar = array('bekliyor', 'tamamlandi', 'iptal', 'ertelendi');
                 if (!in_array($veri['durum'], $gecerli_durumlar)) {
-                    Response::dogrulama_hatasi(array('durum' => 'Gecersiz durum degeri'));
+                    Response::dogrulama_hatasi(array('durum' => 'Geçersiz durum değeri'));
                     return;
                 }
             }
@@ -163,7 +164,7 @@ class OdemeTakipController {
             if (!empty($veri['oncelik'])) {
                 $gecerli_oncelikler = array('dusuk', 'normal', 'yuksek', 'kritik');
                 if (!in_array($veri['oncelik'], $gecerli_oncelikler)) {
-                    Response::dogrulama_hatasi(array('oncelik' => 'Gecersiz oncelik degeri'));
+                    Response::dogrulama_hatasi(array('oncelik' => 'Geçersiz öncelik değeri'));
                     return;
                 }
             }

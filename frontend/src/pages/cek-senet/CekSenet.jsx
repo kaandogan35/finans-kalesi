@@ -904,7 +904,7 @@ export default function CekSenet() {
           </div>
         </div>
         {/* ERP Quick Stats */}
-        <div className="d-flex align-items-center gap-2 flex-wrap">
+        <div className="d-flex align-items-center gap-2 flex-wrap" data-tur="cek-stats">
           <div className={`${p}-stat-pill`} style={{ borderColor: hexRgba(renkler.accent, 0.2) }}>
             <i className="bi bi-collection-fill" style={{ color: renkler.accent, fontSize: 13 }} />
             <div>
@@ -936,12 +936,13 @@ export default function CekSenet() {
       <div className={`${p}-panel`} style={{ padding: 0, overflow: 'hidden' }}>
 
         {/* Tab Başlıkları */}
-        <div className={`${p}-tab-bar`}>
+        <div className={`${p}-tab-bar`} data-tur="cek-tablar">
           {TABS.map((tab, i) => {
             const isActive = aktifTab === i
             return (
               <button
                 key={i}
+                data-tur={i === 1 ? 'portfoy-tab' : undefined}
                 className={`${p}-tab-btn ${isActive ? 'active' : ''}`}
                 onClick={() => tabDegistir(i)}
                 style={isActive ? { color: tab.renk, borderColor: hexRgba(tab.renk, 0.25), background: hexRgba(tab.renk, 0.1) } : undefined}
@@ -1262,6 +1263,7 @@ export default function CekSenet() {
                     </div>
                   )}
                   <button className={`${p}-btn-accent`}
+                    data-tur="cek-ekle-btn"
                     onClick={() => { setPortfoyForm(portfoyBosluk()); setPortfoyDzlId(null); setPortfoyModal(true) }}
                     disabled={cekLimitDolu}
                     title={cekLimitDolu ? 'Aylık çek/senet limiti doldu. Planı yükseltin.' : 'Yeni evrak ekle'}
@@ -1272,7 +1274,7 @@ export default function CekSenet() {
               </div>
 
               {/* Tablo */}
-              <div className="table-responsive">
+              <div className="table-responsive" data-tur="durum-rengi">
                 <table className={`table table-hover align-middle ${p}-table`}>
                   <thead>
                     <tr>

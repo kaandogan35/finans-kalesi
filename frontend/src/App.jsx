@@ -15,14 +15,16 @@
 import { useEffect } from 'react'
 import { BrowserRouter, Routes, Route, Navigate, useNavigate } from 'react-router-dom'
 import useAuthStore from './stores/authStore'
+import ErrorBoundary from './components/ErrorBoundary'
 
 // Layout
 import KorunanSayfa from './components/layout/KorunanSayfa'
 import TemaLayout   from './components/layout/TemaLayout'
 
 // Auth sayfaları
-import GirisYap from './pages/auth/GirisYap'
-import KayitOl  from './pages/auth/KayitOl'
+import GirisYap     from './pages/auth/GirisYap'
+import KayitOl      from './pages/auth/KayitOl'
+import SifreSifirla from './pages/auth/SifreSifirla'
 
 // Uygulama sayfaları
 import Dashboard       from './pages/dashboard/Dashboard'
@@ -73,13 +75,15 @@ export default function App() {
   useEffect(() => { baslat() }, [baslat])
 
   return (
+    <ErrorBoundary>
     <BrowserRouter>
       <AuthLogoutListener />
       <Routes>
 
         {/* ─── Public sayfalar ───────────────────────────────────────── */}
-        <Route path="/giris" element={<GirisYap />} />
-        <Route path="/kayit" element={<KayitOl />} />
+        <Route path="/giris"        element={<GirisYap />} />
+        <Route path="/kayit"        element={<KayitOl />} />
+        <Route path="/sifre-sifirla" element={<SifreSifirla />} />
 
         {/* ─── Korumalı sayfalar (JWT gerekli) ───────────────────────── */}
         <Route element={<KorunanSayfa />}>
@@ -104,5 +108,6 @@ export default function App() {
 
       </Routes>
     </BrowserRouter>
+    </ErrorBoundary>
   )
 }

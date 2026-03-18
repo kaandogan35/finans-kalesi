@@ -1899,6 +1899,15 @@
 }
 .d-cym-btn-new:hover { box-shadow: 0 6px 24px rgba(0,212,255,0.35); transform: translateY(-1px); }
 
+/* Outline (İkincil) Buton */
+.d-cym-btn-outline {
+  background: transparent; color: var(--d-color-cyan);
+  border: 1.5px solid rgba(0,212,255,0.3); font-weight: 600; font-size: 13px;
+  border-radius: var(--d-radius-btn); padding: 8px 16px; cursor: pointer;
+  font-family: var(--d-font-body); min-height: 40px; transition: all 0.2s ease;
+}
+.d-cym-btn-outline:hover { background: rgba(0,212,255,0.08); border-color: rgba(0,212,255,0.5); transform: translateY(-1px); }
+
 /* KPI Card Override */
 .d-cym-kpi-card { padding: 22px 24px; position: relative; overflow: hidden; }
 .d-cym-kpi-deco {
@@ -2047,6 +2056,61 @@
 .d-cym-action-warning:hover { background: rgba(244,197,66,0.18); box-shadow: 0 4px 12px rgba(244,197,66,0.2); }
 .d-cym-action-danger { background: rgba(255,91,91,0.08); color: var(--d-color-danger); border: 1px solid rgba(255,91,91,0.15); }
 .d-cym-action-danger:hover { background: rgba(255,91,91,0.18); box-shadow: 0 4px 12px rgba(255,91,91,0.2); }
+.d-cym-action-odeme { background: rgba(100,180,255,0.08); color: #64b4ff; border: 1px solid rgba(100,180,255,0.15); }
+.d-cym-action-odeme:hover { background: rgba(100,180,255,0.18); box-shadow: 0 4px 12px rgba(100,180,255,0.2); }
+
+/* ── Toplu Yükle Modal ─────────────────────────────────────────────────── */
+.d-cym-toplu-step-num {
+  width: 28px; height: 28px; border-radius: 50%; flex-shrink: 0;
+  background: var(--d-color-cyan); color: #0d1b2a;
+  display: inline-flex; align-items: center; justify-content: center;
+  font-size: 12px; font-weight: 800; font-family: var(--d-font-body);
+}
+.d-cym-toplu-step-title { font-size: 13px; font-weight: 700; color: var(--d-text); font-family: var(--d-font-body); }
+.d-cym-toplu-step-desc  { font-size: 12px; color: var(--d-text-sec); font-family: var(--d-font-body); margin: 0; }
+.d-cym-toplu-dl-btn {
+  display: inline-flex; align-items: center; gap: 6px;
+  background: var(--d-color-cyan); color: #0d1b2a;
+  border: none; border-radius: 8px; padding: 7px 14px;
+  font-size: 12px; font-weight: 700; font-family: var(--d-font-body);
+  cursor: pointer; transition: opacity 0.15s;
+}
+.d-cym-toplu-dl-btn:hover { opacity: 0.85; }
+.d-cym-toplu-drop-zone {
+  border: 2px dashed var(--d-border); border-radius: 12px; padding: 28px 16px;
+  text-align: center; cursor: pointer; transition: all 0.2s;
+  background: var(--d-bg-card);
+}
+.d-cym-toplu-drop-zone:hover, .d-cym-toplu-drop-active {
+  border-color: var(--d-color-cyan); background: rgba(0,212,255,0.05);
+}
+.d-cym-toplu-drop-icon { font-size: 28px; color: var(--d-text-muted); margin-bottom: 8px; display: block; }
+.d-cym-toplu-drop-text { font-size: 13px; font-weight: 600; color: var(--d-text); font-family: var(--d-font-body); }
+.d-cym-toplu-drop-sub  { font-size: 11px; color: var(--d-text-muted); font-family: var(--d-font-body); margin-top: 2px; }
+.d-cym-toplu-file-ok {
+  display: flex; align-items: center; gap: 10px; padding: 10px 14px;
+  border-radius: 8px; border: 1px solid var(--d-color-success);
+  background: rgba(0,214,143,0.07);
+}
+.d-cym-toplu-file-icon { font-size: 20px; color: var(--d-color-success); }
+.d-cym-toplu-file-name { font-size: 13px; font-weight: 600; color: var(--d-text); font-family: var(--d-font-body); }
+.d-cym-toplu-file-meta { font-size: 11px; color: var(--d-text-sec); font-family: var(--d-font-body); }
+.d-cym-toplu-badge-req  { background: rgba(255,91,91,0.1); color: var(--d-color-danger); border-radius: 4px; padding: 1px 7px; font-size: 10px; font-weight: 700; letter-spacing: 0.04em; }
+.d-cym-toplu-badge-opt  { background: rgba(255,255,255,0.06); color: var(--d-text-muted); border-radius: 4px; padding: 1px 7px; font-size: 10px; font-weight: 600; }
+.d-cym-toplu-col-row { display: grid; grid-template-columns: 130px 70px 1fr; gap: 6px 12px; align-items: start; padding: 6px 0; border-bottom: 1px solid var(--d-border); }
+.d-cym-toplu-col-row:last-child { border-bottom: none; }
+.d-cym-toplu-col-name { font-family: monospace; font-size: 12px; font-weight: 700; color: var(--d-text); }
+.d-cym-toplu-col-example { font-size: 11px; color: var(--d-text-muted); font-style: italic; }
+.d-cym-toplu-result { border-radius: 8px; padding: 10px 14px; border: 1px solid; margin-top: 12px; }
+.d-cym-toplu-result-ok   { border-color: var(--d-color-success); background: rgba(0,214,143,0.07); }
+.d-cym-toplu-result-warn { border-color: var(--d-color-danger);  background: rgba(255,91,91,0.07); }
+.d-cym-toplu-result-title { font-size: 13px; font-weight: 700; color: var(--d-text); font-family: var(--d-font-body); }
+.d-cym-toplu-result-row   { font-size: 11px; color: var(--d-color-danger); font-family: var(--d-font-body); margin-top: 3px; }
+.d-cym-toplu-divider { border: none; border-top: 1px solid var(--d-border); margin: 14px 0; }
+.d-btn-save-blue {
+  background: linear-gradient(135deg, var(--d-color-cyan), #00a8cc); color: #0d1b2a;
+}
+.d-btn-save-blue:hover { opacity: 0.9; }
 
 /* Copy Button */
 .d-cym-copy-btn {
@@ -2550,7 +2614,6 @@
 
 /* Context Menu */
 .d-odm-context-menu {
-  position: absolute; right: 0; top: calc(100% + 4px); z-index: 200;
   background: var(--d-bg-card); border: 1px solid var(--d-border); border-radius: 10px;
   padding: 5px; min-width: 140; box-shadow: var(--d-shadow-modal);
   backdrop-filter: blur(20px);

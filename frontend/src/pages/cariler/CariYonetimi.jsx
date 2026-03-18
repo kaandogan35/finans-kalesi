@@ -8,6 +8,7 @@
 
 import { useState, useEffect, useCallback } from 'react'
 import { createPortal } from 'react-dom'
+import { useNavigate } from 'react-router-dom'
 import { toast } from 'sonner'
 import { carilerApi } from '../../api/cariler'
 import useTemaStore from '../../stores/temaStore'
@@ -188,6 +189,7 @@ const bosIslem = { tur: 'tahsilat', tutar: '', aciklama: '', tarih: bugunTarih()
 
 // ─── Ana Bileşen ──────────────────────────────────────────────────────────────
 export default function CariYonetimi() {
+  const navigate = useNavigate()
   const aktifTema = useTemaStore((s) => s.aktifTema)
   const p = prefixMap[aktifTema] || 'b'
   const renkler = temaRenkleri[aktifTema] || temaRenkleri.banking
@@ -208,6 +210,14 @@ export default function CariYonetimi() {
   const [sayfa, setSayfa]             = useState(1)
   const sayfaBasi = 8
 
+  // Toplu Yükle modal
+  const [topluModalAcik, setTopluModalAcik]     = useState(false)
+  const [topluDosya, setTopluDosya]             = useState(null)
+  const [topluOnizleme, setTopluOnizleme]       = useState(null) // { satirlar, toplam }
+  const [topluYukleniyor, setTopluYukleniyor]   = useState(false)
+  const [topluSonuc, setTopluSonuc]             = useState(null)
+  const [topluDragOver, setTopluDragOver]       = useState(false)
+
   // Cari Ekle/Düzenle modal
   const [cariModalAcik, setCariModalAcik]     = useState(false)
   const [cariMod, setCariMod]                 = useState('ekle')
@@ -217,7 +227,7 @@ export default function CariYonetimi() {
   const [islemModalAcik, setIslemModalAcik]   = useState(false)
   const [islemCari, setIslemCari]             = useState(null)
 
-  // Cari Kart modal (Netsis mantığı — Bilgiler + Ekstre)
+  // Cari Kart modal (4 sekme: Bilgiler, Finansal Özet, Hareket Geçmişi, Yaşlandırma)
   const [kartModalAcik, setKartModalAcik]     = useState(false)
   const [kartCari, setKartCari]               = useState(null)
   const [kartSekme, setKartSekme]             = useState('bilgiler')
@@ -225,6 +235,10 @@ export default function CariYonetimi() {
   const [kartHareketYukleniyor, setKartHareketYukleniyor] = useState(false)
   const [kartDuzenleModu, setKartDuzenleModu] = useState(false)
   const [kartForm, setKartForm]               = useState(bosForm)
+  const [kartFinansalOzet, setKartFinansalOzet]   = useState(null)
+  const [kartFinansalYukleniyor, setKartFinansalYukleniyor] = useState(false)
+  const [kartYaslandirma, setKartYaslandirma]     = useState(null)
+  const [kartYaslanYukleniyor, setKartYaslanYukleniyor] = useState(false)
 
   // İşlem düzenleme (ekstre içi)
   const [duzenHareket, setDuzenHareket]       = useState(null)
@@ -240,7 +254,7 @@ export default function CariYonetimi() {
   const [yukleniyor, setYukleniyor] = useState(false)
 
   // ─── Modal body overflow yönetimi ─────────────────────────────────────────
-  const acikModalSayisi = [cariModalAcik, islemModalAcik, kartModalAcik, silModalAcik].filter(Boolean).length
+  const acikModalSayisi = [cariModalAcik, islemModalAcik, kartModalAcik, silModalAcik, topluModalAcik].filter(Boolean).length
   useEffect(() => {
     if (acikModalSayisi > 0) document.body.style.overflow = 'hidden'
     else document.body.style.overflow = ''
@@ -281,8 +295,34 @@ export default function CariYonetimi() {
 
   useEffect(() => { veriYukle() }, [veriYukle])
 
+  // ─── Vadesi geçmiş cariler (backend'den, ayrı yükleme) ──────────────────
+  const [vadesiGecmisCariler, setVadesiGecmisCariler] = useState([])
+  const [vadesiGecmisYukleniyor, setVadesiGecmisYukleniyor] = useState(false)
+
+  const vadesiGecmisYukle = useCallback(async () => {
+    if (aktifSekme !== 'vadesi_gecmis') return
+    setVadesiGecmisYukleniyor(true)
+    try {
+      const yanit = await carilerApi.listele({ sadece_vadesi_gecmis: 1, adet: 100 })
+      setVadesiGecmisCariler((yanit.data.veri?.cariler || []).map(apiToUI))
+    } catch {
+      setVadesiGecmisCariler([])
+    } finally {
+      setVadesiGecmisYukleniyor(false)
+    }
+  }, [aktifSekme])
+
+  useEffect(() => { vadesiGecmisYukle() }, [vadesiGecmisYukle])
+
   // ─── Filtrelenmiş + Sıralanmış Liste ────────────────────────────────────
   const filtrelendi = (() => {
+    if (aktifSekme === 'vadesi_gecmis') {
+      if (arama.trim()) {
+        const q = arama.toLowerCase()
+        return vadesiGecmisCariler.filter(c => c.unvan.toLowerCase().includes(q) || c.telefon?.includes(q) || c.vergi_no?.includes(q))
+      }
+      return vadesiGecmisCariler
+    }
     let s = [...cariler]
     if (aktifSekme === 'alici')  s = s.filter(c => c.cariTip === 'alici')
     if (aktifSekme === 'satici') s = s.filter(c => c.cariTip === 'satici')
@@ -375,11 +415,37 @@ export default function CariYonetimi() {
     }
   }
 
+  const finansalOzetYukle = async (cari) => {
+    setKartFinansalYukleniyor(true)
+    try {
+      const yanit = await carilerApi.getir(cari.id)
+      setKartFinansalOzet(yanit.data.veri?.finansal_ozet ?? null)
+    } catch {
+      setKartFinansalOzet(null)
+    } finally {
+      setKartFinansalYukleniyor(false)
+    }
+  }
+
+  const yaslandirmaYukle = async (cari) => {
+    setKartYaslanYukleniyor(true)
+    try {
+      const yanit = await carilerApi.yaslandirma(cari.id)
+      setKartYaslandirma(yanit.data.veri ?? null)
+    } catch {
+      setKartYaslandirma(null)
+    } finally {
+      setKartYaslanYukleniyor(false)
+    }
+  }
+
   const kartAc = async (cari, sekme = 'bilgiler') => {
     setKartCari(cari)
     setKartSekme(sekme)
     setKartDuzenleModu(false)
     setKartHareketler([])
+    setKartFinansalOzet(null)
+    setKartYaslandirma(null)
     setKartForm({
       cariTip: cari.cariTip, tip: cari.tip, unvan: cari.unvan,
       telefon: cari.telefon || '', adres: cari.adres || '',
@@ -389,6 +455,14 @@ export default function CariYonetimi() {
     })
     setKartModalAcik(true)
     kartHareketleriYukle(cari)
+    finansalOzetYukle(cari)
+  }
+
+  const kartSekmeChange = (yeniSekme) => {
+    setKartSekme(yeniSekme)
+    if (yeniSekme === 'yaslandirma' && !kartYaslandirma && kartCari) {
+      yaslandirmaYukle(kartCari)
+    }
   }
 
   const kartCariGuncelle = async (e) => {
@@ -451,6 +525,71 @@ export default function CariYonetimi() {
     } finally { setYukleniyor(false) }
   }
 
+  // ─── Toplu Yükle ─────────────────────────────────────────────────────────
+  const topluSablonIndir = async () => {
+    try {
+      const { utils, writeFile } = await import('xlsx')
+      const satirlar = [
+        ['cari_adi', 'cari_turu', 'vergi_no', 'telefon', 'email', 'adres', 'yetkili_kisi'],
+        ['Ahmet Demir Ltd. Şti.', 'musteri', '1234567890', '0532 111 22 33', 'info@ahmet.com', 'İstanbul, Kadıköy', 'Ahmet Demir'],
+        ['Çelik Yapı A.Ş.', 'tedarikci', '9876543210', '0212 444 55 66', 'satis@celikyapi.com', 'Ankara, Çankaya', 'Mehmet Yılmaz'],
+      ]
+      const ws = utils.aoa_to_sheet(satirlar)
+      // Sütun genişlikleri
+      ws['!cols'] = [{ wch: 30 }, { wch: 12 }, { wch: 14 }, { wch: 16 }, { wch: 24 }, { wch: 24 }, { wch: 20 }]
+      const wb = utils.book_new()
+      utils.book_append_sheet(wb, ws, 'Cariler')
+      writeFile(wb, 'cari-sablonu.xlsx')
+    } catch {
+      toast.error('Şablon oluşturulamadı.')
+    }
+  }
+
+  const topluDosyaIsle = async (dosya) => {
+    if (!dosya) return
+    if (!/\.xlsx?$/i.test(dosya.name)) {
+      toast.error('Lütfen Excel (.xlsx) formatında dosya yükleyin.')
+      return
+    }
+    setTopluSonuc(null)
+    try {
+      const { read, utils } = await import('xlsx')
+      const ab = await dosya.arrayBuffer()
+      const wb = read(ab)
+      const ws = wb.Sheets[wb.SheetNames[0]]
+      const csvMetin = utils.sheet_to_csv(ws)
+      const csvBlob = new Blob([csvMetin], { type: 'text/csv;charset=utf-8;' })
+      const csvDosya = new File([csvBlob], dosya.name.replace(/\.xlsx?$/i, '.csv'), { type: 'text/csv' })
+      setTopluDosya(csvDosya)
+      const satirlar = csvMetin.split('\n').filter(s => s.trim())
+      setTopluOnizleme({ satirlar: satirlar.slice(0, 4), toplam: Math.max(0, satirlar.length - 1) })
+    } catch {
+      toast.error('Excel dosyası okunamadı. Dosyanın bozuk olmadığından emin olun.')
+    }
+  }
+
+  const topluDosyaSec = (e) => topluDosyaIsle(e.target.files[0])
+
+  const topluGonder = async () => {
+    if (!topluDosya) return
+    setTopluYukleniyor(true)
+    try {
+      const formData = new FormData()
+      formData.append('dosya', topluDosya)
+      const yanit = await carilerApi.topluYukle(formData)
+      const veri = yanit.data.veri
+      setTopluSonuc(veri)
+      if (veri.basarili_sayisi > 0) {
+        toast.success(`${veri.basarili_sayisi} cari başarıyla yüklendi.`)
+        veriYukle()
+      }
+    } catch (err) {
+      toast.error(err.response?.data?.hata || 'Yükleme başarısız.')
+    } finally {
+      setTopluYukleniyor(false)
+    }
+  }
+
   // ─── Silme ───────────────────────────────────────────────────────────────
   const silOnayla = async () => {
     setYukleniyor(true)
@@ -504,15 +643,25 @@ export default function CariYonetimi() {
               {cariBilgi.mevcut}/{cariBilgi.sinir} cari
             </div>
           )}
-          <button
-            onClick={cariEkleAc}
-            className={`${p}-cym-btn-new d-flex align-items-center gap-2`}
-            disabled={limitDolu}
-            title={limitDolu ? 'Cari limiti doldu. Planı yükseltin.' : 'Yeni cari ekle'}
-            style={limitDolu ? { opacity: 0.5, cursor: 'not-allowed' } : undefined}
-          >
-            <i className="bi bi-plus-lg" /> Yeni Cari Ekle
-          </button>
+          <div className="d-flex gap-2">
+            <button
+              onClick={() => { setTopluModalAcik(true); setTopluDosya(null); setTopluOnizleme(null); setTopluSonuc(null) }}
+              className={`${p}-cym-btn-outline d-flex align-items-center gap-2`}
+              title="CSV ile toplu cari yükle"
+            >
+              <i className="bi bi-upload" /> Toplu Yükle
+            </button>
+            <button
+              data-tur="yeni-cari-btn"
+              onClick={cariEkleAc}
+              className={`${p}-cym-btn-new d-flex align-items-center gap-2`}
+              disabled={limitDolu}
+              title={limitDolu ? 'Cari limiti doldu. Planı yükseltin.' : 'Yeni cari ekle'}
+              style={limitDolu ? { opacity: 0.5, cursor: 'not-allowed' } : undefined}
+            >
+              <i className="bi bi-plus-lg" /> Yeni Cari Ekle
+            </button>
+          </div>
         </div>
       </div>
 
@@ -555,10 +704,11 @@ export default function CariYonetimi() {
         {/* Sekmeler + Arama */}
         <div className={`${p}-cym-toolbar`}>
           <div className="d-flex align-items-center justify-content-between flex-wrap gap-2">
-            <div className="d-flex gap-2">
+            <div className="d-flex gap-2 flex-wrap">
               {[
-                { key: 'alici',  label: 'Müşteriler',  icon: 'bi-person-check-fill',  sayi: cariler.filter(c => c.cariTip === 'alici').length },
-                { key: 'satici', label: 'Tedarikçiler', icon: 'bi-truck',             sayi: cariler.filter(c => c.cariTip === 'satici').length },
+                { key: 'alici',         label: 'Müşteriler',    icon: 'bi-person-check-fill', sayi: cariler.filter(c => c.cariTip === 'alici').length },
+                { key: 'satici',        label: 'Tedarikçiler',  icon: 'bi-truck',             sayi: cariler.filter(c => c.cariTip === 'satici').length },
+                { key: 'vadesi_gecmis', label: 'Vadesi Geçmiş', icon: 'bi-exclamation-circle-fill', sayi: vadesiGecmisCariler.length },
               ].map(s => {
                 const a = aktifSekme === s.key
                 return (
@@ -576,7 +726,7 @@ export default function CariYonetimi() {
                 )
               })}
             </div>
-            <div className={`${p}-cym-search-wrap`}>
+            <div className={`${p}-cym-search-wrap`} data-tur="cari-arama">
               <i className={`bi bi-search ${p}-cym-search-icon`} />
               <input
                 type="text"
@@ -602,7 +752,7 @@ export default function CariYonetimi() {
         </div>
 
         {/* Yükleniyor */}
-        {listYukleniyor && (
+        {(listYukleniyor || (aktifSekme === 'vadesi_gecmis' && vadesiGecmisYukleniyor)) && (
           <div className="d-flex flex-column align-items-center justify-content-center py-5">
             <div className={`${p}-cym-spinner mb-3`} />
             <span className={`${p}-cym-loading-text`}>Cariler yükleniyor...</span>
@@ -623,8 +773,8 @@ export default function CariYonetimi() {
         )}
 
         {/* Tablo */}
-        {!listYukleniyor && !listHata && (
-        <div className="table-responsive">
+        {!(listYukleniyor || (aktifSekme === 'vadesi_gecmis' && vadesiGecmisYukleniyor)) && !listHata && (
+        <div className="table-responsive" data-tur="cari-listesi">
           <table className={`${p}-cym-table`}>
             <thead>
               <tr>
@@ -719,6 +869,15 @@ export default function CariYonetimi() {
                         <button title="İşlem Geçmişi"   className={`${p}-cym-action-btn ${p}-cym-action-warning`} onClick={() => kartAc(cari, 'ekstre')}>
                           <i className="bi bi-clock-history" />
                         </button>
+                        {cari.bakiye > 0 && (
+                          <button
+                            title={`Ödeme Planına Ekle — Bakiye: ${TL(cari.bakiye)}`}
+                            className={`${p}-cym-action-btn ${p}-cym-action-odeme`}
+                            onClick={() => navigate('/odemeler', { state: { onceden_cari_id: cari.id, onceden_cari_adi: cari.unvan, onceden_bakiye: cari.bakiye } })}
+                          >
+                            <i className="bi bi-calendar-plus-fill" />
+                          </button>
+                        )}
                         <button title="Sil / Pasife Al" className={`${p}-cym-action-btn ${p}-cym-action-danger`} onClick={() => { setSilCari(cari); setSilModalAcik(true) }}>
                           <i className="bi bi-trash" />
                         </button>
@@ -732,7 +891,7 @@ export default function CariYonetimi() {
         </div>
         )}
 
-        {!listYukleniyor && !listHata && toplamSayfa > 1 && (
+        {!(listYukleniyor || (aktifSekme === 'vadesi_gecmis' && vadesiGecmisYukleniyor)) && !listHata && toplamSayfa > 1 && (
           <div className={`${p}-cym-pagination-bar`}>
             <small className={`${p}-cym-pagination-info`}>
               {filtrelendi.length} kayıttan {(sayfa - 1) * sayfaBasi + 1}–{Math.min(sayfa * sayfaBasi, filtrelendi.length)} gösteriliyor
@@ -992,16 +1151,18 @@ export default function CariYonetimi() {
 
                   {/* Nav Tabs */}
                   <div className={`${p}-cym-kart-nav`}>
-                    <div className="d-flex gap-1" style={{ marginBottom: -1 }}>
+                    <div className="d-flex gap-1 flex-wrap" style={{ marginBottom: -1 }}>
                       {[
-                        { key: 'bilgiler', label: 'Cari Bilgiler', icon: 'bi-info-circle-fill' },
-                        { key: 'ekstre',   label: 'Hesap Ekstresi', icon: 'bi-list-ul' },
+                        { key: 'bilgiler',      label: 'Cari Bilgiler',    icon: 'bi-info-circle-fill' },
+                        { key: 'finansal_ozet', label: 'Finansal Özet',    icon: 'bi-bar-chart-fill' },
+                        { key: 'ekstre',        label: 'Hareket Geçmişi',  icon: 'bi-list-ul' },
+                        { key: 'yaslandirma',   label: 'Yaşlandırma',      icon: 'bi-clock-history' },
                       ].map(t => {
                         const a = kartSekme === t.key
                         return (
                           <button
                             key={t.key}
-                            onClick={() => setKartSekme(t.key)}
+                            onClick={() => kartSekmeChange(t.key)}
                             className={`${p}-cym-kart-tab ${a ? `${p}-cym-kart-tab-active` : ''}`}
                           >
                             <i className={`bi ${t.icon}`} />
@@ -1121,10 +1282,73 @@ export default function CariYonetimi() {
                       </>
                     )}
 
-                    {/* ─── Sekme 2: Hesap Ekstresi ─── */}
+                    {/* ─── Sekme 2: Finansal Özet ─── */}
+                    {kartSekme === 'finansal_ozet' && (
+                      <>
+                        {kartFinansalYukleniyor ? (
+                          <div className="d-flex flex-column align-items-center justify-content-center py-5">
+                            <div className={`${p}-cym-spinner mb-2`} />
+                            <span className={`${p}-cym-loading-text`}>Finansal veriler yükleniyor...</span>
+                          </div>
+                        ) : !kartFinansalOzet ? (
+                          <div className={`${p}-cym-empty-state`} style={{ padding: '48px 24px' }}>
+                            <i className="bi bi-bar-chart d-block mb-2" />
+                            <p>Finansal özet alınamadı.</p>
+                          </div>
+                        ) : (
+                          <div className="row g-3">
+                            {[
+                              { label: 'Toplam Alacak',       val: TL(kartFinansalOzet.toplam_alacak),  renk: renkler.success,  icon: 'bi-arrow-down-circle-fill' },
+                              { label: 'Toplam Borç',         val: TL(kartFinansalOzet.toplam_borc),    renk: renkler.danger,   icon: 'bi-arrow-up-circle-fill' },
+                              { label: 'Net Bakiye',          val: TL(kartFinansalOzet.net_bakiye),     renk: bakiyeRenk(kartFinansalOzet.net_bakiye), icon: 'bi-wallet2' },
+                              { label: 'Açık Ödeme',          val: `${kartFinansalOzet.acik_odeme_sayisi} kayıt`,          renk: null,             icon: 'bi-hourglass-split' },
+                              { label: 'Vadesi Geçmiş',       val: `${kartFinansalOzet.vadesi_gecmis_odeme_sayisi} kayıt`,  renk: kartFinansalOzet.vadesi_gecmis_odeme_sayisi > 0 ? renkler.danger : null, icon: 'bi-exclamation-circle' },
+                            ].map((item, i) => (
+                              <div key={i} className="col-12 col-md-4">
+                                <div className={`${p}-cym-info-card`} style={{ textAlign: 'center' }}>
+                                  <div className={`${p}-cym-info-card-label d-flex align-items-center justify-content-center gap-2`} style={{ marginBottom: 8 }}>
+                                    <i className={`bi ${item.icon}`} />
+                                    {item.label}
+                                  </div>
+                                  <div className={`${p}-cym-info-card-value`} style={item.renk ? { color: item.renk } : undefined}>
+                                    {item.val}
+                                  </div>
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        )}
+                      </>
+                    )}
+
+                    {/* ─── Sekme 3: Hareket Geçmişi ─── */}
                     {kartSekme === 'ekstre' && (
                       <>
-                        {/* Özet Kartları */}
+                        {/* Özet Kartları + Yeni Ödeme Butonu */}
+                        <div className="d-flex align-items-center justify-content-between flex-wrap gap-2 mb-3">
+                          <div className="d-flex gap-3">
+                            {[
+                              { label: 'Güncel Bakiye', val: TL(kartCari.bakiye),       renk: bakiyeRenk(kartCari.bakiye) },
+                              { label: 'İşlem Sayısı', val: kartHareketYukleniyor ? '...' : kartHareketler.length, renk: null },
+                              { label: 'Son İşlem',    val: tarihFmt(kartCari.son_islem), renk: null },
+                            ].map((item, i) => (
+                              <div key={i} style={{ textAlign: 'center' }}>
+                                <div style={{ fontSize: 11, opacity: 0.65, marginBottom: 2 }}>{item.label}</div>
+                                <div style={{ fontWeight: 700, fontSize: 14, color: item.renk || 'inherit' }}>{item.val}</div>
+                              </div>
+                            ))}
+                          </div>
+                          <button
+                            onClick={() => {
+                              setKartModalAcik(false)
+                              navigate('/odemeler', { state: { onceden_cari_id: kartCari.id, onceden_cari_adi: kartCari.unvan, onceden_bakiye: kartCari.bakiye } })
+                            }}
+                            className={`${p}-cym-btn-outline d-flex align-items-center gap-2`}
+                            style={{ fontSize: 13 }}
+                          >
+                            <i className="bi bi-calendar-plus" /> Bu Cariye Yeni Ödeme Ekle
+                          </button>
+                        </div>
                         <div className="row g-3 mb-4">
                           {[
                             { label: 'Güncel Bakiye', val: TL(kartCari.bakiye),       renk: bakiyeRenk(kartCari.bakiye) },
@@ -1279,6 +1503,59 @@ export default function CariYonetimi() {
                         )}
                       </>
                     )}
+
+                    {/* ─── Sekme 4: Yaşlandırma ─── */}
+                    {kartSekme === 'yaslandirma' && (
+                      <>
+                        {kartYaslanYukleniyor ? (
+                          <div className="d-flex flex-column align-items-center justify-content-center py-5">
+                            <div className={`${p}-cym-spinner mb-2`} />
+                            <span className={`${p}-cym-loading-text`}>Yaşlandırma hesaplanıyor...</span>
+                          </div>
+                        ) : !kartYaslandirma ? (
+                          <div className={`${p}-cym-empty-state`} style={{ padding: '48px 24px' }}>
+                            <i className="bi bi-clock d-block mb-2" />
+                            <p>Yaşlandırma verisi alınamadı.</p>
+                          </div>
+                        ) : (
+                          <>
+                            {(kartYaslandirma.g0_30.sayi + kartYaslandirma.g31_60.sayi + kartYaslandirma.g61_90.sayi + kartYaslandirma.g90p.sayi) === 0 ? (
+                              <div className={`${p}-cym-empty-state`} style={{ padding: '48px 24px' }}>
+                                <i className="bi bi-check-circle d-block mb-2" style={{ color: renkler.success }} />
+                                <p style={{ color: renkler.success }}>Vadesi geçmiş alacak bulunmuyor.</p>
+                              </div>
+                            ) : (
+                              <div className="row g-3">
+                                {[
+                                  { label: '0–30 Gün',  data: kartYaslandirma.g0_30,  renk: renkler.warning  },
+                                  { label: '31–60 Gün', data: kartYaslandirma.g31_60, renk: '#ff8800'        },
+                                  { label: '61–90 Gün', data: kartYaslandirma.g61_90, renk: renkler.danger   },
+                                  { label: '90+ Gün',   data: kartYaslandirma.g90p,   renk: '#990000'        },
+                                ].map((grup, i) => (
+                                  <div key={i} className="col-12 col-md-6">
+                                    <div className={`${p}-cym-info-card`} style={{ borderLeft: `4px solid ${grup.renk}` }}>
+                                      <div style={{ fontSize: 12, fontWeight: 700, color: grup.renk, marginBottom: 8 }}>
+                                        <i className="bi bi-clock me-2" />{grup.label}
+                                      </div>
+                                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                        <div>
+                                          <div style={{ fontSize: 11, opacity: 0.65 }}>Kayıt Sayısı</div>
+                                          <div style={{ fontWeight: 700, fontSize: 18 }}>{grup.data.sayi}</div>
+                                        </div>
+                                        <div style={{ textAlign: 'right' }}>
+                                          <div style={{ fontSize: 11, opacity: 0.65 }}>Toplam Tutar</div>
+                                          <div style={{ fontWeight: 700, fontSize: 16, color: grup.renk }}>{TL(grup.data.tutar)}</div>
+                                        </div>
+                                      </div>
+                                    </div>
+                                  </div>
+                                ))}
+                              </div>
+                            )}
+                          </>
+                        )}
+                      </>
+                    )}
                   </div>
 
                   {/* Footer */}
@@ -1294,7 +1571,175 @@ export default function CariYonetimi() {
       )}
 
       {/* ══════════════════════════════════════════════
-          MODAL 4 — Silme Onayı
+          MODAL 4 — Toplu Yükle (CSV + Excel)
+      ══════════════════════════════════════════════ */}
+      {topluModalAcik && createPortal(
+        <>
+          <div className={`${p}-modal-overlay`} />
+          <div className={`${p}-modal-center`} role="dialog" aria-modal="true">
+            <div className={`${p}-modal-box`} style={{ maxWidth: 660 }}>
+              {/* Header */}
+              <div className={`${p}-cym-modal-header`}>
+                <div className="d-flex align-items-center gap-2">
+                  <i className={`bi bi-cloud-upload-fill ${p}-cym-modal-header-icon`} />
+                  <div>
+                    <div className={`${p}-cym-modal-header-title`}>Toplu Cari İçeri Aktar</div>
+                  </div>
+                </div>
+                <button onClick={() => setTopluModalAcik(false)} className={`${p}-modal-close`}>
+                  <i className="bi bi-x-lg" />
+                </button>
+              </div>
+
+              <div className={`${p}-modal-body`} style={{ overflowY: 'auto', maxHeight: '70vh' }}>
+
+                {/* ─── Adım 1 ─── */}
+                <div className="d-flex gap-3 mb-3">
+                  <span className={`${p}-cym-toplu-step-num`}>1</span>
+                  <div style={{ flex: 1 }}>
+                    <div className={`${p}-cym-toplu-step-title`}>Excel Şablonunu İndirin ve Doldurun</div>
+                    <p className={`${p}-cym-toplu-step-desc`}>
+                      Aşağıdaki Excel şablonunu indirin, carilerinizi ekleyin, kaydedin ve buradan yükleyin.
+                    </p>
+                    <button onClick={topluSablonIndir} className={`${p}-cym-toplu-dl-btn mt-2`}>
+                      <i className="bi bi-file-earmark-excel-fill" /> Excel Şablonu İndir (.xlsx)
+                    </button>
+                  </div>
+                </div>
+
+                <hr className={`${p}-cym-toplu-divider`} />
+
+                {/* ─── Sütun Açıklamaları ─── */}
+                <div className="d-flex gap-3 mb-3">
+                  <span className={`${p}-cym-toplu-step-num`}>2</span>
+                  <div style={{ flex: 1 }}>
+                    <div className={`${p}-cym-toplu-step-title mb-2`}>Dosya Sütunları</div>
+                    {/* Başlık */}
+                    <div className={`${p}-cym-toplu-col-row`} style={{ opacity: 0.55, fontSize: 10, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.06em' }}>
+                      <div>Sütun Adı</div><div>Durum</div><div>Örnek Değer</div>
+                    </div>
+                    {[
+                      { ad: 'cari_adi',     zorunlu: true,  ornek: 'Test Firması A.Ş.' },
+                      { ad: 'cari_turu',    zorunlu: false, ornek: 'musteri · tedarikci · her_ikisi' },
+                      { ad: 'vergi_no',     zorunlu: false, ornek: '1234567890' },
+                      { ad: 'telefon',      zorunlu: false, ornek: '0532 111 22 33' },
+                      { ad: 'email',        zorunlu: false, ornek: 'info@firma.com' },
+                      { ad: 'adres',        zorunlu: false, ornek: 'İstanbul, Kadıköy' },
+                      { ad: 'yetkili_kisi', zorunlu: false, ornek: 'Ahmet Yılmaz' },
+                    ].map(s => (
+                      <div key={s.ad} className={`${p}-cym-toplu-col-row`}>
+                        <span className={`${p}-cym-toplu-col-name`}>{s.ad}</span>
+                        <span className={s.zorunlu ? `${p}-cym-toplu-badge-req` : `${p}-cym-toplu-badge-opt`}>
+                          {s.zorunlu ? 'Zorunlu' : 'Opsiyonel'}
+                        </span>
+                        <span className={`${p}-cym-toplu-col-example`}>{s.ornek}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                <hr className={`${p}-cym-toplu-divider`} />
+
+                {/* ─── Adım 3: Dosya Yükle ─── */}
+                <div className="d-flex gap-3">
+                  <span className={`${p}-cym-toplu-step-num`}>3</span>
+                  <div style={{ flex: 1 }}>
+                    <div className={`${p}-cym-toplu-step-title mb-2`}>Dosyanızı Seçin</div>
+
+                    {/* Drag & Drop veya seçilmiş dosya */}
+                    {!topluDosya ? (
+                      <div
+                        className={`${p}-cym-toplu-drop-zone ${topluDragOver ? `${p}-cym-toplu-drop-active` : ''}`}
+                        onClick={() => document.getElementById('topluDosyaInput').click()}
+                        onDragOver={e => { e.preventDefault(); setTopluDragOver(true) }}
+                        onDragLeave={() => setTopluDragOver(false)}
+                        onDrop={e => { e.preventDefault(); setTopluDragOver(false); topluDosyaIsle(e.dataTransfer.files[0]) }}
+                      >
+                        <i className={`bi bi-cloud-upload ${p}-cym-toplu-drop-icon`} />
+                        <div className={`${p}-cym-toplu-drop-text`}>Dosyayı buraya sürükleyin veya tıklayın</div>
+                        <div className={`${p}-cym-toplu-drop-sub`}>Yalnızca Excel (.xlsx) — Maks. 5 MB</div>
+                      </div>
+                    ) : (
+                      <div className={`${p}-cym-toplu-file-ok`}>
+                        <i className={`bi ${/\.xlsx?$/i.test(topluDosya.name) ? 'bi-file-earmark-excel-fill' : 'bi-file-earmark-text-fill'} ${p}-cym-toplu-file-icon`} />
+                        <div style={{ flex: 1, minWidth: 0 }}>
+                          <div className={`${p}-cym-toplu-file-name text-truncate`}>{topluDosya.name}</div>
+                          <div className={`${p}-cym-toplu-file-meta`}>
+                            {topluOnizleme ? `${topluOnizleme.toplam} kayıt okundu` : 'İşleniyor...'}
+                          </div>
+                        </div>
+                        <button
+                          onClick={() => { setTopluDosya(null); setTopluOnizleme(null); setTopluSonuc(null) }}
+                          className={`${p}-modal-close`} title="Kaldır"
+                        >
+                          <i className="bi bi-x-lg" />
+                        </button>
+                      </div>
+                    )}
+
+                    {/* Önizleme */}
+                    {topluOnizleme && topluOnizleme.satirlar.length > 1 && (
+                      <div className={`${p}-cym-info-card mt-2`} style={{ padding: '8px 12px' }}>
+                        <div className={`${p}-cym-info-card-label mb-1`}>
+                          <i className="bi bi-table me-1" />Önizleme (ilk 3 satır)
+                        </div>
+                        {topluOnizleme.satirlar.slice(1, 4).map((s, i) => (
+                          <div key={i} style={{ fontFamily: 'monospace', fontSize: 11, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', opacity: 0.75 }}>
+                            {i + 1}. {s}
+                          </div>
+                        ))}
+                      </div>
+                    )}
+
+                    {/* Sonuç */}
+                    {topluSonuc && (
+                      <div className={`${p}-cym-toplu-result ${topluSonuc.basarili_sayisi > 0 ? `${p}-cym-toplu-result-ok` : `${p}-cym-toplu-result-warn`}`}>
+                        <div className={`${p}-cym-toplu-result-title`}>
+                          <i className={`bi ${topluSonuc.basarili_sayisi > 0 ? 'bi-check-circle-fill' : 'bi-x-circle-fill'} me-2`} />
+                          {topluSonuc.basarili_sayisi} kayıt başarıyla eklendi
+                          {topluSonuc.hatali_sayisi > 0 && ` · ${topluSonuc.hatali_sayisi} satırda hata`}
+                        </div>
+                        {topluSonuc.hatali_satirlar?.map((h, i) => (
+                          <div key={i} className={`${p}-cym-toplu-result-row`}>
+                            <i className="bi bi-exclamation-triangle me-1" />Satır {h.satir}: {h.hata}
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </div>
+
+              {/* Gizli file input */}
+              <input
+                id="topluDosyaInput"
+                type="file"
+                accept=".xlsx,.xls"
+                style={{ display: 'none' }}
+                onChange={topluDosyaSec}
+              />
+
+              <div className={`${p}-modal-footer`}>
+                <button onClick={() => setTopluModalAcik(false)} className={`${p}-btn-cancel`}>Kapat</button>
+                <button
+                  onClick={topluGonder}
+                  disabled={!topluDosya || topluYukleniyor}
+                  className={`${p}-btn-save ${p}-btn-save-blue d-flex align-items-center gap-2`}
+                  style={{ opacity: (!topluDosya || topluYukleniyor) ? 0.5 : 1 }}
+                >
+                  {topluYukleniyor
+                    ? <><i className={`bi bi-arrow-repeat ${p}-cym-spin`} />Yükleniyor...</>
+                    : <><i className="bi bi-cloud-upload" />{topluOnizleme ? `${topluOnizleme.toplam} Cari Yükle` : 'Yükle'}</>}
+                </button>
+              </div>
+            </div>
+          </div>
+        </>,
+        document.body
+      )}
+
+      {/* ══════════════════════════════════════════════
+          MODAL 5 — Silme Onayı
       ══════════════════════════════════════════════ */}
       {silModalAcik && createPortal(
         <>

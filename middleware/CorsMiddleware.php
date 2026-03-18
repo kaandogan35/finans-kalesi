@@ -20,16 +20,21 @@ class CorsMiddleware {
      * Her istek geldiğinde bu çalışır
      */
     public static function calistir(): void {
-        // Development ortamında tüm originlere izin ver, production'da sadece canlı domain
+        // İzin verilen origin adresini belirle
+        // NOT: Credentials (cookie/token) gönderiminde tarayıcılar "*" kabul etmez.
+        // Bu yüzden development'ta bile gelen origin'i yansıtıyoruz.
         $app_env = env('APP_ENV', 'production');
         if ($app_env === 'development') {
-            $izinli_adres = '*';
+            // Geliştirme: İsteğin geldiği origin'i yansıt (localhost portları değişebilir)
+            $izinli_adres = $_SERVER['HTTP_ORIGIN'] ?? env('CORS_ORIGIN', 'http://localhost:3000');
         } else {
             $izinli_adres = env('CORS_ORIGIN', 'https://app.hirdavatduragi.shop');
         }
 
         // Tarayıcıya hangi adresten istek gelebileceğini söyle
         header("Access-Control-Allow-Origin: $izinli_adres");
+        // Origin değişkenine göre cache'in doğru çalışması için Vary başlığı
+        header('Vary: Origin');
         
         // Hangi HTTP metodlarına izin veriyoruz
         header('Access-Control-Allow-Methods: GET, POST, PUT, DELETE, OPTIONS');

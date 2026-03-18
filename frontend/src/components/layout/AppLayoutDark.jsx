@@ -3,6 +3,9 @@ import { Outlet, NavLink, useNavigate, useLocation } from 'react-router-dom'
 import useAuthStore from '../../stores/authStore'
 import '../../temalar/dark.css'
 import UpgradeBildirim from '../UpgradeBildirim'
+import TanitimTuru from '../tanitim-turu/TanitimTuru'
+import useTurStore from '../../stores/turStore'
+import { TUR_ADIMLAR, ROTA_TUR } from '../tanitim-turu/turlar'
 
 // ─── Navigasyon menüsü ────────────────────────────────────────────────────────
 const menuItems = [
@@ -73,8 +76,16 @@ export default function AppLayoutDark() {
 
   const adKisalt = kisalt(kullanici?.ad_soyad)
 
+  const turBaslat = useTurStore((s) => s.turBaslat)
+  const handleTurBaslat = () => {
+    const turAdi = ROTA_TUR[location.pathname] || 'dashboard'
+    const adimlar = TUR_ADIMLAR[turAdi]
+    if (adimlar) turBaslat(turAdi, adimlar)
+  }
+
   return (
     <div className="d-app">
+      <TanitimTuru />
 
       {/* ── Mobil overlay ──────────────────────────────────────────────── */}
       {sidebarOpen && (
@@ -86,7 +97,7 @@ export default function AppLayoutDark() {
       )}
 
       {/* ── Sidebar ────────────────────────────────────────────────────── */}
-      <aside className={`d-sidebar${sidebarOpen ? ' d-sidebar-open' : ''}`} role="navigation" aria-label="Ana menü">
+      <aside className={`d-sidebar${sidebarOpen ? ' d-sidebar-open' : ''}`} role="navigation" aria-label="Ana menü" data-tur="sol-menu">
 
         {/* Logo */}
         <div className="d-logo">
@@ -184,6 +195,7 @@ export default function AppLayoutDark() {
 
             {/* Hızlı işlem */}
             <button
+              data-tur="hizli-islem"
               className="d-icon-btn"
               type="button"
               aria-label="Hızlı işlem"
@@ -274,6 +286,33 @@ export default function AppLayoutDark() {
           </div>
         </>
       )}
+
+      {/* ── Tanıtım Turu ? Butonu ──────────────────────────────────────────── */}
+      <button
+        onClick={handleTurBaslat}
+        type="button"
+        aria-label="Tanıtım turunu başlat"
+        title="Tanıtım Turu"
+        style={{
+          position: 'fixed',
+          bottom: 24, right: 24,
+          width: 52, height: 52,
+          borderRadius: '50%',
+          background: '#0d1117',
+          border: '2px solid #00d4ff',
+          color: '#00d4ff',
+          fontSize: 20,
+          fontWeight: 700,
+          cursor: 'pointer',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          boxShadow: '0 0 16px rgba(0,212,255,0.35)',
+          zIndex: 1050,
+        }}
+      >
+        <i className="bi bi-question-lg" />
+      </button>
 
     </div>
   )

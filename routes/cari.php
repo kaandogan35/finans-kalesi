@@ -59,6 +59,15 @@ elseif ($parca_sayisi === 2 && $yol_parcalari[1] === 'ozet') {
     }
 }
 
+// ─── /api/cariler/toplu ───
+elseif ($parca_sayisi === 2 && $yol_parcalari[1] === 'toplu') {
+    if ($metod === 'POST') {
+        $cari->topluYukle($payload);
+    } else {
+        Response::hata('Bu HTTP metodu desteklenmiyor', 405);
+    }
+}
+
 // ─── /api/cariler/{id} ───
 elseif ($parca_sayisi === 2) {
     $cari_id = (int)$yol_parcalari[1];
@@ -79,6 +88,18 @@ elseif ($parca_sayisi === 2) {
                 Response::hata('Bu HTTP metodu desteklenmiyor', 405);
                 break;
         }
+    }
+}
+
+// ─── /api/cariler/{id}/yaslandirma ───
+elseif ($parca_sayisi === 3 && $yol_parcalari[2] === 'yaslandirma') {
+    $cari_id = (int)$yol_parcalari[1];
+    if ($cari_id <= 0) {
+        Response::hata('Gecersiz cari ID', 400);
+    } elseif ($metod === 'GET') {
+        $cari->yaslandirma($payload, $cari_id);
+    } else {
+        Response::hata('Bu HTTP metodu desteklenmiyor', 405);
     }
 }
 

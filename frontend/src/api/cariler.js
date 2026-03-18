@@ -13,4 +13,10 @@ export const carilerApi = {
   hareket_olustur:  (id, veri)        => api.post(`/cariler/${id}/hareketler`, veri),
   hareket_guncelle: (cariId, hId, veri) => api.put(`/cariler/${cariId}/hareketler/${hId}`, veri),
   hareket_sil:      (cariId, hId)     => api.delete(`/cariler/${cariId}/hareketler/${hId}`),
+
+  // Yaşlandırma & Toplu Yükleme
+  yaslandirma: (id)       => api.get(`/cariler/${id}/yaslandirma`),
+  topluYukle:  (formData) => api.post('/cariler/toplu', formData, {
+    headers: { 'Content-Type': 'multipart/form-data' },
+  }),
 }

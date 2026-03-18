@@ -255,6 +255,7 @@ export default function CarilerListesi() {
         </div>
 
         <button
+          data-tur="yeni-cari-btn"
           className={`${p}-cari-btn-new`}
           onClick={() => navigate('/cariler/yeni')}
         >
@@ -264,7 +265,7 @@ export default function CarilerListesi() {
       </div>
 
       {/* ─── Arama ──────────────────────────────────────────────────── */}
-      <div className="mb-3">
+      <div className="mb-3" data-tur="cari-arama">
         <div className={`${p}-cari-search-wrap`}>
           <i className={`bi bi-search ${p}-cari-search-icon`} />
           <input
@@ -278,7 +279,7 @@ export default function CarilerListesi() {
       </div>
 
       {/* ─── Tablo Kartı ────────────────────────────────────────────── */}
-      <div className={`${p}-panel`} style={{ padding: 0, overflow: 'hidden' }}>
+      <div className={`${p}-panel`} style={{ padding: 0, overflow: 'hidden' }} data-tur="cari-listesi">
 
         {/* Tablo Başlık Satırı */}
         <div className={`${p}-cari-grid-header`}>

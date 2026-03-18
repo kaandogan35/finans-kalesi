@@ -28,6 +28,15 @@ date_default_timezone_set('Europe/Istanbul');
 // JSON yanit verecegimizi belirt
 header('Content-Type: application/json; charset=utf-8');
 
+// Güvenlik header'ları
+header('X-Content-Type-Options: nosniff');
+header('X-Frame-Options: DENY');
+header('X-XSS-Protection: 1; mode=block');
+header('Referrer-Policy: strict-origin-when-cross-origin');
+if (isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on') {
+    header('Strict-Transport-Security: max-age=31536000; includeSubDomains');
+}
+
 // ============================================
 // 2. DOSYALARI YUKLE (Autoload)
 // ============================================
@@ -51,6 +60,11 @@ require_once BASE_PATH . '/models/Abonelik.php';
 require_once BASE_PATH . '/middleware/PlanKontrol.php';
 require_once BASE_PATH . '/middleware/SinirKontrol.php';
 require_once BASE_PATH . '/controllers/AuthController.php';
+require_once BASE_PATH . '/utils/SmtpHelper.php';
+require_once BASE_PATH . '/utils/MailHelper.php';
+require_once BASE_PATH . '/utils/MailSablonlar.php';
+require_once BASE_PATH . '/controllers/CronController.php';
+require_once BASE_PATH . '/controllers/TurController.php';
 
 // ============================================
 // 3. MIDDLEWARE'LERİ ÇALIŞTIR
@@ -113,7 +127,8 @@ try {
                 $db->query('SELECT 1');
                 $db_durum = 'bagli';
             } catch (Exception $e) {
-                $db_durum = 'hata: ' . $e->getMessage();
+                $db_durum = 'hata';
+                error_log('Health check DB hatasi: ' . $e->getMessage());
             }
             
             Response::basarili([
@@ -174,6 +189,16 @@ try {
             require_once BASE_PATH . '/routes/sinir.php';
             break;
 
+        // ─── Cron (Zamanlı mail gönderimleri) ───
+        case 'cron':
+            require_once BASE_PATH . '/routes/cron.php';
+            break;
+
+        // ─── Tanıtım Turu ───
+        case 'tur':
+            require_once BASE_PATH . '/routes/tur.php';
+            break;
+
         // ─── API Ana Sayfa ───
         case '':
             Response::basarili([
@@ -185,7 +210,7 @@ try {
         
         // ─── Bilinmeyen Endpoint ───
         default:
-            Response::bulunamadi("'$modul' endpoint'i bulunamadı");
+            Response::bulunamadi("'" . htmlspecialchars($modul, ENT_QUOTES, 'UTF-8') . "' endpoint'i bulunamadı");
             break;
     }
     

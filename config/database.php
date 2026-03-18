@@ -55,8 +55,9 @@ class Database {
             // Sadece genel bir mesaj ver, detay loglansın
             $hata_mesaji = 'Veritabanı bağlantısı kurulamadı.';
             
-            // Debug modunda detay göster (geliştirme sırasında işe yarar)
-            if (isset($ayarlar['app']['debug']) && $ayarlar['app']['debug']) {
+            // Debug modunda detay göster — YALNIZCA development ortamında
+            if (isset($ayarlar['app']['debug']) && $ayarlar['app']['debug']
+                && isset($ayarlar['app']['env']) && $ayarlar['app']['env'] === 'development') {
                 $hata_mesaji .= ' Detay: ' . $e->getMessage();
             }
             

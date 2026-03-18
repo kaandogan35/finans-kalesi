@@ -24,8 +24,9 @@ CREATE TABLE IF NOT EXISTS `sirketler` (
     `email` VARCHAR(255) DEFAULT NULL,
     `adres` TEXT DEFAULT NULL,
     `sektor` VARCHAR(100) DEFAULT NULL,
-    `abonelik_plani` ENUM('deneme','baslangic','profesyonel','kurumsal') NOT NULL DEFAULT 'deneme',
+    `abonelik_plani` ENUM('ucretsiz','standart','kurumsal') NOT NULL DEFAULT 'ucretsiz',
     `abonelik_bitis` DATETIME DEFAULT NULL,
+    `kampanya_kullanici` TINYINT(1) NOT NULL DEFAULT 0,
     `tema_adi` VARCHAR(50) NOT NULL DEFAULT 'banking',
     `aktif_mi` TINYINT(1) NOT NULL DEFAULT 1,
     `kasa_sifre_hash` VARCHAR(255) DEFAULT NULL,
@@ -49,6 +50,7 @@ CREATE TABLE IF NOT EXISTS `kullanicilar` (
     `yetkiler` TEXT DEFAULT NULL,
     `aktif_mi` TINYINT(1) NOT NULL DEFAULT 1,
     `son_giris` DATETIME DEFAULT NULL,
+    `tamamlanan_turlar` JSON DEFAULT NULL COMMENT 'Onboarding tur tamamlanma durumları',
     `olusturma_tarihi` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
     `guncelleme_tarihi` DATETIME DEFAULT NULL ON UPDATE CURRENT_TIMESTAMP,
     PRIMARY KEY (`id`),
@@ -68,6 +70,7 @@ CREATE TABLE IF NOT EXISTS `refresh_tokens` (
     `token_hash` VARCHAR(255) NOT NULL,
     `cihaz_bilgisi` TEXT DEFAULT NULL,
     `ip_adresi` VARCHAR(45) DEFAULT NULL,
+    `silindi_mi` TINYINT(1) NOT NULL DEFAULT 0,
     `son_kullanim` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
     `olusturma_tarihi` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
     `bitis_tarihi` DATETIME NOT NULL,
@@ -392,13 +395,79 @@ CREATE TABLE IF NOT EXISTS `varlik_gecmisi` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- =====================================================
+-- 15. ABONELİKLER (Plan geçmişi ve aktif abonelik)
+-- =====================================================
+CREATE TABLE IF NOT EXISTS `abonelikler` (
+    `id` INT UNSIGNED NOT NULL AUTO_INCREMENT,
+    `sirket_id` INT UNSIGNED NOT NULL,
+    `plan_adi` VARCHAR(30) NOT NULL COMMENT 'ucretsiz, standart, kurumsal',
+    `odeme_donemi` VARCHAR(20) DEFAULT NULL COMMENT 'aylik veya yillik',
+    `odeme_kanali` VARCHAR(50) DEFAULT NULL COMMENT 'web, ios, android',
+    `baslangic_tarihi` DATETIME NOT NULL,
+    `bitis_tarihi` DATETIME DEFAULT NULL,
+    `kampanya_kullanici` TINYINT(1) NOT NULL DEFAULT 0,
+    `kampanya_fiyat` DECIMAL(10,2) DEFAULT NULL,
+    `durum` VARCHAR(20) NOT NULL DEFAULT 'aktif' COMMENT 'aktif veya pasif',
+    `olusturma_tarihi` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    PRIMARY KEY (`id`),
+    KEY `idx_abonelik_sirket` (`sirket_id`),
+    KEY `idx_abonelik_durum` (`sirket_id`, `durum`),
+    CONSTRAINT `fk_abonelik_sirket` FOREIGN KEY (`sirket_id`)
+        REFERENCES `sirketler` (`id`) ON DELETE CASCADE ON UPDATE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- =====================================================
+-- 16. ÖDEME GEÇMİŞİ (Abonelik ödemeleri)
+-- =====================================================
+CREATE TABLE IF NOT EXISTS `odeme_gecmisi` (
+    `id` INT UNSIGNED NOT NULL AUTO_INCREMENT,
+    `sirket_id` INT UNSIGNED NOT NULL,
+    `abonelik_id` INT UNSIGNED DEFAULT NULL,
+    `plan_adi` VARCHAR(30) NOT NULL,
+    `odeme_donemi` VARCHAR(20) DEFAULT NULL,
+    `odeme_kanali` VARCHAR(50) DEFAULT NULL,
+    `tutar` DECIMAL(10,2) NOT NULL,
+    `para_birimi` VARCHAR(10) NOT NULL DEFAULT 'TRY',
+    `referans_no` VARCHAR(255) DEFAULT NULL,
+    `durum` VARCHAR(30) NOT NULL DEFAULT 'tamamlandi',
+    `odeme_tarihi` DATETIME NOT NULL,
+    `olusturma_tarihi` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    PRIMARY KEY (`id`),
+    KEY `idx_odeme_gec_sirket` (`sirket_id`),
+    KEY `idx_odeme_gec_abonelik` (`abonelik_id`),
+    CONSTRAINT `fk_odeme_gec_sirket` FOREIGN KEY (`sirket_id`)
+        REFERENCES `sirketler` (`id`) ON DELETE CASCADE ON UPDATE CASCADE,
+    CONSTRAINT `fk_odeme_gec_abonelik` FOREIGN KEY (`abonelik_id`)
+        REFERENCES `abonelikler` (`id`) ON DELETE SET NULL ON UPDATE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- =====================================================
+-- 17. MAIL LOG (E-posta gönderim kayıtları)
+-- =====================================================
+CREATE TABLE IF NOT EXISTS `mail_log` (
+    `id` INT UNSIGNED NOT NULL AUTO_INCREMENT,
+    `sirket_id` INT UNSIGNED DEFAULT NULL,
+    `kullanici_id` INT UNSIGNED DEFAULT NULL,
+    `mail_turu` VARCHAR(50) NOT NULL COMMENT 'hosgeldin, guvenlik, cron_gunluk vb.',
+    `alici_email` VARCHAR(255) NOT NULL,
+    `konu` VARCHAR(500) DEFAULT NULL,
+    `durum` VARCHAR(20) NOT NULL DEFAULT 'gonderildi' COMMENT 'gonderildi veya basarisiz',
+    `hata_mesaji` TEXT DEFAULT NULL,
+    `olusturma_tarihi` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    PRIMARY KEY (`id`),
+    KEY `idx_mail_sirket` (`sirket_id`),
+    KEY `idx_mail_turu` (`mail_turu`),
+    KEY `idx_mail_tarih` (`olusturma_tarihi`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- =====================================================
 -- FOREIGN KEY KONTROL AÇ
 -- =====================================================
 SET FOREIGN_KEY_CHECKS = 1;
 
 -- =====================================================
 -- TAMAMLANDI!
--- 14 tablo başarıyla oluşturuldu:
+-- 17 tablo başarıyla oluşturuldu:
 -- 1.  sirketler          — Şirket/firma bilgileri
 -- 2.  kullanicilar       — Kullanıcı hesapları
 -- 3.  refresh_tokens     — JWT yenileme token'ları
@@ -413,4 +482,7 @@ SET FOREIGN_KEY_CHECKS = 1;
 -- 12. ay_kapanislar      — Aylık mali kapanış özeti
 -- 13. sistem_loglari     — Güvenlik ve işlem logları
 -- 14. varlik_gecmisi     — Aylık varlık değişim takibi
+-- 15. abonelikler        — Abonelik plan geçmişi
+-- 16. odeme_gecmisi      — Abonelik ödeme kayıtları
+-- 17. mail_log           — E-posta gönderim logları
 -- =====================================================

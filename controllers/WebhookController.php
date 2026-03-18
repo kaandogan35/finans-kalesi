@@ -31,14 +31,11 @@ class WebhookController {
      *   5. Ödemeyi kaydet: $this->abonelik_model->odemeKaydet(...)
      */
     public function webOdeme(array $girdi): void {
-        // TODO: İmza doğrulama
-        // $this->web_imza_dogrula();
-
-        error_log('Webhook/web alındı: ' . json_encode($girdi));
-
-        // Placeholder yanıt — ödeme sağlayıcısı 200 bekliyor
-        http_response_code(200);
-        echo json_encode(['received' => true]);
+        // GÜVENLİK: İmza doğrulaması olmadan webhook işlenmez
+        // Ödeme entegrasyonu yapılana kadar tüm istekleri reddet
+        error_log('Webhook/web REDDEDILDI — imza dogrulama henuz aktif degil: ' . substr(json_encode($girdi), 0, 200));
+        http_response_code(403);
+        echo json_encode(['basarili' => false, 'hata' => 'Webhook dogrulama aktif degil']);
     }
 
     /**
@@ -54,14 +51,10 @@ class WebhookController {
      *   6. planı aktive et
      */
     public function appleIap(array $girdi): void {
-        // TODO: Apple receipt doğrulama
-        // $receipt = $girdi['unified_receipt'] ?? null;
-        // Apple sunucusuna doğrulama isteği gönderilecek
-
-        error_log('Webhook/apple alındı: ' . json_encode($girdi));
-
-        http_response_code(200);
-        echo json_encode(['received' => true]);
+        // GÜVENLİK: Apple receipt doğrulaması olmadan işlenmez
+        error_log('Webhook/apple REDDEDILDI — dogrulama henuz aktif degil: ' . substr(json_encode($girdi), 0, 200));
+        http_response_code(403);
+        echo json_encode(['basarili' => false, 'hata' => 'Webhook dogrulama aktif degil']);
     }
 
     /**
@@ -76,13 +69,10 @@ class WebhookController {
      *   5. planı aktive et
      */
     public function googlePlay(array $girdi): void {
-        // TODO: Google Pub/Sub mesajı çözme ve doğrulama
-        // $mesaj = base64_decode($girdi['message']['data'] ?? '');
-
-        error_log('Webhook/google alındı: ' . json_encode($girdi));
-
-        http_response_code(200);
-        echo json_encode(['received' => true]);
+        // GÜVENLİK: Google Play doğrulaması olmadan işlenmez
+        error_log('Webhook/google REDDEDILDI — dogrulama henuz aktif degil: ' . substr(json_encode($girdi), 0, 200));
+        http_response_code(403);
+        echo json_encode(['basarili' => false, 'hata' => 'Webhook dogrulama aktif degil']);
     }
 
     // ─────────────────────────────────────────

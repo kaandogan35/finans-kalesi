@@ -36,7 +36,7 @@ export function usePlanKontrol() {
    * @returns {boolean}
    */
   const izinVarMi = (ozellik) => {
-    if (!IZINLER[ozellik]) return true // Tanımsız özellik → herkese açık
+    if (!IZINLER[ozellik]) return false // Tanımsız özellik → güvenli varsayılan: erişim yok
     return IZINLER[ozellik].includes(plan)
   }
 

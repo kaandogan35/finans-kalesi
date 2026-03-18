@@ -34,7 +34,7 @@ class AyarlarController {
 
         if (!in_array($tema_adi, $izinli_temalar, true)) {
             Response::dogrulama_hatasi([
-                'tema_adi' => 'Gecerli temalar: ' . implode(', ', $izinli_temalar)
+                'tema_adi' => 'Geçerli temalar: ' . implode(', ', $izinli_temalar)
             ]);
             return;
         }

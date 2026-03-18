@@ -47,7 +47,7 @@ class KasaController {
                 'baslangic_tarihi' => $baslangic,
                 'bitis_tarihi'     => isset($_GET['bitis_tarihi']) ? $_GET['bitis_tarihi'] : null,
                 'sayfa'            => isset($_GET['sayfa']) ? $_GET['sayfa'] : 1,
-                'adet'             => isset($_GET['adet']) ? $_GET['adet'] : 50,
+                'adet'             => isset($_GET['adet']) ? min((int)$_GET['adet'], 500) : 50,
             );
 
             $kasa = new Kasa($this->db);
@@ -66,17 +66,17 @@ class KasaController {
             $veri = $girdi;
 
             if (empty($veri['islem_tipi'])) {
-                Response::dogrulama_hatasi(array('islem_tipi' => 'Islem tipi zorunludur (giris veya cikis)'));
+                Response::dogrulama_hatasi(array('islem_tipi' => 'İşlem tipi zorunludur (giriş veya çıkış)'));
                 return;
             }
 
             if (!in_array($veri['islem_tipi'], array('giris', 'cikis'))) {
-                Response::dogrulama_hatasi(array('islem_tipi' => 'Gecerli degerler: giris, cikis'));
+                Response::dogrulama_hatasi(array('islem_tipi' => 'Geçerli değerler: giris, cikis'));
                 return;
             }
 
             if (!isset($veri['tutar']) || (float)$veri['tutar'] <= 0) {
-                Response::dogrulama_hatasi(array('tutar' => 'Tutar sifirdan buyuk olmalidir'));
+                Response::dogrulama_hatasi(array('tutar' => 'Tutar sıfırdan büyük olmalıdır'));
                 return;
             }
 
@@ -139,7 +139,7 @@ class KasaController {
             }
 
             if (!isset($veri['miktar']) || (float)$veri['miktar'] <= 0) {
-                Response::dogrulama_hatasi(array('miktar' => 'Miktar sifirdan buyuk olmalidir'));
+                Response::dogrulama_hatasi(array('miktar' => 'Miktar sıfırdan büyük olmalıdır'));
                 return;
             }
 
@@ -206,7 +206,7 @@ class KasaController {
                 'ortak_adi'  => isset($_GET['ortak_adi']) ? $_GET['ortak_adi'] : null,
                 'islem_tipi' => isset($_GET['islem_tipi']) ? $_GET['islem_tipi'] : null,
                 'sayfa'      => isset($_GET['sayfa']) ? $_GET['sayfa'] : 1,
-                'adet'       => isset($_GET['adet']) ? $_GET['adet'] : 50,
+                'adet'       => isset($_GET['adet']) ? min((int)$_GET['adet'], 500) : 50,
             );
 
             $kasa = new Kasa($this->db);
@@ -229,12 +229,12 @@ class KasaController {
             }
 
             if (empty($veri['islem_tipi']) || !in_array($veri['islem_tipi'], array('para_girisi', 'para_cikisi'))) {
-                Response::dogrulama_hatasi(array('islem_tipi' => 'Gecerli degerler: para_girisi, para_cikisi'));
+                Response::dogrulama_hatasi(array('islem_tipi' => 'Geçerli değerler: para_girisi, para_cikisi'));
                 return;
             }
 
             if (!isset($veri['tutar']) || (float)$veri['tutar'] <= 0) {
-                Response::dogrulama_hatasi(array('tutar' => 'Tutar sifirdan buyuk olmalidir'));
+                Response::dogrulama_hatasi(array('tutar' => 'Tutar sıfırdan büyük olmalıdır'));
                 return;
             }
 

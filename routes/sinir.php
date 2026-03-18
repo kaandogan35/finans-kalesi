@@ -14,5 +14,5 @@ $alt_yol    = $yol_parcalari[1] ?? '';
 if ($metod === 'GET' && $alt_yol === 'durum') {
     $controller->durum($payload);
 } else {
-    Response::bulunamadi("Sinir endpoint'i bulunamadi: $alt_yol");
+    Response::bulunamadi("Sinir endpoint'i bulunamadi: " . htmlspecialchars($alt_yol, ENT_QUOTES, 'UTF-8'));
 }

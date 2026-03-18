@@ -22,6 +22,9 @@ class RateLimiter {
     const KAYIT_MAX_DENEME = 3;   // Aynı IP'den maksimum kayıt denemesi
     const KAYIT_PENCERE_DK = 60;  // 1 saat içinde sayılsın
 
+    const SIFRE_SIFIRLAMA_MAX = 3;   // Şifre sıfırlama: maks deneme
+    const SIFRE_SIFIRLAMA_DK  = 30;  // 30 dakika içinde sayılsın
+
     /**
      * Bu IP'den giriş yapılabilir mi?
      *
@@ -79,6 +82,34 @@ class RateLimiter {
 
         } catch (Exception $e) {
             error_log('RateLimiter kayit kontrol hatasi: ' . $e->getMessage());
+            return true;
+        }
+    }
+
+    /**
+     * Bu IP'den şifre sıfırlama talebi gönderilebilir mi?
+     *
+     * Son SIFRE_SIFIRLAMA_DK dakika içinde SIFRE_SIFIRLAMA_MAX veya daha fazla
+     * talep geldiyse engellenir (brute-force token tahminini önler).
+     */
+    public static function sifre_sifirlama_izinli_mi(string $ip): bool {
+        try {
+            $db = Database::baglan();
+            $stmt = $db->prepare(
+                "SELECT COUNT(*) as sayi
+                 FROM sistem_loglari
+                 WHERE ip_adresi = ?
+                   AND islem_tipi = 'giris_basarisiz'
+                   AND detay LIKE 'sifre_sifirlama_talebi:%'
+                   AND tarih >= DATE_SUB(NOW(), INTERVAL ? MINUTE)"
+            );
+            $stmt->execute([$ip, self::SIFRE_SIFIRLAMA_DK]);
+            $sonuc = $stmt->fetch();
+
+            return (int)$sonuc['sayi'] < self::SIFRE_SIFIRLAMA_MAX;
+
+        } catch (Exception $e) {
+            error_log('RateLimiter sifre_sifirlama kontrol hatasi: ' . $e->getMessage());
             return true;
         }
     }

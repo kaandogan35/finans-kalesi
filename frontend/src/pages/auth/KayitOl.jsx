@@ -46,7 +46,8 @@ export default function KayitOl() {
   const adim1Gecerli = () => {
     if (!form.firma_adi.trim()) { setHata('Firma adı zorunludur.'); return false }
     if (!form.ad_soyad.trim())  { setHata('Ad soyad zorunludur.');  return false }
-    if (!form.email.trim() || !form.email.includes('@')) { setHata('Geçerli bir e-posta girin.'); return false }
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+    if (!form.email.trim() || !emailRegex.test(form.email.trim())) { setHata('Geçerli bir e-posta girin.'); return false }
     return true
   }
 

@@ -98,10 +98,9 @@ $stmt = $pdo->prepare("SELECT * FROM tablo WHERE id = :id");
 
 ### 🎨 OTOMATİK TETİKLENEN — Tasarım (Her Zaman)
 
-Aşağıdaki anahtar kelimelerden **herhangi biri** mesajda geçiyorsa **üç şey birlikte yapılır:**
+Aşağıdaki anahtar kelimelerden **herhangi biri** mesajda geçiyorsa **iki şey birlikte yapılır:**
 1. `.claude/skills/react-bootstrap-ui.md` OKUNUR (React/Bootstrap teknik kuralları)
-2. `.claude/skills/koyu-tema.md` OKUNUR (Obsidian Vault koyu tema görsel dili)
-3. Sistem `frontend-design` Skill'i ÇAĞIRILIR (tasarım kalitesi ve yaratıcılık için)
+2. Sistem `frontend-design` Skill'i ÇAĞIRILIR (tasarım kalitesi ve yaratıcılık için)
 
 > "jsx", "bileşen", "sayfa", "modal", "UI", "tasarım", "grafik",
 > "KPI", "tutar", "renk", "tablo", "kart", "buton", "form", "stil"
@@ -110,7 +109,6 @@ Aşağıdaki anahtar kelimelerden **herhangi biri** mesajda geçiyorsa **üç ş
 en son tamamlanmış sayfayı referans al — aynı dil, aynı renk, aynı bileşen yapısı.
 
 > **Aktif tasarım sistemi:** Obsidian Vault koyu glassmorphism.
-> Görsel tema → `koyu-tema.md`
 > Teknik kurallar → `react-bootstrap-ui.md`
 > Tasarım kalitesi → `frontend-design` Skill
 >

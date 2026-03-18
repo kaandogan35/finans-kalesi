@@ -51,13 +51,13 @@ class AuthController {
         
         // 2. E-posta formati kontrol
         if (!filter_var($girdi['email'], FILTER_VALIDATE_EMAIL)) {
-            Response::dogrulama_hatasi(['email' => 'Gecerli bir e-posta adresi girin']);
+            Response::dogrulama_hatasi(['email' => 'Geçerli bir e-posta adresi girin']);
             return;
         }
         
         // 3. Sifre uzunlugu (en az 8 karakter)
         if (strlen($girdi['sifre']) < 8) {
-            Response::dogrulama_hatasi(['sifre' => 'Sifre en az 8 karakter olmalidir']);
+            Response::dogrulama_hatasi(['sifre' => 'Şifre en az 8 karakter olmalıdır']);
             return;
         }
         
@@ -124,15 +124,30 @@ class AuthController {
                 $refresh['son_kullanim']
             );
             
-            // 9. Yeni kaydı logla
+            // 9. Yeni kaydı logla (PII maskeleme: e-posta hash'li)
             SistemLog::kaydet(
                 SistemLog::KAYIT,
-                'firma: ' . $girdi['firma_adi'] . ', email: ' . $girdi['email'],
+                'yeni_kayit, email_hash: ' . substr(hash('sha256', $girdi['email']), 0, 12),
                 (int)$sirket_id,
                 (int)$kullanici_id
             );
 
-            // 10. Basarili yanit
+            // 10. Hoş geldin maili gönder (hata olsa da kayıt başarılı sayılır)
+            try {
+                $html = MailSablonlar::hosgeldin($girdi['ad_soyad'], $girdi['firma_adi']);
+                MailHelper::gonder(
+                    $girdi['email'],
+                    'Finans Kalesi\'ne Hoş Geldiniz',
+                    $html,
+                    (int)$sirket_id,
+                    (int)$kullanici_id,
+                    'hosgeldin'
+                );
+            } catch (Exception $e) {
+                error_log('Hoş geldin maili gönderilemedi: ' . $e->getMessage());
+            }
+
+            // 12. Basarili yanit
             Response::basarili([
                 'kullanici' => [
                     'id'        => $kullanici_id,
@@ -164,7 +179,7 @@ class AuthController {
         if (empty($girdi['email']) || empty($girdi['sifre'])) {
             Response::dogrulama_hatasi([
                 'email' => empty($girdi['email']) ? 'E-posta zorunludur' : null,
-                'sifre' => empty($girdi['sifre']) ? 'Sifre zorunludur' : null,
+                'sifre' => empty($girdi['sifre']) ? 'Şifre zorunludur' : null,
             ]);
             return;
         }
@@ -183,7 +198,7 @@ class AuthController {
 
         if (!$kullanici) {
             // Başarısız denemeyi logla (rate limiter bunu sayar)
-            SistemLog::kaydet(SistemLog::GIRIS_BASARISIZ, 'email_bulunamadi: ' . $girdi['email']);
+            SistemLog::kaydet(SistemLog::GIRIS_BASARISIZ, 'email_bulunamadi, hash: ' . substr(hash('sha256', $girdi['email']), 0, 12));
             Response::hata('E-posta veya sifre hatali', 401);
             return;
         }
@@ -205,7 +220,7 @@ class AuthController {
             // Başarısız denemeyi logla (rate limiter bunu sayar)
             SistemLog::kaydet(
                 SistemLog::GIRIS_BASARISIZ,
-                'yanlis_sifre: ' . $girdi['email'],
+                'yanlis_sifre, hash: ' . substr(hash('sha256', $girdi['email']), 0, 12),
                 (int)$kullanici['sirket_id'],
                 (int)$kullanici['id']
             );
@@ -240,15 +255,47 @@ class AuthController {
             // (numara kayması: eski 9→11, şimdi 10→12)
             $this->kullanici_model->son_giris_guncelle($kullanici['id']);
 
-            // 10. Basarili girisi logla
+            // 10. Basarili girisi logla (PII maskeleme)
             SistemLog::kaydet(
                 SistemLog::GIRIS_BASARILI,
-                'email: ' . $kullanici['email'],
+                'giris_basarili, hash: ' . substr(hash('sha256', $kullanici['email']), 0, 12),
                 (int)$kullanici['sirket_id'],
                 (int)$kullanici['id']
             );
 
-            // 11. Basarili yanit
+            // 11. Farklı IP kontrolü — yeni cihazdan giriş uyarısı
+            try {
+                $mevcut_ip = SistemLog::ip_al();
+                $db_check  = Database::baglan();
+                $stmt_ip   = $db_check->prepare(
+                    "SELECT ip_adresi FROM refresh_tokens
+                     WHERE kullanici_id = :kid AND silindi_mi = 0
+                     ORDER BY olusturma_tarihi DESC LIMIT 1"
+                );
+                $stmt_ip->execute([':kid' => (int)$kullanici['id']]);
+                $son_token = $stmt_ip->fetch();
+
+                if ($son_token && $son_token['ip_adresi'] && $son_token['ip_adresi'] !== $mevcut_ip) {
+                    $app_url    = env('APP_URL', 'https://app.finanskalesi.com');
+                    $sifirla_link = $app_url . '/sifre-sifirla';
+                    $cihaz      = substr($_SERVER['HTTP_USER_AGENT'] ?? 'Bilinmiyor', 0, 80);
+                    $tarih_saat = date('d.m.Y H:i');
+
+                    $html = MailSablonlar::guvenlikUyarisi($tarih_saat, $mevcut_ip, $cihaz, $sifirla_link);
+                    MailHelper::gonder(
+                        $kullanici['email'],
+                        'Güvenlik Uyarısı: Yeni Cihazdan Giriş',
+                        $html,
+                        (int)$kullanici['sirket_id'],
+                        (int)$kullanici['id'],
+                        'guvenlik_uyarisi'
+                    );
+                }
+            } catch (Exception $e) {
+                error_log('Güvenlik uyarı maili gönderilemedi: ' . $e->getMessage());
+            }
+
+            // 12. Basarili yanit
             Response::basarili([
                 'kullanici' => [
                     'id'        => (int) $kullanici['id'],
@@ -365,6 +412,139 @@ class AuthController {
         Response::basarili(null, 'Cikis basarili');
     }
     
+    /**
+     * ŞİFRE SIFIRLAMA TALEBİ
+     * POST /api/auth/sifre-sifirla-iste
+     */
+    public function sifreSifirlaIste($girdi) {
+        if (empty($girdi['email'])) {
+            Response::dogrulama_hatasi(['email' => 'E-posta zorunludur']);
+            return;
+        }
+
+        // Rate limit — aynı IP'den çok fazla şifre sıfırlama talebi
+        $ip = SistemLog::ip_al();
+        if (!RateLimiter::sifre_sifirlama_izinli_mi($ip)) {
+            Response::cok_fazla_istek(1800); // 30 dakika bekle
+            return;
+        }
+
+        // Güvenlik: kullanıcı bulunamasa da aynı yanıtı döndür (enumeration koruması)
+        $kullanici = $this->kullanici_model->eposta_ile_bul($girdi['email']);
+
+        if ($kullanici && $kullanici['aktif_mi']) {
+            try {
+                $token  = bin2hex(random_bytes(32)); // 64 karakter güvenli token
+                $bitis  = date('Y-m-d H:i:s', time() + 1800); // 30 dakika
+
+                $db = Database::baglan();
+                $stmt = $db->prepare(
+                    "UPDATE kullanicilar
+                     SET sifre_sifirlama_token = :token, sifre_sifirlama_bitis = :bitis
+                     WHERE id = :id"
+                );
+                $stmt->execute([
+                    ':token' => $token,
+                    ':bitis' => $bitis,
+                    ':id'    => (int)$kullanici['id'],
+                ]);
+
+                $app_url = env('APP_URL', 'https://app.finanskalesi.com');
+                $link    = $app_url . '/sifre-sifirla?token=' . $token;
+                $html    = MailSablonlar::sifreSifirla($link, 30);
+
+                MailHelper::gonder(
+                    $kullanici['email'],
+                    'Şifre Sıfırlama — Finans Kalesi',
+                    $html,
+                    (int)$kullanici['sirket_id'],
+                    (int)$kullanici['id'],
+                    'sifre_sifirlama'
+                );
+
+                SistemLog::kaydet(
+                    SistemLog::GIRIS_BASARISIZ,
+                    'sifre_sifirlama_talebi: hash_' . substr(hash('sha256', $girdi['email']), 0, 12),
+                    (int)$kullanici['sirket_id'],
+                    (int)$kullanici['id']
+                );
+
+            } catch (Exception $e) {
+                error_log('Şifre sıfırlama işlemi hatası: ' . $e->getMessage());
+            }
+        }
+
+        // Her durumda aynı yanıt
+        Response::basarili(null, 'E-posta adresinize sıfırlama bağlantısı gönderildi');
+    }
+
+    /**
+     * ŞİFRE SIFIRLAMA (TOKEN İLE)
+     * POST /api/auth/sifre-sifirla
+     */
+    public function sifreSifirla($girdi) {
+        if (empty($girdi['token'])) {
+            Response::dogrulama_hatasi(['token' => 'Token zorunludur']);
+            return;
+        }
+        if (empty($girdi['yeni_sifre'])) {
+            Response::dogrulama_hatasi(['yeni_sifre' => 'Yeni şifre zorunludur']);
+            return;
+        }
+        if (strlen($girdi['yeni_sifre']) < 8) {
+            Response::dogrulama_hatasi(['yeni_sifre' => 'Şifre en az 8 karakter olmalıdır']);
+            return;
+        }
+
+        try {
+            $db   = Database::baglan();
+            $stmt = $db->prepare(
+                "SELECT id, sirket_id, email
+                 FROM kullanicilar
+                 WHERE sifre_sifirlama_token = :token
+                   AND sifre_sifirlama_bitis > NOW()
+                   AND aktif_mi = 1"
+            );
+            $stmt->execute([':token' => $girdi['token']]);
+            $kullanici = $stmt->fetch();
+
+            if (!$kullanici) {
+                Response::hata('Sıfırlama bağlantısı geçersiz veya süresi dolmuş', 400);
+                return;
+            }
+
+            // Şifreyi güncelle, token'ı temizle
+            $hash  = password_hash($girdi['yeni_sifre'], PASSWORD_BCRYPT);
+            $stmt2 = $db->prepare(
+                "UPDATE kullanicilar
+                 SET sifre_hash = :hash,
+                     sifre_sifirlama_token = NULL,
+                     sifre_sifirlama_bitis = NULL
+                 WHERE id = :id"
+            );
+            $stmt2->execute([':hash' => $hash, ':id' => (int)$kullanici['id']]);
+
+            // Tüm refresh token'ları geçersiz kıl (güvenlik)
+            $stmt3 = $db->prepare(
+                "UPDATE refresh_tokens SET silindi_mi = 1 WHERE kullanici_id = :kid"
+            );
+            $stmt3->execute([':kid' => (int)$kullanici['id']]);
+
+            SistemLog::kaydet(
+                SistemLog::GIRIS_BASARILI,
+                'sifre_sifirlandi, hash: ' . substr(hash('sha256', $kullanici['email']), 0, 12),
+                (int)$kullanici['sirket_id'],
+                (int)$kullanici['id']
+            );
+
+            Response::basarili(null, 'Şifreniz başarıyla güncellendi. Yeni şifrenizle giriş yapabilirsiniz.');
+
+        } catch (Exception $e) {
+            error_log('Şifre sıfırlama hatası: ' . $e->getMessage());
+            Response::sunucu_hatasi('Şifre sıfırlanamadı');
+        }
+    }
+
     /**
      * BEN KIMIM
      */

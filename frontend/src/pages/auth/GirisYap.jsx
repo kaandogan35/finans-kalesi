@@ -213,7 +213,7 @@ export default function GirisYap() {
                     <label className={`${p}-giris-label`} style={{ margin: 0 }}>
                       Güvenlik Şifresi
                     </label>
-                    <Link to="/sifremi-unuttum" className={`${p}-giris-link-sifre`}>
+                    <Link to="/sifre-sifirla" className={`${p}-giris-link-sifre`}>
                       Şifremi unuttum
                     </Link>
                   </div>

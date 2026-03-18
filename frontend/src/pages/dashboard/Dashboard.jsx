@@ -14,6 +14,8 @@ import cekSenetApi      from '../../api/cekSenet'
 import useAuthStore     from '../../stores/authStore'
 import useTemaStore     from '../../stores/temaStore'
 import { temaRenkleri } from '../../lib/temaRenkleri'
+import HosgeldinPrompt  from '../../components/tanitim-turu/HosgeldinPrompt'
+import useTurStore      from '../../stores/turStore'
 
 // ─── Tema Prefix ────────────────────────────────────────────────────────────
 const prefixMap = { banking: 'b', earthy: 'e', dark: 'd' }
@@ -188,6 +190,10 @@ export default function Dashboard() {
   const p = prefixMap[aktifTema] || 'b'
   const renkler = temaRenkleri[aktifTema] || temaRenkleri.banking
 
+  // Tur yükleme
+  const yukleTurlar = useTurStore((s) => s.yukleTurlar)
+  useEffect(() => { yukleTurlar() }, [yukleTurlar])
+
   // Veri state
   const [dash,   setDash]   = useState(null)
   const [cari,   setCari]   = useState(null)
@@ -324,6 +330,7 @@ export default function Dashboard() {
   // ─── Render ───────────────────────────────────────────────────────────────
   return (
     <div className={`${p}-page-root`}>
+      <HosgeldinPrompt />
 
       {/* ─── Başlık ────────────────────────────────────────────────────────── */}
       <div className={`d-flex align-items-start justify-content-between ${p}-greeting`}>
@@ -349,7 +356,7 @@ export default function Dashboard() {
       </div>
 
       {/* ─── KPI Kartları (6'lı, 3 sütun) ────────────────────────────────── */}
-      <div className={`${p}-kpi-grid-3`}>
+      <div className={`${p}-kpi-grid-3`} data-tur="kpi-kartlar">
         {kpiler.map((k) => (
           <KpiKart key={k.baslik} {...k} yukleniyor={yukl} p={p} />
         ))}
@@ -406,7 +413,7 @@ export default function Dashboard() {
       )}
 
       {/* ─── Orta: Analiz ──────────────────────────────────────────────────── */}
-      <div className={`${p}-analiz-grid`}>
+      <div className={`${p}-analiz-grid`} data-tur="grafik-alan">
 
         {/* Kasa & Nakit Akış */}
         <div className={`${p}-panel`} style={{ height: '100%' }}>

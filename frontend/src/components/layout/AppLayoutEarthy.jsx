@@ -3,6 +3,9 @@ import { Outlet, NavLink, useNavigate, useLocation } from 'react-router-dom'
 import useAuthStore from '../../stores/authStore'
 import '../../temalar/earthy.css'
 import UpgradeBildirim from '../UpgradeBildirim'
+import TanitimTuru from '../tanitim-turu/TanitimTuru'
+import useTurStore from '../../stores/turStore'
+import { TUR_ADIMLAR, ROTA_TUR } from '../tanitim-turu/turlar'
 
 // ─── Navigasyon menüsü ────────────────────────────────────────────────────────
 const menuItems = [
@@ -73,8 +76,16 @@ export default function AppLayoutEarthy() {
 
   const adKisalt = kisalt(kullanici?.ad_soyad)
 
+  const turBaslat = useTurStore((s) => s.turBaslat)
+  const handleTurBaslat = () => {
+    const turAdi = ROTA_TUR[location.pathname] || 'dashboard'
+    const adimlar = TUR_ADIMLAR[turAdi]
+    if (adimlar) turBaslat(turAdi, adimlar)
+  }
+
   return (
     <div className="e-app">
+      <TanitimTuru />
 
       {/* ── Mobil overlay ──────────────────────────────────────────────── */}
       {sidebarOpen && (
@@ -86,7 +97,7 @@ export default function AppLayoutEarthy() {
       )}
 
       {/* ── Sidebar ────────────────────────────────────────────────────── */}
-      <aside className={`e-sidebar${sidebarOpen ? ' e-sidebar-open' : ''}`} role="navigation" aria-label="Ana menü">
+      <aside className={`e-sidebar${sidebarOpen ? ' e-sidebar-open' : ''}`} role="navigation" aria-label="Ana menü" data-tur="sol-menu">
 
         {/* Logo */}
         <div className="e-logo">
@@ -184,6 +195,7 @@ export default function AppLayoutEarthy() {
 
             {/* Hızlı işlem */}
             <button
+              data-tur="hizli-islem"
               className="e-icon-btn"
               type="button"
               aria-label="Hızlı işlem"
@@ -277,6 +289,33 @@ export default function AppLayoutEarthy() {
           </div>
         </>
       )}
+
+      {/* ── Tanıtım Turu ? Butonu ──────────────────────────────────────────── */}
+      <button
+        onClick={handleTurBaslat}
+        type="button"
+        aria-label="Tanıtım turunu başlat"
+        title="Tanıtım Turu"
+        style={{
+          position: 'fixed',
+          bottom: 24, right: 24,
+          width: 52, height: 52,
+          borderRadius: '50%',
+          background: '#4a7c59',
+          border: '2px solid #c47f0a',
+          color: '#fff',
+          fontSize: 20,
+          fontWeight: 700,
+          cursor: 'pointer',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          boxShadow: '0 4px 16px rgba(74,124,89,0.4)',
+          zIndex: 1050,
+        }}
+      >
+        <i className="bi bi-question-lg" />
+      </button>
 
     </div>
   )

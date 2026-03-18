@@ -3384,9 +3384,10 @@ export default function VarlikKasa() {
       ) : (
       <>
         {/* ─── Tab Navigasyonu ─── */}
-        <div className={`${p}-kasa-tab-container`}>
+        <div className={`${p}-kasa-tab-container`} data-tur="kasa-panel">
           {SEKMELER.map(s => (
             <button key={s.key} onClick={() => setAktifSekme(s.key)}
+              data-tur={s.key === 'nakit' ? 'kasa-sekme-nakit' : s.key === 'bilanco' ? 'kasa-sekme-bilanco' : undefined}
               className={`${p}-kasa-tab ${aktifSekme === s.key ? 'active' : ''}`}>
               <i className={`bi ${s.icon}`} style={{ fontSize:15 }} />
               {s.label}
@@ -3425,10 +3426,12 @@ export default function VarlikKasa() {
                 </button>
               </div>
             )}
-            <NakitAkisi {...shared} p={p} renkler={renkler} />
+            <div data-tur="nakit-akis">
+              <NakitAkisi {...shared} p={p} renkler={renkler} />
+            </div>
           </>
         )}
-        {aktifSekme === 'bilanco'  && <AylikBilanco kapanislar={kapanislar} setKapanislar={setKapanislar} yatirimGuncelDeger={yatirimGuncelDeger} p={p} renkler={renkler} />}
+        {aktifSekme === 'bilanco'  && <div data-tur="aylik-bilanco"><AylikBilanco kapanislar={kapanislar} setKapanislar={setKapanislar} yatirimGuncelDeger={yatirimGuncelDeger} p={p} renkler={renkler} /></div>}
         {aktifSekme === 'ortak'    && <OrtakCarisi ortakHareketler={ortakHareketler} setOrtakHareketler={setOrtakHareketler} p={p} renkler={renkler} />}
         {aktifSekme === 'yatirim'  && <YatirimKalesi yatirimlar={yatirimlar} setYatirimlar={setYatirimlar} p={p} renkler={renkler} />}
       </>

@@ -72,4 +72,4 @@ if ($alt_modul === 'webhook') {
 }
 
 // Tanımlanmamış endpoint
-Response::bulunamadi("'$alt_modul/$islem' endpoint'i bulunamadı");
+Response::bulunamadi("'" . htmlspecialchars("$alt_modul/$islem", ENT_QUOTES, 'UTF-8') . "' endpoint'i bulunamadi");

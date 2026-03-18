@@ -12,4 +12,10 @@ export const authApi = {
 
   ben: () =>
     api.get('/auth/ben'),
+
+  sifreSifirlaIste: (email) =>
+    api.post('/auth/sifre-sifirla-iste', { email }),
+
+  sifreSifirla: (token, yeni_sifre) =>
+    api.post('/auth/sifre-sifirla', { token, yeni_sifre }),
 }
