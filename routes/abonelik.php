@@ -32,18 +32,21 @@ if ($alt_modul === 'abonelik') {
 
     // GET /api/abonelik/durum — JWT gerekli
     if ($metod === 'GET' && $islem === 'durum') {
+        AuthMiddleware::dogrula(); // Route seviyesinde dogrulama
         $abonelik_ctrl->durum();
         exit;
     }
 
     // GET /api/abonelik/gecmis — JWT gerekli
     if ($metod === 'GET' && $islem === 'gecmis') {
+        AuthMiddleware::dogrula(); // Route seviyesinde dogrulama
         $abonelik_ctrl->gecmis();
         exit;
     }
 
     // POST /api/abonelik/yukselt — JWT gerekli
     if ($metod === 'POST' && $islem === 'yukselt') {
+        AuthMiddleware::dogrula(); // Route seviyesinde dogrulama
         $abonelik_ctrl->yukselt($girdi);
         exit;
     }

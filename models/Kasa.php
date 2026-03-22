@@ -600,7 +600,7 @@ class Kasa {
         $yatirim_meta = $y_stmt->fetch(PDO::FETCH_ASSOC);
 
         // Ortak hareket sayısı
-        $ortak_sql = "SELECT COUNT(*) as toplam_ortak_hareket FROM ortak_carisi WHERE sirket_id = ?";
+        $ortak_sql = "SELECT COUNT(*) as toplam_ortak_hareket FROM ortak_carisi WHERE sirket_id = ? AND silindi_mi = 0";
         $o_stmt = $this->db->prepare($ortak_sql);
         $o_stmt->execute([$sirket_id]);
         $ortak_meta = $o_stmt->fetch(PDO::FETCH_ASSOC);

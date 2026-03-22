@@ -120,22 +120,19 @@ try {
         // GET /api/health
         // İlk test endpoint'imiz — API çalışıyor mu diye kontrol
         case 'health':
-            // Veritabanı bağlantısını test et
-            $db_durum = 'baglanti_yok';
+            // Veritabanı bağlantısını dahili olarak test et — sonuç dışarıya sızdırılmaz
             try {
                 $db = Database::baglan();
                 $db->query('SELECT 1');
-                $db_durum = 'bagli';
             } catch (Exception $e) {
-                $db_durum = 'hata';
                 error_log('Health check DB hatasi: ' . $e->getMessage());
+                Response::sunucu_hatasi('Servis geçici olarak kullanılamıyor');
+                break;
             }
-            
+
             Response::basarili([
-                'durum'      => 'aktif',
-                'versiyon'   => '1.0.0',
-                'zaman'      => date('Y-m-d H:i:s'),
-                'veritabani' => $db_durum,
+                'durum' => 'aktif',
+                'zaman' => date('Y-m-d H:i:s'),
             ], 'Finans Kalesi API çalışıyor');
             break;
         

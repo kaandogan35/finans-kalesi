@@ -6,6 +6,9 @@
  * PUT /api/tur/{tur_adi} → TurController::tamamla()
  */
 
+// JWT dogrulama — tüm tur endpoint'leri giris gerektirir
+$payload = AuthMiddleware::dogrula();
+
 $tur = new TurController();
 
 $islem = $yol_parcalari[1] ?? '';

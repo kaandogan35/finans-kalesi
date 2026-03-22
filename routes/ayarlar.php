@@ -11,6 +11,9 @@
 
 require_once BASE_PATH . '/controllers/AyarlarController.php';
 
+// JWT dogrulama — tüm ayarlar endpoint'leri giris gerektirir
+$payload = AuthMiddleware::dogrula();
+
 $controller = new AyarlarController();
 $girdi = json_decode(file_get_contents('php://input'), true) ?? [];
 
