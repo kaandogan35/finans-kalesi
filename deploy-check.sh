@@ -4,8 +4,8 @@
 # Kullanım: Git Bash'te → bash deploy-check.sh
 # ═══════════════════════════════════════════════════════════════
 
-SUNUCU_REPO="/home/kdgfethi09/repositories/finans-kalesi"
-SUNUCU_WEB="/home/kdgfethi09/public_html"
+SUNUCU_REPO="/home/goparam/repositories/finans-kalesi"
+SUNUCU_WEB="/home/goparam/public_html"
 TAG="deploy-last"
 
 echo ""

@@ -3,6 +3,18 @@
 
 ---
 
+## SUNUCU BİLGİLERİ
+
+- **Domain:** paramgo.com
+- **cPanel kullanıcı:** goparam
+- **Repo yolu:** `/home/goparam/repositories/finans-kalesi/`
+- **Web kökü:** `/home/goparam/public_html/`
+- **PHP sürümü:** 8.4 (cPanel MultiPHP Manager'dan ayarlandı)
+- **Panel:** cPanel
+- **Deploy yöntemi:** WinSCP (FTP/SFTP)
+
+---
+
 ## DEPLOY ADIMLARI
 
 ```
@@ -20,21 +32,21 @@
 
 | Lokal Klasör/Dosya | Sunucuda Nereye |
 |--------------------|-----------------|
-| `config/` | `/home/kdgfethi09/repositories/finans-kalesi/config/` |
-| `controllers/` | `/home/kdgfethi09/repositories/finans-kalesi/controllers/` |
-| `middleware/` | `/home/kdgfethi09/repositories/finans-kalesi/middleware/` |
-| `models/` | `/home/kdgfethi09/repositories/finans-kalesi/models/` |
-| `routes/` | `/home/kdgfethi09/repositories/finans-kalesi/routes/` |
-| `utils/` | `/home/kdgfethi09/repositories/finans-kalesi/utils/` |
-| `public/frontend-build/` | `/home/kdgfethi09/public_html/frontend-build/` |
-| `public/.htaccess` | `/home/kdgfethi09/public_html/.htaccess` |
+| `config/` | `/home/goparam/repositories/finans-kalesi/config/` |
+| `controllers/` | `/home/goparam/repositories/finans-kalesi/controllers/` |
+| `middleware/` | `/home/goparam/repositories/finans-kalesi/middleware/` |
+| `models/` | `/home/goparam/repositories/finans-kalesi/models/` |
+| `routes/` | `/home/goparam/repositories/finans-kalesi/routes/` |
+| `utils/` | `/home/goparam/repositories/finans-kalesi/utils/` |
+| `public/frontend-build/` | `/home/goparam/public_html/frontend-build/` |
+| `public/.htaccess` | `/home/goparam/public_html/.htaccess` |
 
 ---
 
 ## ⚠️ ÖZEL DURUM: public/index.php
 
 Canlıdaki `public_html/index.php` ile lokaldeki `public/index.php` FARKLIDIR.
-Canlıda BASE_PATH sabit yol kullanıyor: `/home/kdgfethi09/repositories/finans-kalesi`
+Canlıda BASE_PATH sabit yol kullanıyor: `/home/goparam/repositories/finans-kalesi`
 
 **Yeni bir route eklendiğinde:**
 - Lokalde `public/index.php`'ye route eklendi
@@ -78,13 +90,3 @@ git tag -f deploy-last
 # Deploy tag'inin tarihi:
 git log -1 --format="%cd" --date=format:"%d.%m.%Y %H:%M" deploy-last
 ```
-
----
-
-## SUNUCU BİLGİLERİ
-
-- **Kullanıcı:** kdgfethi09
-- **Repo yolu:** `/home/kdgfethi09/repositories/finans-kalesi/`
-- **Web kökü:** `/home/kdgfethi09/public_html/`
-- **Panel:** cPanel
-- **Deploy yöntemi:** WinSCP (FTP/SFTP)
