@@ -1,5 +1,5 @@
 /**
- * Finans Kalesi — Ana Router
+ * ParamGo — Ana Router
  *
  * Route yapısı:
  *   /giris                  → Giriş sayfası (public)
@@ -62,8 +62,8 @@ function YakindaGeliyor({ sayfa }) {
       >
         🚧
       </div>
-      <h2 style={{ fontSize: 16, fontWeight: 700, color: '#1e293b', marginBottom: 4 }}>{sayfa}</h2>
-      <p style={{ fontSize: 13, color: '#94a3b8', margin: 0 }}>Bu modül yakında eklenecek.</p>
+      <h2 style={{ fontSize: 16, fontWeight: 700, color: '#111827', marginBottom: 4 }}>{sayfa}</h2>
+      <p style={{ fontSize: 13, color: '#9CA3AF', margin: 0 }}>Bu modül yakında eklenecek.</p>
     </div>
   )
 }

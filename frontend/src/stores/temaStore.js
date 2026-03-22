@@ -1,5 +1,5 @@
 /**
- * Finans Kalesi — Tema Store (Zustand)
+ * ParamGo — Tema Store (Zustand)
  *
  * Aktif arayüz temasını tutar.
  * Tema bilgisi login sonrası backend'den gelir, buraya yazılır.
@@ -9,7 +9,7 @@
 import { create } from 'zustand'
 
 const useTemaStore = create((set) => ({
-  aktifTema: 'banking',
+  aktifTema: 'paramgo',
 
   temaAyarla: (tema) => set({ aktifTema: tema }),
 }))

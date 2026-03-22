@@ -5,7 +5,7 @@ import { carilerApi } from '../../api/cariler'
 import useTemaStore from '../../stores/temaStore'
 import { temaRenkleri, hexRgba } from '../../lib/temaRenkleri'
 
-const prefixMap = { banking: 'b', earthy: 'e', dark: 'd' }
+const prefixMap = { paramgo: 'p' }
 
 /* ═══════════════════════════════════════════════════════════════
    YARDIMCI FONKSİYONLAR
@@ -50,14 +50,14 @@ const ONCELIK_SIRA = { kritik: 0, yuksek: 1, normal: 2, dusuk: 3 }
    TABLO YARDIMCILARI
    ═══════════════════════════════════════════════════════════════ */
 
-function kenariRenk(tarih, durum, renkler) {
-  if (durum === 'tamamlandi') return renkler.success
+function kenariRenkCls(tarih, durum, p) {
+  if (durum === 'tamamlandi') return `${p}-odm-td-border-success`
   const fark = gunFarki(tarih)
-  if (fark === null) return 'transparent'
-  if (fark < 0)   return renkler.danger
-  if (fark === 0) return renkler.warning
-  if (fark <= 3)  return renkler.warning
-  return 'transparent'
+  if (fark === null) return ''
+  if (fark < 0)   return `${p}-odm-td-border-danger`
+  if (fark === 0) return `${p}-odm-td-border-warning`
+  if (fark <= 3)  return `${p}-odm-td-border-warning`
+  return ''
 }
 
 function vadeBadge(tarih, durum, p) {
@@ -81,8 +81,8 @@ export default function OdemeTakip() {
   const navigate = useNavigate()
   const location = useLocation()
   const aktifTema = useTemaStore((s) => s.aktifTema)
-  const p = prefixMap[aktifTema] || 'b'
-  const renkler = temaRenkleri[aktifTema] || temaRenkleri.banking
+  const p = prefixMap[aktifTema] || 'p'
+  const renkler = temaRenkleri[aktifTema] || temaRenkleri.paramgo
 
   const ONCELIK_META = {
     kritik: { label: 'Kritik',  cls: `${p}-odm-oncelik-kritik` },
@@ -428,7 +428,7 @@ export default function OdemeTakip() {
   }
 
   const KPI_TANIM = [
-    { key: 'bu_hafta_vadeli', label: 'Bu Hafta Vadeli',   icon: 'bi-calendar-week',        cls: `${p}-odm-kpi-amber` },
+    { key: 'bu_hafta_vadeli', label: 'Bu Hafta Vadeli',   icon: 'bi-calendar-week',        cls: `${p}-odm-kpi-primary` },
     { key: 'bekleyen_tutar',  label: 'Bekleyen Tahsilat', icon: 'bi-hourglass-split',      cls: `${p}-odm-kpi-info`, format: v => TL(v) },
     { key: 'bu_hafta_aranan', label: 'Bu Hafta Aranan',   icon: 'bi-telephone-outbound',   cls: `${p}-odm-kpi-success` },
     { key: 'gecikmus',        label: 'Gecikmiş Alacak',   icon: 'bi-exclamation-triangle', cls: `${p}-odm-kpi-danger` },
@@ -456,22 +456,24 @@ export default function OdemeTakip() {
       )}
 
       {/* ── Sayfa Başlığı ── */}
-      <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 22 }}>
-        <div>
-          <h1 className={`${p}-odm-sayfa-baslik`}>
-            <div className={`${p}-odm-baslik-ikon`}>
-              <i className="bi bi-credit-card-2-fill" />
-            </div>
-            Ödeme Takip
-          </h1>
-          <p className={`${p}-odm-sayfa-alt`}>
-            Tahsilat takibi · Alacak yaşlandırma · Yaklaşan ödemeler
-          </p>
+      <div className={`${p}-page-header`}>
+        <div className={`${p}-page-header-left`}>
+          <div className={`${p}-page-header-icon`}>
+            <i className="bi bi-credit-card-2-front-fill" />
+          </div>
+          <div>
+            <h1 className={`${p}-page-title`}>Ödeme Takip</h1>
+            <p className={`${p}-page-sub`}>
+              Tahsilat takibi · Alacak yaşlandırma · Yaklaşan ödemeler
+            </p>
+          </div>
         </div>
-        <button data-tur="odeme-ekle-btn" className={`${p}-btn-save ${p}-btn-save-amber ${p}-odm-yeni-btn`} onClick={() => { setYeniForm(BOSH_YENI_FORM); setYeniFormHata(''); setShowYeniModal(true) }}>
-          <i className="bi bi-plus-lg" />
-          Yeni Ekle
-        </button>
+        <div className={`${p}-page-header-right`}>
+          <button data-tur="odeme-ekle-btn" className={`${p}-btn-save ${p}-btn-save-default ${p}-odm-yeni-btn`} onClick={() => { setYeniForm(BOSH_YENI_FORM); setYeniFormHata(''); setShowYeniModal(true) }}>
+            <i className="bi bi-plus-lg" />
+            Yeni Ekle
+          </button>
+        </div>
       </div>
 
       {/* ═══════════════════════════════════════════════════════════
@@ -485,7 +487,7 @@ export default function OdemeTakip() {
             <div key={kpi.key} className={`${p}-kpi-card ${p}-odm-kpi-card`}>
               <i className={`bi ${kpi.icon} ${p}-odm-kpi-deco ${kpi.cls}`} />
               <div className={`${p}-kpi-label`}>{kpi.label}</div>
-              <div className={`${p}-kpi-value ${kpi.cls}`}>
+              <div className={`${p}-kpi-value ${kpi.cls}${kpi.key === 'bekleyen_tutar' ? ' financial-num' : ''}`}>
                 {deger}
               </div>
             </div>
@@ -508,7 +510,7 @@ export default function OdemeTakip() {
               <div>
                 <div className={`${p}-odm-kart-baslik`}>Alacak Yaşlandırma</div>
                 <div className={`${p}-odm-kart-aciklama`}>
-                  Toplam: <strong className={`${p}-odm-accent-text ${p}-odm-mono`}>{TL(toplamYaslima)}</strong>
+                  Toplam: <strong className={`${p}-odm-accent-text ${p}-odm-mono financial-num`}>{TL(toplamYaslima)}</strong>
                 </div>
               </div>
             </div>
@@ -522,7 +524,7 @@ export default function OdemeTakip() {
               <div className={`${p}-odm-yas-header`}>
                 <span className={`${p}-odm-yas-aralik`}>{y.aralik}</span>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                  <span className={`${p}-odm-yas-tutar ${y.cls}`}>{TL(y.tutar)}</span>
+                  <span className={`${p}-odm-yas-tutar ${y.cls} financial-num`}>{TL(y.tutar)}</span>
                   <span className={`${p}-odm-yas-oran ${y.cls}`}>
                     %{y.oran}
                   </span>
@@ -557,7 +559,7 @@ export default function OdemeTakip() {
               </div>
             </div>
             <div style={{ textAlign: 'right' }}>
-              <div className={`${p}-odm-yaklasan-toplam`}>{TL(toplamYaklasan)}</div>
+              <div className={`${p}-odm-yaklasan-toplam financial-num`}>{TL(toplamYaklasan)}</div>
               <div className={`${p}-odm-yaklasan-alt`}>{yaklasan.length} kalem</div>
             </div>
           </div>
@@ -582,7 +584,7 @@ export default function OdemeTakip() {
                 <span className={`${p}-odm-odeme-gun ${acil ? `${p}-odm-odeme-gun-acil` : ''}`}>
                   {fark === 0 ? 'Bugün' : `${fark}g`}
                 </span>
-                <span className={`${p}-odm-odeme-tutar`}>{TL(o.tutar)}</span>
+                <span className={`${p}-odm-odeme-tutar financial-num`}>{TL(o.tutar)}</span>
               </div>
             )
           })}
@@ -696,7 +698,7 @@ export default function OdemeTakip() {
                           const vb     = vadeBadge(k.vade_tarihi, k.durum, p)
                           const ad     = ARAMA_DURUM_META[k.arama_durumu] || ARAMA_DURUM_META.aranmadi
                           const om     = ONCELIK_META[k.oncelik]           || ONCELIK_META.normal
-                          const kenari = kenariRenk(k.vade_tarihi, k.durum, renkler)
+                          const kenari = kenariRenkCls(k.vade_tarihi, k.durum, p)
                           const pulse  = isPulse(k)
                           return (
                             <tr
@@ -704,7 +706,7 @@ export default function OdemeTakip() {
                               className={`${pulse ? `${p}-odm-kritik-pulse` : ''}${secilenKayitId === k.id ? ` ${p}-odm-tr-secili` : ''}`}
                               onClick={() => setSecilenKayitId(k.id === secilenKayitId ? null : k.id)}
                             >
-                              <td className={`${p}-odm-td-border`} style={{ background: kenari }} />
+                              <td className={`${p}-odm-td-border ${kenari}`} />
 
                               <td>
                                 <div className={`${p}-odm-firma`}>{k.firma_adi}</div>
@@ -712,7 +714,7 @@ export default function OdemeTakip() {
                               </td>
 
                               <td>
-                                <span className={`${p}-odm-tutar-cell ${k.durum === 'tamamlandi' ? `${p}-odm-tutar-done` : ''}`}>
+                                <span className={`${p}-odm-tutar-cell ${k.durum === 'tamamlandi' ? `${p}-odm-tutar-done` : ''} financial-num`}>
                                   {TL(k.tutar)}
                                 </span>
                               </td>
@@ -777,13 +779,12 @@ export default function OdemeTakip() {
                   const vb     = vadeBadge(k.vade_tarihi, k.durum, p)
                   const ad     = ARAMA_DURUM_META[k.arama_durumu] || ARAMA_DURUM_META.aranmadi
                   const om     = ONCELIK_META[k.oncelik]           || ONCELIK_META.normal
-                  const kenari = kenariRenk(k.vade_tarihi, k.durum, renkler)
+                  const kenari = kenariRenkCls(k.vade_tarihi, k.durum, p)
                   const pulse  = isPulse(k)
                   return (
                     <div
                       key={k.id}
                       className={`${p}-odm-mobil-kart${pulse ? ` ${p}-odm-kritik-pulse` : ''}`}
-                      style={{ borderLeftColor: kenari }}
                       onClick={() => setSecilenKayitId(k.id === secilenKayitId ? null : k.id)}
                     >
                       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 9 }}>
@@ -791,7 +792,7 @@ export default function OdemeTakip() {
                           <div className={`${p}-odm-firma`}>{k.firma_adi}</div>
                           <div className={`${p}-odm-cari`}>{k.cari_adi}</div>
                         </div>
-                        <div className={`${p}-odm-tutar-cell ${k.durum === 'tamamlandi' ? `${p}-odm-tutar-done` : ''}`}>
+                        <div className={`${p}-odm-tutar-cell ${k.durum === 'tamamlandi' ? `${p}-odm-tutar-done` : ''} financial-num`}>
                           {TL(k.tutar)}
                         </div>
                       </div>
@@ -878,7 +879,7 @@ export default function OdemeTakip() {
                   <div className={`${p}-odm-drawer-tutar-label`}>
                     Bekleyen Tutar
                   </div>
-                  <div className={`${p}-odm-drawer-tutar-value`}>
+                  <div className={`${p}-odm-drawer-tutar-value financial-num`}>
                     {TL(secilenKayit.tutar)}
                   </div>
                   <div style={{ display: 'flex', gap: 6, marginTop: 10, flexWrap: 'wrap' }}>
@@ -912,7 +913,7 @@ export default function OdemeTakip() {
                 )}
 
                 <button
-                  className={`${p}-btn-save ${p}-btn-save-amber ${p}-odm-drawer-arama-btn`}
+                  className={`${p}-btn-save ${p}-btn-save-default ${p}-odm-drawer-arama-btn`}
                   onClick={() => modalAc(secilenKayit)}
                 >
                   <i className="bi bi-telephone-outbound" />
@@ -971,13 +972,13 @@ export default function OdemeTakip() {
             <div className={`${p}-modal-box`} style={{ maxWidth: 500 }}>
 
               {/* Header */}
-              <div className={`${p}-modal-header ${p}-mh-amber`}>
+              <div className={`${p}-modal-header ${p}-mh-default`} aria-labelledby="arama-modal-title">
                 <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-                  <div className={`${p}-modal-icon ${p}-modal-icon-amber`}>
+                  <div className={`${p}-modal-icon ${p}-modal-icon-default`}>
                     <i className="bi bi-telephone-outbound" />
                   </div>
                   <div>
-                    <div className={`${p}-modal-title`}>Arama Kaydı</div>
+                    <h2 id="arama-modal-title" className={`${p}-modal-title`}>Arama Kaydı</h2>
                     <div className={`${p}-modal-sub`}>
                       {aramaModali.firma_adi} — {aramaModali.cari_adi}
                     </div>
@@ -1036,7 +1037,7 @@ export default function OdemeTakip() {
               <div className={`${p}-modal-footer`}>
                 <button className={`${p}-btn-cancel`} onClick={() => { setAramaModaliId(null); resetModal() }}>İptal</button>
                 <button
-                  className={`${p}-btn-save ${p}-btn-save-amber`}
+                  className={`${p}-btn-save ${p}-btn-save-default`}
                   disabled={!aramaSonucu}
                   onClick={aramaKaydet}
                   style={{ opacity: !aramaSonucu ? 0.5 : 1 }}
@@ -1061,13 +1062,13 @@ export default function OdemeTakip() {
             <div className={`${p}-modal-box`} style={{ maxWidth: 520 }}>
 
               {/* Header */}
-              <div className={`${p}-modal-header ${p}-mh-green`}>
+              <div className={`${p}-modal-header ${p}-mh-default`} aria-labelledby="yeni-modal-title">
                 <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-                  <div className={`${p}-modal-icon ${p}-modal-icon-green`}>
+                  <div className={`${p}-modal-icon ${p}-modal-icon-default`}>
                     <i className={duzenlemeId ? 'bi bi-pencil-fill' : 'bi bi-plus-circle-fill'} />
                   </div>
                   <div>
-                    <div className={`${p}-modal-title`}>{duzenlemeId ? 'Kaydı Düzenle' : 'Yeni Kayıt Ekle'}</div>
+                    <h2 id="yeni-modal-title" className={`${p}-modal-title`}>{duzenlemeId ? 'Kaydı Düzenle' : 'Yeni Kayıt Ekle'}</h2>
                     <div className={`${p}-modal-sub`}>Tahsilat veya ödeme takibi</div>
                   </div>
                 </div>
@@ -1236,7 +1237,7 @@ export default function OdemeTakip() {
                         </div>
                       </div>
                       {yeniForm.tutar && (
-                        <div className={`${p}-odm-preview-tutar ${yeniForm.yon === 'tahsilat' ? `${p}-odm-preview-tutar-success` : `${p}-odm-preview-tutar-danger`}`}>
+                        <div className={`${p}-odm-preview-tutar ${yeniForm.yon === 'tahsilat' ? `${p}-odm-preview-tutar-success` : `${p}-odm-preview-tutar-danger`} financial-num`}>
                           ₺{yeniForm.tutar}
                         </div>
                       )}
@@ -1257,7 +1258,7 @@ export default function OdemeTakip() {
                 <button
                   onClick={duzenlemeId ? duzenlemeKaydet : yeniEkleKaydet}
                   disabled={yeniKaydetYukleniyor || !yeniForm.firma_adi.trim()}
-                  className={`${p}-btn-save ${p}-btn-save-green`}
+                  className={`${p}-btn-save ${p}-btn-save-default`}
                   style={{ flex: 2, opacity: (yeniKaydetYukleniyor || !yeniForm.firma_adi.trim()) ? 0.5 : 1, display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 8 }}
                 >
                   {yeniKaydetYukleniyor
@@ -1281,16 +1282,16 @@ export default function OdemeTakip() {
         const silinecek = liste.find(k => k.id === silOnayId)
         return (
           <>
-            <div className={`${p}-modal-overlay`} onClick={() => !silYukleniyor && setSilOnayId(null)} />
+            <div className={`${p}-modal-overlay`} />
             <div className={`${p}-modal-center`}>
               <div className={`${p}-modal-box`} style={{ maxWidth: 420 }}>
-                <div className={`${p}-modal-header ${p}-mh-red`}>
+                <div className={`${p}-modal-header ${p}-mh-danger`} aria-labelledby="sil-modal-title">
                   <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
                     <div className={`${p}-modal-icon ${p}-modal-icon-red`}>
                       <i className="bi bi-trash3-fill" />
                     </div>
                     <div>
-                      <div className={`${p}-modal-title`}>Kaydı Sil</div>
+                      <h2 id="sil-modal-title" className={`${p}-modal-title`}>Kaydı Sil</h2>
                       <div className={`${p}-modal-sub`}>Bu işlem geri alınamaz</div>
                     </div>
                   </div>
@@ -1303,7 +1304,7 @@ export default function OdemeTakip() {
                     <div className={`${p}-odm-preview-box`} style={{ marginBottom: 0 }}>
                       <div className={`${p}-odm-preview-firma`} style={{ fontSize: 15 }}>{silinecek.firma_adi}</div>
                       <div className={`${p}-odm-preview-detay`}>
-                        {silinecek.yon === 'tahsilat' ? 'Tahsilat' : 'Ödeme'} · {TL(silinecek.tutar)} · Vade: {tarihStr(silinecek.vade_tarihi)}
+                        {silinecek.yon === 'tahsilat' ? 'Tahsilat' : 'Ödeme'} · <span className="financial-num">{TL(silinecek.tutar)}</span> · Vade: {tarihStr(silinecek.vade_tarihi)}
                       </div>
                     </div>
                   )}

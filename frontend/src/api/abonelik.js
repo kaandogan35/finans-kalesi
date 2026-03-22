@@ -1,5 +1,5 @@
 /**
- * Finans Kalesi — Abonelik API
+ * ParamGo — Abonelik API
  */
 
 import api from './axios'

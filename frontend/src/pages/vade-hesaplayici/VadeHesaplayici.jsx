@@ -2,7 +2,7 @@ import { useState, useMemo, useEffect } from 'react'
 import useTemaStore from '../../stores/temaStore'
 import { temaRenkleri, hexRgba } from '../../lib/temaRenkleri'
 
-const prefixMap = { banking: 'b', earthy: 'e', dark: 'd' }
+const prefixMap = { paramgo: 'p' }
 
 // ─── Yardımcı Fonksiyonlar ────────────────────────────────────────────────────
 function tarihFormat(d) {
@@ -120,8 +120,8 @@ function KartBaslik({ p, icon, baslik, alt, variant }) {
 // ─── Ana Bileşen ──────────────────────────────────────────────────────────────
 export default function VadeHesaplayici() {
   const aktifTema = useTemaStore((s) => s.aktifTema)
-  const p = prefixMap[aktifTema] || 'b'
-  const renkler = temaRenkleri[aktifTema] || temaRenkleri.banking
+  const p = prefixMap[aktifTema] || 'p'
+  const renkler = temaRenkleri[aktifTema] || temaRenkleri.paramgo
 
   const [aktifSekme, setAktifSekme] = useState('fatura-ort')
 
@@ -268,13 +268,15 @@ export default function VadeHesaplayici() {
     <div className={`${p}-vade-page`}>
 
       {/* Sayfa Başlığı */}
-      <div className="d-flex align-items-center gap-3 mb-4">
-        <div className={`${p}-vade-page-icon`}>
-          <i className="bi bi-calculator-fill" />
-        </div>
-        <div>
-          <h1 className={`${p}-page-title`} style={{ fontSize:'1.1rem', margin:0, lineHeight:1.2 }}>Vade Hesaplayıcı</h1>
-          <div className={`${p}-vade-page-sub`}>Ağırlıklı ortalama vade ve çek tarihi hesaplamaları</div>
+      <div className={`${p}-page-header`}>
+        <div className={`${p}-page-header-left`}>
+          <div className={`${p}-page-header-icon`}>
+            <i className="bi bi-calculator-fill" />
+          </div>
+          <div>
+            <h1 className={`${p}-page-title`}>Vade Hesaplayıcı</h1>
+            <p className={`${p}-page-sub`}>Ağırlıklı ortalama vade ve çek tarihi hesaplamaları</p>
+          </div>
         </div>
       </div>
 
@@ -374,18 +376,18 @@ export default function VadeHesaplayici() {
                             <tr key={f.id}>
                               <td className={`${p}-vade-td-muted`}>{i+1}</td>
                               <td className={`${p}-vade-td-sec`}>{f.no||'—'}</td>
-                              <td className={`${p}-vade-num ${p}-vade-td-success`} style={{ textAlign:'right' }}>{paraFormat(f.tutar)}</td>
+                              <td className={`${p}-vade-num financial-num ${p}-vade-td-success`} style={{ textAlign:'right' }}>{paraFormat(f.tutar)}</td>
                               <td className={`${p}-vade-num`} style={{ textAlign:'right' }}>{f.gun}</td>
-                              <td className={`${p}-vade-num ${p}-vade-td-accent`} style={{ textAlign:'right' }}>{paraFormat(f.agirlik)}</td>
+                              <td className={`${p}-vade-num financial-num ${p}-vade-td-accent`} style={{ textAlign:'right' }}>{paraFormat(f.agirlik)}</td>
                             </tr>
                           ))}
                         </tbody>
                         <tfoot>
                           <tr>
                             <td colSpan={2} className={`${p}-vade-tfoot-label`}>TOPLAM</td>
-                            <td className={`${p}-vade-num ${p}-vade-td-success`} style={{ textAlign:'right', fontWeight:700 }}>{paraFormat(s1Sonuc.toplamTutar)}</td>
+                            <td className={`${p}-vade-num financial-num ${p}-vade-td-success`} style={{ textAlign:'right', fontWeight:700 }}>{paraFormat(s1Sonuc.toplamTutar)}</td>
                             <td></td>
-                            <td className={`${p}-vade-num ${p}-vade-td-accent`} style={{ textAlign:'right', fontWeight:700 }}>{paraFormat(s1Sonuc.toplamAgirlik)}</td>
+                            <td className={`${p}-vade-num financial-num ${p}-vade-td-accent`} style={{ textAlign:'right', fontWeight:700 }}>{paraFormat(s1Sonuc.toplamAgirlik)}</td>
                           </tr>
                         </tfoot>
                       </table>
@@ -483,19 +485,19 @@ export default function VadeHesaplayici() {
                       <div className="col-sm-4">
                         <div className={`${p}-vade-result-secondary`}>
                           <div className={`${p}-vade-result-label`}>Borç Tutarı</div>
-                          <div className={`${p}-vade-result-date ${p}-vade-td-danger`}>₺{paraFormat(parseTutar(s2Borc))}</div>
+                          <div className={`${p}-vade-result-date financial-num ${p}-vade-td-danger`}>₺{paraFormat(parseTutar(s2Borc))}</div>
                         </div>
                       </div>
                       <div className="col-sm-4">
                         <div className={`${p}-vade-result-secondary`}>
                           <div className={`${p}-vade-result-label`}>Çek Tutarı</div>
-                          <div className={`${p}-vade-result-date ${p}-vade-td-success`}>₺{paraFormat(parseTutar(s2CekTutar))}</div>
+                          <div className={`${p}-vade-result-date financial-num ${p}-vade-td-success`}>₺{paraFormat(parseTutar(s2CekTutar))}</div>
                         </div>
                       </div>
                       <div className="col-sm-4">
                         <div className={`${p}-vade-result-secondary`}>
                           <div className={`${p}-vade-result-label`}>Fark</div>
-                          <div className={`${p}-vade-result-date ${s2Sonuc.fark >= 0 ? `${p}-vade-td-success` : `${p}-vade-td-danger`}`}>
+                          <div className={`${p}-vade-result-date financial-num ${s2Sonuc.fark >= 0 ? `${p}-vade-td-success` : `${p}-vade-td-danger`}`}>
                             {s2Sonuc.fark >= 0 ? '+' : ''}₺{paraFormat(Math.abs(s2Sonuc.fark))}
                           </div>
                         </div>
@@ -521,7 +523,7 @@ export default function VadeHesaplayici() {
                           <div className={`${p}-vade-divider`} />
                           <div className={`${p}-vade-result-hint`}>
                             Borç × Vade değeri:{' '}
-                            <span className={`${p}-vade-num ${p}-vade-inline-val`}>{paraFormat(s2Sonuc.borcVadeDegeri)}</span>
+                            <span className={`${p}-vade-num financial-num ${p}-vade-inline-val`}>{paraFormat(s2Sonuc.borcVadeDegeri)}</span>
                           </div>
                         </div>
                       </div>
@@ -614,18 +616,18 @@ export default function VadeHesaplayici() {
                             <tr key={c.id}>
                               <td className={`${p}-vade-td-muted`}>{i+1}</td>
                               <td className={`${p}-vade-td-sec`}>{c.aciklama||'—'}</td>
-                              <td className={`${p}-vade-num ${p}-vade-td-success`} style={{ textAlign:'right' }}>{paraFormat(c.tutar)}</td>
+                              <td className={`${p}-vade-num financial-num ${p}-vade-td-success`} style={{ textAlign:'right' }}>{paraFormat(c.tutar)}</td>
                               <td className={`${p}-vade-num`} style={{ textAlign:'right' }}>{c.gun}</td>
-                              <td className={`${p}-vade-num ${p}-vade-td-accent`} style={{ textAlign:'right' }}>{paraFormat(c.agirlik)}</td>
+                              <td className={`${p}-vade-num financial-num ${p}-vade-td-accent`} style={{ textAlign:'right' }}>{paraFormat(c.agirlik)}</td>
                             </tr>
                           ))}
                         </tbody>
                         <tfoot>
                           <tr>
                             <td colSpan={2} className={`${p}-vade-tfoot-label`}>TOPLAM</td>
-                            <td className={`${p}-vade-num ${p}-vade-td-success`} style={{ textAlign:'right', fontWeight:700 }}>{paraFormat(s3Sonuc.toplamTutar)}</td>
+                            <td className={`${p}-vade-num financial-num ${p}-vade-td-success`} style={{ textAlign:'right', fontWeight:700 }}>{paraFormat(s3Sonuc.toplamTutar)}</td>
                             <td></td>
-                            <td className={`${p}-vade-num ${p}-vade-td-accent`} style={{ textAlign:'right', fontWeight:700 }}>{paraFormat(s3Sonuc.toplamAgirlik)}</td>
+                            <td className={`${p}-vade-num financial-num ${p}-vade-td-accent`} style={{ textAlign:'right', fontWeight:700 }}>{paraFormat(s3Sonuc.toplamAgirlik)}</td>
                           </tr>
                         </tfoot>
                       </table>
@@ -752,18 +754,18 @@ export default function VadeHesaplayici() {
                             <tr key={b.id}>
                               <td className={`${p}-vade-td-muted`}>{i+1}</td>
                               <td className={`${p}-vade-td-sec`}>{b.aciklama||'—'}</td>
-                              <td className={`${p}-vade-num ${p}-vade-td-danger`} style={{ textAlign:'right' }}>{paraFormat(b.tutar)}</td>
+                              <td className={`${p}-vade-num financial-num ${p}-vade-td-danger`} style={{ textAlign:'right' }}>{paraFormat(b.tutar)}</td>
                               <td className={`${p}-vade-num`} style={{ textAlign:'right' }}>{b.gun}</td>
-                              <td className={`${p}-vade-num ${p}-vade-td-accent`} style={{ textAlign:'right' }}>{paraFormat(b.agirlik)}</td>
+                              <td className={`${p}-vade-num financial-num ${p}-vade-td-accent`} style={{ textAlign:'right' }}>{paraFormat(b.agirlik)}</td>
                             </tr>
                           ))}
                         </tbody>
                         <tfoot>
                           <tr>
                             <td colSpan={2} className={`${p}-vade-tfoot-label`}>TOPLAM</td>
-                            <td className={`${p}-vade-num ${p}-vade-td-danger`} style={{ textAlign:'right', fontWeight:700 }}>{paraFormat(s4Sonuc.toplamBorc)}</td>
+                            <td className={`${p}-vade-num financial-num ${p}-vade-td-danger`} style={{ textAlign:'right', fontWeight:700 }}>{paraFormat(s4Sonuc.toplamBorc)}</td>
                             <td></td>
-                            <td className={`${p}-vade-num ${p}-vade-td-accent`} style={{ textAlign:'right', fontWeight:700 }}>{paraFormat(s4Sonuc.toplamAgirlik)}</td>
+                            <td className={`${p}-vade-num financial-num ${p}-vade-td-accent`} style={{ textAlign:'right', fontWeight:700 }}>{paraFormat(s4Sonuc.toplamAgirlik)}</td>
                           </tr>
                         </tfoot>
                       </table>
@@ -804,7 +806,7 @@ export default function VadeHesaplayici() {
                           <div className={`${p}-vade-divider`} />
                           <div className={`${p}-vade-result-hint`}>
                             Toplam Borç:{' '}
-                            <span className={`${p}-vade-num ${p}-vade-td-danger`} style={{ fontWeight:700 }}>₺{paraFormat(s4Sonuc.toplamBorc)}</span>
+                            <span className={`${p}-vade-num financial-num ${p}-vade-td-danger`} style={{ fontWeight:700 }}>₺{paraFormat(s4Sonuc.toplamBorc)}</span>
                           </div>
                         </div>
                       </div>

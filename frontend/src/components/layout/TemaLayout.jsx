@@ -1,23 +1,20 @@
 /**
- * Finans Kalesi — Tema Layout Seçici
+ * ParamGo — Tema Layout Seçici
  *
  * temaStore'daki aktif temaya göre doğru AppLayout bileşenini render eder.
  * Yeni tema eklemek: harita nesnesine path + bileşen ekle.
  */
 
 import useTemaStore from '../../stores/temaStore'
-import AppLayoutBanking from './AppLayoutBanking'  // banking (kurumsal lacivert)
-import AppLayoutEarthy  from './AppLayoutEarthy'   // earthy (toprak tonları)
-import AppLayoutDark    from './AppLayoutDark'     // dark (fintech terminal)
+import AppLayoutParamGo from './AppLayoutParamGo'  // paramgo (modern yeşil)
 
 const harita = {
-  banking: AppLayoutBanking,
-  earthy:  AppLayoutEarthy,
-  dark:    AppLayoutDark,
+  paramgo: AppLayoutParamGo,
+  // Yeni temalar buraya eklenecek
 }
 
 export default function TemaLayout() {
   const aktifTema = useTemaStore((s) => s.aktifTema)
-  const Layout = harita[aktifTema] || AppLayoutBanking
+  const Layout = harita[aktifTema] || AppLayoutParamGo
   return <Layout />
 }

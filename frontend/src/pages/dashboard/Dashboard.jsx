@@ -6,7 +6,7 @@
  */
 
 import { useEffect, useState, useRef, useCallback } from 'react'
-import { Link }        from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 import { dashboardApi } from '../../api/dashboard'
 import { carilerApi }   from '../../api/cariler'
 import { kasaOzeti }    from '../../api/kasa'
@@ -18,7 +18,7 @@ import HosgeldinPrompt  from '../../components/tanitim-turu/HosgeldinPrompt'
 import useTurStore      from '../../stores/turStore'
 
 // ─── Tema Prefix ────────────────────────────────────────────────────────────
-const prefixMap = { banking: 'b', earthy: 'e', dark: 'd' }
+const prefixMap = { paramgo: 'p' }
 
 // ─── Para Formatları ──────────────────────────────────────────────────────────
 const TL = (n) =>
@@ -67,18 +67,18 @@ function useAnimatedNumber(target, duration = 750) {
 }
 
 // ─── KPI Kart ─────────────────────────────────────────────────────────────────
-function KpiKart({ baslik, deger, alt, ikon, link, yukleniyor, p }) {
+function KpiKart({ baslik, deger, alt, ikon, link, yukleniyor, p, ikonRenk }) {
   const animDeger = useAnimatedNumber(parseFloat(deger ?? 0))
 
   return (
     <div className={`${p}-kpi-card`}>
-      <i className={`bi ${ikon} ${p}-kpi-deco`} />
+      <i className={`bi ${ikon} ${p}-kpi-deco`} style={ikonRenk ? { color: ikonRenk } : undefined} />
       <h6 className={`${p}-kpi-label`}>{baslik}</h6>
 
       {yukleniyor ? (
         <div className={`${p}-skeleton`} style={{ height: 30, width: '75%', marginBottom: 8 }} />
       ) : (
-        <div className={`${p}-kpi-value`}>
+        <div className={`${p}-kpi-value financial-num`}>
           {TL(animDeger)} ₺
         </div>
       )}
@@ -110,9 +110,9 @@ function VadeRozeti({ gun, p }) {
 // ─── Durum Rozeti ─────────────────────────────────────────────────────────────
 function DurumRozeti({ durum, p, renkler }) {
   const harita = {
-    portfoyde:    { c: renkler.accent,  l: 'Portföyde'   },
+    portfoyde:    { c: renkler.info,    l: 'Portföyde'   },
     odendi:       { c: renkler.success, l: 'Ödendi'       },
-    tahsilde:     { c: renkler.accent,  l: 'Tahsilde'     },
+    tahsilde:     { c: renkler.info,    l: 'Tahsilde'     },
     karsilıksız:  { c: renkler.danger,  l: 'Karşılıksız'  },
     ciroslu:      { c: renkler.info,    l: 'Cirolu'       },
     banka_garantili: { c: renkler.info, l: 'Banka Garanti' },
@@ -187,8 +187,8 @@ function OranCubugu({ etiket1, yuzde1, renk1, etiket2, yuzde2, renk2, p }) {
 export default function Dashboard() {
   const { kullanici } = useAuthStore()
   const aktifTema = useTemaStore((s) => s.aktifTema)
-  const p = prefixMap[aktifTema] || 'b'
-  const renkler = temaRenkleri[aktifTema] || temaRenkleri.banking
+  const p = prefixMap[aktifTema] || 'p'
+  const renkler = temaRenkleri[aktifTema] || temaRenkleri.paramgo
 
   // Tur yükleme
   const yukleTurlar = useTurStore((s) => s.yukleTurlar)
@@ -202,6 +202,28 @@ export default function Dashboard() {
   const [yukl,   setYukl]   = useState(true)
   const [gunc,   setGunc]   = useState(null)
   const [donuyor, setDonuyor] = useState(false)
+  const [showHizliIslem, setShowHizliIslem] = useState(false)
+  const navigate = useNavigate()
+
+  // Hızlı işlem seçenekleri
+  const hizliIslemler = [
+    { icon: 'bi-receipt',       label: 'Yeni Çek / Senet', path: '/cek-senet' },
+    { icon: 'bi-cash-coin',     label: 'Kasa Hareketi',    path: '/kasa' },
+    { icon: 'bi-person-plus',   label: 'Yeni Cari',        path: '/cariler' },
+    { icon: 'bi-calendar-plus', label: 'Ödeme Planla',     path: '/odemeler' },
+  ]
+
+  const handleHizliIslem = (path) => {
+    setShowHizliIslem(false)
+    navigate(path)
+  }
+
+  // ESC ile Hızlı İşlem modalını kapat
+  useEffect(() => {
+    const handleEsc = (e) => { if (e.key === 'Escape') setShowHizliIslem(false) }
+    document.addEventListener('keydown', handleEsc)
+    return () => document.removeEventListener('keydown', handleEsc)
+  }, [])
 
   const verileriYukle = useCallback(async (manuel = false) => {
     if (manuel) setDonuyor(true)
@@ -288,6 +310,7 @@ export default function Dashboard() {
       deger: topAlacak,
       alt: `${aktifCari} aktif cari`,
       ikon: 'bi-arrow-down-circle-fill',
+      ikonRenk: renkler.success,
       link: '/cariler',
     },
     {
@@ -295,6 +318,7 @@ export default function Dashboard() {
       deger: topBorc,
       alt: `Net: ${netPozitif ? '+' : ''}${TLKisa(netPozisyon)}`,
       ikon: 'bi-arrow-up-circle-fill',
+      ikonRenk: renkler.danger,
       link: '/cariler',
     },
     {
@@ -302,6 +326,7 @@ export default function Dashboard() {
       deger: kasaBakiye,
       alt: kasaGiris > 0 ? `Bu ay giriş: ${TLKisa(kasaGiris)}` : 'Nakit varlığı',
       ikon: 'bi-safe-fill',
+      ikonRenk: renkler.info,
       link: '/kasa',
     },
     {
@@ -309,13 +334,15 @@ export default function Dashboard() {
       deger: cekPortfoyde,
       alt: `${cekPortfoyAdet} adet`,
       ikon: 'bi-file-earmark-text-fill',
+      ikonRenk: renkler.info,
       link: '/cek-senet',
     },
     {
       baslik: 'Bekleyen Ödemeler',
       deger: bekleyenToplam,
       alt: `${bekleyenAdet} işlem bekliyor`,
-      ikon: 'bi-credit-card-2-fill',
+      ikon: 'bi-credit-card-2-front-fill',
+      ikonRenk: renkler.primary,
       link: '/odemeler',
     },
     {
@@ -323,6 +350,7 @@ export default function Dashboard() {
       deger: likidite,
       alt: 'Kasa + Alacak toplamı',
       ikon: 'bi-graph-up-arrow',
+      ikonRenk: renkler.info,
       link: null,
     },
   ]
@@ -333,26 +361,41 @@ export default function Dashboard() {
       <HosgeldinPrompt />
 
       {/* ─── Başlık ────────────────────────────────────────────────────────── */}
-      <div className={`d-flex align-items-start justify-content-between ${p}-greeting`}>
-        <div>
-          <h1>
-            {selamlama}{ad ? `, ${ad}` : ''} 👋
-          </h1>
-          <p className={`${p}-greeting-sub`}>
-            {gunc
-              ? `Son güncelleme: ${gunc.toLocaleTimeString('tr-TR')}`
-              : 'Finansal durumunuzun güncel özeti'
-            }
-          </p>
+      <div className={`${p}-page-header ${p}-greeting`}>
+        <div className={`${p}-page-header-left`}>
+          <div className={`${p}-page-header-icon`}>
+            <i className="bi bi-grid-1x2-fill" />
+          </div>
+          <div>
+            <h1 className={`${p}-page-title`}>
+              {selamlama}{ad ? `, ${ad}` : ''} 👋
+            </h1>
+            <p className={`${p}-page-sub`}>
+              {gunc
+                ? `Son güncelleme: ${gunc.toLocaleTimeString('tr-TR')}`
+                : 'Finansal durumunuzun güncel özeti'
+              }
+            </p>
+          </div>
         </div>
-        <button
-          className={`${p}-btn-accent`}
-          onClick={() => verileriYukle(true)}
-          disabled={yukl}
-        >
-          <i className={`bi bi-arrow-clockwise${donuyor ? ` ${p}-spin` : ''}`} style={{ fontSize: 14 }} />
-          Yenile
-        </button>
+        <div className={`${p}-page-header-right`}>
+          <button
+            className={`${p}-btn-accent`}
+            onClick={() => verileriYukle(true)}
+            disabled={yukl}
+          >
+            <i className={`bi bi-arrow-clockwise${donuyor ? ` ${p}-spin` : ''}`} style={{ fontSize: 14 }} />
+            Yenile
+          </button>
+          <button
+            data-tur="hizli-islem"
+            className={`${p}-btn-accent`}
+            onClick={() => setShowHizliIslem(true)}
+          >
+            <i className="bi bi-plus-lg" style={{ fontSize: 14 }} />
+            Hızlı İşlem
+          </button>
+        </div>
       </div>
 
       {/* ─── KPI Kartları (6'lı, 3 sütun) ────────────────────────────────── */}
@@ -393,7 +436,7 @@ export default function Dashboard() {
           />
           <div>
             <p className={`${p}-net-band-label`}>Piyasa Net Pozisyonu</p>
-            <p className={`${p}-net-band-value`} style={{ color: netPozitif ? renkler.success : renkler.danger }}>
+            <p className={`${p}-net-band-value financial-num`} style={{ color: netPozitif ? renkler.success : renkler.danger }}>
               {netPozisyon > 0 ? '+' : ''}{TL(netPozisyon)} ₺
             </p>
           </div>
@@ -431,14 +474,14 @@ export default function Dashboard() {
             <>
               <div className={`${p}-metric-row`}>
                 <span className={`${p}-metric-label`}>Mevcut Bakiye</span>
-                <span className={`${p}-metric-value`} style={{ color: kasaBakiye >= 0 ? renkler.accent : renkler.danger }}>
+                <span className={`${p}-metric-value financial-num`} style={{ color: kasaBakiye >= 0 ? renkler.success : renkler.danger }}>
                   {TL(kasaBakiye)} ₺
                 </span>
               </div>
               {kasaGiris > 0 && (
                 <div className={`${p}-metric-row`}>
                   <span className={`${p}-metric-label`}>Bu Ay Giriş</span>
-                  <span className={`${p}-metric-value`} style={{ color: renkler.success }}>
+                  <span className={`${p}-metric-value financial-num`} style={{ color: renkler.success }}>
                     +{TL(kasaGiris)} ₺
                   </span>
                 </div>
@@ -446,7 +489,7 @@ export default function Dashboard() {
               {kasaCikis > 0 && (
                 <div className={`${p}-metric-row`}>
                   <span className={`${p}-metric-label`}>Bu Ay Çıkış</span>
-                  <span className={`${p}-metric-value`} style={{ color: renkler.danger }}>
+                  <span className={`${p}-metric-value financial-num`} style={{ color: renkler.danger }}>
                     -{TL(kasaCikis)} ₺
                   </span>
                 </div>
@@ -454,7 +497,7 @@ export default function Dashboard() {
               {kasaGiris > 0 && kasaCikis > 0 && (
                 <div className={`${p}-metric-row`}>
                   <span className={`${p}-metric-label`}>Bu Ay Net</span>
-                  <span className={`${p}-metric-value`} style={{
+                  <span className={`${p}-metric-value financial-num`} style={{
                     color: kasaGiris - kasaCikis >= 0 ? renkler.success : renkler.danger,
                     fontWeight: 700,
                   }}>
@@ -467,7 +510,7 @@ export default function Dashboard() {
                   <i className="bi bi-info-circle me-1" style={{ fontSize: 11, opacity: 0.6 }} />
                   Likidite Tahmini
                 </span>
-                <span className={`${p}-metric-value`} style={{ color: renkler.info }}>
+                <span className={`${p}-metric-value financial-num`} style={{ color: renkler.info }}>
                   {TLKisa(likidite)}
                 </span>
               </div>
@@ -490,8 +533,8 @@ export default function Dashboard() {
           ) : (
             <>
               {[
-                { etiket: 'Portföyde',   tutar: cekPortfoyde,    renk: renkler.accent,  ikon: 'bi-archive-fill' },
-                { etiket: 'Tahsilde',    tutar: cekTahsilToplam, renk: renkler.accent,  ikon: 'bi-hourglass-split' },
+                { etiket: 'Portföyde',   tutar: cekPortfoyde,    renk: renkler.info,    ikon: 'bi-archive-fill' },
+                { etiket: 'Tahsilde',    tutar: cekTahsilToplam, renk: renkler.info,    ikon: 'bi-hourglass-split' },
                 { etiket: 'Ödendi',      tutar: cekOdendi,       renk: renkler.success, ikon: 'bi-check-circle-fill' },
                 { etiket: 'Karşılıksız', tutar: cekKarsilıksız,  renk: renkler.danger,  ikon: 'bi-x-circle-fill' },
               ].map(({ etiket, tutar, renk, ikon }) => (
@@ -500,7 +543,7 @@ export default function Dashboard() {
                     <i className={`bi ${ikon}`} style={{ color: renk, fontSize: 12 }} />
                     {etiket}
                   </span>
-                  <span className={`${p}-metric-value`} style={{ color: tutar > 0 ? renk : renkler.textSec }}>
+                  <span className={`${p}-metric-value financial-num`} style={{ color: tutar > 0 ? renk : renkler.textSec }}>
                     {tutar > 0 ? `${TL(tutar)} ₺` : '—'}
                   </span>
                 </div>
@@ -510,7 +553,7 @@ export default function Dashboard() {
                   <OranCubugu
                     etiket1={`Aktif %${Math.round(((cekPortfoyde + cekTahsilToplam) / (cekPortfoyde + cekTahsilToplam + cekOdendi + cekKarsilıksız || 1)) * 100)}`}
                     yuzde1={Math.round(((cekPortfoyde + cekTahsilToplam) / (cekPortfoyde + cekTahsilToplam + cekOdendi + cekKarsilıksız || 1)) * 100)}
-                    renk1={renkler.accent}
+                    renk1={renkler.info}
                     etiket2={`Kapandı %${Math.round(((cekOdendi + cekKarsilıksız) / (cekPortfoyde + cekTahsilToplam + cekOdendi + cekKarsilıksız || 1)) * 100)}`}
                     yuzde2={Math.round(((cekOdendi + cekKarsilıksız) / (cekPortfoyde + cekTahsilToplam + cekOdendi + cekKarsilıksız || 1)) * 100)}
                     renk2={renkler.textSec}
@@ -543,8 +586,8 @@ export default function Dashboard() {
                         className={`${p}-avatar`}
                         style={{
                           background: (v.gun !== null && v.gun <= 3)
-                            ? `${renkler.danger}1e` : `${renkler.accent}1a`,
-                          color: (v.gun !== null && v.gun <= 3) ? renkler.danger : renkler.accent,
+                            ? `${renkler.danger}1e` : `${renkler.info}1a`,
+                          color: (v.gun !== null && v.gun <= 3) ? renkler.danger : renkler.info,
                         }}
                       >
                         <i className="bi bi-file-earmark-text" style={{ fontSize: 14 }} />
@@ -560,7 +603,7 @@ export default function Dashboard() {
                       </div>
                     </div>
                     <div className="text-end d-flex flex-column align-items-end gap-1">
-                      <span className={`${p}-metric-value`}>
+                      <span className={`${p}-metric-value financial-num`}>
                         {TL(v.tutar_tl)} ₺
                       </span>
                       <VadeRozeti gun={v.gun} p={p} />
@@ -591,8 +634,8 @@ export default function Dashboard() {
                   const bakiye  = parseFloat(c.bakiye ?? 0)
                   const pozitif = bakiye >= 0
                   const isTedarikci = c.cari_turu === 'tedarikci'
-                  const avatarBg    = isTedarikci ? `${renkler.accent}18` : `${renkler.success}18`
-                  const avatarColor = isTedarikci ? renkler.accent : renkler.success
+                  const avatarBg    = isTedarikci ? `${renkler.danger}18` : `${renkler.success}18`
+                  const avatarColor = isTedarikci ? renkler.danger : renkler.success
                   return (
                     <li key={c.id} className={`${p}-list-row`}>
                       <div className="d-flex align-items-center gap-3">
@@ -612,7 +655,7 @@ export default function Dashboard() {
                           </p>
                         </div>
                       </div>
-                      <span className={pozitif ? `${p}-amount-pos` : `${p}-amount-neg`} style={{ fontSize: 13 }}>
+                      <span className={`${pozitif ? `${p}-amount-pos` : `${p}-amount-neg`} financial-num`} style={{ fontSize: 13 }}>
                         {pozitif ? '+' : ''}{TL(bakiye)} ₺
                       </span>
                     </li>
@@ -632,6 +675,63 @@ export default function Dashboard() {
         </div>
 
       </div>
+
+      {/* ── Hızlı İşlem Modalı ─────────────────────────────────────────── */}
+      {showHizliIslem && (
+        <>
+          <div className={`${p}-modal-overlay`} onClick={() => setShowHizliIslem(false)} aria-hidden="true" />
+          <div
+            className={`${p}-modal-center`}
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="dash-hizli-title"
+            onClick={(e) => e.target === e.currentTarget && setShowHizliIslem(false)}
+          >
+            <div className={`${p}-modal-box`} style={{ maxWidth: 440 }}>
+              <div className={`${p}-modal-header ${p}-mh-default`}>
+                <h2 className={`${p}-modal-title`} id="dash-hizli-title">
+                  <i className="bi bi-plus-circle-fill" aria-hidden="true" />
+                  Hızlı İşlem Oluştur
+                </h2>
+                <button
+                  className={`${p}-modal-close`}
+                  onClick={() => setShowHizliIslem(false)}
+                  type="button"
+                  aria-label="Kapat"
+                >
+                  <i className="bi bi-x-lg" aria-hidden="true" />
+                </button>
+              </div>
+              <div className={`${p}-modal-body`}>
+                <p className={`${p}-modal-desc`}>
+                  Hangi işlemi gerçekleştirmek istiyorsunuz?
+                </p>
+                <div className={`${p}-modal-options`}>
+                  {hizliIslemler.map((islem) => (
+                    <button
+                      key={islem.label}
+                      className={`${p}-modal-option`}
+                      type="button"
+                      onClick={() => handleHizliIslem(islem.path)}
+                    >
+                      <div className={`${p}-modal-opt-icon`} aria-hidden="true">
+                        <i className={`bi ${islem.icon}`} />
+                      </div>
+                      <span>{islem.label}</span>
+                      <i className={`bi bi-chevron-right ms-auto ${p}-modal-opt-arrow`} aria-hidden="true" />
+                    </button>
+                  ))}
+                </div>
+              </div>
+              <div className={`${p}-modal-footer`}>
+                <button className={`${p}-btn-cancel`} onClick={() => setShowHizliIslem(false)} type="button">
+                  Vazgeç
+                </button>
+              </div>
+            </div>
+          </div>
+        </>
+      )}
     </div>
   )
 }

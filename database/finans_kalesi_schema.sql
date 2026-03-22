@@ -27,7 +27,7 @@ CREATE TABLE IF NOT EXISTS `sirketler` (
     `abonelik_plani` ENUM('ucretsiz','standart','kurumsal') NOT NULL DEFAULT 'ucretsiz',
     `abonelik_bitis` DATETIME DEFAULT NULL,
     `kampanya_kullanici` TINYINT(1) NOT NULL DEFAULT 0,
-    `tema_adi` VARCHAR(50) NOT NULL DEFAULT 'banking',
+    `tema_adi` VARCHAR(50) NOT NULL DEFAULT 'paramgo',
     `aktif_mi` TINYINT(1) NOT NULL DEFAULT 1,
     `kasa_sifre_hash` VARCHAR(255) DEFAULT NULL,
     `kasa_salt` VARCHAR(255) DEFAULT NULL,

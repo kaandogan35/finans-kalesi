@@ -2,7 +2,7 @@
  * VarlikKasa.jsx — Kasa & Varlık Yönetimi
  * 3 Tema Sistemi: Banking / Earthy / Dark
  * 5 Sekme: Gösterge Paneli | Nakit Akışı | Aylık Bilanço | Ortak Carisi | Yatırım Kalesi
- * Bootstrap 5 + Saf React | Finans Kalesi
+ * Bootstrap 5 + Saf React | ParamGo
  */
 
 import { useState, useMemo, useEffect, useRef, Fragment } from 'react'
@@ -19,7 +19,7 @@ import {
   bilancoListele, bilancoKaydet, bilancoGuncelle, bilancoSil,
 } from '../../api/kasa'
 
-const prefixMap = { banking: 'b', earthy: 'e', dark: 'd' }
+const prefixMap = { paramgo: 'p' }
 
 // ─── Yardımcılar ──────────────────────────────────────────────────────────────
 const TL = (n) =>
@@ -37,7 +37,7 @@ const formatParaInput = (value) => {
 const parseParaInput = (f) => parseFloat(String(f).replace(/\./g, '').replace(',', '.')) || 0
 
 
-const ORTAK_RENKLERI = ['#f59e0b', '#d97706', '#10b981', '#7c3aed', '#0891b2', '#ef4444']
+const ORTAK_RENKLERI = ['#10B981', '#059669', '#3b82f6', '#7c3aed', '#0891b2', '#ef4444']
 
 const GIRIS_KAT = ['Günlük Çekmece Hasılatı', 'Açık Hesap', 'Havale / Çek Tahsil', 'POS İşlemi']
 const CIKIS_KAT = ['Tedarikçi / Toptancı Ödemesi', 'Personel, Vergi ve Sabit Giderler', 'Günlük İşletme Giderleri', 'Kredi Kartı ve Banka Kredisi Ödemeleri']
@@ -75,8 +75,8 @@ const SEKMELER = [
 const AY_ADLARI = ['Ocak','Şubat','Mart','Nisan','Mayıs','Haziran','Temmuz','Ağustos','Eylül','Ekim','Kasım','Aralık']
 
 // ─── Stil Yardımcıları (YatirimKalesi vb. kapsam dışı bileşenler için korunuyor) ──
-const ikonKutu   = (c, bg) => ({ width:42, height:42, borderRadius:12, background:bg || `${c}15`, display:'flex', alignItems:'center', justifyContent:'center' })
-const kartEtiket = (c)     => ({ fontSize:11, fontWeight:600, color: 'rgba(255,255,255,0.75)', textTransform:'uppercase', letterSpacing:'0.8px', textShadow:'0 0 14px rgba(255,255,255,0.08)' })
+const ikonKutu   = (c, bg) => ({ width:42, height:42, borderRadius:14, background:bg || `${c}15`, display:'flex', alignItems:'center', justifyContent:'center' })
+const kartEtiket = (c)     => ({ fontSize:11, fontWeight:600, textTransform:'uppercase', letterSpacing:'0.8px' })
 
 // ─── Ortak Hesaplama ──────────────────────────────────────────────────────────
 function hesaplaOzet(hareketler, kapanislar = []) {
@@ -138,10 +138,10 @@ function DonemFiltresi({ secilenAy, secilenYil, setSecilenAy, setSecilenYil, p, 
 function DortKart({ ozet, p, renkler }) {
   const { toplamGiris, toplamCikis, bankaGuncel, girisFark, cikisFark, merkezKasa } = ozet
   const kartlar = [
-    { label:'Merkez Kasa', deger:merkezKasa, ikon:'bi-safe2', numColor:renkler.accent, alt:'Fiziki kasa bakiyesi' },
+    { label:'Merkez Kasa', deger:merkezKasa, ikon:'bi-safe2', numColor:renkler.primary, alt:'Fiziki kasa bakiyesi' },
     { label:'Bu Ay Giren', deger:toplamGiris, ikon:'bi-arrow-down-circle-fill', numColor:renkler.success, fark:girisFark },
     { label:'Bu Ay Çıkan', deger:toplamCikis, ikon:'bi-arrow-up-circle-fill', numColor:renkler.danger, fark:cikisFark, ters:true },
-    { label:'Güncel Banka Nakit', deger:bankaGuncel, ikon:'bi-bank', numColor:renkler.accent, alt:`Geçen Aydan Devreden: ${TL(ozet.oncekiAyBankaNakit ?? 0)}` },
+    { label:'Güncel Banka Nakit', deger:bankaGuncel, ikon:'bi-bank', numColor:renkler.primary, alt:`Geçen Aydan Devreden: ${TL(ozet.oncekiAyBankaNakit ?? 0)}` },
   ]
   return (
     <div className="row g-3 mb-4">
@@ -221,20 +221,20 @@ function GunlukGrafik({ veri, renkler }) {
     <svg viewBox={`0 0 ${svgW} ${svgH}`} style={{ width:'100%', height:'auto', display:'block' }}>
       {yTicks.map((t,i) => (
         <g key={i}>
-          <line x1={mL} y1={t.y} x2={svgW-mR} y2={t.y} stroke="rgba(255,255,255,0.06)" strokeWidth="1" />
-          <text x={mL-5} y={t.y+4} textAnchor="end" fontSize="10" fill="rgba(255,255,255,0.4)">
+          <line x1={mL} y1={t.y} x2={svgW-mR} y2={t.y} stroke={hexRgba(renkler.textSec, 0.1)} strokeWidth="1" />
+          <text x={mL-5} y={t.y+4} textAnchor="end" fontSize="10" fill={hexRgba(renkler.textSec, 0.5)}>
             {t.val >= 1000 ? `${(t.val/1000).toFixed(0)}K` : t.val}
           </text>
         </g>
       ))}
-      <line x1={mL} y1={mT} x2={mL} y2={mT+chartH} stroke="rgba(255,255,255,0.1)" strokeWidth="1" />
+      <line x1={mL} y1={mT} x2={mL} y2={mT+chartH} stroke={hexRgba(renkler.textSec, 0.15)} strokeWidth="1" />
       {veri.map((g,i) => {
         const cx=mL+i*groupW+groupW/2, gx=cx-barW-2, rx=cx+2
         return (
           <g key={g.tarih}>
             {barH(g.giris) > 0 && <rect x={gx} y={barY(g.giris)} width={barW} height={barH(g.giris)} rx="3" fill={renkler.success} fillOpacity="0.85" />}
             {barH(g.cikis) > 0 && <rect x={rx}  y={barY(g.cikis)}  width={barW} height={barH(g.cikis)}  rx="3" fill={renkler.danger} fillOpacity="0.85" />}
-            <text x={cx} y={svgH-8} textAnchor="middle" fontSize="10" fill="rgba(255,255,255,0.35)">{g.gun} Mar</text>
+            <text x={cx} y={svgH-8} textAnchor="middle" fontSize="10" fill={hexRgba(renkler.textSec, 0.45)}>{g.gun} Mar</text>
           </g>
         )
       })}
@@ -260,19 +260,19 @@ function KumulatifGrafik({ veri, renkler }) {
     <svg viewBox={`0 0 ${svgW} ${svgH}`} style={{ width:'100%', height:'auto', display:'block' }}>
       {yTicks.map((t,i) => (
         <g key={i}>
-          <line x1={mL} y1={t.y} x2={svgW-mR} y2={t.y} stroke="rgba(255,255,255,0.06)" strokeWidth="1" />
-          <text x={mL-5} y={t.y+4} textAnchor="end" fontSize="10" fill="rgba(255,255,255,0.4)">
+          <line x1={mL} y1={t.y} x2={svgW-mR} y2={t.y} stroke={hexRgba(renkler.textSec, 0.1)} strokeWidth="1" />
+          <text x={mL-5} y={t.y+4} textAnchor="end" fontSize="10" fill={hexRgba(renkler.textSec, 0.5)}>
             {Math.abs(t.val) >= 1000 ? `${(t.val/1000).toFixed(0)}K` : t.val}
           </text>
         </g>
       ))}
-      <line x1={mL} y1={mT} x2={mL} y2={mT+chartH} stroke="rgba(255,255,255,0.1)" strokeWidth="1" />
+      <line x1={mL} y1={mT} x2={mL} y2={mT+chartH} stroke={hexRgba(renkler.textSec, 0.15)} strokeWidth="1" />
       <polygon points={area} fill={hexRgba(renkler.success, 0.08)} />
       <polyline points={pts} fill="none" stroke={renkler.success} strokeWidth="2.5" strokeLinejoin="round" />
       {veri.map((v,i) => (
         <g key={v.tarih}>
           <circle cx={xS(i)} cy={yS(v.bakiye)} r="4" fill={renkler.success} stroke="#fff" strokeWidth="2" />
-          <text x={xS(i)} y={svgH-8} textAnchor="middle" fontSize="10" fill="rgba(255,255,255,0.35)">{v.gun} Mar</text>
+          <text x={xS(i)} y={svgH-8} textAnchor="middle" fontSize="10" fill={hexRgba(renkler.textSec, 0.45)}>{v.gun} Mar</text>
         </g>
       ))}
     </svg>
@@ -347,11 +347,11 @@ function NakitModal({ open, onClose, initialTur, onKaydet, hareketler, p, renkle
     <>
       <div className={`${p}-modal-overlay`} />
       <div className={`${p}-modal-center`}>
-        <div className={`${p}-modal-box`} style={{ maxWidth:580 }}>
+        <div className={`${p}-modal-box`} style={{ maxWidth:580 }} aria-labelledby="nakit-modal-title">
 
           {/* Başlık */}
-          <div className={`${p}-modal-header ${p}-kasa-mh-accent`}>
-            <span className={`${p}-modal-title`}>Yeni İşlem Ekle</span>
+          <div className={`${p}-modal-header ${p}-mh-default`}>
+            <h2 id="nakit-modal-title" className={`${p}-modal-title`}>Yeni İşlem Ekle</h2>
             <button onClick={onClose} className={`${p}-modal-close`}>
               <i className="bi bi-x-lg" />
             </button>
@@ -402,7 +402,7 @@ function NakitModal({ open, onClose, initialTur, onKaydet, hareketler, p, renkle
             {/* Bağlantı dropdown (koşullu) */}
             {baglantiSecenekleri(tur, kategori).length > 0 && (
               <div className="mb-4">
-                <p style={{ fontSize:12, fontWeight:800, color:'rgba(255,255,255,0.6)', textTransform:'uppercase', letterSpacing:'0.07em', marginBottom:8 }}>
+                <p className={`${p}-kasa-text-label`} style={{ marginBottom:8 }}>
                   2. {tur === 'giris' ? 'Tahsilat Nasıl Yapıldı?' : 'Para Havuzu (Nereden Çıktı?)'}
                 </p>
                 <select
@@ -439,7 +439,7 @@ function NakitModal({ open, onClose, initialTur, onKaydet, hareketler, p, renkle
 
             {/* Kaydet */}
             <button onClick={kaydet}
-              className={`${p}-kasa-btn-accent w-100 mb-4`} style={{ borderRadius:12 }}>
+              className={`${p}-kasa-btn-accent w-100 mb-4`} style={{ borderRadius:10 }}>
               <i className="bi bi-shield-lock-fill me-2" />Kaydet & Şifrele
             </button>
 
@@ -492,7 +492,7 @@ const donemFmt = (d) => {
 }
 
 // ─── SVG Bilanço Büyüme Grafiği ───────────────────────────────────────────────
-function BilancoGrafik({ kapanislar, renkler }) {
+function BilancoGrafik({ kapanislar, renkler, p }) {
   const [tooltip, setTooltip] = useState(null)
   const wrapRef = useRef(null)
 
@@ -506,7 +506,7 @@ function BilancoGrafik({ kapanislar, renkler }) {
     const k = sirali[0]
     return (
       <div style={{ textAlign:'center', padding:'24px' }}>
-        <div className="financial-num" style={{ fontSize:16, fontWeight:800, color:renkler.accent }}>
+        <div className={`financial-num ${p}-kasa-fin-num`} style={{ fontSize:16, fontWeight:800, color:renkler.primary }}>
           {donemFmt(k.donem)}: {TL(k.net_varlik)}
         </div>
         <p style={{ fontSize:12, color:renkler.textSec, marginTop:6 }}>Grafik için en az 2 kapanış gerekli</p>
@@ -540,19 +540,19 @@ function BilancoGrafik({ kapanislar, renkler }) {
       {tooltip && (
         <div style={{ position:'absolute', left:tooltip.x, top:tooltip.y, transform:'translate(-50%,-100%)', background:'rgba(13,27,46,0.95)', backdropFilter:'blur(12px)', color:'#fff', borderRadius:10, padding:'8px 14px', fontSize:12, fontWeight:700, pointerEvents:'none', zIndex:10, whiteSpace:'nowrap', boxShadow:'0 8px 24px rgba(0,0,0,0.5)', border:'1px solid rgba(255,255,255,0.1)' }}>
           <div style={{ opacity:0.7, marginBottom:2, fontSize:11 }}>{tooltip.donem}</div>
-          <div style={{ color:renkler.accent }}>{TL(tooltip.val)}</div>
+          <div className="financial-num" style={{ color:renkler.accent }}>{TL(tooltip.val)}</div>
         </div>
       )}
       <svg viewBox={`0 0 ${svgW} ${svgH}`} style={{ width:'100%', height:'auto', display:'block' }}>
         {yTicks.map((t,i) => (
           <g key={i}>
-            <line x1={mL} y1={t.y} x2={svgW-mR} y2={t.y} stroke="rgba(255,255,255,0.06)" strokeWidth="1" />
-            <text x={mL-5} y={t.y+4} textAnchor="end" fontSize="10" fill="rgba(255,255,255,0.4)">
+            <line x1={mL} y1={t.y} x2={svgW-mR} y2={t.y} stroke={hexRgba(renkler.textSec, 0.1)} strokeWidth="1" />
+            <text x={mL-5} y={t.y+4} textAnchor="end" fontSize="10" fill={hexRgba(renkler.textSec, 0.5)}>
               {Math.abs(t.val)>=1000000 ? `${(t.val/1000000).toFixed(1)}M` : Math.abs(t.val)>=1000 ? `${(t.val/1000).toFixed(0)}K` : t.val}
             </text>
           </g>
         ))}
-        <line x1={mL} y1={mT} x2={mL} y2={mT+chartH} stroke="rgba(255,255,255,0.1)" strokeWidth="1" />
+        <line x1={mL} y1={mT} x2={mL} y2={mT+chartH} stroke={hexRgba(renkler.textSec, 0.15)} strokeWidth="1" />
         <polygon points={area} fill={hexRgba(renkler.accent, 0.08)} />
         <polyline points={pts} fill="none" stroke={renkler.accent} strokeWidth="2.5" strokeLinejoin="round" />
         {sirali.map((k,i) => (
@@ -563,7 +563,7 @@ function BilancoGrafik({ kapanislar, renkler }) {
           >
             <circle cx={xS(i)} cy={yS(k.net_varlik)} r="10" fill="transparent" />
             <circle cx={xS(i)} cy={yS(k.net_varlik)} r="5" fill={renkler.accent} stroke="#fff" strokeWidth="2" />
-            <text x={xS(i)} y={svgH-8} textAnchor="middle" fontSize="10" fill="rgba(255,255,255,0.35)">{donemFmt(k.donem)}</text>
+            <text x={xS(i)} y={svgH-8} textAnchor="middle" fontSize="10" fill={hexRgba(renkler.textSec, 0.45)}>{donemFmt(k.donem)}</text>
           </g>
         ))}
       </svg>
@@ -679,18 +679,18 @@ function AyKapanisModal({ open, onClose, kapanislar, onKaydet, yatirimGuncelDege
 
       {/* Modal Wrapper */}
       <div className={`${p}-modal-center`}>
-        <div className={`${p}-modal-box`} style={{ maxWidth:720 }}>
+        <div className={`${p}-modal-box`} style={{ maxWidth:720 }} aria-labelledby="aykapanis-modal-title">
 
-          {/* ── Header — Amber gradient strip ── */}
-          <div className={`${p}-modal-header ${p}-kasa-mh-accent`}>
+          {/* ── Header — Lacivert dolu ── */}
+          <div className={`${p}-modal-header ${p}-mh-default`}>
             <div className="d-flex align-items-center gap-3">
               <div className={`${p}-kasa-modal-icon-accent`}>
                 <i className={`bi ${duzenlenen ? 'bi-pencil-square' : 'bi-calculator-fill'}`} style={{ fontSize:18 }} />
               </div>
               <div>
-                <div className={`${p}-modal-title`}>
+                <h2 id="aykapanis-modal-title" className={`${p}-modal-title`}>
                   {duzenlenen ? 'Kayıt Düzenle' : 'SMM Motoru & Ay Kapanışı'}
-                </div>
+                </h2>
                 <div className={`${p}-modal-sub`}>
                   {duzenlenen ? `${donemFmt(duzenlenen.donem)} dönemini güncelliyorsunuz` : 'Dönemi hesapla ve varlığını kaydet'}
                 </div>
@@ -714,9 +714,9 @@ function AyKapanisModal({ open, onClose, kapanislar, onKaydet, yatirimGuncelDege
 
             {/* ── Bölüm 1: Dönem Bilgileri ── */}
             <div style={{ marginBottom:20 }}>
-              <div style={{ fontSize:11, fontWeight:800, color:hexRgba(renkler.accent, 0.7), textTransform:'uppercase', letterSpacing:'1px', marginBottom:12, display:'flex', alignItems:'center', gap:6 }}>
-                <div style={{ width:16, height:2, background:renkler.accent, borderRadius:1 }} />
-                Dönem Bilgileri
+              <div className={`${p}-kasa-section-bar`}>
+                <div className={`${p}-kasa-section-mark`} style={{ background:renkler.accent }} />
+                <span className={`${p}-kasa-section-label`} style={{ color:renkler.accent }}>Dönem Bilgileri</span>
               </div>
               <div className="row g-3">
                 <div className="col-12 col-sm-6">
@@ -734,9 +734,9 @@ function AyKapanisModal({ open, onClose, kapanislar, onKaydet, yatirimGuncelDege
 
             {/* ── Bölüm 2: Ciro & Maliyet ── */}
             <div style={{ marginBottom:20 }}>
-              <div style={{ fontSize:11, fontWeight:800, color:hexRgba(renkler.success, 0.7), textTransform:'uppercase', letterSpacing:'1px', marginBottom:12, display:'flex', alignItems:'center', gap:6 }}>
-                <div style={{ width:16, height:2, background:renkler.success, borderRadius:1 }} />
-                Ciro & Maliyet
+              <div className={`${p}-kasa-section-bar`}>
+                <div className={`${p}-kasa-section-mark`} style={{ background:renkler.success }} />
+                <span className={`${p}-kasa-section-label`} style={{ color:renkler.success }}>Ciro & Maliyet</span>
               </div>
               <div className="row g-3">
                 <div className="col-12 col-sm-4">
@@ -759,9 +759,9 @@ function AyKapanisModal({ open, onClose, kapanislar, onKaydet, yatirimGuncelDege
 
             {/* ── Bölüm 3: Piyasa Durumu ── */}
             <div style={{ marginBottom:24 }}>
-              <div style={{ fontSize:11, fontWeight:800, color:hexRgba(renkler.info, 0.7), textTransform:'uppercase', letterSpacing:'1px', marginBottom:12, display:'flex', alignItems:'center', gap:6 }}>
-                <div style={{ width:16, height:2, background:renkler.info, borderRadius:1 }} />
-                Piyasa Durumu
+              <div className={`${p}-kasa-section-bar`}>
+                <div className={`${p}-kasa-section-mark`} style={{ background:renkler.info }} />
+                <span className={`${p}-kasa-section-label`} style={{ color:renkler.info }}>Piyasa Durumu</span>
               </div>
               <div className="row g-3">
                 <div className="col-12 col-sm-4">
@@ -788,30 +788,30 @@ function AyKapanisModal({ open, onClose, kapanislar, onKaydet, yatirimGuncelDege
               border:`1px solid ${hexRgba(renkler.accent, 0.15)}`,
               borderRadius:14, padding:'18px 20px', marginBottom:20
             }}>
-              <div style={{ fontSize:11, fontWeight:800, color:hexRgba(renkler.accent, 0.6), textTransform:'uppercase', letterSpacing:'1px', marginBottom:14, display:'flex', alignItems:'center', gap:6 }}>
-                <i className="bi bi-eye-fill" style={{ fontSize:12 }} />
-                Canlı Önizleme
+              <div className={`${p}-kasa-section-bar`} style={{ marginBottom:14 }}>
+                <i className="bi bi-eye-fill" style={{ fontSize:12, color:renkler.accent }} />
+                <span className={`${p}-kasa-section-label`} style={{ color:renkler.accent }}>Canlı Önizleme</span>
               </div>
 
               {/* SMM hesabı */}
-              <div className="d-flex justify-content-between align-items-center mb-2" style={{ padding:'8px 12px', background:hexRgba(renkler.text, 0.03), borderRadius:8 }}>
+              <div className="d-flex justify-content-between align-items-center mb-2" style={{ padding:'8px 12px', background:hexRgba(renkler.text, 0.03), borderRadius:10 }}>
                 <span className={`${p}-kasa-text-sec`} style={{ fontSize:12, fontWeight:600 }}>
                   SMM = {TL(pv(form.kesilenFatura))} / (1 + %{pv(form.karMarji)})
                 </span>
-                <span className={`financial-num ${p}-kasa-text-primary`} style={{ fontFamily:'Inter, sans-serif', fontSize:13, fontWeight:800, fontVariantNumeric:'tabular-nums', opacity:0.85 }}>{TL(smm)}</span>
+                <span className={`financial-num ${p}-kasa-fin-num ${p}-kasa-text-primary`} style={{ fontSize:13, fontWeight:800, opacity:0.85 }}>{TL(smm)}</span>
               </div>
 
               {/* Sanal Stok */}
-              <div className="d-flex justify-content-between align-items-center mb-2" style={{ padding:'8px 12px', background:hexRgba(renkler.text, 0.03), borderRadius:8 }}>
+              <div className="d-flex justify-content-between align-items-center mb-2" style={{ padding:'8px 12px', background:hexRgba(renkler.text, 0.03), borderRadius:10 }}>
                 <span className={`${p}-kasa-text-sec`} style={{ fontSize:12, fontWeight:600 }}>Sanal Stok</span>
-                <span className="financial-num" style={{ fontFamily:'Inter, sans-serif', fontSize:13, fontWeight:800, color:'#7c3aed', fontVariantNumeric:'tabular-nums' }}>{TL(sanaiStok)}</span>
+                <span className={`financial-num ${p}-kasa-fin-num ${p}-kasa-text-accent`} style={{ fontSize:13, fontWeight:800 }}>{TL(sanaiStok)}</span>
               </div>
 
               {/* Yatırım Birikimi */}
-              <div className="d-flex justify-content-between align-items-center mb-3" style={{ padding:'8px 12px', background:hexRgba(renkler.text, 0.03), borderRadius:8 }}>
+              <div className="d-flex justify-content-between align-items-center mb-3" style={{ padding:'8px 12px', background:hexRgba(renkler.text, 0.03), borderRadius:10 }}>
                 <span className={`${p}-kasa-text-sec`} style={{ fontSize:12, fontWeight:600 }}>Yatırım Birikimi</span>
                 {yatirimGuncelDeger > 0
-                  ? <span className="financial-num" style={{ fontFamily:'Inter, sans-serif', fontSize:13, fontWeight:800, color:renkler.success, fontVariantNumeric:'tabular-nums' }}>{TL(yatirimGuncelDeger)}</span>
+                  ? <span className={`financial-num ${p}-kasa-fin-num`} style={{ fontSize:13, fontWeight:800, color:renkler.success }}>{TL(yatirimGuncelDeger)}</span>
                   : <span className={`${p}-kasa-text-muted`} style={{ fontSize:12, fontWeight:600 }}>Henüz fiyat girilmedi</span>
                 }
               </div>
@@ -821,11 +821,10 @@ function AyKapanisModal({ open, onClose, kapanislar, onKaydet, yatirimGuncelDege
                 <div className={`${p}-kasa-text-muted`} style={{ fontSize:11, fontWeight:700, textTransform:'uppercase', letterSpacing:'0.8px', marginBottom:6 }}>
                   <i className="bi bi-trophy-fill me-1" style={{ color:renkler.accent }} />Net Varlık
                 </div>
-                <div className="financial-num" style={{
-                  fontFamily:'Inter, sans-serif', fontSize:28, fontWeight:900,
-                  color:renkler.accent, lineHeight:1, fontVariantNumeric:'tabular-nums',
-                  textShadow:`0 0 24px ${hexRgba(renkler.accent, 0.25)}`,
-                  WebkitFontSmoothing:'antialiased'
+                <div className={`financial-num ${p}-kasa-fin-num`} style={{
+                  fontSize:28, fontWeight:900,
+                  color:renkler.primary, lineHeight:1,
+                  textShadow:`0 0 24px ${hexRgba(renkler.primary, 0.25)}`
                 }}>
                   {TL(netVarlik)}
                 </div>
@@ -843,7 +842,7 @@ function AyKapanisModal({ open, onClose, kapanislar, onKaydet, yatirimGuncelDege
             <button onClick={kaydet}
               className={`${p}-kasa-btn-accent`}
               style={{
-                width:'100%', borderRadius:12, padding:'14px',
+                width:'100%', borderRadius:10, padding:'14px',
                 fontSize:16, fontWeight:700,
                 boxShadow:`0 4px 20px ${hexRgba(renkler.accent, 0.3)}, 0 0 40px ${hexRgba(renkler.accent, 0.1)}`
               }}>
@@ -972,13 +971,13 @@ function AylikBilanco({ kapanislar, setKapanislar, yatirimGuncelDeger = 0, p, re
         {/* Kart 2 — Sanal Stok */}
         <div className="col-12 col-md-4">
           <div className={`${p}-kasa-kpi-card`}>
-            <i className={`bi bi-box-seam ${p}-kasa-kpi-deco`} style={{ color:'#7c3aed' }} />
+            <i className={`bi bi-box-seam ${p}-kasa-kpi-deco`} style={{ color:renkler.accent }} />
             <div className="d-flex align-items-center gap-2 mb-2">
-              <div className={`${p}-kasa-icon-box`} style={{ background:'rgba(124,58,237,0.12)' }}><i className="bi bi-box-seam" style={{ color:'#7c3aed', fontSize:17 }} /></div>
+              <div className={`${p}-kasa-icon-box`} style={{ background:hexRgba(renkler.accent, 0.12) }}><i className="bi bi-box-seam" style={{ color:renkler.accent, fontSize:17 }} /></div>
               <span className={`${p}-kasa-kpi-label`}>Hesaplanan Sanal Stok</span>
             </div>
             {sonKapanis ? (
-              <div className={`financial-num ${p}-kasa-kpi-val`} style={{ textShadow:'0 0 20px rgba(124,58,237,0.2)' }}>
+              <div className={`financial-num ${p}-kasa-kpi-val`} style={{ textShadow:`0 0 20px ${hexRgba(renkler.accent, 0.2)}` }}>
                 {TL(sonKapanis.sanal_stok)}
               </div>
             ) : (
@@ -1022,7 +1021,7 @@ function AylikBilanco({ kapanislar, setKapanislar, yatirimGuncelDeger = 0, p, re
         <PerformansKarti label="Bu Ay Kestiğimiz" yeni={sonKapanis?.kesilen_fatura ?? 0} eski={onceki?.kesilen_fatura}
           renk={renkler.success} bg={hexRgba(renkler.success, 0.1)} ikon="bi-receipt" p={p} renkler={renkler} />
         <PerformansKarti label="Bu Ay Gelen Alış" yeni={sonKapanis?.gelen_alis ?? 0} eski={onceki?.gelen_alis}
-          renk="#d97706" bg="rgba(217,119,6,0.1)" ikon="bi-truck" p={p} renkler={renkler} />
+          renk={renkler.accent} bg={hexRgba(renkler.accent, 0.1)} ikon="bi-truck" p={p} renkler={renkler} />
         <PerformansKarti label="Toplam Alacağımız" yeni={sonKapanis?.alacaklar ?? 0} eski={onceki?.alacaklar}
           renk={renkler.accent} bg={hexRgba(renkler.accent, 0.1)} ikon="bi-arrow-down-circle" p={p} renkler={renkler} />
         <PerformansKarti label="Toplam Borcumuz" yeni={sonKapanis?.borclar ?? 0} eski={onceki?.borclar}
@@ -1039,13 +1038,13 @@ function AylikBilanco({ kapanislar, setKapanislar, yatirimGuncelDeger = 0, p, re
           <div style={{
             background:`linear-gradient(160deg, ${hexRgba(renkler.accent, 0.08)} 0%, ${hexRgba(renkler.accent, 0.04)} 100%)`,
             border:`1px solid ${hexRgba(renkler.accent, 0.2)}`,
-            borderRadius:16, padding:'28px 22px',
+            borderRadius:14, padding:'28px 22px',
             height:'100%', display:'flex', flexDirection:'column',
             alignItems:'center', justifyContent:'center', textAlign:'center'
           }}>
             {/* İkon alanı */}
             <div style={{
-              width:60, height:60, borderRadius:16, marginBottom:16,
+              width:60, height:60, borderRadius:14, marginBottom:16,
               background:`linear-gradient(135deg, ${hexRgba(renkler.accent, 0.15)}, ${hexRgba(renkler.accent, 0.08)})`,
               border:`1px solid ${hexRgba(renkler.accent, 0.25)}`,
               display:'flex', alignItems:'center', justifyContent:'center'
@@ -1086,7 +1085,7 @@ function AylikBilanco({ kapanislar, setKapanislar, yatirimGuncelDeger = 0, p, re
                 <p className={`mb-0 ${p}-kasa-text-muted`} style={{ fontSize:11 }}>Ay kapanışlarından hesaplanır</p>
               </div>
             </div>
-            <BilancoGrafik kapanislar={kapanislar} renkler={renkler} />
+            <BilancoGrafik kapanislar={kapanislar} renkler={renkler} p={p} />
           </div>
         </div>
       </div>
@@ -1117,17 +1116,17 @@ function AylikBilanco({ kapanislar, setKapanislar, yatirimGuncelDeger = 0, p, re
               {sayfaliVeri.map(k => (
                 <tr key={k.id}>
                   <td style={{ padding:'11px 16px' }}>
-                    <span style={{ fontWeight:700, color:renkler.accent, fontSize:14 }}>{donemFmt(k.donem)}</span>
+                    <span style={{ fontWeight:700, color:renkler.primary, fontSize:14 }}>{donemFmt(k.donem)}</span>
                     <span className={`${p}-kasa-text-muted`} style={{ fontSize:11, marginLeft:6 }}>{k.donem}</span>
                   </td>
                   <td className={`financial-num ${p}-kasa-text-primary`} style={{ textAlign:'right', fontWeight:700, fontSize:13, padding:'11px 16px', opacity:0.9 }}>{TL(k.kesilen_fatura)}</td>
                   <td style={{ padding:'11px 16px' }}>
-                    <span className={`${p}-kasa-badge`} style={{ color:renkler.accent }}>
+                    <span className={`${p}-kasa-badge`} style={{ color:renkler.primary }}>
                       %{k.kar_marji}
                     </span>
                   </td>
-                  <td className="financial-num" style={{ textAlign:'right', fontWeight:700, fontSize:13, padding:'11px 16px', color:'#7c3aed' }}>{TL(k.sanal_stok)}</td>
-                  <td className="financial-num" style={{ textAlign:'right', fontWeight:800, fontSize:14, padding:'11px 16px', color:renkler.accent }}>{TL(k.net_varlik)}</td>
+                  <td className={`financial-num ${p}-kasa-text-accent`} style={{ textAlign:'right', fontWeight:700, fontSize:13, padding:'11px 16px' }}>{TL(k.sanal_stok)}</td>
+                  <td className={`financial-num ${p}-kasa-text-accent`} style={{ textAlign:'right', fontWeight:800, fontSize:14, padding:'11px 16px' }}>{TL(k.net_varlik)}</td>
                   <td style={{ padding:'11px 16px', textAlign:'right', whiteSpace:'nowrap' }}>
                     {silOnayId === k.id ? (
                       <span className="d-inline-flex align-items-center gap-1">
@@ -1138,13 +1137,13 @@ function AylikBilanco({ kapanislar, setKapanislar, yatirimGuncelDeger = 0, p, re
                     ) : (
                       <div className="d-flex gap-1 justify-content-end">
                         <button onClick={() => acDuzenle(k)}
-                          style={{ background:'none', border:`1px solid ${hexRgba(renkler.text, 0.1)}`, borderRadius:8, width:44, height:44, padding:0, cursor:'pointer', display:'inline-flex', alignItems:'center', justifyContent:'center', transition:'all 0.15s' }}
+                          style={{ background:'none', border:`1px solid ${hexRgba(renkler.text, 0.1)}`, borderRadius:10, width:44, height:44, padding:0, cursor:'pointer', display:'inline-flex', alignItems:'center', justifyContent:'center', transition:'all 0.15s' }}
                           onMouseEnter={e => { e.currentTarget.style.borderColor=renkler.accent; e.currentTarget.style.background=hexRgba(renkler.accent, 0.1) }}
                           onMouseLeave={e => { e.currentTarget.style.borderColor=hexRgba(renkler.text, 0.1); e.currentTarget.style.background='none' }}>
                           <i className="bi bi-pencil" style={{ fontSize:13, color:renkler.accent }} />
                         </button>
                         <button onClick={() => setSilOnayId(k.id)}
-                          style={{ background:hexRgba(renkler.danger, 0.08), border:`1px solid ${hexRgba(renkler.danger, 0.2)}`, borderRadius:8, width:44, height:44, padding:0, cursor:'pointer', display:'inline-flex', alignItems:'center', justifyContent:'center', transition:'border-color 0.15s' }}
+                          style={{ background:hexRgba(renkler.danger, 0.08), border:`1px solid ${hexRgba(renkler.danger, 0.2)}`, borderRadius:10, width:44, height:44, padding:0, cursor:'pointer', display:'inline-flex', alignItems:'center', justifyContent:'center', transition:'border-color 0.15s' }}
                           onMouseEnter={e => { e.currentTarget.style.borderColor=renkler.danger }}
                           onMouseLeave={e => { e.currentTarget.style.borderColor=hexRgba(renkler.danger, 0.2) }}>
                           <i className="bi bi-trash3" style={{ fontSize:13, color:renkler.danger }} />
@@ -1174,7 +1173,7 @@ function AylikBilanco({ kapanislar, setKapanislar, yatirimGuncelDeger = 0, p, re
               </button>
               {Array.from({ length: toplamSayfa }, (_,i) => i+1).map(pg => (
                 <button key={pg} onClick={() => setSayfa(pg)}
-                  className={`${p}-kasa-sayfa-btn`} style={{ background: pg===sayfa ? renkler.accent : 'transparent', color: pg===sayfa ? renkler.bg : renkler.textSec, borderColor: pg===sayfa ? renkler.accent : hexRgba(renkler.text, 0.1) }}>
+                  className={`${p}-kasa-sayfa-btn`} style={{ background: pg===sayfa ? renkler.primary : 'transparent', color: pg===sayfa ? '#fff' : renkler.textSec, borderColor: pg===sayfa ? renkler.primary : hexRgba(renkler.text, 0.1) }}>
                   {pg}
                 </button>
               ))}
@@ -1242,16 +1241,16 @@ function OrtakModal({ open, onClose, mevcutOrtaklar, onKaydet, p, renkler }) {
     <>
       <div className={`${p}-modal-overlay`} />
       <div className={`${p}-modal-center`}>
-        <div className={`${p}-modal-box`} style={{ maxWidth:540 }}>
+        <div className={`${p}-modal-box`} style={{ maxWidth:540 }} aria-labelledby="ortak-modal-title">
 
-          {/* ── Başlık — Gradient Header ── */}
-          <div className={`${p}-modal-header ${p}-kasa-mh-accent`}>
+          {/* ── Başlık — Lacivert dolu ── */}
+          <div className={`${p}-modal-header ${p}-mh-default`}>
             <div className="d-flex align-items-center gap-3">
               <div className={`${p}-kasa-modal-icon-accent`}>
                 <i className="bi bi-people-fill" style={{ fontSize:18 }} />
               </div>
               <div>
-                <div className={`${p}-modal-title`}>Kullanım / Çekim Ekle</div>
+                <h2 id="ortak-modal-title" className={`${p}-modal-title`}>Kullanım / Çekim Ekle</h2>
                 <div className={`${p}-modal-sub`}>Ortak cari hareketi kaydı</div>
               </div>
             </div>
@@ -1264,9 +1263,9 @@ function OrtakModal({ open, onClose, mevcutOrtaklar, onKaydet, p, renkler }) {
           <div style={{ overflowY:'auto', flex:1, padding:'20px 24px' }}>
 
             {/* ─ Bölüm 1: Ortak Bilgisi ─ */}
-            <div style={{ display:'flex', alignItems:'center', gap:8, marginBottom:14 }}>
-              <div style={{ width:4, height:18, borderRadius:2, background:renkler.accent }} />
-              <span style={{ fontSize:12, fontWeight:700, color:renkler.accent, textTransform:'uppercase', letterSpacing:'0.06em' }}>Ortak Bilgisi</span>
+            <div className={`${p}-kasa-section-bar`}>
+              <div className={`${p}-kasa-section-mark`} style={{ background:renkler.primary }} />
+              <span className={`${p}-kasa-section-label`} style={{ color:renkler.primary }}>Ortak Bilgisi</span>
             </div>
 
             <div className="mb-4">
@@ -1281,9 +1280,9 @@ function OrtakModal({ open, onClose, mevcutOrtaklar, onKaydet, p, renkler }) {
             </div>
 
             {/* ─ Bölüm 2: İşlem Detayları ─ */}
-            <div style={{ display:'flex', alignItems:'center', gap:8, marginBottom:14 }}>
-              <div style={{ width:4, height:18, borderRadius:2, background:renkler.info }} />
-              <span style={{ fontSize:12, fontWeight:700, color:renkler.info, textTransform:'uppercase', letterSpacing:'0.06em' }}>İşlem Detayları</span>
+            <div className={`${p}-kasa-section-bar`}>
+              <div className={`${p}-kasa-section-mark`} style={{ background:renkler.info }} />
+              <span className={`${p}-kasa-section-label`} style={{ color:renkler.info }}>İşlem Detayları</span>
             </div>
 
             {/* Tür seçici */}
@@ -1295,7 +1294,7 @@ function OrtakModal({ open, onClose, mevcutOrtaklar, onKaydet, p, renkler }) {
                 <div key={t.key} className="col-6">
                   <button
                     onClick={() => setTur(t.key)}
-                    style={{ width:'100%', padding:'14px 12px', border:`2px solid ${tur===t.key ? t.renk : hexRgba(renkler.text, 0.1)}`, borderRadius:12, background: tur===t.key ? t.bg : hexRgba(renkler.text, 0.04), cursor:'pointer', textAlign:'left', transition:'all 0.15s' }}
+                    style={{ width:'100%', padding:'14px 12px', border:`2px solid ${tur===t.key ? t.renk : hexRgba(renkler.text, 0.1)}`, borderRadius:10, background: tur===t.key ? t.bg : hexRgba(renkler.text, 0.04), cursor:'pointer', textAlign:'left', transition:'all 0.15s' }}
                   >
                     <div className="d-flex align-items-center gap-2 mb-1">
                       <i className={`bi ${t.icon}`} style={{ color:t.renk, fontSize:18 }} />
@@ -1317,7 +1316,7 @@ function OrtakModal({ open, onClose, mevcutOrtaklar, onKaydet, p, renkler }) {
               <div className="col-12 col-sm-6">
                 <label className={`${p}-kasa-input-label`}>Tutar (₺)</label>
                 <input type="text" value={tutar} onChange={e => setTutar(formatParaInput(e.target.value))}
-                  placeholder="0,00" className={`${p}-kasa-input`} style={{ color:acikRenk, fontFamily:'Inter, sans-serif', fontWeight:700 }} />
+                  placeholder="0,00" className={`${p}-kasa-input ${p}-kasa-fin-num`} style={{ color:acikRenk, fontWeight:700 }} />
               </div>
             </div>
 
@@ -1331,7 +1330,7 @@ function OrtakModal({ open, onClose, mevcutOrtaklar, onKaydet, p, renkler }) {
             {/* ─ Canlı Önizleme ─ */}
             {(ortakAdi.trim() || tutarSayi > 0) && (
               <div style={{ background:`linear-gradient(135deg, ${hexRgba(renkler.accent, 0.06)}, ${hexRgba(renkler.accent, 0.03)})`, border:`1px solid ${hexRgba(renkler.accent, 0.15)}`, borderRadius:14, padding:'14px 18px', marginBottom:8 }}>
-                <div style={{ fontSize:10, fontWeight:700, color:hexRgba(renkler.accent, 0.7), textTransform:'uppercase', letterSpacing:'0.06em', marginBottom:10 }}>Kayıt Önizleme</div>
+                <div className={`${p}-kasa-text-label`} style={{ marginBottom:10 }}>Kayıt Önizleme</div>
                 <div className="d-flex align-items-center justify-content-between">
                   <div className="d-flex align-items-center gap-3">
                     <div style={{ width:38, height:38, borderRadius:10, background: giris ? hexRgba(renkler.success, 0.15) : hexRgba(renkler.danger, 0.12), border:`1px solid ${giris ? hexRgba(renkler.success, 0.3) : hexRgba(renkler.danger, 0.25)}`, display:'flex', alignItems:'center', justifyContent:'center' }}>
@@ -1353,7 +1352,7 @@ function OrtakModal({ open, onClose, mevcutOrtaklar, onKaydet, p, renkler }) {
           {/* ── Footer — Yapışkan ── */}
           <div style={{ padding:'16px 24px', borderTop:`1px solid ${hexRgba(renkler.text, 0.08)}`, background:hexRgba(renkler.bg, 0.98), flexShrink:0 }}>
             <button onClick={kaydet} className={`${p}-kasa-btn-accent w-100`}
-              style={{ borderRadius:12, padding:'13px', fontSize:15, boxShadow:`0 4px 16px ${hexRgba(renkler.accent, 0.3)}` }}>
+              style={{ borderRadius:10, padding:'13px', fontSize:15, boxShadow:`0 4px 16px ${hexRgba(renkler.accent, 0.3)}` }}>
               <i className="bi bi-shield-lock-fill me-2" />Kaydet & Şifrele
             </button>
           </div>
@@ -1425,8 +1424,8 @@ function OrtakCarisi({ ortakHareketler, setOrtakHareketler, p, renkler }) {
 
   // Baş harfleri daire
   const BasHarf = ({ ad, renk }) => (
-    <div style={{ width:44, height:44, borderRadius:12, background:renk, display:'flex', alignItems:'center', justifyContent:'center', flexShrink:0 }}>
-      <span style={{ fontSize:16, fontWeight:800, color:renkler.text, lineHeight:1 }}>
+    <div style={{ width:44, height:44, borderRadius:14, background:renk, display:'flex', alignItems:'center', justifyContent:'center', flexShrink:0 }}>
+      <span style={{ fontSize:16, fontWeight:800, color:'#fff', lineHeight:1 }}>
         {ad.split(' ').map(s=>s[0]).slice(0,2).join('')}
       </span>
     </div>
@@ -1469,7 +1468,7 @@ function OrtakCarisi({ ortakHareketler, setOrtakHareketler, p, renkler }) {
           ].map((k,i) => (
             <div key={i} className="col-12 col-md-4">
               <div className={`${p}-kasa-kpi-card`} style={{ position:'relative', overflow:'hidden' }}>
-                <i className={`bi ${k.ikon}`} style={{ position:'absolute', right:14, top:14, fontSize:28, opacity:0.08, color:renkler.text }} />
+                <i className={`bi ${k.ikon}`} style={{ position:'absolute', right:14, top:14, fontSize:28, opacity:0.35, color:renkler.text }} />
                 <div className={`${p}-kasa-text-sec`} style={{ fontSize:11, fontWeight:700, textTransform:'uppercase', letterSpacing:'0.06em', marginBottom:8 }}>{k.label}</div>
                 <div className="financial-num" style={{ fontSize:'1.4rem', fontWeight:800, lineHeight:1.1, color: k.renk }}>
                   {k.label === 'Net Bakiye' && toplamNet >= 0 ? '+' : ''}{k.label === 'Toplam Çıkış' ? '-' : ''}{TL(k.deger)}
@@ -1550,8 +1549,8 @@ function OrtakCarisi({ ortakHareketler, setOrtakHareketler, p, renkler }) {
                     <td style={{ fontSize:13, color:renkler.textSec, padding:'10px 16px', whiteSpace:'nowrap' }}>{tarihFmt(h.tarih)}</td>
                     <td style={{ padding:'10px 16px' }}>
                       <div className="d-flex align-items-center gap-2">
-                        <div style={{ width:28, height:28, borderRadius:8, background:renk, display:'flex', alignItems:'center', justifyContent:'center', flexShrink:0 }}>
-                          <span style={{ fontSize:11, fontWeight:800, color:renkler.text, lineHeight:1 }}>
+                        <div style={{ width:28, height:28, borderRadius:10, background:renk, display:'flex', alignItems:'center', justifyContent:'center', flexShrink:0 }}>
+                          <span style={{ fontSize:11, fontWeight:800, color:'#fff', lineHeight:1 }}>
                             {h.ortak_adi.split(' ').map(s=>s[0]).slice(0,2).join('')}
                           </span>
                         </div>
@@ -1577,7 +1576,7 @@ function OrtakCarisi({ ortakHareketler, setOrtakHareketler, p, renkler }) {
                         </span>
                       ) : (
                         <button onClick={() => setSilOnayId(h.id)}
-                          style={{ background:'none', border:`1px solid ${hexRgba(renkler.text, 0.1)}`, borderRadius:6, padding:'4px 8px', cursor:'pointer', color:renkler.textSec, fontSize:14, transition:'all 0.15s', minWidth:44, minHeight:44, display:'inline-flex', alignItems:'center', justifyContent:'center' }}
+                          style={{ background:'none', border:`1px solid ${hexRgba(renkler.text, 0.1)}`, borderRadius:10, padding:'4px 8px', cursor:'pointer', color:renkler.textSec, fontSize:14, transition:'all 0.15s', minWidth:44, minHeight:44, display:'inline-flex', alignItems:'center', justifyContent:'center' }}
                           onMouseEnter={e => { e.currentTarget.style.borderColor=renkler.danger; e.currentTarget.style.color=renkler.danger }}
                           onMouseLeave={e => { e.currentTarget.style.borderColor=hexRgba(renkler.text, 0.1); e.currentTarget.style.color=renkler.textSec }}>
                           <i className="bi bi-trash3" />
@@ -1609,7 +1608,7 @@ function OrtakCarisi({ ortakHareketler, setOrtakHareketler, p, renkler }) {
               </button>
               {Array.from({ length: toplamSayfa }, (_,i) => i+1).map(pg => (
                 <button key={pg} onClick={() => setSayfa(pg)}
-                  className={`${p}-kasa-sayfa-btn`} style={{ background: pg===sayfa ? renkler.accent : 'transparent', color: pg===sayfa ? renkler.bg : renkler.textSec, borderColor: pg===sayfa ? renkler.accent : hexRgba(renkler.text, 0.1) }}>
+                  className={`${p}-kasa-sayfa-btn`} style={{ background: pg===sayfa ? renkler.primary : 'transparent', color: pg===sayfa ? '#fff' : renkler.textSec, borderColor: pg===sayfa ? renkler.primary : hexRgba(renkler.text, 0.1) }}>
                   {pg}
                 </button>
               ))}
@@ -1751,7 +1750,7 @@ function GostergePaneli({ hareketler, kapanislar, yatirimGuncelDeger, secilenAy,
                     <div className="col-6">
                       <div className={`${p}-kasa-gp-tile`}>
                         <div className={`${p}-kasa-text-muted`} style={{ fontSize:10, fontWeight:700, textTransform:'uppercase', letterSpacing:'0.6px', marginBottom:4 }}>Sanal Stok</div>
-                        <div className={`financial-num ${p}-kasa-fin-num`} style={{ fontSize:12, fontWeight:700, color: renkler.accent }}>{TL(sanalStok)}</div>
+                        <div className={`financial-num ${p}-kasa-fin-num`} style={{ fontSize:12, fontWeight:700, color: renkler.primary }}>{TL(sanalStok)}</div>
                       </div>
                     </div>
                     <div className="col-6">
@@ -1782,7 +1781,7 @@ function GostergePaneli({ hareketler, kapanislar, yatirimGuncelDeger, secilenAy,
         {/* ── HERO KART 2 — Acil Nakit Gücü (Likit Varlıklar) ── */}
         <div className="col-12 col-sm-6 col-lg-4">
           <div className={`${p}-kasa-gp-sm-kpi`} style={{ height:'100%', display:'flex', flexDirection:'column' }}>
-            <i className="bi bi-lightning-charge-fill" style={{ position:'absolute', top:14, right:14, fontSize:54, color: renkler.success, opacity:0.20, pointerEvents:'none' }} />
+            <i className="bi bi-lightning-charge-fill" style={{ position:'absolute', top:14, right:14, fontSize:54, color: renkler.success, opacity:0.35, pointerEvents:'none' }} />
             <div className={`${p}-kasa-text-label`} style={{ fontSize:10, fontWeight:700, textTransform:'uppercase', letterSpacing:'0.8px', marginBottom:14 }}>
               <i className="bi bi-lightning-charge me-1" style={{ color: renkler.success, opacity:0.8 }} />Acil Nakit Gücü
             </div>
@@ -1814,7 +1813,7 @@ function GostergePaneli({ hareketler, kapanislar, yatirimGuncelDeger, secilenAy,
         {/* ── HERO KART 3 — Piyasa Net Pozisyonu ── */}
         <div className="col-12 col-sm-6 col-lg-3">
           <div className={`${p}-kasa-gp-sm-kpi`} style={{ height:'100%', display:'flex', flexDirection:'column' }}>
-            <i className={`bi ${piyasaNet >= 0 ? 'bi-graph-up-arrow' : 'bi-graph-down-arrow'}`} style={{ position:'absolute', top:14, right:14, fontSize:54, color:piyasaRenk, opacity:0.20, pointerEvents:'none' }} />
+            <i className={`bi ${piyasaNet >= 0 ? 'bi-graph-up-arrow' : 'bi-graph-down-arrow'}`} style={{ position:'absolute', top:14, right:14, fontSize:54, color:piyasaRenk, opacity:0.35, pointerEvents:'none' }} />
             <div className={`${p}-kasa-text-label`} style={{ fontSize:10, fontWeight:700, textTransform:'uppercase', letterSpacing:'0.8px', marginBottom:14 }}>
               <i className="bi bi-arrow-left-right me-1" style={{ color:piyasaRenk, opacity:0.8 }} />Piyasa Pozisyonu
             </div>
@@ -1836,7 +1835,7 @@ function GostergePaneli({ hareketler, kapanislar, yatirimGuncelDeger, secilenAy,
             {/* Mini durum badge */}
             <div style={{ marginTop:'auto', paddingTop:10 }}>
               <span style={{
-                fontSize:11, fontWeight:700, padding:'5px 12px', borderRadius:8,
+                fontSize:11, fontWeight:700, padding:'5px 12px', borderRadius:10,
                 background: piyasaNet >= 0 ? hexRgba(renkler.success, 0.12) : hexRgba(renkler.danger, 0.12),
                 color: piyasaNet >= 0 ? renkler.success : renkler.danger, display:'inline-block'
               }}>
@@ -1863,7 +1862,7 @@ function GostergePaneli({ hareketler, kapanislar, yatirimGuncelDeger, secilenAy,
               </div>
               <span className={`${p}-kasa-text-label`} style={{ fontSize:11, fontWeight:700, textTransform:'uppercase', letterSpacing:'0.9px' }}>Asit-Test Oranı</span>
               {asitDurum && (
-                <span style={{ marginLeft:'auto', fontSize:11, fontWeight:700, padding:'4px 11px', borderRadius:7, background: asitDurum.bg, color: asitDurum.renk, whiteSpace:'nowrap', flexShrink:0 }}>
+                <span style={{ marginLeft:'auto', fontSize:11, fontWeight:700, padding:'4px 11px', borderRadius:10, background: asitDurum.bg, color: asitDurum.renk, whiteSpace:'nowrap', flexShrink:0 }}>
                   <i className={`bi ${asitDurum.ikon} me-1`} style={{ fontSize:10 }} />{asitDurum.label}
                 </span>
               )}
@@ -1948,7 +1947,7 @@ function GostergePaneli({ hareketler, kapanislar, yatirimGuncelDeger, secilenAy,
               </div>
               <input
                 type="date" value={secilenTarih} onChange={e => setSecilenTarih(e.target.value)}
-                className={`${p}-kasa-input`} style={{ width:140, fontSize:11, padding:'5px 8px', minHeight:34, borderRadius:8 }}
+                className={`${p}-kasa-input`} style={{ width:140, fontSize:11, padding:'5px 8px', minHeight:34, borderRadius:10 }}
               />
             </div>
 
@@ -2054,7 +2053,7 @@ function GostergePaneli({ hareketler, kapanislar, yatirimGuncelDeger, secilenAy,
             <div style={{ background: hexRgba(renkler.text, 0.04), borderRadius:10, padding:'12px 14px', textAlign:'center', border: `1px solid ${hexRgba(renkler.text, 0.06)}` }}>
               <div className="d-flex justify-content-between align-items-center">
                 <span style={{ fontSize:10, fontWeight:700, color: hexRgba(renkler.success, 0.6) }}>{boAcakPct}% alacak</span>
-                <span style={{
+                <span className="financial-num" style={{
                   fontSize:12, fontWeight:700,
                   color: alacaklar >= borclar ? renkler.success : renkler.danger
                 }}>
@@ -2164,7 +2163,7 @@ function NakitTamponuBari({ aylikGider, acilNakit, renkler, p }) {
       <div className="d-flex justify-content-between align-items-center mt-2">
         <span className={`${p}-kasa-text-muted`} style={{ fontSize: 10, fontWeight: 600 }}>0 Ay</span>
         <span style={{
-          fontSize: 11, fontWeight: 700, padding: '3px 10px', borderRadius: 7,
+          fontSize: 11, fontWeight: 700, padding: '3px 10px', borderRadius: 10,
           background: hexRgba(renk, 0.1), color: renk
         }}>
           <i className={`bi ${durumIkon} me-1`} style={{ fontSize: 10 }} />{durumLabel}
@@ -2275,12 +2274,12 @@ function KategoriDetayModal({ show, onClose, kategori, tip, hareketler, p, renkl
     <>
       <div className={`${p}-modal-overlay`} />
       <div className={`${p}-modal-center`}>
-        <div className={`${p}-modal-box`} style={{ maxWidth:600, maxHeight:'88vh' }}>
+        <div className={`${p}-modal-box`} style={{ maxWidth:600, maxHeight:'88vh' }} aria-labelledby="kategori-detay-modal-title">
 
           {/* Başlık */}
-          <div className={`${p}-modal-header ${p}-kasa-mh-accent`}>
+          <div className={`${p}-modal-header ${p}-mh-default`}>
             <div className="d-flex align-items-center gap-2 flex-wrap">
-              <span className={`${p}-modal-title`}>{kategori}</span>
+              <h2 id="kategori-detay-modal-title" className={`${p}-modal-title`}>{kategori}</h2>
               <span className="badge" style={{ background:tipBg, color:tipRenk, fontWeight:700, fontSize:12 }}>
                 {girismi ? 'Giriş' : 'Çıkış'}
               </span>
@@ -2661,7 +2660,7 @@ function NakitAkisi({ secilenAy, secilenYil, setSecilenAy, setSecilenYil, hareke
               </button>
               {Array.from({ length: toplamSayfa }, (_,i) => i+1).map(pg => (
                 <button key={pg} onClick={() => setSayfa(pg)}
-                  className={`${p}-kasa-sayfa-btn`} style={{ background: pg===sayfa ? renkler.accent : 'transparent', color: pg===sayfa ? renkler.bg : renkler.textSec, borderColor: pg===sayfa ? renkler.accent : undefined }}>
+                  className={`${p}-kasa-sayfa-btn`} style={{ background: pg===sayfa ? renkler.primary : 'transparent', color: pg===sayfa ? '#fff' : renkler.textSec, borderColor: pg===sayfa ? renkler.primary : undefined }}>
                   {pg}
                 </button>
               ))}
@@ -2757,18 +2756,18 @@ function YatirimModal({ open, onClose, onKaydet, duzenlenen, p, renkler }) {
     <>
       <div className={`${p}-modal-overlay`} />
       <div className={`${p}-modal-center`}>
-        <div className={`${p}-modal-box`} style={{ maxWidth:540 }}>
+        <div className={`${p}-modal-box`} style={{ maxWidth:540 }} aria-labelledby="yatirim-modal-title">
 
-          {/* ── Başlık — Gradient Header ── */}
-          <div className={`${p}-modal-header ${p}-kasa-mh-accent`}>
+          {/* ── Başlık — Lacivert dolu ── */}
+          <div className={`${p}-modal-header ${p}-mh-default`}>
             <div className="d-flex align-items-center gap-3">
-              <div style={{ }} className={`${p}-kasa-modal-icon-accent`}>
-                <i className={`bi ${duzenlenen ? 'bi-pencil-square' : 'bi-safe2'}`} style={{ color:'#fff', fontSize:18 }} />
+              <div className={`${p}-kasa-modal-icon-accent`}>
+                <i className={`bi ${duzenlenen ? 'bi-pencil-square' : 'bi-safe2'}`} style={{ fontSize:18 }} />
               </div>
               <div>
-                <div className={`${p}-modal-title`}>
+                <h2 id="yatirim-modal-title" className={`${p}-modal-title`}>
                   {duzenlenen ? 'Varlık Düzenle' : 'Yeni Varlık Ekle'}
-                </div>
+                </h2>
                 <div className={`${p}-modal-sub`}>Döviz, altın ve diğer birikimler</div>
               </div>
             </div>
@@ -2850,10 +2849,10 @@ function YatirimModal({ open, onClose, onKaydet, duzenlenen, p, renkler }) {
                     </div>
                   </div>
                   <div className="text-end">
-                    <div className={`${p}-kasa-fin-num`} style={{ fontSize:18, fontWeight:800, color: renkler.success }}>
+                    <div className={`financial-num ${p}-kasa-fin-num`} style={{ fontSize:18, fontWeight:800, color: renkler.success }}>
                       {toplamDeger > 0 ? TL(toplamDeger) : '₺0,00'}
                     </div>
-                    {birimFiyat > 0 && <div className={`${p}-kasa-text-muted`} style={{ fontSize:10 }}>birim: {TL(birimFiyat)}</div>}
+                    {birimFiyat > 0 && <div className={`financial-num ${p}-kasa-text-muted`} style={{ fontSize:10 }}>birim: {TL(birimFiyat)}</div>}
                   </div>
                 </div>
               </div>
@@ -2911,16 +2910,16 @@ function FiyatGuncelleModal({ open, onClose, yatirimlar, onGuncelle, p, renkler 
     <>
       <div className={`${p}-modal-overlay`} />
       <div className={`${p}-modal-center`}>
-        <div className={`${p}-modal-box`} style={{ maxWidth:520 }}>
+        <div className={`${p}-modal-box`} style={{ maxWidth:520 }} aria-labelledby="fiyat-modal-title">
 
-          {/* ── Başlık — Gradient Header ── */}
-          <div className={`${p}-modal-header ${p}-kasa-mh-cyan`}>
+          {/* ── Başlık — Lacivert dolu ── */}
+          <div className={`${p}-modal-header ${p}-mh-default`}>
             <div className="d-flex align-items-center gap-3">
               <div className={`${p}-kasa-modal-icon-cyan`}>
-                <i className="bi bi-graph-up-arrow" style={{ color:'#fff', fontSize:18 }} />
+                <i className="bi bi-graph-up-arrow" style={{ fontSize:18 }} />
               </div>
               <div>
-                <div className={`${p}-modal-title`}>Güncel Piyasa Fiyatları</div>
+                <h2 id="fiyat-modal-title" className={`${p}-modal-title`}>Güncel Piyasa Fiyatları</h2>
                 <div className={`${p}-modal-sub`}>Kâr/zarar hesabı için güncel fiyatları girin</div>
               </div>
             </div>
@@ -2939,15 +2938,15 @@ function FiyatGuncelleModal({ open, onClose, yatirimlar, onGuncelle, p, renkler 
               const deger = fiyatlar[y.tur] ? parseParaInput(fiyatlar[y.tur]) : null
               const fark = (deger !== null && y.birim_fiyat > 0) ? ((deger - y.birim_fiyat) / y.birim_fiyat) * 100 : null
               return (
-                <div key={y.tur} className={`${p}-kasa-list-item`} style={{ borderRadius:12, padding:'12px 16px', marginBottom:10, border: `1px solid ${hexRgba(renkler.text, 0.06)}` }}>
+                <div key={y.tur} className={`${p}-kasa-list-item`} style={{ borderRadius:14, padding:'12px 16px', marginBottom:10, border: `1px solid ${hexRgba(renkler.text, 0.06)}` }}>
                   <div className="d-flex align-items-center justify-content-between gap-3">
                     <div className="d-flex align-items-center gap-2" style={{ flex:1 }}>
-                      <div className={`${p}-kasa-icon-box-sm`} style={{ width:30, height:30, borderRadius:8, background:`${cfg.color}18` }}>
+                      <div className={`${p}-kasa-icon-box-sm`} style={{ width:30, height:30, borderRadius:10, background:`${cfg.color}18` }}>
                         <i className={`bi ${cfg.icon}`} style={{ fontSize:13, color:cfg.color }} />
                       </div>
                       <div>
                         <span style={{ fontSize:13, fontWeight:700, color: renkler.text }}>{y.tur}</span>
-                        <div className={`${p}-kasa-text-muted`} style={{ fontSize:10 }}>Alış: {TL(y.birim_fiyat)}</div>
+                        <div className={`financial-num ${p}-kasa-text-muted`} style={{ fontSize:10 }}>Alış: {TL(y.birim_fiyat)}</div>
                       </div>
                     </div>
                     <div style={{ width:160 }}>
@@ -3091,12 +3090,12 @@ function YatirimKalesi({ yatirimlar, setYatirimlar, p, renkler }) {
         {/* Kart 1 — Bilanço Değeri */}
         <div className="col-12 col-lg-4">
           <div className={`${p}-kasa-kpi-card`}>
-            <i className="bi bi-wallet2" style={{ position:'absolute', right:16, top:16, fontSize:40, opacity:0.06, color: renkler.text }} />
+            <i className="bi bi-wallet2" style={{ position:'absolute', right:16, top:16, fontSize:40, opacity:0.35, color: renkler.text }} />
             <div className="d-flex align-items-center gap-2 mb-2">
               <div className={`${p}-kasa-icon-box-sm`} style={{ background: hexRgba(renkler.text, 0.06) }}><i className="bi bi-wallet2" style={{ fontSize:18, color: hexRgba(renkler.text, 0.6) }} /></div>
               <span className={`${p}-kasa-text-label`} style={{ color: hexRgba(renkler.text, 0.5) }}>Bilanço (Sabit) Değeri</span>
             </div>
-            <div className={`${p}-kasa-fin-num`} style={{ fontSize:'1.6rem', fontWeight:800, color: renkler.text, lineHeight:1.1 }}>{TL(ozet.bilancoMaliyet)}</div>
+            <div className={`financial-num ${p}-kasa-fin-num`} style={{ fontSize:'1.6rem', fontWeight:800, color: renkler.text, lineHeight:1.1 }}>{TL(ozet.bilancoMaliyet)}</div>
             <p className={`${p}-kasa-text-muted`} style={{ margin:'8px 0 0' }}>Kayıtlı alış maliyetlerinizin toplamı</p>
           </div>
         </div>
@@ -3104,10 +3103,10 @@ function YatirimKalesi({ yatirimlar, setYatirimlar, p, renkler }) {
         {/* Kart 2 — Güncel Piyasa Karşılığı */}
         <div className="col-12 col-lg-4">
           <div className={`${p}-kasa-kpi-card`} >
-            <i className="bi bi-graph-up" style={{ position:'absolute', right:16, top:16, fontSize:40, opacity:0.06, color: renkler.info }} />
+            <i className="bi bi-graph-up" style={{ position:'absolute', right:16, top:16, fontSize:40, opacity:0.35, color: renkler.info }} />
             <div className="d-flex align-items-center gap-2 mb-2">
               <div style={ikonKutu(renkler.info, hexRgba(renkler.info, 0.1))}><i className="bi bi-graph-up" style={{ fontSize:18, color: renkler.info }} /></div>
-              <span style={kartEtiket(renkler.info)}>Güncel Piyasa Karşılığı</span>
+              <span className={`${p}-kasa-kpi-label`} style={kartEtiket(renkler.info)}>Güncel Piyasa Karşılığı</span>
             </div>
             {ozet.hicGuncel ? (
               <div className="d-flex align-items-center gap-2 mt-1" style={{ color: hexRgba(renkler.text, 0.35) }}>
@@ -3124,10 +3123,10 @@ function YatirimKalesi({ yatirimlar, setYatirimlar, p, renkler }) {
         {/* Kart 3 — Potansiyel K/Z */}
         <div className="col-12 col-lg-4">
           <div className={`${p}-kasa-kpi-card`} >
-            <i className={`bi ${kzIkon}`} style={{ position:'absolute', right:16, top:16, fontSize:40, opacity:0.06, color: kzRenk }} />
+            <i className={`bi ${kzIkon}`} style={{ position:'absolute', right:16, top:16, fontSize:40, opacity:0.35, color: kzRenk }} />
             <div className="d-flex align-items-center gap-2 mb-2">
               <div style={ikonKutu(kzRenk, kzBg)}><i className={`bi ${kzIkon}`} style={{ fontSize:18, color:kzRenk }} /></div>
-              <span style={kartEtiket(kzRenk)}>Potansiyel Kâr / Zarar</span>
+              <span className={`${p}-kasa-kpi-label`} style={kartEtiket(kzRenk)}>Potansiyel Kâr / Zarar</span>
             </div>
             {ozet.kz === null ? (
               <div className="financial-num" style={{ fontSize:'1.6rem', fontWeight:800, color: hexRgba(renkler.text, 0.35), lineHeight:1.1 }}>—</div>
@@ -3137,7 +3136,7 @@ function YatirimKalesi({ yatirimlar, setYatirimlar, p, renkler }) {
                   {ozet.kz >= 0 ? '+' : ''}{TL(ozet.kz)}
                 </div>
                 {ozet.kzYuzde !== null && (
-                  <span className="badge" style={{ background: kzBg, color:kzRenk, fontWeight:700, fontSize:12, padding:'4px 10px', borderRadius:8 }}>
+                  <span className="badge" style={{ background: kzBg, color:kzRenk, fontWeight:700, fontSize:12, padding:'4px 10px', borderRadius:10 }}>
                     {ozet.kz >= 0 ? '+' : ''}{ozet.kzYuzde.toFixed(1)}%
                   </span>
                 )}
@@ -3151,7 +3150,7 @@ function YatirimKalesi({ yatirimlar, setYatirimlar, p, renkler }) {
       {/* ── Portföy Dağılımı + Envanter ── */}
       {yatirimlar.length === 0 ? (
         <div className={`${p}-kasa-glass-card text-center py-5`}>
-          <i className="bi bi-safe2" style={{ fontSize:52, opacity:0.15, color: renkler.accent }} />
+          <i className="bi bi-safe2" style={{ fontSize:52, opacity:0.35, color: renkler.accent }} />
           <p className="mt-3 mb-1" style={{ fontSize:16, fontWeight:700, color: hexRgba(renkler.text, 0.5) }}>Henüz varlık eklenmedi</p>
           <p style={{ fontSize:13, margin:0 }} className={`${p}-kasa-text-muted`}>Altın, döviz veya diğer birikimlerinizi buradan takip edin.</p>
         </div>
@@ -3193,7 +3192,7 @@ function YatirimKalesi({ yatirimlar, setYatirimlar, p, renkler }) {
                 <div key={tip} className="mb-4">
                   {/* Grup Başlığı */}
                   <div className="d-flex align-items-center gap-2 mb-3">
-                    <div className={`${p}-kasa-icon-box-sm`} style={{ width:28, height:28, borderRadius:8, background:`${cfg.color}18` }}>
+                    <div className={`${p}-kasa-icon-box-sm`} style={{ width:28, height:28, borderRadius:10, background:`${cfg.color}18` }}>
                       <i className={`bi ${cfg.icon}`} style={{ fontSize:14, color:cfg.color }} />
                     </div>
                     <span style={{ fontSize:14, fontWeight:800, color:cfg.color, letterSpacing:'0.02em' }}>{cfg.label}</span>
@@ -3211,7 +3210,7 @@ function YatirimKalesi({ yatirimlar, setYatirimlar, p, renkler }) {
                         <div key={y.id} className="col-12 col-sm-6 col-xl-4">
                           <div className={`${p}-kasa-glass-card`} style={{ padding:'16px 18px', position:'relative', overflow:'hidden' }}>
                             {/* Dekoratif ikon */}
-                            <i className={`bi ${cfg.icon}`} style={{ position:'absolute', right:12, bottom:10, fontSize:44, opacity:0.04, color:cfg.color }} />
+                            <i className={`bi ${cfg.icon}`} style={{ position:'absolute', right:12, bottom:10, fontSize:44, opacity:0.35, color:cfg.color }} />
 
                             {/* Üst: Tür + Aksiyon */}
                             <div className="d-flex align-items-start justify-content-between mb-3">
@@ -3256,7 +3255,7 @@ function YatirimKalesi({ yatirimlar, setYatirimlar, p, renkler }) {
 
                             {/* Alt: K/Z barı */}
                             {kz !== null ? (
-                              <div style={{ background: kz >= 0 ? hexRgba(renkler.success, 0.08) : hexRgba(renkler.danger, 0.06), borderRadius:8, padding:'6px 10px', display:'flex', alignItems:'center', justifyContent:'space-between' }}>
+                              <div style={{ background: kz >= 0 ? hexRgba(renkler.success, 0.08) : hexRgba(renkler.danger, 0.06), borderRadius:10, padding:'6px 10px', display:'flex', alignItems:'center', justifyContent:'space-between' }}>
                                 <span style={{ fontSize:11, fontWeight:700, color: kz >= 0 ? renkler.success : renkler.danger }}>
                                   {kz >= 0 ? 'Kar' : 'Zarar'}
                                 </span>
@@ -3270,7 +3269,7 @@ function YatirimKalesi({ yatirimlar, setYatirimlar, p, renkler }) {
                                 </div>
                               </div>
                             ) : (
-                              <div style={{ background: hexRgba(renkler.text, 0.03), borderRadius:8, padding:'6px 10px', textAlign:'center' }}>
+                              <div style={{ background: hexRgba(renkler.text, 0.03), borderRadius:10, padding:'6px 10px', textAlign:'center' }}>
                                 <span className={`${p}-kasa-text-muted`}>Güncel fiyat girilmedi</span>
                               </div>
                             )}
@@ -3310,8 +3309,8 @@ function YatirimKalesi({ yatirimlar, setYatirimlar, p, renkler }) {
 // ─── Ana Bileşen ──────────────────────────────────────────────────────────────
 export default function VarlikKasa() {
   const aktifTema = useTemaStore((s) => s.aktifTema)
-  const p = prefixMap[aktifTema] || 'b'
-  const renkler = temaRenkleri[aktifTema] || temaRenkleri.banking
+  const p = prefixMap[aktifTema] || 'p'
+  const renkler = temaRenkleri[aktifTema] || temaRenkleri.paramgo
 
   const { kullanici } = useAuthStore()
   const navigate = useNavigate()
@@ -3366,14 +3365,15 @@ export default function VarlikKasa() {
     <div className={`${p}-page-root`}>
 
       {/* ─── Sayfa Başlığı ─── */}
-      <div className="d-flex align-items-start justify-content-between mb-4">
-        <div>
-          <h1 className={`${p}-kasa-page-title`}>
-            Kasa & Varlık Yönetimi
-          </h1>
-          <p className={`${p}-kasa-page-sub`}>
-            Nakit akışı, bilanço ve yatırım takibi
-          </p>
+      <div className={`${p}-page-header`}>
+        <div className={`${p}-page-header-left`}>
+          <div className={`${p}-page-header-icon`}>
+            <i className="bi bi-safe-fill" />
+          </div>
+          <div>
+            <h1 className={`${p}-page-title`}>Kasa & Varlık Yönetimi</h1>
+            <p className={`${p}-page-sub`}>Nakit akışı, bilanço ve yatırım takibi</p>
+          </div>
         </div>
       </div>
 
@@ -3417,7 +3417,7 @@ export default function VarlikKasa() {
                   style={{
                     background: hexRgba(renkler.warning, 0.15),
                     border: `1px solid ${hexRgba(renkler.warning, 0.3)}`,
-                    color: renkler.warning, borderRadius: 7,
+                    color: renkler.warning, borderRadius: 10,
                     padding: '4px 12px', fontSize: 12, fontWeight: 700,
                     cursor: 'pointer', whiteSpace: 'nowrap', flexShrink: 0,
                   }}

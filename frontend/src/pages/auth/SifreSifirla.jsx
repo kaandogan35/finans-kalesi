@@ -1,5 +1,5 @@
 /**
- * SifreSifirla — Finans Kalesi
+ * SifreSifirla — ParamGo
  * Adım 1: E-posta gir → mail gönderildi
  * Adım 2: URL'deki ?token= ile yeni şifre belirle
  */
@@ -8,12 +8,13 @@ import { useState } from 'react'
 import { useNavigate, useSearchParams, Link } from 'react-router-dom'
 import useTemaStore from '../../stores/temaStore'
 import { authApi } from '../../api/auth'
+import ParamGoLogo from '../../logo/ParamGoLogo'
 
-const prefixMap = { banking: 'b', earthy: 'e', dark: 'd' }
+const prefixMap = { paramgo: 'p' }
 
 export default function SifreSifirla() {
   const aktifTema          = useTemaStore((s) => s.aktifTema)
-  const p                  = prefixMap[aktifTema] || 'b'
+  const p                  = prefixMap[aktifTema] || 'p'
   const navigate           = useNavigate()
   const [searchParams]     = useSearchParams()
   const token              = searchParams.get('token')
@@ -92,13 +93,7 @@ export default function SifreSifirla() {
 
         <div className={`${p}-giris-sol-anim-1`}>
           <div className={`${p}-giris-marka-wrap`}>
-            <div className={`${p}-giris-marka-ikon`}>
-              <i className="bi bi-shield-lock-fill" />
-            </div>
-            <div>
-              <div className={`${p}-giris-marka-baslik`}>Finans Kalesi</div>
-              <div className={`${p}-giris-marka-alt`}>Güvenli Erişim</div>
-            </div>
+            <ParamGoLogo size="md" variant="white" />
           </div>
         </div>
 
@@ -119,7 +114,7 @@ export default function SifreSifirla() {
 
         <div className={`${p}-giris-ozellik-wrap`}>
           <p className={`${p}-giris-copyright`}>
-            &copy; 2026 Finans Kalesi &middot; Tüm hakları saklıdır
+            &copy; 2026 ParamGo &middot; Tüm hakları saklıdır
           </p>
         </div>
       </div>
@@ -132,11 +127,8 @@ export default function SifreSifirla() {
             <div className={`${p}-giris-kart-ic`}>
 
               {/* Mobil logo */}
-              <div className="d-flex d-lg-none align-items-center justify-content-center gap-2 mb-4">
-                <div className={`${p}-giris-mobil-logo`}>
-                  <i className="bi bi-shield-lock-fill" />
-                </div>
-                <span className={`${p}-giris-mobil-baslik`}>Finans Kalesi</span>
+              <div className="d-flex d-lg-none align-items-center justify-content-center mb-4">
+                <ParamGoLogo size="sm" />
               </div>
 
               {/* ── DURUM: Tamamlandı ─────────────────────────── */}
@@ -171,11 +163,11 @@ export default function SifreSifirla() {
                 <div style={{ textAlign: 'center', padding: '16px 0' }}>
                   <div style={{
                     width: 56, height: 56, borderRadius: '50%',
-                    background: '#eff6ff', border: '2px solid #1e40af',
+                    background: '#ECFDF5', border: '2px solid #10B981',
                     display: 'flex', alignItems: 'center', justifyContent: 'center',
                     margin: '0 auto 16px',
                   }}>
-                    <i className="bi bi-envelope-check" style={{ fontSize: 22, color: '#1e40af' }} />
+                    <i className="bi bi-envelope-check" style={{ fontSize: 22, color: '#10B981' }} />
                   </div>
                   <h2 className={`${p}-giris-form-baslik`} style={{ marginBottom: 8 }}>
                     Mail Gönderildi

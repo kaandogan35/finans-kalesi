@@ -110,7 +110,7 @@ class AuthController {
                 'id'        => $kullanici_id,
                 'sirket_id' => $sirket_id,
                 'rol'       => 'sahip',
-                'tema_adi'  => 'banking',
+                'tema_adi'  => 'paramgo',
                 'plan'      => 'ucretsiz',
             ];
 
@@ -155,7 +155,7 @@ class AuthController {
                     'ad_soyad'  => $girdi['ad_soyad'],
                     'email'     => $girdi['email'],
                     'rol'       => 'sahip',
-                    'tema_adi'  => 'banking',
+                    'tema_adi'  => 'paramgo',
                     'plan'      => 'ucretsiz',
                 ],
                 'tokenlar' => [
@@ -237,7 +237,7 @@ class AuthController {
                 'id'        => $kullanici['id'],
                 'sirket_id' => $kullanici['sirket_id'],
                 'rol'       => $kullanici['rol'],
-                'tema_adi'  => $sirket['tema_adi'] ?? 'banking',
+                'tema_adi'  => $sirket['tema_adi'] ?? 'paramgo',
                 'plan'      => $sirket['abonelik_plani'] ?? 'ucretsiz',
             ];
 
@@ -303,7 +303,7 @@ class AuthController {
                     'ad_soyad'  => $kullanici['ad_soyad'],
                     'email'     => $kullanici['email'],
                     'rol'       => $kullanici['rol'],
-                    'tema_adi'  => $sirket['tema_adi'] ?? 'banking',
+                    'tema_adi'  => $sirket['tema_adi'] ?? 'paramgo',
                     'plan'      => $sirket['abonelik_plani'] ?? 'ucretsiz',
                 ],
                 'tokenlar' => [
@@ -360,7 +360,7 @@ class AuthController {
                 'id'        => (int) $token_kayit['kullanici_id'],
                 'sirket_id' => (int) $token_kayit['sirket_id'],
                 'rol'       => $token_kayit['rol'],
-                'tema_adi'  => $sirket['tema_adi'] ?? 'banking',
+                'tema_adi'  => $sirket['tema_adi'] ?? 'paramgo',
                 'plan'      => $sirket['abonelik_plani'] ?? 'ucretsiz',
             ];
             
@@ -560,7 +560,7 @@ class AuthController {
 
         // Sirket tema ve plan bilgisini ekle
         $sirket = $this->sirket_model->id_ile_bul($kullanici['sirket_id']);
-        $kullanici['tema_adi'] = $sirket['tema_adi'] ?? 'banking';
+        $kullanici['tema_adi'] = $sirket['tema_adi'] ?? 'paramgo';
         $kullanici['plan']     = $sirket['abonelik_plani'] ?? 'ucretsiz';
 
         Response::basarili(['kullanici' => $kullanici]);

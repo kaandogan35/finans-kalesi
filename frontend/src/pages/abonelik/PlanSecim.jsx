@@ -6,7 +6,6 @@
 import { useState, useEffect } from 'react'
 import { toast } from 'sonner'
 import useAuthStore from '../../stores/authStore'
-import useTemaStore from '../../stores/temaStore'
 import { abonelikApi } from '../../api/abonelik'
 import { usePlanKontrol } from '../../hooks/usePlanKontrol'
 
@@ -29,9 +28,7 @@ const DURUM_MAP = {
 const KANAL_MAP = { web: 'Web', apple: 'App Store', google: 'Google Play' }
 
 export default function PlanSecim() {
-  const { aktifTema } = useTemaStore()
-  const prefixMap = { banking: 'b', earthy: 'e', dark: 'd' }
-  const p = prefixMap[aktifTema] || 'd'
+  const p = 'p'
   const { plan } = usePlanKontrol()
 
   const [yukleniyor, setYukleniyor] = useState(true)
@@ -78,7 +75,7 @@ export default function PlanSecim() {
       kisitlamalar: ['PDF/Excel rapor yok', 'Veri dışa aktarma yok', 'Tek kullanıcı'],
     },
     {
-      id: 'standart', ad: 'Standart', ikon: 'bi-star-fill', btnSinif: 'amber',
+      id: 'standart', ad: 'Standart', ikon: 'bi-star-fill', btnSinif: 'primary',
       fiyat: standartGosterilen, fiyatYillik: FIYATLAR.standart.yillik,
       tasarruf: fmt(FIYATLAR.standart.aylik * 12 - FIYATLAR.standart.yillik),
       onerilen: true, kampanya: kampanyaAktif && !yillik,
@@ -102,10 +99,15 @@ export default function PlanSecim() {
           border: none; cursor: pointer; font-size: 13px; font-weight: 700;
           margin-top: 16px; transition: all 0.15s;
         }
-        .abn-btn.amber { background: linear-gradient(135deg,#f59e0b,#d97706); color:#fff; box-shadow:0 4px 14px rgba(245,158,11,0.3); }
-        .abn-btn.amber:hover { transform:translateY(-1px); box-shadow:0 6px 18px rgba(245,158,11,0.4); }
+        .abn-btn.primary { background: linear-gradient(135deg,#10B981,#059669); color:#fff; box-shadow:0 4px 14px rgba(16,185,129,0.3); }
+        .abn-btn.primary:hover { transform:translateY(-1px); box-shadow:0 6px 18px rgba(16,185,129,0.4); }
         .abn-btn.mavi  { background: linear-gradient(135deg,#3b82f6,#2563eb); color:#fff; box-shadow:0 4px 14px rgba(59,130,246,0.3); }
         .abn-btn.mavi:hover  { transform:translateY(-1px); box-shadow:0 6px 18px rgba(59,130,246,0.4); }
+        /* ParamGo tema butonları — yeşil tonları */
+        .abn-btn.yesil-standart { background: linear-gradient(135deg, var(--p-color-primary), var(--p-color-primary-dark)); color:var(--p-text-on-primary); box-shadow:0 4px 14px rgba(16,185,129,0.3); }
+        .abn-btn.yesil-standart:hover { transform:translateY(-1px); box-shadow:0 6px 18px rgba(16,185,129,0.4); }
+        .abn-btn.yesil-kurumsal { background: linear-gradient(135deg, var(--p-color-primary-dark), var(--p-color-accent)); color:var(--p-text-on-primary); box-shadow:0 4px 14px rgba(5,150,105,0.3); }
+        .abn-btn.yesil-kurumsal:hover { transform:translateY(-1px); box-shadow:0 6px 18px rgba(5,150,105,0.4); }
         .abn-toggle-switch {
           position:relative; width:44px; height:24px;
           border-radius:50px; cursor:pointer; transition:background 0.2s;
@@ -117,8 +119,8 @@ export default function PlanSecim() {
         }
         .abn-toggle-switch.on .abn-toggle-knob { transform:translateX(20px); }
         .abn-kampanya-chip {
-          background:linear-gradient(135deg,#f59e0b,#d97706);
-          color:#000; font-size:10px; font-weight:800; padding:3px 10px;
+          background:linear-gradient(135deg,#10B981,#059669);
+          color:#fff; font-size:10px; font-weight:800; padding:3px 10px;
           border-radius:20px; white-space:nowrap;
         }
         .abn-tasarruf-chip {
@@ -131,186 +133,75 @@ export default function PlanSecim() {
         .abn-badge-danger  { background:rgba(220,38,38,0.1);  color:#dc2626; font-size:11px; font-weight:700; padding:3px 8px; border-radius:6px; }
         .abn-badge-info    { background:rgba(99,102,241,0.1); color:#6366f1; font-size:11px; font-weight:700; padding:3px 8px; border-radius:6px; }
         /* Plan icon boxes */
-        .abn-icon-standart { background:rgba(245,158,11,0.12); border:1px solid rgba(245,158,11,0.25); }
+        .abn-icon-standart { background:rgba(16,185,129,0.1); border:1px solid rgba(16,185,129,0.2); }
         .abn-icon-kurumsal { background:rgba(59,130,246,0.1);  border:1px solid rgba(59,130,246,0.22); }
+        /* ParamGo: ikon kutuları primary renk tonlarında */
+        .p-abn-icon-standart { background:rgba(16,185,129,0.1); border:1px solid rgba(16,185,129,0.2); }
+        .p-abn-icon-kurumsal { background:rgba(5,150,105,0.1); border:1px solid rgba(5,150,105,0.2); }
         @keyframes abnSkel { from{opacity:.45} to{opacity:1} }
 
-        /* ── BANKING (b) ─────────────────────────────────────────── */
-        .b-abn-page-title { font-size:20px; font-weight:700; color:var(--b-text); font-family:var(--b-font-display); margin-bottom:4px; }
-        .b-abn-page-sub   { font-size:13px; color:var(--b-text-muted); }
-        .b-abn-hero {
-          background:linear-gradient(135deg,#0a2463 0%,#1a3a80 100%);
-          border-radius:16px; padding:28px 32px; margin-bottom:28px; color:#fff;
+        /* ── PARAMGO (p) ─────────────────────────────────────────── */
+        .p-abn-page-title { font-size:20px; font-weight:700; color:var(--p-text-primary); font-family:var(--p-font-display); margin-bottom:4px; }
+        .p-abn-page-sub   { font-size:13px; color:var(--p-text-muted); }
+        .p-abn-hero {
+          background:linear-gradient(135deg, var(--p-color-primary) 0%, var(--p-color-primary-dark) 100%);
+          border-radius:16px; padding:28px 32px; margin-bottom:28px; color:var(--p-text-on-primary);
         }
-        .b-abn-current-card {
-          background:var(--b-bg-card); border:1px solid var(--b-border);
-          border-left:4px solid var(--b-color-gold);
-          border-radius:var(--b-radius-card); padding:20px 24px;
-          margin-bottom:28px; box-shadow:var(--b-shadow-card);
+        .p-abn-current-card {
+          background:var(--p-bg-card); border:1px solid var(--p-border);
+          border-left:4px solid var(--p-color-primary);
+          border-radius:var(--p-radius-card); padding:20px 24px;
+          margin-bottom:28px; box-shadow:var(--p-shadow-card);
         }
-        .b-abn-current-label { font-size:11px; font-weight:600; color:var(--b-text-label); text-transform:uppercase; letter-spacing:.08em; }
-        .b-abn-current-name  { font-size:18px; font-weight:800; color:var(--b-text); font-family:var(--b-font-display); }
-        .b-abn-meta-label    { font-size:11px; font-weight:600; color:var(--b-text-label); text-transform:uppercase; letter-spacing:.06em; }
-        .b-abn-meta-value    { font-size:14px; font-weight:700; color:var(--b-text); }
-        .b-abn-section-title {
-          font-size:13px; font-weight:700; color:var(--b-text); text-transform:uppercase;
+        .p-abn-current-label { font-size:11px; font-weight:600; color:var(--p-text-label); text-transform:uppercase; letter-spacing:.08em; }
+        .p-abn-current-name  { font-size:18px; font-weight:800; color:var(--p-text-primary); font-family:var(--p-font-display); }
+        .p-abn-meta-label    { font-size:11px; font-weight:600; color:var(--p-text-label); text-transform:uppercase; letter-spacing:.06em; }
+        .p-abn-meta-value    { font-size:14px; font-weight:700; color:var(--p-text-primary); }
+        .p-abn-section-title {
+          font-size:13px; font-weight:700; color:var(--p-text-primary); text-transform:uppercase;
           letter-spacing:.06em; margin-bottom:16px; display:flex; align-items:center; gap:8px;
         }
-        .b-abn-section-title::before { content:''; display:block; width:4px; height:16px; border-radius:2px; background:var(--b-color-navy); }
-        .b-abn-toggle-label { font-size:13px; font-weight:600; color:var(--b-text-muted); cursor:pointer; transition:color .15s; }
-        .b-abn-toggle-label.aktif { color:var(--b-text); }
-        .b-abn-toggle-sw { background:var(--b-border); border:1px solid var(--b-border-strong); }
-        .b-abn-toggle-sw.on { background:var(--b-color-navy); }
-        .b-abn-plan-card {
-          background:var(--b-bg-card); border:1px solid var(--b-border);
-          box-shadow:var(--b-shadow-card); border-radius:16px; padding:22px;
+        .p-abn-section-title::before { content:''; display:block; width:4px; height:16px; border-radius:2px; background:var(--p-color-primary); }
+        .p-abn-toggle-label { font-size:13px; font-weight:600; color:var(--p-text-muted); cursor:pointer; transition:color .15s; }
+        .p-abn-toggle-label.aktif { color:var(--p-text-primary); }
+        .p-abn-toggle-sw { background:var(--p-border); border:1px solid var(--p-border-strong); }
+        .p-abn-toggle-sw.on { background:var(--p-color-primary); }
+        .p-abn-plan-card {
+          background:var(--p-bg-card); border:1px solid var(--p-border);
+          box-shadow:var(--p-shadow-card); border-radius:16px; padding:22px;
           transition:all .2s; position:relative; overflow:hidden; height:100%;
         }
-        .b-abn-plan-card:hover { box-shadow:var(--b-shadow-card-hover); transform:translateY(-2px); background:var(--b-bg-card-hover); }
-        .b-abn-plan-card.aktif-plan  { border:2px solid var(--b-color-navy); }
-        .b-abn-plan-card.onerilen    { border:2px solid var(--b-color-gold); box-shadow:var(--b-shadow-card-hover); }
-        .b-abn-plan-price  { font-size:30px; font-weight:800; color:var(--b-text); font-family:var(--b-font-display); line-height:1; }
-        .b-abn-price-unit  { font-size:13px; font-weight:600; color:var(--b-text-muted); }
-        .b-abn-plan-name   { font-size:16px; font-weight:800; color:var(--b-text); }
-        .b-abn-feature     { font-size:12px; color:var(--b-text-sec); display:flex; align-items:flex-start; gap:7px; margin-bottom:8px; line-height:1.4; }
-        .b-abn-feature i   { color:#059669; font-size:12px; flex-shrink:0; margin-top:1px; }
-        .b-abn-feature.kisit     { color:var(--b-text-muted); }
-        .b-abn-feature.kisit i   { color:#dc2626; }
-        .b-abn-sep         { height:1px; background:var(--b-border); margin:14px 0; }
-        .b-abn-btn-pasif   { display:block; width:100%; min-height:44px; border-radius:10px; border:1px solid var(--b-border); background:var(--b-border); color:var(--b-text-muted); font-size:13px; font-weight:600; margin-top:16px; cursor:default; }
-        .b-abn-card        { background:var(--b-bg-card); border:1px solid var(--b-border); box-shadow:var(--b-shadow-card); border-radius:var(--b-radius-card); overflow:hidden; }
-        .b-abn-th          { font-size:11px; font-weight:700; color:var(--b-text-label); text-transform:uppercase; letter-spacing:.05em; padding:12px 16px; background:var(--b-bg-card-hover); border:none !important; border-bottom:1px solid var(--b-border) !important; }
-        .b-abn-td          { padding:11px 16px; font-size:13px; color:var(--b-text-sec); border:none !important; border-bottom:1px solid var(--b-border) !important; }
-        .b-abn-td-bold     { padding:11px 16px; font-size:13px; font-weight:700; color:var(--b-text); border:none !important; border-bottom:1px solid var(--b-border) !important; }
-        .b-abn-empty       { color:var(--b-text-muted); }
-        .b-abn-savings     { font-size:11px; color:#059669; font-weight:700; }
-        .b-abn-yearly-note { font-size:11px; color:var(--b-text-muted); margin-top:3px; }
-        .b-abn-strike      { font-size:11px; color:var(--b-text-muted); text-decoration:line-through; }
-        .b-abn-icon-box    { width:44px; height:44px; border-radius:12px; background:var(--b-color-navy); display:flex; align-items:center; justify-content:center; }
-        .b-abn-icon-ucretsiz { background:rgba(10,36,99,0.07); border:1px solid rgba(10,36,99,0.14); }
-        .b-abn-badge-active { font-size:10px; font-weight:700; padding:3px 8px; border-radius:20px; text-transform:uppercase; letter-spacing:.06em; background:rgba(10,36,99,0.1); color:var(--b-color-navy); }
-        .b-abn-badge-rec    { font-size:10px; font-weight:700; padding:3px 8px; border-radius:20px; text-transform:uppercase; letter-spacing:.06em; background:rgba(184,134,11,0.12); color:var(--b-color-gold); }
-        .b-abn-skel        { background:var(--b-border); border-radius:6px; animation:abnSkel 1.4s ease infinite alternate; }
-        .b-abn-hero-stat   { color:#fff; opacity:.9; }
-
-        /* ── EARTHY (e) ─────────────────────────────────────────── */
-        .e-abn-page-title { font-size:20px; font-weight:700; color:var(--e-text); font-family:var(--e-font-display); margin-bottom:4px; }
-        .e-abn-page-sub   { font-size:13px; color:var(--e-text-muted); }
-        .e-abn-hero {
-          background:linear-gradient(135deg, var(--e-color-terracotta) 0%, #9b2a1e 100%);
-          border-radius:16px; padding:28px 32px; margin-bottom:28px; color:#fff;
-        }
-        .e-abn-current-card {
-          background:var(--e-bg-card); border:1px solid var(--e-border);
-          border-bottom:4px solid var(--e-color-mustard);
-          border-radius:var(--e-radius-card); padding:20px 24px;
-          margin-bottom:28px; box-shadow:var(--e-shadow-card);
-        }
-        .e-abn-current-label { font-size:11px; font-weight:600; color:var(--e-text-muted); text-transform:uppercase; letter-spacing:.08em; }
-        .e-abn-current-name  { font-size:18px; font-weight:800; color:var(--e-text); font-family:var(--e-font-display); }
-        .e-abn-meta-label    { font-size:11px; font-weight:600; color:var(--e-text-muted); text-transform:uppercase; letter-spacing:.06em; }
-        .e-abn-meta-value    { font-size:14px; font-weight:700; color:var(--e-text); }
-        .e-abn-section-title {
-          font-size:13px; font-weight:700; color:var(--e-text); text-transform:uppercase;
-          letter-spacing:.06em; margin-bottom:16px; display:flex; align-items:center; gap:8px;
-        }
-        .e-abn-section-title::before { content:''; display:block; width:4px; height:16px; border-radius:2px; background:var(--e-color-terracotta); }
-        .e-abn-toggle-label { font-size:13px; font-weight:600; color:var(--e-text-muted); cursor:pointer; transition:color .15s; }
-        .e-abn-toggle-label.aktif { color:var(--e-text); }
-        .e-abn-toggle-sw { background:var(--e-border); border:1px solid #d4c9b8; }
-        .e-abn-toggle-sw.on { background:var(--e-color-terracotta); }
-        .e-abn-plan-card {
-          background:var(--e-bg-card); border:1px solid var(--e-border);
-          box-shadow:var(--e-shadow-card); border-radius:16px; padding:22px;
-          transition:all .2s; position:relative; overflow:hidden; height:100%;
-        }
-        .e-abn-plan-card:hover { box-shadow:var(--e-shadow-card-hover); transform:translateY(-2px); background:var(--e-bg-card-hover); }
-        .e-abn-plan-card.aktif-plan { border:2px solid var(--e-color-terracotta); }
-        .e-abn-plan-card.onerilen   { border:2px solid var(--e-color-mustard); box-shadow:var(--e-shadow-card-hover); }
-        .e-abn-plan-price  { font-size:30px; font-weight:800; color:var(--e-text); font-family:var(--e-font-display); line-height:1; }
-        .e-abn-price-unit  { font-size:13px; font-weight:600; color:var(--e-text-muted); }
-        .e-abn-plan-name   { font-size:16px; font-weight:800; color:var(--e-text); }
-        .e-abn-feature     { font-size:12px; color:var(--e-text-sec); display:flex; align-items:flex-start; gap:7px; margin-bottom:8px; line-height:1.4; }
-        .e-abn-feature i   { color:var(--e-color-success); font-size:12px; flex-shrink:0; margin-top:1px; }
-        .e-abn-feature.kisit     { color:var(--e-text-muted); }
-        .e-abn-feature.kisit i   { color:var(--e-color-danger); }
-        .e-abn-sep         { height:1px; background:var(--e-border); margin:14px 0; }
-        .e-abn-btn-pasif   { display:block; width:100%; min-height:44px; border-radius:10px; border:1px solid var(--e-border); background:var(--e-border); color:var(--e-text-muted); font-size:13px; font-weight:600; margin-top:16px; cursor:default; }
-        .e-abn-card        { background:var(--e-bg-card); border:1px solid var(--e-border); box-shadow:var(--e-shadow-card); border-radius:var(--e-radius-card); overflow:hidden; }
-        .e-abn-th          { font-size:11px; font-weight:700; color:var(--e-text-muted); text-transform:uppercase; letter-spacing:.05em; padding:12px 16px; background:var(--e-bg-card-hover); border:none !important; border-bottom:1px solid var(--e-border) !important; }
-        .e-abn-td          { padding:11px 16px; font-size:13px; color:var(--e-text-sec); border:none !important; border-bottom:1px solid var(--e-border) !important; }
-        .e-abn-td-bold     { padding:11px 16px; font-size:13px; font-weight:700; color:var(--e-text); border:none !important; border-bottom:1px solid var(--e-border) !important; }
-        .e-abn-empty       { color:var(--e-text-muted); }
-        .e-abn-savings     { font-size:11px; color:var(--e-color-success); font-weight:700; }
-        .e-abn-yearly-note { font-size:11px; color:var(--e-text-muted); margin-top:3px; }
-        .e-abn-strike      { font-size:11px; color:var(--e-text-muted); text-decoration:line-through; }
-        .e-abn-icon-box    { width:44px; height:44px; border-radius:12px; background:var(--e-color-terracotta); display:flex; align-items:center; justify-content:center; }
-        .e-abn-icon-ucretsiz { background:rgba(120,60,20,0.07); border:1px solid rgba(120,60,20,0.14); }
-        .e-abn-badge-active { font-size:10px; font-weight:700; padding:3px 8px; border-radius:20px; text-transform:uppercase; letter-spacing:.06em; background:rgba(192,57,43,0.1); color:var(--e-color-terracotta); }
-        .e-abn-badge-rec    { font-size:10px; font-weight:700; padding:3px 8px; border-radius:20px; text-transform:uppercase; letter-spacing:.06em; background:rgba(212,146,11,0.12); color:var(--e-color-mustard); }
-        .e-abn-skel        { background:var(--e-border); border-radius:6px; animation:abnSkel 1.4s ease infinite alternate; }
-        .e-abn-hero-stat   { color:#fff; opacity:.9; }
-
-        /* ── DARK (d) ────────────────────────────────────────────── */
-        .d-abn-page-title { font-size:20px; font-weight:700; color:var(--d-text); margin-bottom:4px; }
-        .d-abn-page-sub   { font-size:13px; color:rgba(255,255,255,0.45); }
-        .d-abn-hero {
-          background:linear-gradient(135deg,rgba(245,158,11,0.1),rgba(245,158,11,0.04));
-          border:1px solid rgba(245,158,11,0.2); border-radius:16px; padding:28px 32px; margin-bottom:28px;
-        }
-        .d-abn-current-card {
-          background:linear-gradient(135deg,rgba(245,158,11,0.06),rgba(245,158,11,0.02));
-          border:1px solid rgba(245,158,11,0.2); border-radius:16px; padding:20px 24px; margin-bottom:28px;
-        }
-        .d-abn-current-label { font-size:11px; font-weight:600; color:rgba(255,255,255,0.4); text-transform:uppercase; letter-spacing:.08em; }
-        .d-abn-current-name  { font-size:18px; font-weight:800; color:var(--d-text); }
-        .d-abn-meta-label    { font-size:11px; font-weight:600; color:rgba(255,255,255,0.35); text-transform:uppercase; letter-spacing:.06em; }
-        .d-abn-meta-value    { font-size:14px; font-weight:700; color:var(--d-text); }
-        .d-abn-section-title {
-          font-size:13px; font-weight:700; color:rgba(255,255,255,0.7); text-transform:uppercase;
-          letter-spacing:.06em; margin-bottom:16px; display:flex; align-items:center; gap:8px;
-        }
-        .d-abn-section-title::before { content:''; display:block; width:4px; height:16px; border-radius:2px; background:#f59e0b; }
-        .d-abn-toggle-label { font-size:13px; font-weight:600; color:rgba(255,255,255,0.45); cursor:pointer; transition:color .15s; }
-        .d-abn-toggle-label.aktif { color:var(--d-text); }
-        .d-abn-toggle-sw { background:rgba(255,255,255,0.1); border:1px solid rgba(255,255,255,0.12); }
-        .d-abn-toggle-sw.on { background:#f59e0b; }
-        .d-abn-plan-card {
-          background:var(--d-bg-card); border:1px solid var(--d-border);
-          box-shadow:var(--d-shadow-card); border-radius:16px; padding:22px;
-          transition:all .2s; position:relative; overflow:hidden; height:100%;
-        }
-        .d-abn-plan-card:hover { box-shadow:var(--d-shadow-card-hover); transform:translateY(-2px); background:var(--d-bg-card-hover); }
-        .d-abn-plan-card.aktif-plan { border-color:rgba(245,158,11,0.35); background:rgba(245,158,11,0.04); }
-        .d-abn-plan-card.onerilen   { border-color:rgba(245,158,11,0.4);  background:rgba(245,158,11,0.04); box-shadow:0 0 28px rgba(245,158,11,0.1); }
-        .d-abn-plan-price  { font-size:30px; font-weight:800; color:var(--d-text); line-height:1; }
-        .d-abn-price-unit  { font-size:13px; font-weight:600; color:rgba(255,255,255,0.4); }
-        .d-abn-plan-name   { font-size:16px; font-weight:800; color:var(--d-text); }
-        .d-abn-feature     { font-size:12px; color:rgba(255,255,255,0.6); display:flex; align-items:flex-start; gap:7px; margin-bottom:8px; line-height:1.4; }
-        .d-abn-feature i   { color:#10b981; font-size:12px; flex-shrink:0; margin-top:1px; }
-        .d-abn-feature.kisit     { color:rgba(255,255,255,0.25); }
-        .d-abn-feature.kisit i   { color:rgba(255,255,255,0.18); }
-        .d-abn-sep         { height:1px; background:rgba(255,255,255,0.07); margin:14px 0; }
-        .d-abn-btn-pasif   { display:block; width:100%; min-height:44px; border-radius:10px; border:1px solid rgba(255,255,255,0.1); background:rgba(255,255,255,0.06); color:rgba(255,255,255,0.35); font-size:13px; font-weight:600; margin-top:16px; cursor:default; }
-        .d-abn-card        { background:var(--d-bg-card); border:1px solid var(--d-border); box-shadow:var(--d-shadow-card); border-radius:16px; overflow:hidden; }
-        .d-abn-th          { font-size:11px; font-weight:700; color:rgba(255,255,255,0.45); text-transform:uppercase; letter-spacing:.05em; padding:12px 16px; background:rgba(255,255,255,0.02); border:none !important; border-bottom:1px solid rgba(255,255,255,0.08) !important; }
-        .d-abn-td          { padding:11px 16px; font-size:13px; color:rgba(255,255,255,0.6); border:none !important; border-bottom:1px solid rgba(255,255,255,0.04) !important; }
-        .d-abn-td-bold     { padding:11px 16px; font-size:13px; font-weight:700; color:var(--d-text); border:none !important; border-bottom:1px solid rgba(255,255,255,0.04) !important; }
-        .d-abn-empty       { color:rgba(255,255,255,0.3); }
-        .d-abn-savings     { font-size:11px; color:#10b981; font-weight:700; }
-        .d-abn-yearly-note { font-size:11px; color:rgba(255,255,255,0.35); margin-top:3px; }
-        .d-abn-strike      { font-size:11px; color:rgba(255,255,255,0.3); text-decoration:line-through; }
-        .d-abn-icon-box    { width:44px; height:44px; border-radius:12px; background:linear-gradient(135deg,#f59e0b,#d97706); box-shadow:0 4px 12px rgba(245,158,11,0.3); display:flex; align-items:center; justify-content:center; }
-        .d-abn-icon-ucretsiz { background:rgba(255,255,255,0.07); border:1px solid rgba(255,255,255,0.1); }
-        .d-abn-badge-active { font-size:10px; font-weight:700; padding:3px 8px; border-radius:20px; text-transform:uppercase; letter-spacing:.06em; background:rgba(245,158,11,0.15); color:#f59e0b; }
-        .d-abn-badge-rec    { font-size:10px; font-weight:700; padding:3px 8px; border-radius:20px; text-transform:uppercase; letter-spacing:.06em; background:rgba(245,158,11,0.15); color:#f59e0b; }
-        .d-abn-skel        { background:rgba(255,255,255,0.08); border-radius:6px; animation:abnSkel 1.4s ease infinite alternate; }
-        .d-abn-hero-stat   { color:var(--d-text); opacity:.85; }
+        .p-abn-plan-card:hover { box-shadow:var(--p-shadow-card-hover); transform:translateY(-2px); background:var(--p-bg-card-hover); }
+        .p-abn-plan-card.aktif-plan  { border:2px solid var(--p-color-primary); }
+        .p-abn-plan-card.onerilen    { border:2px solid var(--p-color-primary-dark); box-shadow:var(--p-shadow-card-hover); }
+        .p-abn-plan-price  { font-size:30px; font-weight:800; color:var(--p-text-primary); font-family:var(--p-font-display); line-height:1; }
+        .p-abn-price-unit  { font-size:13px; font-weight:600; color:var(--p-text-muted); }
+        .p-abn-plan-name   { font-size:16px; font-weight:800; color:var(--p-text-primary); }
+        .p-abn-feature     { font-size:12px; color:var(--p-text-secondary); display:flex; align-items:flex-start; gap:7px; margin-bottom:8px; line-height:1.4; }
+        .p-abn-feature i   { color:var(--p-color-success); font-size:12px; flex-shrink:0; margin-top:1px; }
+        .p-abn-feature.kisit     { color:var(--p-text-muted); }
+        .p-abn-feature.kisit i   { color:var(--p-color-danger); }
+        .p-abn-sep         { height:1px; background:var(--p-border); margin:14px 0; }
+        .p-abn-btn-pasif   { display:block; width:100%; min-height:44px; border-radius:10px; border:1px solid var(--p-border); background:var(--p-border); color:var(--p-text-muted); font-size:13px; font-weight:600; margin-top:16px; cursor:default; }
+        .p-abn-card        { background:var(--p-bg-card); border:1px solid var(--p-border); box-shadow:var(--p-shadow-card); border-radius:var(--p-radius-card); overflow:hidden; }
+        .p-abn-th          { font-size:11px; font-weight:700; color:var(--p-text-label); text-transform:uppercase; letter-spacing:.05em; padding:12px 16px; background:var(--p-bg-card-hover); border:none !important; border-bottom:1px solid var(--p-border) !important; }
+        .p-abn-td          { padding:11px 16px; font-size:13px; color:var(--p-text-secondary); border:none !important; border-bottom:1px solid var(--p-border) !important; }
+        .p-abn-td-bold     { padding:11px 16px; font-size:13px; font-weight:700; color:var(--p-text-primary); border:none !important; border-bottom:1px solid var(--p-border) !important; }
+        .p-abn-empty       { color:var(--p-text-muted); }
+        .p-abn-savings     { font-size:11px; color:var(--p-color-success); font-weight:700; }
+        .p-abn-yearly-note { font-size:11px; color:var(--p-text-muted); margin-top:3px; }
+        .p-abn-strike      { font-size:11px; color:var(--p-text-muted); text-decoration:line-through; }
+        .p-abn-icon-box    { width:44px; height:44px; border-radius:12px; background:linear-gradient(135deg, var(--p-color-primary), var(--p-color-primary-dark)); display:flex; align-items:center; justify-content:center; }
+        .p-abn-icon-ucretsiz { background:rgba(16,185,129,0.07); border:1px solid rgba(16,185,129,0.14); }
+        .p-abn-badge-active { font-size:10px; font-weight:700; padding:3px 8px; border-radius:20px; text-transform:uppercase; letter-spacing:.06em; background:rgba(16,185,129,0.1); color:var(--p-color-primary); }
+        .p-abn-badge-rec    { font-size:10px; font-weight:700; padding:3px 8px; border-radius:20px; text-transform:uppercase; letter-spacing:.06em; background:rgba(5,150,105,0.12); color:var(--p-color-primary-dark); }
+        .p-abn-skel        { background:var(--p-border); border-radius:6px; animation:abnSkel 1.4s ease infinite alternate; }
+        .p-abn-hero-stat   { color:var(--p-text-on-primary); opacity:.9; }
 
         @media (max-width: 767px) {
           .abn-page { padding: 16px; }
-          .b-abn-plan-price, .e-abn-plan-price, .d-abn-plan-price { font-size: 24px; }
-          .b-abn-hero, .e-abn-hero, .d-abn-hero { padding: 20px 18px; }
+          .p-abn-plan-price { font-size: 24px; }
+          .p-abn-hero { padding: 20px 18px; }
         }
       `}</style>
 
@@ -330,7 +221,7 @@ export default function PlanSecim() {
           <div className="row align-items-center">
             <div className="col-12 col-md-8">
               <div style={{ fontSize: 11, fontWeight: 700, opacity: .75, textTransform: 'uppercase', letterSpacing: '.08em', marginBottom: 6 }}>
-                {kampanyaAktif ? '🎉 Lansman Kampanyası Aktif' : 'Finans Kalesi Premium'}
+                {kampanyaAktif ? '🎉 Lansman Kampanyası Aktif' : 'ParamGo Premium'}
               </div>
               <div style={{ fontSize: 22, fontWeight: 800, lineHeight: 1.25, marginBottom: 8, color: '#fff' }}>
                 Tüm finans süreçleriniz tek platformda — hiçbir şey gözden kaçmasın
@@ -429,8 +320,10 @@ export default function PlanSecim() {
             const aktif = plan === pl.id
             const iconBoxCls = pl.id === 'ucretsiz'
               ? `${p}-abn-icon-ucretsiz`
-              : `abn-icon-${pl.id}`
-            const iconColor = pl.id === 'standart' ? '#f59e0b' : pl.id === 'kurumsal' ? '#3b82f6' : undefined
+              : (p === 'p' ? `p-abn-icon-${pl.id}` : `abn-icon-${pl.id}`)
+            const iconColor = p === 'p'
+              ? (pl.id === 'standart' ? 'var(--p-color-primary)' : pl.id === 'kurumsal' ? 'var(--p-color-primary-dark)' : undefined)
+              : (pl.id === 'standart' ? '#10B981' : pl.id === 'kurumsal' ? '#3b82f6' : undefined)
 
             return (
               <div key={pl.id} className="col-12 col-md-4">
@@ -453,7 +346,7 @@ export default function PlanSecim() {
                     >
                       <i
                         className={`bi ${pl.ikon}`}
-                        style={{ fontSize: 14, color: iconColor || (p === 'b' ? 'var(--b-text-muted)' : p === 'e' ? 'var(--e-text-muted)' : 'rgba(255,255,255,0.4)') }}
+                        style={{ fontSize: 14, color: iconColor || 'var(--p-text-muted)' }}
                       />
                     </div>
                     <span className={`${p}-abn-plan-name`}>{pl.ad}</span>
@@ -507,7 +400,7 @@ export default function PlanSecim() {
                     <button className={`${p}-abn-btn-pasif`} disabled>Ücretsiz Kullan</button>
                   ) : (
                     <button
-                      className={`abn-btn ${pl.btnSinif}`}
+                      className={`abn-btn ${p === 'p' ? (pl.id === 'standart' ? 'yesil-standart' : 'yesil-kurumsal') : pl.btnSinif}`}
                       onClick={() => toast.info('Ödeme sistemi yakında entegre edilecek. Detaylar için bizimle iletişime geçin.')}
                     >
                       <i className="bi bi-arrow-up-circle me-2" />
@@ -554,7 +447,7 @@ export default function PlanSecim() {
                         <td className={`${p}-abn-td`}>{tarihFmt(kayit.odeme_tarihi || kayit.olusturma_tarihi)}</td>
                         <td className={`${p}-abn-td-bold`}>{kayit.plan_adi === 'standart' ? 'Standart' : 'Kurumsal'}</td>
                         <td className={`${p}-abn-td`}>{kayit.odeme_donemi === 'yillik' ? 'Yıllık' : 'Aylık'}</td>
-                        <td className={`${p}-abn-td`} style={{ color: '#059669', fontWeight: 700 }}>{fmt(kayit.tutar)}₺</td>
+                        <td className={`${p}-abn-td`} style={{ color: `var(--${p}-color-success)`, fontWeight: 700 }}>{fmt(kayit.tutar)}₺</td>
                         <td className={`${p}-abn-td`}>{KANAL_MAP[kayit.odeme_kanali] || '—'}</td>
                         <td className={`${p}-abn-td`}><span className={d.cls}>{d.etiket}</span></td>
                       </tr>

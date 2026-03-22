@@ -1,5 +1,5 @@
 /**
- * Finans Kalesi — Plan Kontrol Hook
+ * ParamGo — Plan Kontrol Hook
  *
  * Kullanıcının planına göre özellik erişimini kontrol eder.
  *

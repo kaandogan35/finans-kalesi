@@ -1,79 +1,65 @@
-/* ─── Google Fonts: Outfit + Inter ───────────────────────────────────────────── */
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Outfit:wght@300;400;500;600;700;800&display=swap');
+/* ─── Google Fonts: Inter ────────────────────────────────────────────────────── */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
 
-/* ─── Obsidian Vault — Marka Değişkenleri ─────────────────────────────────── */
+/* ─── ParamGo v2 — Marka Degiskenleri ────────────────────────────────────── */
 :root {
-  --ov-bg:          #0d1b2e;
-  --ov-bg-mid:      #0a1628;
-  --ov-bg-end:      #0d1f35;
-  --ov-amber:       #f59e0b;
-  --ov-amber-dark:  #d97706;
-  --ov-green:       #10b981;
-  --ov-red:         #ef4444;
-  --ov-text:        #ffffff;
-  --ov-text-60:     rgba(255,255,255,0.6);
-  --ov-text-45:     rgba(255,255,255,0.45);
-  --ov-text-35:     rgba(255,255,255,0.35);
-  --ov-text-25:     rgba(255,255,255,0.25);
-  --ov-border:      rgba(255,255,255,0.08);
-  --ov-border-hover:rgba(255,255,255,0.14);
-  --ov-border-thin: rgba(255,255,255,0.04);
-  --ov-glass:       rgba(255,255,255,0.04);
-  --ov-glass-hover: rgba(255,255,255,0.07);
-  --ov-sidebar-bg:  rgba(13,27,46,0.92);
-  --ov-modal-bg:    rgba(13,27,46,0.95);
+  --pg-bg:            #F8F9FA;
+  --pg-primary:       #10B981;
+  --pg-primary-dark:  #059669;
+  --pg-green:         #10b981;
+  --pg-danger:        #EF4444;
+  --pg-text:          #111827;
+  --pg-text-80:       rgba(17,24,39,0.8);
+  --pg-text-60:       rgba(17,24,39,0.6);
+  --pg-text-45:       rgba(17,24,39,0.45);
+  --pg-text-35:       rgba(17,24,39,0.35);
+  --pg-text-25:       rgba(17,24,39,0.25);
+  --pg-border:        #E5E7EB;
+  --pg-border-hover:  #D1D5DB;
+  --pg-border-thin:   #F3F4F6;
+  --pg-sidebar-bg:    #FFFFFF;
+  --pg-modal-bg:      #FFFFFF;
 
-  /* Geriye dönük uyumluluk alias'ları */
-  --brand-dark:     #0d1b2e;
-  --brand-navy:     #0d1b2e;
-  --brand-accent:   #f59e0b;
-  --brand-emerald:  #10b981;
-  --brand-rose:     #ef4444;
 }
 
-/* ─── Temel Sıfırlama ───────────────────────────────────────────────────────── */
+/* ─── Temel Sifirlama ────────────────────────────────────────────────────────── */
 *, *::before, *::after {
   box-sizing: border-box;
 }
 
 body {
   margin: 0;
-  font-family: 'Outfit', sans-serif;
-  background: linear-gradient(160deg, var(--ov-bg) 0%, var(--ov-bg-mid) 50%, var(--ov-bg-end) 100%);
-  background-attachment: fixed;
+  font-family: 'Inter', sans-serif;
+  background: #F8F9FA;
   min-height: 100vh;
-  color: var(--ov-text);
+  color: #111827;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
 
-/* Dekoratif radial glow — tüm sayfaya derinlik katar */
+/* Dekoratif radial glow — cok hafif emerald */
 body::before {
   content: '';
   position: fixed;
   inset: 0;
   background:
-    radial-gradient(ellipse at 20% 10%, rgba(245,158,11,0.06) 0%, transparent 50%),
-    radial-gradient(ellipse at 80% 80%, rgba(16,185,129,0.04) 0%, transparent 50%);
+    radial-gradient(ellipse at 20% 10%, rgba(16,185,129,0.03) 0%, transparent 50%),
+    radial-gradient(ellipse at 80% 80%, rgba(16,185,129,0.02) 0%, transparent 50%);
   pointer-events: none;
   z-index: 0;
 }
 
-/* ─── Premium Kart (Login / büyük bölüm kartları) ───────────────────────────── */
+/* ─── Premium Kart (Login / buyuk bolum kartlari) ────────────────────────────── */
 .premium-card {
-  background: var(--ov-modal-bg);
-  backdrop-filter: blur(30px);
-  -webkit-backdrop-filter: blur(30px);
+  background: #FFFFFF;
   border-radius: 20px;
-  border: 1px solid rgba(255,255,255,0.1);
-  box-shadow:
-    0 8px 32px rgba(0,0,0,0.3),
-    0 2px 8px rgba(0,0,0,0.2);
+  border: 1px solid #E5E7EB;
+  box-shadow: 0 4px 16px rgba(0,0,0,0.08);
   padding: 2.5rem;
   transition: all 0.2s ease;
 }
 
-/* ─── Sayfa İçerik Kapsayıcı ─────────────────────────────────────────────────── */
+/* ─── Sayfa Icerik Kapsayici ─────────────────────────────────────────────────── */
 .page-container {
   padding: 28px 28px 40px;
   max-width: 1440px;
@@ -87,29 +73,26 @@ body::before {
   .page-container { padding: 12px; }
 }
 
-/* ─── Light Card → Glassmorphism Kart ────────────────────────────────────────── */
+/* ─── Light Card ─────────────────────────────────────────────────────────────── */
 .light-card {
-  background: var(--ov-glass);
-  backdrop-filter: blur(20px);
-  -webkit-backdrop-filter: blur(20px);
-  border: 1px solid var(--ov-border);
+  background: #FFFFFF;
+  border: 1px solid #E5E7EB;
   border-radius: 16px;
-  box-shadow: 0 4px 24px rgba(0,0,0,0.15);
+  box-shadow: 0 1px 3px rgba(0,0,0,0.06);
   transition: all 0.2s ease;
   position: relative;
   overflow: hidden;
 }
 .light-card:hover {
-  background: var(--ov-glass-hover);
-  border-color: var(--ov-border-hover);
+  background: #F9FAFB;
+  border-color: #D1D5DB;
   transform: translateY(-1px);
 }
 
-/* ─── Renk Tintleri (Koyu tema glassmorphism varyantları) ────────────────── */
+/* ─── Renk Tintleri (Acik tema varyantlari) ──────────────────────────────── */
 .tint-green  { background: rgba(16, 185, 129, 0.08) !important; border-color: rgba(16, 185, 129, 0.2) !important; }
 .tint-rose   { background: rgba(239,  68,  68, 0.08) !important; border-color: rgba(239,  68,  68, 0.2) !important; }
-.tint-navy   { background: rgba(245, 158,  11, 0.06) !important; border-color: rgba(245, 158,  11, 0.15) !important; }
-.tint-amber  { background: rgba(245, 158,  11, 0.08) !important; border-color: rgba(245, 158,  11, 0.2) !important; }
+.tint-primary { background: rgba(16, 185, 129, 0.06) !important; border-color: rgba(16, 185, 129, 0.15) !important; }
 .tint-blue   { background: rgba(59,  130, 246, 0.08) !important; border-color: rgba(59,  130, 246, 0.2) !important; }
 .tint-purple { background: rgba(168, 85,  247, 0.08) !important; border-color: rgba(168,  85, 247, 0.2) !important; }
 .tint-cyan   { background: rgba(6,   182, 212, 0.08) !important; border-color: rgba(6,   182, 212, 0.2) !important; }
@@ -120,28 +103,26 @@ body::before {
   top: -12px;
   right: -12px;
   font-size: 7rem;
-  opacity: 0.06;
+  opacity: 0.35;
   pointer-events: none;
   line-height: 1;
   user-select: none;
-  color: #ffffff;
+  color: #374151;
 }
 
-/* ─── Yardımcı Sınıflar ──────────────────────────────────────────────────────── */
+/* ─── Yardimci Siniflar ──────────────────────────────────────────────────────── */
 .bg-brand-light {
-  background-color: rgba(245, 158, 11, 0.06);
+  background-color: #ECFDF5;
 }
 .text-brand {
-  color: var(--ov-amber) !important;
+  color: #10B981 !important;
 }
 
 /* ─── Sidebar Layout ─────────────────────────────────────────────────────────── */
 .sidebar-desktop {
   width: 260px;
-  background: var(--ov-sidebar-bg);
-  backdrop-filter: blur(24px);
-  -webkit-backdrop-filter: blur(24px);
-  border-right: 1px solid rgba(245,158,11,0.08);
+  background: #FFFFFF;
+  border-right: 1px solid #E5E7EB;
 }
 
 .sidebar-mobile {
@@ -149,10 +130,8 @@ body::before {
   top: 0; bottom: 0; left: 0;
   width: 260px;
   z-index: 1041;
-  background: var(--ov-sidebar-bg);
-  backdrop-filter: blur(24px);
-  -webkit-backdrop-filter: blur(24px);
-  border-right: 1px solid rgba(245,158,11,0.08);
+  background: #FFFFFF;
+  border-right: 1px solid #E5E7EB;
   transform: translateX(-100%);
   transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
@@ -163,7 +142,7 @@ body::before {
 .sidebar-overlay {
   position: fixed;
   inset: 0;
-  background: rgba(0,0,0,0.6);
+  background: rgba(0,0,0,0.3);
   backdrop-filter: blur(4px);
   -webkit-backdrop-filter: blur(4px);
   z-index: 1040;
@@ -171,15 +150,15 @@ body::before {
 
 .sidebar-logo-icon {
   font-size: 28px;
-  color: var(--ov-amber);
-  filter: drop-shadow(0 0 8px rgba(245,158,11,0.4));
+  color: #10B981;
+  filter: drop-shadow(0 0 8px rgba(16,185,129,0.3));
 }
 
 .sidebar-cikis-btn {
   background: none;
   border: none;
   padding: 4px;
-  color: var(--ov-text-45);
+  color: rgba(17,24,39,0.45);
   cursor: pointer;
   border-radius: 6px;
   transition: all 0.15s ease;
@@ -190,7 +169,7 @@ body::before {
   justify-content: center;
 }
 .sidebar-cikis-btn:hover {
-  color: var(--ov-red);
+  color: #EF4444;
   background: rgba(239,68,68,0.08);
 }
 
@@ -203,36 +182,34 @@ body::before {
   border-radius: 10px;
   font-size: 14px;
   font-weight: 500;
-  color: rgba(255,255,255,0.6);
+  color: rgba(17,24,39,0.6);
   text-decoration: none;
   border-left: 3px solid transparent;
   transition: all 0.2s ease;
   min-height: 44px;
-  text-shadow: 0 0 12px rgba(255,255,255,0.06);
 }
 .sidebar-link:hover {
-  color: rgba(255,255,255,0.85);
-  background: rgba(255,255,255,0.04);
+  color: rgba(17,24,39,0.85);
+  background: rgba(16,185,129,0.06);
   text-decoration: none;
-  text-shadow: 0 0 16px rgba(255,255,255,0.1);
 }
 .sidebar-link.active {
-  color: #ffffff;
-  background: rgba(245,158,11,0.08);
-  border-left-color: var(--ov-amber);
+  color: #111827;
+  background: rgba(16,185,129,0.08);
+  border-left-color: #10B981;
 }
 .sidebar-link.active i {
-  color: var(--ov-amber) !important;
+  color: #10B981 !important;
 }
 
-/* ─── Form: Özel Input (Koyu Tema) ───────────────────────────────────────────── */
+/* ─── Form: Ozel Input (Acik Tema) ───────────────────────────────────────────── */
 .form-control-custom {
-  background: rgba(255,255,255,0.05);
-  border: 1px solid rgba(255,255,255,0.1);
+  background: #FFFFFF;
+  border: 1px solid #E5E7EB;
   padding: 12px 16px;
   font-weight: 500;
-  color: #ffffff;
-  font-family: 'Outfit', sans-serif;
+  color: #111827;
+  font-family: 'Inter', sans-serif;
   border-radius: 10px;
   transition: all 0.2s ease;
   font-size: 14px;
@@ -240,57 +217,57 @@ body::before {
   outline: none;
 }
 .form-control-custom:focus {
-  background: rgba(255,255,255,0.08);
-  border-color: var(--ov-amber);
-  box-shadow: 0 0 0 3px rgba(245,158,11,0.12);
-  color: #ffffff;
+  background: #FFFFFF;
+  border-color: #10B981;
+  box-shadow: 0 0 0 3px rgba(16,185,129,0.12);
+  color: #111827;
   outline: none;
 }
 .form-control-custom::placeholder {
-  color: var(--ov-text-25);
+  color: rgba(17,24,39,0.25);
   font-weight: 400;
 }
 
 /* Input Group ikon sol */
 .input-group .input-group-text {
-  background: rgba(255,255,255,0.05);
-  border: 1px solid rgba(255,255,255,0.1);
+  background: #FFFFFF;
+  border: 1px solid #E5E7EB;
   border-right: none;
-  color: var(--ov-text-45);
+  color: rgba(17,24,39,0.45);
   border-radius: 10px 0 0 10px;
   padding: 12px 16px;
   font-size: 1rem;
 }
 .input-group:focus-within .input-group-text {
-  background: rgba(255,255,255,0.08);
-  border-color: var(--ov-amber);
-  color: var(--ov-amber);
+  background: #FFFFFF;
+  border-color: #10B981;
+  color: #10B981;
 }
 .input-group:focus-within .form-control-custom {
   border-left: none;
 }
 
-/* ─── Giriş Butonu (Amber Gradient) ─────────────────────────────────────────── */
+/* ─── Giris Butonu (Emerald Gradient) ──────────────────────────────────────── */
 .btn-login {
-  background: linear-gradient(135deg, var(--ov-amber) 0%, var(--ov-amber-dark) 100%);
+  background: linear-gradient(135deg, #10B981 0%, #059669 100%);
   border: none;
-  color: var(--ov-bg);
+  color: #FFFFFF;
   padding: 14px;
   font-weight: 700;
   font-size: 1rem;
   border-radius: 10px;
   transition: all 0.2s ease;
-  font-family: 'Outfit', sans-serif;
+  font-family: 'Inter', sans-serif;
   width: 100%;
   cursor: pointer;
   letter-spacing: 0.01em;
-  box-shadow: 0 4px 20px rgba(245,158,11,0.3);
+  box-shadow: 0 4px 20px rgba(16,185,129,0.3);
   min-height: 44px;
 }
 .btn-login:hover:not(:disabled) {
   transform: translateY(-1px);
-  box-shadow: 0 6px 28px rgba(245,158,11,0.45);
-  color: var(--ov-bg);
+  box-shadow: 0 6px 28px rgba(16,185,129,0.45);
+  color: #FFFFFF;
 }
 .btn-login:active:not(:disabled) {
   transform: translateY(0);
@@ -300,40 +277,40 @@ body::before {
   cursor: not-allowed;
 }
 
-/* ─── Brand Buton (Amber Primary) ────────────────────────────────────────────── */
+/* ─── Brand Buton (Emerald Primary) ──────────────────────────────────────────── */
 .btn-brand {
-  background: linear-gradient(135deg, var(--ov-amber) 0%, var(--ov-amber-dark) 100%);
-  color: var(--ov-bg);
+  background: linear-gradient(135deg, #10B981 0%, #059669 100%);
+  color: #FFFFFF;
   font-weight: 700;
   border: none;
-  font-family: 'Outfit', sans-serif;
+  font-family: 'Inter', sans-serif;
   cursor: pointer;
   transition: all 0.2s ease;
-  box-shadow: 0 4px 20px rgba(245,158,11,0.3);
+  box-shadow: 0 4px 20px rgba(16,185,129,0.3);
   border-radius: 10px;
   min-height: 44px;
 }
 .btn-brand:hover {
   transform: translateY(-1px);
-  box-shadow: 0 6px 28px rgba(245,158,11,0.45);
-  color: var(--ov-bg);
+  box-shadow: 0 6px 28px rgba(16,185,129,0.45);
+  color: #FFFFFF;
 }
 
-/* ─── Glass Buton (Secondary/İptal) ──────────────────────────────────────────── */
+/* ─── Glass Buton (Secondary/Iptal) ──────────────────────────────────────────── */
 .btn-outline-brand {
-  background: rgba(255,255,255,0.06);
-  border: 1px solid rgba(255,255,255,0.12);
-  color: rgba(255,255,255,0.7);
+  background: #FFFFFF;
+  border: 1px solid #D1D5DB;
+  color: #374151;
   font-weight: 600;
-  font-family: 'Outfit', sans-serif;
+  font-family: 'Inter', sans-serif;
   border-radius: 10px;
   min-height: 44px;
   transition: all 0.2s ease;
 }
 .btn-outline-brand:hover {
-  background: rgba(255,255,255,0.1);
-  border-color: rgba(255,255,255,0.2);
-  color: #ffffff;
+  background: #F9FAFB;
+  border-color: #9CA3AF;
+  color: #111827;
 }
 
 /* ─── Finansal Rakamlar ──────────────────────────────────────────────────────── */
@@ -346,10 +323,10 @@ body::before {
   letter-spacing: 0.01em;
 }
 
-/* ─── Neon Metin Renkleri ────────────────────────────────────────────────────── */
-.text-neon-gold   { color: var(--ov-amber); }
-.text-neon-green  { color: var(--ov-green); }
-.text-neon-red    { color: var(--ov-red); }
+/* ─── Metin Renkleri ─────────────────────────────────────────────────────────── */
+.text-neon-primary { color: #10B981; }
+.text-neon-green  { color: #10b981; }
+.text-neon-red    { color: #ef4444; }
 .text-neon-blue   { color: #3b82f6; }
 .text-neon-purple { color: #a855f7; }
 .text-neon-cyan   { color: #06b6d4; }
@@ -375,11 +352,11 @@ body::before {
   to   { opacity: 1; transform: translateY(0)    scale(1);    }
 }
 
-/* ─── Scrollbar (Koyu Tema) ──────────────────────────────────────────────────── */
+/* ─── Scrollbar (Acik Tema) ──────────────────────────────────────────────────── */
 ::-webkit-scrollbar       { width: 5px; height: 5px; }
 ::-webkit-scrollbar-track { background: transparent; }
-::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.15); border-radius: 9999px; }
-::-webkit-scrollbar-thumb:hover { background: rgba(255,255,255,0.25); }
+::-webkit-scrollbar-thumb { background: rgba(0,0,0,0.15); border-radius: 9999px; }
+::-webkit-scrollbar-thumb:hover { background: rgba(0,0,0,0.25); }
 
 /* ─── Tablo Genel Override ───────────────────────────────────────────────────── */
 .premium-card table th,
@@ -393,39 +370,39 @@ body::before {
   font-size: 0.9rem !important;
 }
 
-/* Bootstrap form-control koyu tema override */
+/* Bootstrap form-control acik tema override */
 .form-control {
-  background: rgba(255,255,255,0.05);
-  border: 1px solid rgba(255,255,255,0.1);
-  color: #ffffff;
+  background: #FFFFFF;
+  border: 1px solid #E5E7EB;
+  color: #111827;
   border-radius: 10px;
   min-height: 44px;
-  font-family: 'Outfit', sans-serif;
+  font-family: 'Inter', sans-serif;
   transition: all 0.2s ease;
 }
 .form-control:focus {
-  background: rgba(255,255,255,0.08);
-  border-color: var(--ov-amber);
-  box-shadow: 0 0 0 3px rgba(245,158,11,0.12);
-  color: #ffffff;
+  background: #FFFFFF;
+  border-color: #10B981;
+  box-shadow: 0 0 0 3px rgba(16,185,129,0.12);
+  color: #111827;
 }
 .form-control::placeholder {
-  color: var(--ov-text-25);
+  color: rgba(17,24,39,0.25);
 }
 
-/* Bootstrap form-select koyu tema override */
+/* Bootstrap form-select acik tema override */
 .form-select {
-  background-color: rgba(255,255,255,0.05);
-  border: 1px solid rgba(255,255,255,0.1);
-  color: #ffffff;
+  background-color: #FFFFFF;
+  border: 1px solid #E5E7EB;
+  color: #111827;
   border-radius: 10px;
   min-height: 44px;
 }
 .form-select:focus {
-  border-color: var(--ov-amber);
-  box-shadow: 0 0 0 3px rgba(245,158,11,0.12);
+  border-color: #10B981;
+  box-shadow: 0 0 0 3px rgba(16,185,129,0.12);
 }
 .form-select option {
-  background: #0d1b2e;
-  color: #ffffff;
+  background: #FFFFFF;
+  color: #111827;
 }

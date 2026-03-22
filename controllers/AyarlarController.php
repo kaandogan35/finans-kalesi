@@ -29,7 +29,7 @@ class AyarlarController {
         }
 
         // 3. Girdi dogrula
-        $izinli_temalar = ['banking', 'earthy', 'dark'];
+        $izinli_temalar = ['paramgo'];
         $tema_adi = trim($girdi['tema_adi'] ?? '');
 
         if (!in_array($tema_adi, $izinli_temalar, true)) {

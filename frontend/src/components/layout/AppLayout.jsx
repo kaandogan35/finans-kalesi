@@ -8,16 +8,17 @@ import { useState } from 'react'
 import { NavLink, Outlet, useNavigate, useLocation } from 'react-router-dom'
 import useAuthStore from '../../stores/authStore'
 import UpgradeBildirim from '../UpgradeBildirim'
+import ParamGoLogo from '../../logo/ParamGoLogo'
 
 // ─── Menü Öğeleri ─────────────────────────────────────────────────────────────
 const menuOgeleri = [
-  { yol: '/dashboard', etiket: 'Dashboard',      icon: 'bi-speedometer2',             renk: '#f59e0b', rgb: '245,158,11'  },
+  { yol: '/dashboard', etiket: 'Dashboard',      icon: 'bi-speedometer2',             renk: '#10B981', rgb: '16,185,129'  },
   { yol: '/cariler',   etiket: 'Cari Hesaplar',   icon: 'bi-people-fill',              renk: '#10b981', rgb: '16,185,129'  },
-  { yol: '/cek-senet', etiket: 'Çek / Senet',    icon: 'bi-file-earmark-text-fill',   renk: '#3b82f6', rgb: '59,130,246'  },
-  { yol: '/odemeler',  etiket: 'Ödemeler',        icon: 'bi-credit-card-2-front-fill', renk: '#a78bfa', rgb: '167,139,250' },
-  { yol: '/kasa',             etiket: 'Varlık & Kasa',    icon: 'bi-safe-fill',                renk: '#f59e0b', rgb: '245,158,11'  },
-  { yol: '/vade-hesaplayici', etiket: 'Vade Hesaplayıcı', icon: 'bi-calculator-fill',          renk: '#06b6d4', rgb: '6,182,212'   },
-  { yol: '/ayarlar/tema',     etiket: 'Tema Ayarları',    icon: 'bi-palette-fill',             renk: '#8b5cf6', rgb: '139,92,246'  },
+  { yol: '/cek-senet', etiket: 'Çek / Senet',    icon: 'bi-file-earmark-text-fill',   renk: '#10B981', rgb: '16,185,129'  },
+  { yol: '/odemeler',  etiket: 'Ödemeler',        icon: 'bi-credit-card-2-front-fill', renk: '#10B981', rgb: '16,185,129'  },
+  { yol: '/kasa',             etiket: 'Varlık & Kasa',    icon: 'bi-safe-fill',                renk: '#10B981', rgb: '16,185,129'  },
+  { yol: '/vade-hesaplayici', etiket: 'Vade Hesaplayıcı', icon: 'bi-calculator-fill',          renk: '#10B981', rgb: '16,185,129'  },
+  { yol: '/ayarlar/tema',     etiket: 'Tema Ayarları',    icon: 'bi-palette-fill',             renk: '#10B981', rgb: '16,185,129'  },
 ]
 
 // ─── Aktif Sayfa Başlığı ──────────────────────────────────────────────────────
@@ -50,7 +51,7 @@ const CSS = `
     height: 42px;
     border-radius: 11px;
     text-decoration: none !important;
-    color: rgba(255,255,255,0.45);
+    color: #6B7280;
     font-size: 13px;
     font-weight: 600;
     letter-spacing: -0.1px;
@@ -70,29 +71,29 @@ const CSS = `
     width: 3px;
     height: 55%;
     border-radius: 0 3px 3px 0;
-    background: #f59e0b;
+    background: #10B981;
     transition: transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
   }
 
   .fk-nav-link:hover {
-    color: rgba(255,255,255,0.8);
-    background: rgba(255,255,255,0.045);
-    border-color: rgba(255,255,255,0.055);
+    color: #111827;
+    background: rgba(16,185,129,0.06);
+    border-color: rgba(16,185,129,0.12);
   }
 
   .fk-nav-link.active {
-    color: #ffffff;
+    color: #111827;
     background: linear-gradient(135deg,
-      rgba(245,158,11,0.12) 0%,
-      rgba(217,119,6,0.05) 100%
+      rgba(16,185,129,0.1) 0%,
+      rgba(5,150,105,0.05) 100%
     );
-    border-color: rgba(245,158,11,0.2);
-    box-shadow: 0 2px 14px rgba(245,158,11,0.07), inset 0 1px 0 rgba(255,255,255,0.05);
+    border-color: rgba(16,185,129,0.2);
+    box-shadow: 0 2px 14px rgba(16,185,129,0.07), inset 0 1px 0 rgba(255,255,255,0.5);
   }
 
   .fk-nav-link.active::before {
     transform: translateY(-50%) scaleY(1);
-    box-shadow: 0 0 8px rgba(245,158,11,0.6);
+    box-shadow: 0 0 8px rgba(16,185,129,0.6);
   }
 
   /* ── İkon kutusu ── */
@@ -105,10 +106,10 @@ const CSS = `
     justify-content: center;
     flex-shrink: 0;
     transition: background 0.16s ease;
-    background: rgba(255,255,255,0.035);
+    background: rgba(16,185,129,0.06);
   }
-  .fk-nav-link:hover .fk-nav-icon { background: rgba(255,255,255,0.06); }
-  .fk-nav-link.active .fk-nav-icon { background: rgba(255,255,255,0.07); }
+  .fk-nav-link:hover .fk-nav-icon { background: rgba(16,185,129,0.1); }
+  .fk-nav-link.active .fk-nav-icon { background: rgba(16,185,129,0.12); }
 
   /* ── Aktif nokta animasyonu ── */
   .fk-dot {
@@ -143,8 +144,8 @@ const CSS = `
   /* ── Sidebar yapıları ── */
   .fk-sidebar-desktop {
     width: 256px;
-    background: linear-gradient(175deg, #0d1b2e 0%, #091525 100%);
-    border-right: 1px solid rgba(245,158,11,0.07);
+    background: #FFFFFF;
+    border-right: 1px solid #E5E7EB;
     position: relative;
     z-index: 10;
     flex-shrink: 0;
@@ -157,8 +158,8 @@ const CSS = `
     width: 1px;
     background: linear-gradient(to bottom,
       transparent,
-      rgba(245,158,11,0.14) 35%,
-      rgba(245,158,11,0.14) 65%,
+      rgba(16,185,129,0.14) 35%,
+      rgba(16,185,129,0.14) 65%,
       transparent
     );
     pointer-events: none;
@@ -167,8 +168,8 @@ const CSS = `
   .fk-sidebar-mobile {
     position: fixed; left: 0; top: 0; bottom: 0;
     width: 256px; z-index: 1040;
-    background: linear-gradient(175deg, #0d1b2e 0%, #091525 100%);
-    border-right: 1px solid rgba(245,158,11,0.08);
+    background: #FFFFFF;
+    border-right: 1px solid #E5E7EB;
     transform: translateX(-100%);
     transition: transform 0.26s cubic-bezier(0.4, 0, 0.2, 1);
   }
@@ -192,7 +193,7 @@ const CSS = `
   .fk-sidebar-mobile ::-webkit-scrollbar  { width: 3px; }
   .fk-sidebar-desktop ::-webkit-scrollbar-thumb,
   .fk-sidebar-mobile ::-webkit-scrollbar-thumb {
-    background: rgba(245,158,11,0.25); border-radius: 2px;
+    background: rgba(16,185,129,0.25); border-radius: 2px;
   }
 `
 
@@ -205,40 +206,13 @@ function SidebarIcerik({ kullanici, handleCikis, onKapat }) {
       <div style={{ padding: '22px 14px 0' }}>
         <div className="d-flex align-items-center justify-content-between">
 
-          <div className="d-flex align-items-center gap-3">
-            {/* Logo kutusu */}
-            <div style={{ position: 'relative', flexShrink: 0 }}>
-              <div style={{
-                width: 40, height: 40, borderRadius: 13,
-                background: 'linear-gradient(135deg, #f59e0b 0%, #d97706 100%)',
-                boxShadow: '0 4px 18px rgba(245,158,11,0.38), 0 0 0 1px rgba(245,158,11,0.22)',
-                display: 'flex', alignItems: 'center', justifyContent: 'center',
-              }}>
-                <i className="bi bi-shield-lock-fill" style={{ fontSize: 18, color: '#0d1b2e' }} />
-              </div>
-              {/* Ambient glow */}
-              <div style={{
-                position: 'absolute', inset: -6, borderRadius: 19,
-                background: 'radial-gradient(circle, rgba(245,158,11,0.18) 0%, transparent 70%)',
-                pointerEvents: 'none',
-              }} />
-            </div>
-
-            <div>
-              <div style={{ fontWeight: 800, fontSize: 15.5, color: '#fff', lineHeight: 1.2, letterSpacing: '-0.4px' }}>
-                Finans Kalesi
-              </div>
-              <div style={{ fontSize: 10, color: 'rgba(255,255,255,0.35)', marginTop: 2, fontWeight: 500, letterSpacing: '0.04em' }}>
-                Varlık Yönetimi
-              </div>
-            </div>
-          </div>
+          <ParamGoLogo size="sm" variant="dark" />
 
           {onKapat && (
             <button onClick={onKapat} style={{
-              background: 'rgba(255,255,255,0.05)',
-              border: '1px solid rgba(255,255,255,0.08)',
-              color: 'rgba(255,255,255,0.4)', borderRadius: 8,
+              background: 'rgba(0,0,0,0.04)',
+              border: '1px solid #E5E7EB',
+              color: '#6B7280', borderRadius: 8,
               width: 30, height: 30,
               display: 'flex', alignItems: 'center', justifyContent: 'center',
               cursor: 'pointer',
@@ -251,7 +225,7 @@ function SidebarIcerik({ kullanici, handleCikis, onKapat }) {
         {/* Gradient divider */}
         <div style={{
           height: 1, marginTop: 18,
-          background: 'linear-gradient(to right, transparent, rgba(255,255,255,0.07) 25%, rgba(255,255,255,0.07) 75%, transparent)',
+          background: 'linear-gradient(to right, transparent, #E5E7EB 25%, #E5E7EB 75%, transparent)',
         }} />
       </div>
 
@@ -259,7 +233,7 @@ function SidebarIcerik({ kullanici, handleCikis, onKapat }) {
       <nav className="flex-grow-1 overflow-auto" style={{ padding: '12px 8px 0' }}>
         <p style={{
           fontSize: 9.5, fontWeight: 700, letterSpacing: '0.12em',
-          color: 'rgba(255,255,255,0.22)', textTransform: 'uppercase',
+          color: '#9CA3AF', textTransform: 'uppercase',
           padding: '0 6px', margin: '0 0 7px',
         }}>
           Modüller
@@ -280,7 +254,7 @@ function SidebarIcerik({ kullanici, handleCikis, onKapat }) {
                     className={`bi ${item.icon}`}
                     style={{
                       fontSize: 13,
-                      color: isActive ? item.renk : 'rgba(255,255,255,0.38)',
+                      color: isActive ? item.renk : '#9CA3AF',
                       transition: 'color 0.16s ease',
                       filter: isActive ? `drop-shadow(0 0 4px rgba(${item.rgb},0.5))` : 'none',
                     }}
@@ -311,31 +285,31 @@ function SidebarIcerik({ kullanici, handleCikis, onKapat }) {
         {/* Divider */}
         <div style={{
           height: 1, marginBottom: 10,
-          background: 'linear-gradient(to right, transparent, rgba(255,255,255,0.065) 25%, rgba(255,255,255,0.065) 75%, transparent)',
+          background: 'linear-gradient(to right, transparent, #E5E7EB 25%, #E5E7EB 75%, transparent)',
         }} />
 
         <div className="d-flex align-items-center gap-2" style={{
-          background: 'rgba(255,255,255,0.03)',
-          border: '1px solid rgba(255,255,255,0.065)',
+          background: '#F9FAFB',
+          border: '1px solid #E5E7EB',
           borderRadius: 11, padding: '8px 10px',
         }}>
           {/* Avatar */}
           <div style={{
             width: 32, height: 32, borderRadius: 9, flexShrink: 0,
-            background: 'linear-gradient(135deg, #f59e0b, #d97706)',
-            boxShadow: '0 2px 8px rgba(245,158,11,0.22)',
+            background: 'linear-gradient(135deg, #10B981, #059669)',
+            boxShadow: '0 2px 8px rgba(16,185,129,0.22)',
             display: 'flex', alignItems: 'center', justifyContent: 'center',
           }}>
-            <span style={{ color: '#0d1b2e', fontSize: 12, fontWeight: 800 }}>
+            <span style={{ color: '#FFFFFF', fontSize: 12, fontWeight: 800 }}>
               {kullanici?.ad_soyad?.charAt(0)?.toUpperCase() || 'K'}
             </span>
           </div>
 
           <div className="flex-grow-1" style={{ minWidth: 0 }}>
-            <div className="text-truncate" style={{ fontSize: 12, fontWeight: 700, color: '#fff', lineHeight: 1.3 }}>
+            <div className="text-truncate" style={{ fontSize: 12, fontWeight: 700, color: '#111827', lineHeight: 1.3 }}>
               {kullanici?.ad_soyad || 'Kullanıcı'}
             </div>
-            <div style={{ fontSize: 10, color: 'rgba(255,255,255,0.32)', textTransform: 'capitalize', fontWeight: 500 }}>
+            <div style={{ fontSize: 10, color: '#9CA3AF', textTransform: 'capitalize', fontWeight: 500 }}>
               {kullanici?.rol || 'Kullanıcı'}
             </div>
           </div>
@@ -345,8 +319,8 @@ function SidebarIcerik({ kullanici, handleCikis, onKapat }) {
           </button>
         </div>
 
-        <p style={{ margin: '7px 0 0', fontSize: 9.5, color: 'rgba(255,255,255,0.16)', textAlign: 'center', fontWeight: 500, letterSpacing: '0.02em' }}>
-          Finans Kalesi v0.9 Beta
+        <p style={{ margin: '7px 0 0', fontSize: 9.5, color: '#D1D5DB', textAlign: 'center', fontWeight: 500, letterSpacing: '0.02em' }}>
+          ParamGo v0.9 Beta
         </p>
       </div>
 
@@ -371,7 +345,7 @@ export default function AppLayout() {
   return (
     <div
       className="d-flex vh-100 overflow-hidden"
-      style={{ background: 'linear-gradient(160deg, #0d1b2e 0%, #0a1628 50%, #0d1f35 100%)', backgroundAttachment: 'fixed' }}
+      style={{ background: '#F8F9FA', backgroundAttachment: 'fixed' }}
     >
       <style>{CSS}</style>
 
@@ -403,10 +377,10 @@ export default function AppLayout() {
           style={{
             height: 58,
             padding: '0 26px',
-            background: 'rgba(9,21,37,0.78)',
+            background: 'rgba(255,255,255,0.85)',
             backdropFilter: 'blur(28px)',
             WebkitBackdropFilter: 'blur(28px)',
-            borderBottom: '1px solid rgba(255,255,255,0.052)',
+            borderBottom: '1px solid #E5E7EB',
             zIndex: 10,
           }}
         >
@@ -422,10 +396,10 @@ export default function AppLayout() {
               <i className={`bi ${aktifSayfa.icon}`} style={{ fontSize: 14, color: aktifSayfa.renk }} />
             </div>
             <div>
-              <p style={{ margin: 0, fontSize: 14.5, fontWeight: 700, color: '#fff', letterSpacing: '-0.3px', lineHeight: 1.2, fontFamily: 'Outfit, sans-serif' }}>
+              <p style={{ margin: 0, fontSize: 14.5, fontWeight: 700, color: '#111827', letterSpacing: '-0.3px', lineHeight: 1.2, fontFamily: 'Outfit, sans-serif' }}>
                 {aktifSayfa.etiket}
               </p>
-              <p style={{ margin: 0, fontSize: 11, color: 'rgba(255,255,255,0.36)', fontFamily: 'Outfit, sans-serif' }}>
+              <p style={{ margin: 0, fontSize: 11, color: '#9CA3AF', fontFamily: 'Outfit, sans-serif' }}>
                 {bugunStr()}
               </p>
             </div>
@@ -436,36 +410,36 @@ export default function AppLayout() {
             {/* Bildirim */}
             <button
               style={{
-                background: 'rgba(255,255,255,0.04)',
-                border: '1px solid rgba(255,255,255,0.07)',
-                color: 'rgba(255,255,255,0.4)', borderRadius: 8,
+                background: '#F9FAFB',
+                border: '1px solid #E5E7EB',
+                color: '#6B7280', borderRadius: 8,
                 width: 36, height: 36,
                 display: 'flex', alignItems: 'center', justifyContent: 'center',
                 cursor: 'pointer', transition: 'all 0.16s ease',
               }}
-              onMouseEnter={e => { e.currentTarget.style.background = 'rgba(255,255,255,0.08)'; e.currentTarget.style.color = '#fff' }}
-              onMouseLeave={e => { e.currentTarget.style.background = 'rgba(255,255,255,0.04)'; e.currentTarget.style.color = 'rgba(255,255,255,0.4)' }}
+              onMouseEnter={e => { e.currentTarget.style.background = '#F3F4F6'; e.currentTarget.style.color = '#111827' }}
+              onMouseLeave={e => { e.currentTarget.style.background = '#F9FAFB'; e.currentTarget.style.color = '#6B7280' }}
             >
               <i className="bi bi-bell" style={{ fontSize: 14 }} />
             </button>
 
             {/* Kullanıcı rozeti */}
             <div className="d-flex align-items-center gap-2" style={{
-              background: 'rgba(255,255,255,0.04)',
-              border: '1px solid rgba(255,255,255,0.07)',
+              background: '#F9FAFB',
+              border: '1px solid #E5E7EB',
               borderRadius: 10, padding: '5px 12px 5px 6px',
               fontFamily: 'Outfit, sans-serif',
             }}>
               <div style={{
                 width: 27, height: 27, borderRadius: 8,
-                background: 'linear-gradient(135deg, #f59e0b, #d97706)',
+                background: 'linear-gradient(135deg, #10B981, #059669)',
                 display: 'flex', alignItems: 'center', justifyContent: 'center',
               }}>
-                <span style={{ color: '#0d1b2e', fontSize: 11, fontWeight: 800 }}>
+                <span style={{ color: '#FFFFFF', fontSize: 11, fontWeight: 800 }}>
                   {kullanici?.ad_soyad?.charAt(0)?.toUpperCase() || 'K'}
                 </span>
               </div>
-              <span style={{ fontSize: 13, fontWeight: 600, color: 'rgba(255,255,255,0.78)' }}>
+              <span style={{ fontSize: 13, fontWeight: 600, color: '#374151' }}>
                 {kullanici?.ad_soyad?.split(' ')[0] || 'Kullanıcı'}
               </span>
             </div>
@@ -495,17 +469,17 @@ export default function AppLayout() {
           className="d-flex d-lg-none align-items-center justify-content-between flex-shrink-0"
           style={{
             height: 62, padding: '0 16px',
-            background: 'rgba(9,21,37,0.9)',
+            background: 'rgba(255,255,255,0.9)',
             backdropFilter: 'blur(24px)',
             WebkitBackdropFilter: 'blur(24px)',
-            borderBottom: '1px solid rgba(255,255,255,0.052)',
+            borderBottom: '1px solid #E5E7EB',
           }}
         >
           <button
             onClick={() => setSidebarAcik(true)}
             style={{
               background: 'none', border: 'none',
-              color: '#f59e0b', cursor: 'pointer',
+              color: '#10B981', cursor: 'pointer',
               width: 44, height: 44,
               display: 'flex', alignItems: 'center', justifyContent: 'center',
             }}
@@ -513,15 +487,7 @@ export default function AppLayout() {
             <i className="bi bi-list" style={{ fontSize: 26 }} />
           </button>
 
-          <div className="d-flex align-items-center gap-2">
-            <i className="bi bi-shield-lock-fill" style={{
-              color: '#f59e0b', fontSize: 20,
-              filter: 'drop-shadow(0 0 6px rgba(245,158,11,0.45))',
-            }} />
-            <span style={{ fontWeight: 800, fontSize: 16, color: '#fff', letterSpacing: '-0.3px', fontFamily: 'Outfit, sans-serif' }}>
-              Finans Kalesi
-            </span>
-          </div>
+          <ParamGoLogo size="xs" variant="dark" />
 
           <div style={{ width: 44, height: 44, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
             <i

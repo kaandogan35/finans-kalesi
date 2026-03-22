@@ -1,6 +1,6 @@
 /**
  * CariYonetimi.jsx — Cari & Finans Yönetimi
- * 3 Tema Sistemi (Banking / Earthy / Dark)
+ * Tek Tema: ParamGo
  * cym- prefix ile modüle özel CSS class'ları
  * Modallar: Saf React state + createPortal
  * Revizyon: Cari Kart (Netsis mantığı), Dinamik İşlem, PDF Ekstre
@@ -16,7 +16,7 @@ import { temaRenkleri, hexRgba } from '../../lib/temaRenkleri'
 import { useSinirler } from '../../hooks/useSinirler'
 import useAuthStore from '../../stores/authStore'
 
-const prefixMap = { banking: 'b', earthy: 'e', dark: 'd' }
+const prefixMap = { paramgo: 'p' }
 
 // ─── Para Formatı ─────────────────────────────────────────────────────────────
 const TL = (n) =>
@@ -102,9 +102,9 @@ async function ekstrePdfIndir(cari, hareketler) {
 
   const html = `
     <div style="font-family:'Segoe UI',Arial,sans-serif;padding:32px;color:#1e293b">
-      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:28px;padding-bottom:18px;border-bottom:2px solid #123F59">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:28px;padding-bottom:18px;border-bottom:2px solid #10B981">
         <div>
-          <div style="font-size:22px;font-weight:800;color:#123F59;letter-spacing:-0.02em">Finans Kalesi</div>
+          <div style="font-size:22px;font-weight:800;color:#10B981;letter-spacing:-0.02em">ParamGo</div>
           <div style="font-size:11px;color:#64748b;margin-top:2px">Hesap Ekstresi</div>
         </div>
         <div style="text-align:right;font-size:12px;color:#64748b">
@@ -123,7 +123,7 @@ async function ekstrePdfIndir(cari, hareketler) {
 
       <table style="width:100%;border-collapse:collapse;border:1px solid #e2e8f0;border-radius:8px;overflow:hidden">
         <thead>
-          <tr style="background:#123F59">
+          <tr style="background:#10B981">
             <th style="padding:11px 14px;font-size:11px;font-weight:700;color:#fff;text-align:left;text-transform:uppercase;letter-spacing:0.05em">Tarih</th>
             <th style="padding:11px 14px;font-size:11px;font-weight:700;color:#fff;text-align:left;text-transform:uppercase;letter-spacing:0.05em">Açıklama</th>
             <th style="padding:11px 14px;font-size:11px;font-weight:700;color:#fff;text-align:right;text-transform:uppercase;letter-spacing:0.05em">Alacak</th>
@@ -139,7 +139,7 @@ async function ekstrePdfIndir(cari, hareketler) {
             <td style="padding:12px 14px;font-size:14px;font-weight:800;text-align:right;color:#059669">${TL(toplamAlacak)}</td>
             <td style="padding:12px 14px;font-size:14px;font-weight:800;text-align:right;color:#dc2626">${TL(toplamBorc)}</td>
           </tr>
-          <tr style="background:#123F59">
+          <tr style="background:#10B981">
             <td colspan="2" style="padding:12px 14px;font-size:13px;font-weight:800;color:#fff">BAKİYE</td>
             <td colspan="2" style="padding:12px 14px;font-size:16px;font-weight:800;text-align:right;color:${cari.bakiye > 0 ? '#fca5a5' : cari.bakiye < 0 ? '#6ee7b7' : 'rgba(255,255,255,0.7)'}">${TL(cari.bakiye)}</td>
           </tr>
@@ -147,7 +147,7 @@ async function ekstrePdfIndir(cari, hareketler) {
       </table>
 
       <div style="margin-top:32px;padding-top:16px;border-top:1px solid #e2e8f0;text-align:center;font-size:10px;color:#94a3b8">
-        Bu belge Finans Kalesi yazılımı tarafından otomatik oluşturulmuştur. · ${new Date().toLocaleDateString('tr-TR')}
+        Bu belge ParamGo yazılımı tarafından otomatik oluşturulmuştur. · ${new Date().toLocaleDateString('tr-TR')}
       </div>
     </div>
   `
@@ -191,8 +191,8 @@ const bosIslem = { tur: 'tahsilat', tutar: '', aciklama: '', tarih: bugunTarih()
 export default function CariYonetimi() {
   const navigate = useNavigate()
   const aktifTema = useTemaStore((s) => s.aktifTema)
-  const p = prefixMap[aktifTema] || 'b'
-  const renkler = temaRenkleri[aktifTema] || temaRenkleri.banking
+  const p = prefixMap[aktifTema] || 'p'
+  const renkler = temaRenkleri[aktifTema] || temaRenkleri.paramgo
 
   const { kullanici } = useAuthStore()
   const { sinirler, uyariDurum } = useSinirler()
@@ -625,43 +625,46 @@ export default function CariYonetimi() {
     <div className={`${p}-page-root`}>
 
       {/* ─── Sayfa Başlığı ──────────────────────────────────────────── */}
-      <div className="d-flex align-items-center justify-content-between mb-4 flex-wrap gap-3">
-        <div>
-          <h1 className={`${p}-page-title`}>Cari Hesaplar</h1>
-          <p className={`${p}-cym-subtitle`}>
-            {cariler.length} toplam cari · {cariler.filter(c => c.durum === 'aktif').length} aktif
-          </p>
+      <div className={`${p}-page-header`}>
+        <div className={`${p}-page-header-left`}>
+          <div className={`${p}-page-header-icon`}>
+            <i className="bi bi-people-fill" />
+          </div>
+          <div>
+            <h1 className={`${p}-page-title`}>Cari Hesaplar</h1>
+            <p className={`${p}-page-sub`}>
+              {cariler.length} toplam cari · {cariler.filter(c => c.durum === 'aktif').length} aktif
+            </p>
+          </div>
         </div>
-        <div className="d-flex flex-column align-items-end gap-2">
+        <div className={`${p}-page-header-right`}>
           {kullanici?.plan === 'ucretsiz' && cariBilgi && !cariBilgi.sinirsiz && (cariDurum === 'uyari' || cariDurum === 'dolu') && (
             <div style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 12, fontWeight: 600,
               color: cariDurum === 'dolu' ? renkler.danger : renkler.warning }}>
-              <div style={{ width: 80, height: 4, borderRadius: 3, background: hexRgba(renkler.textSec, 0.15), overflow: 'hidden' }}>
+              <div style={{ width: 80, height: 4, borderRadius: 2, background: hexRgba(renkler.textSec, 0.15), overflow: 'hidden' }}>
                 <div style={{ height: '100%', width: `${Math.min(cariBilgi.yuzde, 100)}%`,
-                  background: cariDurum === 'dolu' ? renkler.danger : renkler.warning, borderRadius: 3 }} />
+                  background: cariDurum === 'dolu' ? renkler.danger : renkler.warning, borderRadius: 2 }} />
               </div>
               {cariBilgi.mevcut}/{cariBilgi.sinir} cari
             </div>
           )}
-          <div className="d-flex gap-2">
-            <button
-              onClick={() => { setTopluModalAcik(true); setTopluDosya(null); setTopluOnizleme(null); setTopluSonuc(null) }}
-              className={`${p}-cym-btn-outline d-flex align-items-center gap-2`}
-              title="CSV ile toplu cari yükle"
-            >
-              <i className="bi bi-upload" /> Toplu Yükle
-            </button>
-            <button
-              data-tur="yeni-cari-btn"
-              onClick={cariEkleAc}
-              className={`${p}-cym-btn-new d-flex align-items-center gap-2`}
-              disabled={limitDolu}
-              title={limitDolu ? 'Cari limiti doldu. Planı yükseltin.' : 'Yeni cari ekle'}
-              style={limitDolu ? { opacity: 0.5, cursor: 'not-allowed' } : undefined}
-            >
-              <i className="bi bi-plus-lg" /> Yeni Cari Ekle
-            </button>
-          </div>
+          <button
+            onClick={() => { setTopluModalAcik(true); setTopluDosya(null); setTopluOnizleme(null); setTopluSonuc(null) }}
+            className={`${p}-cym-btn-outline d-flex align-items-center gap-2`}
+            title="CSV ile toplu cari yükle"
+          >
+            <i className="bi bi-upload" /> Toplu Yükle
+          </button>
+          <button
+            data-tur="yeni-cari-btn"
+            onClick={cariEkleAc}
+            className={`${p}-cym-btn-new d-flex align-items-center gap-2`}
+            disabled={limitDolu}
+            title={limitDolu ? 'Cari limiti doldu. Planı yükseltin.' : 'Yeni cari ekle'}
+            style={limitDolu ? { opacity: 0.5, cursor: 'not-allowed' } : undefined}
+          >
+            <i className="bi bi-plus-lg" /> Yeni Cari Ekle
+          </button>
         </div>
       </div>
 
@@ -927,16 +930,16 @@ export default function CariYonetimi() {
       {cariModalAcik && createPortal(
         <>
           <div className={`${p}-modal-overlay`} />
-          <div className={`${p}-modal-center`} role="dialog" aria-modal="true">
+          <div className={`${p}-modal-center`} role="dialog" aria-modal="true" aria-labelledby="cari-modal-title">
             <div className={`${p}-modal-box`} style={{ maxWidth: 800 }}>
               {/* Header */}
-              <div className={`${p}-cym-modal-header`}>
-                <div className="d-flex align-items-center gap-2">
-                  <i className={`bi ${cariMod === 'ekle' ? 'bi-person-plus-fill' : 'bi-pencil-square'} ${p}-cym-modal-header-icon`} />
-                  <span className={`${p}-cym-modal-header-title`}>{cariMod === 'ekle' ? 'Yeni Cari Ekle' : 'Cari Düzenle'}</span>
-                </div>
-                <button onClick={() => setCariModalAcik(false)} className={`${p}-modal-close`}>
-                  <i className="bi bi-x-lg" />
+              <div className={`${p}-modal-header ${p}-mh-default`}>
+                <h2 className={`${p}-modal-title`} id="cari-modal-title">
+                  <i className={`bi ${cariMod === 'ekle' ? 'bi-person-plus-fill' : 'bi-pencil-square'}`} aria-hidden="true" />
+                  {cariMod === 'ekle' ? 'Yeni Cari Ekle' : 'Cari Düzenle'}
+                </h2>
+                <button onClick={() => setCariModalAcik(false)} className={`${p}-modal-close`} type="button" aria-label="Kapat">
+                  <i className="bi bi-x-lg" aria-hidden="true" />
                 </button>
               </div>
 
@@ -949,7 +952,7 @@ export default function CariYonetimi() {
                       <div className="d-flex gap-2">
                         {[
                           { val: 'alici',  label: 'Müşteri',    icon: 'bi-person-check-fill', cls: 'success' },
-                          { val: 'satici', label: 'Tedarikçi',  icon: 'bi-truck',             cls: 'warning' },
+                          { val: 'satici', label: 'Tedarikçi',  icon: 'bi-truck',             cls: 'danger' },
                         ].map(t => {
                           const sel = form.cariTip === t.val
                           return (
@@ -1014,7 +1017,7 @@ export default function CariYonetimi() {
                 </div>
                 <div className={`${p}-modal-footer`}>
                   <button type="button" onClick={() => setCariModalAcik(false)} className={`${p}-btn-cancel`}>İptal</button>
-                  <button type="submit" disabled={yukleniyor} className={`${p}-btn-save ${p}-btn-save-amber`}>
+                  <button type="submit" disabled={yukleniyor} className={`${p}-btn-save ${p}-btn-save-default`}>
                     {yukleniyor
                       ? <><i className="bi bi-arrow-repeat me-2 ${p}-cym-spin" />Kaydediliyor...</>
                       : <><i className="bi bi-check-lg me-2" />{cariMod === 'ekle' ? 'Cari Ekle' : 'Güncelle'}</>}
@@ -1033,20 +1036,20 @@ export default function CariYonetimi() {
       {islemModalAcik && createPortal(
         <>
           <div className={`${p}-modal-overlay`} />
-          <div className={`${p}-modal-center`} role="dialog" aria-modal="true">
+          <div className={`${p}-modal-center`} role="dialog" aria-modal="true" aria-labelledby="islem-modal-title">
             <div className={`${p}-modal-box`} style={{ maxWidth: 520 }}>
               {(() => {
                 const etiketler = islemEtiketleri(islemCari)
                 return (
                   <>
                     {/* Header */}
-                    <div className={`${p}-cym-modal-header`}>
-                      <div className="d-flex align-items-center gap-2">
-                        <i className={`bi bi-currency-exchange ${p}-cym-modal-header-icon`} />
-                        <span className={`${p}-cym-modal-header-title`}>{etiketler.baslik}</span>
-                      </div>
-                      <button onClick={() => setIslemModalAcik(false)} className={`${p}-modal-close`}>
-                        <i className="bi bi-x-lg" />
+                    <div className={`${p}-modal-header ${p}-mh-default`}>
+                      <h2 className={`${p}-modal-title`} id="islem-modal-title">
+                        <i className="bi bi-currency-exchange" aria-hidden="true" />
+                        {etiketler.baslik}
+                      </h2>
+                      <button onClick={() => setIslemModalAcik(false)} className={`${p}-modal-close`} type="button" aria-label="Kapat">
+                        <i className="bi bi-x-lg" aria-hidden="true" />
                       </button>
                     </div>
 
@@ -1219,7 +1222,7 @@ export default function CariYonetimi() {
                                 <div className="d-flex gap-2">
                                   {[
                                     { val: 'alici',  label: 'Müşteri',   icon: 'bi-person-check-fill', cls: 'success' },
-                                    { val: 'satici', label: 'Tedarikçi', icon: 'bi-truck',             cls: 'warning' },
+                                    { val: 'satici', label: 'Tedarikçi', icon: 'bi-truck',             cls: 'danger' },
                                   ].map(t => {
                                     const sel = kartForm.cariTip === t.val
                                     return (
@@ -1273,7 +1276,7 @@ export default function CariYonetimi() {
                             </div>
                             <div className="d-flex justify-content-end gap-2 mt-4">
                               <button type="button" onClick={() => setKartDuzenleModu(false)} className={`${p}-btn-cancel`}>İptal</button>
-                              <button type="submit" disabled={yukleniyor} className={`${p}-btn-save ${p}-btn-save-amber`}>
+                              <button type="submit" disabled={yukleniyor} className={`${p}-btn-save ${p}-btn-save-default`}>
                                 {yukleniyor ? <><i className={`bi bi-arrow-repeat me-2 ${p}-cym-spin`} />Kaydediliyor...</> : <><i className="bi bi-check-lg me-2" />Kaydet</>}
                               </button>
                             </div>
@@ -1527,24 +1530,24 @@ export default function CariYonetimi() {
                             ) : (
                               <div className="row g-3">
                                 {[
-                                  { label: '0–30 Gün',  data: kartYaslandirma.g0_30,  renk: renkler.warning  },
-                                  { label: '31–60 Gün', data: kartYaslandirma.g31_60, renk: '#ff8800'        },
-                                  { label: '61–90 Gün', data: kartYaslandirma.g61_90, renk: renkler.danger   },
-                                  { label: '90+ Gün',   data: kartYaslandirma.g90p,   renk: '#990000'        },
+                                  { label: '0–30 Gün',  data: kartYaslandirma.g0_30,  band: 1 },
+                                  { label: '31–60 Gün', data: kartYaslandirma.g31_60, band: 2 },
+                                  { label: '61–90 Gün', data: kartYaslandirma.g61_90, band: 3 },
+                                  { label: '90+ Gün',   data: kartYaslandirma.g90p,   band: 4 },
                                 ].map((grup, i) => (
                                   <div key={i} className="col-12 col-md-6">
-                                    <div className={`${p}-cym-info-card`} style={{ borderLeft: `4px solid ${grup.renk}` }}>
-                                      <div style={{ fontSize: 12, fontWeight: 700, color: grup.renk, marginBottom: 8 }}>
+                                    <div className={`${p}-cym-info-card ${p}-cym-yas-band ${p}-cym-yas-band-${grup.band}`}>
+                                      <div className={`${p}-cym-yas-label ${p}-cym-yas-label-${grup.band}`}>
                                         <i className="bi bi-clock me-2" />{grup.label}
                                       </div>
                                       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                                         <div>
-                                          <div style={{ fontSize: 11, opacity: 0.65 }}>Kayıt Sayısı</div>
-                                          <div style={{ fontWeight: 700, fontSize: 18 }}>{grup.data.sayi}</div>
+                                          <div className={`${p}-cym-yas-sublabel`}>Kayıt Sayısı</div>
+                                          <div className={`${p}-cym-yas-value`}>{grup.data.sayi}</div>
                                         </div>
                                         <div style={{ textAlign: 'right' }}>
-                                          <div style={{ fontSize: 11, opacity: 0.65 }}>Toplam Tutar</div>
-                                          <div style={{ fontWeight: 700, fontSize: 16, color: grup.renk }}>{TL(grup.data.tutar)}</div>
+                                          <div className={`${p}-cym-yas-sublabel`}>Toplam Tutar</div>
+                                          <div className={`${p}-cym-yas-value ${p}-cym-yas-tutar-${grup.band} financial-num`}>{TL(grup.data.tutar)}</div>
                                         </div>
                                       </div>
                                     </div>
@@ -1576,18 +1579,16 @@ export default function CariYonetimi() {
       {topluModalAcik && createPortal(
         <>
           <div className={`${p}-modal-overlay`} />
-          <div className={`${p}-modal-center`} role="dialog" aria-modal="true">
+          <div className={`${p}-modal-center`} role="dialog" aria-modal="true" aria-labelledby="toplu-modal-title">
             <div className={`${p}-modal-box`} style={{ maxWidth: 660 }}>
               {/* Header */}
-              <div className={`${p}-cym-modal-header`}>
-                <div className="d-flex align-items-center gap-2">
-                  <i className={`bi bi-cloud-upload-fill ${p}-cym-modal-header-icon`} />
-                  <div>
-                    <div className={`${p}-cym-modal-header-title`}>Toplu Cari İçeri Aktar</div>
-                  </div>
-                </div>
-                <button onClick={() => setTopluModalAcik(false)} className={`${p}-modal-close`}>
-                  <i className="bi bi-x-lg" />
+              <div className={`${p}-modal-header ${p}-mh-default`}>
+                <h2 className={`${p}-modal-title`} id="toplu-modal-title">
+                  <i className="bi bi-cloud-upload-fill" aria-hidden="true" />
+                  Toplu Cari İçeri Aktar
+                </h2>
+                <button onClick={() => setTopluModalAcik(false)} className={`${p}-modal-close`} type="button" aria-label="Kapat">
+                  <i className="bi bi-x-lg" aria-hidden="true" />
                 </button>
               </div>
 
@@ -1724,7 +1725,7 @@ export default function CariYonetimi() {
                 <button
                   onClick={topluGonder}
                   disabled={!topluDosya || topluYukleniyor}
-                  className={`${p}-btn-save ${p}-btn-save-blue d-flex align-items-center gap-2`}
+                  className={`${p}-btn-save ${p}-btn-save-default d-flex align-items-center gap-2`}
                   style={{ opacity: (!topluDosya || topluYukleniyor) ? 0.5 : 1 }}
                 >
                   {topluYukleniyor
@@ -1744,18 +1745,23 @@ export default function CariYonetimi() {
       {silModalAcik && createPortal(
         <>
           <div className={`${p}-modal-overlay`} />
-          <div className={`${p}-modal-center`} role="dialog" aria-modal="true">
+          <div className={`${p}-modal-center`} role="dialog" aria-modal="true" aria-labelledby="sil-modal-title">
             <div className={`${p}-modal-box`} style={{ maxWidth: 420 }}>
-              <div className={`${p}-cym-delete-modal-body`}>
-                <div className={`${p}-cym-delete-modal-icon`}>
-                  <i className="bi bi-exclamation-triangle-fill" />
-                </div>
-                <h5 className={`${p}-cym-delete-modal-title`}>Cari Pasife Al</h5>
-                <p className={`${p}-cym-delete-modal-desc`}>
+              <div className={`${p}-modal-header ${p}-mh-danger`}>
+                <h2 className={`${p}-modal-title`} id="sil-modal-title">
+                  <i className="bi bi-exclamation-triangle-fill" aria-hidden="true" />
+                  Cari Pasife Al
+                </h2>
+                <button onClick={() => setSilModalAcik(false)} className={`${p}-modal-close`} type="button" aria-label="Kapat">
+                  <i className="bi bi-x-lg" aria-hidden="true" />
+                </button>
+              </div>
+              <div className={`${p}-modal-body`}>
+                <p style={{ margin: 0 }}>
                   <strong>{silCari?.unvan}</strong> cari kaydını pasife almak istediğinizden emin misiniz?
                 </p>
               </div>
-              <div className={`${p}-cym-delete-modal-footer`}>
+              <div className={`${p}-modal-footer`}>
                 <button onClick={() => setSilModalAcik(false)} className={`${p}-btn-cancel`}>Vazgeç</button>
                 <button onClick={silOnayla} disabled={yukleniyor} className={`${p}-btn-save ${p}-btn-save-red d-flex align-items-center justify-content-center gap-2`}>
                   {yukleniyor

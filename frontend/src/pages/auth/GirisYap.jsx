@@ -1,7 +1,7 @@
 /**
- * GirisYap — Finans Kalesi Premium Login
+ * GirisYap — ParamGo Premium Login
  * Split-screen: Sol dekoratif panel + Sag glassmorphism form
- * 3-Tema sistemi: Banking / Earthy / Dark
+ * Tek tema: ParamGo
  */
 
 import { useState } from 'react'
@@ -9,8 +9,9 @@ import { useNavigate, Link } from 'react-router-dom'
 import { toast } from 'sonner'
 import useAuthStore from '../../stores/authStore'
 import useTemaStore from '../../stores/temaStore'
+import ParamGoLogo from '../../logo/ParamGoLogo'
 
-const prefixMap = { banking: 'b', earthy: 'e', dark: 'd' }
+const prefixMap = { paramgo: 'p' }
 
 const OZELLIKLER = [
   { ikon: 'bi-people-fill',         baslik: 'Cari Hesaplar',    aciklama: 'Müşteri & tedarikçi takibi' },
@@ -22,7 +23,7 @@ export default function GirisYap() {
   const navigate = useNavigate()
   const { girisYap } = useAuthStore()
   const aktifTema = useTemaStore((s) => s.aktifTema)
-  const p = prefixMap[aktifTema] || 'b'
+  const p = prefixMap[aktifTema] || 'p'
 
   const [form, setForm]               = useState({ email: '', sifre: '' })
   const [sifreGoster, setSifreGoster] = useState(false)
@@ -77,17 +78,7 @@ export default function GirisYap() {
         {/* Marka logosu */}
         <div className={`${p}-giris-sol-anim-1`}>
           <div className={`${p}-giris-marka-wrap`}>
-            <div className={`${p}-giris-marka-ikon`}>
-              <i className="bi bi-shield-lock-fill" />
-            </div>
-            <div>
-              <div className={`${p}-giris-marka-baslik`}>
-                Finans Kalesi
-              </div>
-              <div className={`${p}-giris-marka-alt`}>
-                KOBİ Finans Yönetimi
-              </div>
-            </div>
+            <ParamGoLogo size="md" variant="white" />
           </div>
         </div>
 
@@ -136,7 +127,7 @@ export default function GirisYap() {
           </div>
 
           <p className={`${p}-giris-copyright`}>
-            &copy; 2026 Finans Kalesi &middot; Tüm hakları saklıdır
+            &copy; 2026 ParamGo &middot; Tüm hakları saklıdır
           </p>
         </div>
       </div>
@@ -152,13 +143,8 @@ export default function GirisYap() {
             <div className={`${p}-giris-kart-ic`}>
 
               {/* Mobil logo (lg altinda gorunur) */}
-              <div className={`d-flex d-lg-none align-items-center justify-content-center gap-2 mb-4`}>
-                <div className={`${p}-giris-mobil-logo`}>
-                  <i className="bi bi-shield-lock-fill" />
-                </div>
-                <span className={`${p}-giris-mobil-baslik`}>
-                  Finans Kalesi
-                </span>
+              <div className={`d-flex d-lg-none align-items-center justify-content-center mb-4`}>
+                <ParamGoLogo size="sm" />
               </div>
 
               {/* Form basligi */}
@@ -279,7 +265,7 @@ export default function GirisYap() {
 
           {/* Mobil alt not */}
           <p className={`${p}-giris-mobil-copyright d-lg-none text-center mt-4`}>
-            &copy; 2026 Finans Kalesi &middot; Tüm hakları saklıdır
+            &copy; 2026 ParamGo &middot; Tüm hakları saklıdır
           </p>
         </div>
       </div>

@@ -6,85 +6,36 @@ import { temaGuncelle } from '../../api/ayarlar'
 // ─── Tema Tanımları ───────────────────────────────────────────────────────────
 const temalar = [
   {
-    id: 'banking',
-    ad: 'Banking',
-    etiket: 'Kurumsal Finans',
-    tanim: 'Kurumsal finans yönetimi için geleneksel ve güven veren bir görünüm.',
-    font: "'Libre Baskerville', Georgia, serif",
+    id: 'paramgo',
+    ad: 'ParamGo',
+    etiket: 'Modern Fintech',
+    tanim: 'Temiz ve modern bir arayüz ile hızlı finansal yönetim deneyimi.',
+    font: "'Inter', system-ui, sans-serif",
     onizleme: {
-      sidebar:  '#0a2463',
-      sidebarAksan: '#b8860b',
-      sayfa:    '#f2f4f7',
+      sidebar:  '#FAFAF9',
+      sidebarAksan: '#10B981',
+      sayfa:    '#F5F5F4',
       kart:     '#ffffff',
       kart2:    '#ffffff',
-      aksan:    '#0a2463',
-      aksan2:   '#1a7a55',
-      aksan3:   '#c0392b',
-      metin:    '#1a1f36',
-      metinMuted: '#8b92a8',
+      aksan:    '#10B981',
+      aksan2:   '#059669',
+      aksan3:   '#EF4444',
+      metin:    '#1A1A1A',
+      metinMuted: '#9CA3AF',
     },
     renkPaleti: [
-      { renk: '#0a2463', etiket: 'Lacivert' },
-      { renk: '#b8860b', etiket: 'Altın' },
-      { renk: '#f2f4f7', etiket: 'Zemin' },
-      { renk: '#1a7a55', etiket: 'Yeşil' },
+      { renk: '#10B981', etiket: 'Yeşil' },
+      { renk: '#059669', etiket: 'Koyu Yeşil' },
+      { renk: '#F5F5F4', etiket: 'Zemin' },
+      { renk: '#1A1A1A', etiket: 'Metin' },
     ],
   },
-  {
-    id: 'earthy',
-    ad: 'Earthy',
-    etiket: 'Toprak Tonları',
-    tanim: 'Sıcak toprak tonları ile rahatlatıcı ve samimi bir çalışma ortamı.',
-    font: "'Cormorant Garamond', Georgia, serif",
-    onizleme: {
-      sidebar:  '#f5ede0',
-      sidebarAksan: '#c0392b',
-      sayfa:    '#faf7f2',
-      kart:     '#ffffff',
-      kart2:    '#fffcf8',
-      aksan:    '#c0392b',
-      aksan2:   '#2d8050',
-      aksan3:   '#d4920b',
-      metin:    '#3a2010',
-      metinMuted: '#b09070',
-    },
-    renkPaleti: [
-      { renk: '#c0392b', etiket: 'Tuğla' },
-      { renk: '#d4920b', etiket: 'Hardal' },
-      { renk: '#f5ede0', etiket: 'Krem' },
-      { renk: '#2d8050', etiket: 'Yeşil' },
-    ],
-  },
-  {
-    id: 'dark',
-    ad: 'Dark',
-    etiket: 'Fintech Terminal',
-    tanim: 'Modern fintech araçlarından ilham alan yüksek kontrast gece teması.',
-    font: "'Manrope', system-ui, sans-serif",
-    onizleme: {
-      sidebar:  '#0a1628',
-      sidebarAksan: '#00d4ff',
-      sayfa:    '#0d1b2a',
-      kart:     '#111f30',
-      kart2:    '#152540',
-      aksan:    '#00d4ff',
-      aksan2:   '#00d68f',
-      aksan3:   '#ff5b5b',
-      metin:    '#e2eaf4',
-      metinMuted: '#4a6680',
-    },
-    renkPaleti: [
-      { renk: '#00d4ff', etiket: 'Cyan' },
-      { renk: '#f4c542', etiket: 'Altın' },
-      { renk: '#0d1b2a', etiket: 'Gece' },
-      { renk: '#00d68f', etiket: 'Yeşil' },
-    ],
-  },
+  // Yeni temalar buraya eklenecek
 ]
 
 // ─── Mini Önizleme Bileşeni ────────────────────────────────────────────────────
 function MiniOnizleme({ onizleme, aktif }) {
-  const { sidebar, sidebarAksan, sayfa, kart, kart2, aksan, aksan2, aksan3, metin, metinMuted } = onizleme
+  const { sidebar, sidebarAksan, sayfa, kart, kart2, aksan, aksan2, aksan3, metin } = onizleme
 
   return (
     <div style={{
@@ -95,7 +46,7 @@ function MiniOnizleme({ onizleme, aktif }) {
       display: 'flex',
       overflow: 'hidden',
       position: 'relative',
-      border: aktif ? `2px solid var(--b-color-navy)` : '2px solid transparent',
+      border: aktif ? `2px solid #10B981` : '2px solid transparent',
       borderBottom: 'none',
       transition: 'all 0.2s ease',
     }}>
@@ -156,7 +107,7 @@ function MiniOnizleme({ onizleme, aktif }) {
             { aksan: aksan2,  borderColor: aksan2 },
             { aksan: aksan3,  borderColor: aksan3 },
             { aksan: aksan,   borderColor: aksan },
-            { aksan: '#b8860b', borderColor: '#b8860b' },
+            { aksan: '#D97706', borderColor: '#D97706' },
           ].map((k, i) => (
             <div key={i} style={{
               flex: 1,
@@ -212,8 +163,8 @@ function RenkPaleti({ renkler }) {
           }} />
           <span style={{
             fontSize: 9,
-            color: 'var(--b-text-muted)',
-            fontFamily: 'var(--b-font-body)',
+            color: 'var(--p-text-muted)',
+            fontFamily: 'var(--p-font-body)',
             letterSpacing: '0.03em',
           }}>
             {etiket}
@@ -230,7 +181,7 @@ export default function TemaSecimi() {
   const kullanici = useAuthStore((s) => s.kullanici)
 
   const [yukleniyor, setYukleniyor] = useState(false)
-  const [seciliTema, setSeciliTema] = useState(null) // Hangi tema değiştiriliyor
+  const [seciliTema, setSeciliTema] = useState(null)
   const [hata, setHata] = useState(null)
   const [basari, setBasari] = useState(null)
 
@@ -262,29 +213,29 @@ export default function TemaSecimi() {
       maxWidth: 960,
       margin: '0 auto',
       padding: 28,
-      background: '#f2f4f7',
+      background: 'var(--p-bg-page)',
       minHeight: '100%',
       borderRadius: 0,
     }}>
 
       {/* ── Başlık Paneli ──────────────────────────────────────────────────── */}
-      <div className="b-panel" style={{ marginBottom: 24 }}>
-        <div className="b-panel-header">
-          <h2 className="b-panel-title">
+      <div className="p-panel" style={{ marginBottom: 24 }}>
+        <div className="p-panel-header">
+          <h2 className="p-panel-title">
             <i className="bi bi-palette" />
             Tema Seçimi
           </h2>
-          <span className="b-badge b-badge-success">
+          <span className="p-badge p-badge-success">
             <i className="bi bi-circle-fill" style={{ fontSize: 7 }} />
-            {temalar.find(t => t.id === aktifTema)?.ad || 'Banking'} Aktif
+            {temalar.find(t => t.id === aktifTema)?.ad || 'ParamGo'} Aktif
           </span>
         </div>
-        <div className="b-panel-body-padded" style={{ borderBottom: '1px solid var(--b-border)' }}>
+        <div className="p-panel-body-padded" style={{ borderBottom: '1px solid var(--p-border)' }}>
           <p style={{
             margin: 0,
             fontSize: 13.5,
-            color: 'var(--b-text-secondary)',
-            fontFamily: 'var(--b-font-body)',
+            color: 'var(--p-text-secondary)',
+            fontFamily: 'var(--p-font-body)',
             lineHeight: 1.6,
           }}>
             Şirketiniz için arayüz teması seçin. Seçilen tema tüm kullanıcılara uygulanır.
@@ -294,16 +245,16 @@ export default function TemaSecimi() {
 
         {/* Yetkisiz uyarı */}
         {!yetkiVar && (
-          <div className="b-panel-body-padded">
+          <div className="p-panel-body-padded">
             <div style={{
               display: 'flex', alignItems: 'flex-start', gap: 10,
               padding: '12px 14px',
-              background: 'var(--b-bg-badge-warning)',
-              border: '1px solid #e8d08a',
-              borderRadius: 'var(--b-radius-card)',
+              background: 'var(--p-bg-badge-warning)',
+              border: '1px solid rgba(245,158,11,0.3)',
+              borderRadius: 'var(--p-radius-card)',
               fontSize: 13,
-              color: 'var(--b-color-warning)',
-              fontFamily: 'var(--b-font-body)',
+              color: 'var(--p-color-warning)',
+              fontFamily: 'var(--p-font-body)',
             }}>
               <i className="bi bi-info-circle-fill" style={{ marginTop: 1, flexShrink: 0 }} />
               <span>
@@ -320,11 +271,11 @@ export default function TemaSecimi() {
         <div style={{
           display: 'flex', alignItems: 'center', gap: 10,
           padding: '12px 16px', marginBottom: 20,
-          background: 'var(--b-bg-badge-success)',
-          border: '1px solid #a8d5c2',
-          borderRadius: 'var(--b-radius-card)',
-          fontSize: 13, color: 'var(--b-color-success)',
-          fontFamily: 'var(--b-font-body)',
+          background: 'var(--p-bg-badge-success)',
+          border: '1px solid rgba(16,185,129,0.3)',
+          borderRadius: 'var(--p-radius-card)',
+          fontSize: 13, color: 'var(--p-color-success)',
+          fontFamily: 'var(--p-font-body)',
         }}>
           <i className="bi bi-check-circle-fill" />
           <span>{basari}</span>
@@ -332,7 +283,7 @@ export default function TemaSecimi() {
             onClick={() => setBasari(null)}
             style={{
               marginLeft: 'auto', background: 'none', border: 'none',
-              cursor: 'pointer', color: 'var(--b-color-success)',
+              cursor: 'pointer', color: 'var(--p-color-success)',
               minWidth: 24, minHeight: 24,
               display: 'flex', alignItems: 'center', justifyContent: 'center',
             }}
@@ -347,11 +298,11 @@ export default function TemaSecimi() {
         <div style={{
           display: 'flex', alignItems: 'center', gap: 10,
           padding: '12px 16px', marginBottom: 20,
-          background: 'var(--b-bg-badge-danger)',
-          border: '1px solid #f0b8b2',
-          borderRadius: 'var(--b-radius-card)',
-          fontSize: 13, color: 'var(--b-color-danger)',
-          fontFamily: 'var(--b-font-body)',
+          background: 'var(--p-bg-badge-danger)',
+          border: '1px solid rgba(239,68,68,0.3)',
+          borderRadius: 'var(--p-radius-card)',
+          fontSize: 13, color: 'var(--p-color-danger)',
+          fontFamily: 'var(--p-font-body)',
         }}>
           <i className="bi bi-exclamation-circle-fill" />
           <span>{hata}</span>
@@ -359,7 +310,7 @@ export default function TemaSecimi() {
             onClick={() => setHata(null)}
             style={{
               marginLeft: 'auto', background: 'none', border: 'none',
-              cursor: 'pointer', color: 'var(--b-color-danger)',
+              cursor: 'pointer', color: 'var(--p-color-danger)',
               minWidth: 24, minHeight: 24,
               display: 'flex', alignItems: 'center', justifyContent: 'center',
             }}
@@ -373,7 +324,7 @@ export default function TemaSecimi() {
       {/* ── Tema Kartları ───────────────────────────────────────────────────── */}
       <div style={{
         display: 'grid',
-        gridTemplateColumns: 'repeat(3, 1fr)',
+        gridTemplateColumns: 'repeat(2, 1fr)',
         gap: 20,
       }}
         className="tema-grid"
@@ -386,14 +337,14 @@ export default function TemaSecimi() {
             <div
               key={tema.id}
               style={{
-                background: 'var(--b-bg-card)',
+                background: 'var(--p-bg-card)',
                 border: aktif
-                  ? '2px solid var(--b-color-navy)'
-                  : '2px solid var(--b-border)',
-                borderRadius: 'var(--b-radius-card)',
+                  ? '2px solid #10B981'
+                  : '2px solid var(--p-border)',
+                borderRadius: 'var(--p-radius-card)',
                 boxShadow: aktif
-                  ? '0 4px 20px rgba(10,36,99,0.12), 0 2px 6px rgba(10,36,99,0.07)'
-                  : 'var(--b-shadow-card)',
+                  ? '0 4px 20px rgba(16,185,129,0.12), 0 2px 6px rgba(16,185,129,0.07)'
+                  : 'var(--p-shadow-card)',
                 overflow: 'hidden',
                 transition: 'all 0.22s ease',
                 cursor: yetkiVar && !aktif && !yukleniyor ? 'pointer' : 'default',
@@ -408,18 +359,18 @@ export default function TemaSecimi() {
                   position: 'absolute',
                   top: 10, right: 10,
                   zIndex: 10,
-                  background: 'var(--b-color-navy)',
+                  background: '#10B981',
                   color: 'white',
                   borderRadius: 4,
                   padding: '3px 8px',
                   fontSize: 10.5,
                   fontWeight: 700,
-                  fontFamily: 'var(--b-font-body)',
+                  fontFamily: 'var(--p-font-body)',
                   letterSpacing: '0.06em',
                   display: 'flex', alignItems: 'center', gap: 5,
-                  boxShadow: '0 2px 8px rgba(10,36,99,0.25)',
+                  boxShadow: '0 2px 8px rgba(16,185,129,0.25)',
                 }}>
-                  <i className="bi bi-check-circle-fill" style={{ fontSize: 10, color: '#b8860b' }} />
+                  <i className="bi bi-check-circle-fill" style={{ fontSize: 10, color: '#FFFFFF' }} />
                   AKTİF TEMA
                 </div>
               )}
@@ -436,14 +387,14 @@ export default function TemaSecimi() {
                     <span style={{
                       fontFamily: tema.font,
                       fontSize: 18, fontWeight: 700,
-                      color: 'var(--b-text-primary)',
+                      color: 'var(--p-text-primary)',
                     }}>
                       {tema.ad}
                     </span>
                     <span style={{
                       fontSize: 11, fontWeight: 600,
-                      color: 'var(--b-text-muted)',
-                      fontFamily: 'var(--b-font-body)',
+                      color: 'var(--p-text-muted)',
+                      fontFamily: 'var(--p-font-body)',
                       letterSpacing: '0.06em',
                       textTransform: 'uppercase',
                     }}>
@@ -453,8 +404,8 @@ export default function TemaSecimi() {
                   <p style={{
                     margin: 0,
                     fontSize: 12.5,
-                    color: 'var(--b-text-secondary)',
-                    fontFamily: 'var(--b-font-body)',
+                    color: 'var(--p-text-secondary)',
+                    fontFamily: 'var(--p-font-body)',
                     lineHeight: 1.55,
                   }}>
                     {tema.tanim}
@@ -471,12 +422,12 @@ export default function TemaSecimi() {
                   <div style={{
                     display: 'flex', alignItems: 'center', gap: 7,
                     padding: '9px 14px', minHeight: 44,
-                    background: '#f0f4ff',
-                    border: '1px solid #c8d4f0',
-                    borderRadius: 'var(--b-radius-btn)',
+                    background: '#ECFDF5',
+                    border: '1px solid #A7F3D0',
+                    borderRadius: 'var(--p-radius-btn)',
                     fontSize: 13, fontWeight: 600,
-                    color: 'var(--b-color-navy)',
-                    fontFamily: 'var(--b-font-body)',
+                    color: '#059669',
+                    fontFamily: 'var(--p-font-body)',
                     justifyContent: 'center',
                   }}>
                     <i className="bi bi-check2-circle" />
@@ -490,12 +441,12 @@ export default function TemaSecimi() {
                     style={{
                       width: '100%', minHeight: 44,
                       padding: '9px 14px',
-                      background: yetkiVar ? 'var(--b-color-navy)' : 'transparent',
-                      border: `1px solid ${yetkiVar ? 'var(--b-color-navy)' : 'var(--b-border)'}`,
-                      borderRadius: 'var(--b-radius-btn)',
-                      color: yetkiVar ? 'white' : 'var(--b-text-muted)',
+                      background: yetkiVar ? '#10B981' : 'transparent',
+                      border: `1px solid ${yetkiVar ? '#10B981' : 'var(--p-border)'}`,
+                      borderRadius: 'var(--p-radius-btn)',
+                      color: yetkiVar ? 'white' : 'var(--p-text-muted)',
                       fontSize: 13.5, fontWeight: 600,
-                      fontFamily: 'var(--b-font-body)',
+                      fontFamily: 'var(--p-font-body)',
                       cursor: yetkiVar && !yukleniyor ? 'pointer' : 'not-allowed',
                       transition: 'all 0.18s ease',
                       display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 7,
@@ -503,14 +454,14 @@ export default function TemaSecimi() {
                     }}
                     onMouseEnter={(e) => {
                       if (yetkiVar && !yukleniyor) {
-                        e.currentTarget.style.background = '#071a4a'
-                        e.currentTarget.style.borderColor = '#071a4a'
+                        e.currentTarget.style.background = '#059669'
+                        e.currentTarget.style.borderColor = '#059669'
                       }
                     }}
                     onMouseLeave={(e) => {
                       if (yetkiVar && !yukleniyor) {
-                        e.currentTarget.style.background = 'var(--b-color-navy)'
-                        e.currentTarget.style.borderColor = 'var(--b-color-navy)'
+                        e.currentTarget.style.background = '#10B981'
+                        e.currentTarget.style.borderColor = '#10B981'
                       }
                     }}
                   >

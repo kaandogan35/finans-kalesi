@@ -6,6 +6,8 @@
 import { useEffect, useState } from 'react'
 import { createPortal } from 'react-dom'
 import useTurStore from '../../stores/turStore'
+import useTemaStore from '../../stores/temaStore'
+import { temaRenkleri } from '../../lib/temaRenkleri'
 import { TUR_ADIMLAR } from './turlar'
 
 export default function HosgeldinPrompt() {
@@ -14,6 +16,9 @@ export default function HosgeldinPrompt() {
   const turBaslat       = useTurStore((s) => s.turBaslat)
   const promptKapat     = useTurStore((s) => s.promptKapat)
 
+  const { aktifTema } = useTemaStore()
+  const p = 'p'
+  const renk = temaRenkleri[aktifTema] || temaRenkleri.paramgo
   const [gorunsun, setGorunsun] = useState(false)
 
   useEffect(() => {
@@ -59,27 +64,27 @@ export default function HosgeldinPrompt() {
       }}
       onClick={(e) => e.stopPropagation()}
       >
-        {/* Header şerit */}
+        {/* Header şerit — tema rengi */}
         <div style={{
-          background: 'linear-gradient(135deg, #0a2463 0%, #1a3a7a 100%)',
+          background: `var(--${p}-color-navy)`,
           padding: '20px 20px 16px',
         }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
             <div style={{
               width: 44, height: 44, borderRadius: 12,
-              background: 'rgba(184,134,11,0.25)',
-              border: '1.5px solid #b8860b',
+              background: 'rgba(255,255,255,0.18)',
+              border: '1.5px solid rgba(255,255,255,0.3)',
               display: 'flex', alignItems: 'center', justifyContent: 'center',
               flexShrink: 0,
             }}>
-              <i className="bi bi-map" style={{ color: '#f0c040', fontSize: 20 }} />
+              <i className="bi bi-map" style={{ color: '#fff', fontSize: 20 }} />
             </div>
             <div>
               <div style={{ color: '#fff', fontWeight: 700, fontSize: 15 }}>
                 Hoş geldiniz!
               </div>
               <div style={{ color: 'rgba(255,255,255,0.65)', fontSize: 12, marginTop: 2 }}>
-                Finans Kalesi'ne ilk adımınız
+                ParamGo'ya ilk adımınız
               </div>
             </div>
           </div>
@@ -87,7 +92,7 @@ export default function HosgeldinPrompt() {
 
         {/* Gövde */}
         <div style={{ padding: '16px 20px 20px' }}>
-          <p style={{ fontSize: 13, color: '#374151', lineHeight: 1.6, margin: '0 0 16px' }}>
+          <p style={{ fontSize: 13, color: renk.textSec, lineHeight: 1.6, margin: '0 0 16px' }}>
             Uygulamayı hızla öğrenmek için kısa bir tanıtım turu ister misiniz?
             Tüm modülleri adım adım anlatır, <strong>2 dakika</strong> sürer.
           </p>
@@ -96,7 +101,7 @@ export default function HosgeldinPrompt() {
             <button
               onClick={handleEvet}
               style={{
-                background: '#0a2463',
+                background: `var(--${p}-color-navy)`,
                 color: '#fff',
                 border: 'none',
                 borderRadius: 10,
@@ -119,7 +124,7 @@ export default function HosgeldinPrompt() {
               onClick={handleHayir}
               style={{
                 background: '#f1f5f9',
-                color: '#6b7280',
+                color: renk.textSec,
                 border: 'none',
                 borderRadius: 10,
                 padding: '10px 0',

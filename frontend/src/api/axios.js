@@ -1,5 +1,5 @@
 /**
- * Finans Kalesi — Axios yapılandırması
+ * ParamGo — Axios yapılandırması
  *
  * Tüm API istekleri bu dosyadan geçer.
  * JWT token otomatik eklenir, 401 gelince token yenilenir.

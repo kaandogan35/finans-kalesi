@@ -6,15 +6,19 @@
 import { useEffect, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 import useTurStore from '../../stores/turStore'
+import useTemaStore from '../../stores/temaStore'
+import { temaRenkleri, hexRgba } from '../../lib/temaRenkleri'
 
 const OFFSET = 10  // Spotlight etrafındaki boşluk (px)
 const BALON_GENISLIK = 460
-
 export default function TanitimTuru() {
   const aktifTur   = useTurStore((s) => s.aktifTur)
   const adimIleri  = useTurStore((s) => s.adimIleri)
   const adimGeri   = useTurStore((s) => s.adimGeri)
   const turKapat   = useTurStore((s) => s.turKapat)
+  const { aktifTema } = useTemaStore()
+  const p = 'p'
+  const renk = temaRenkleri[aktifTema] || temaRenkleri.paramgo
 
   const [hedefRect, setHedefRect] = useState(null)
   const balonRef = useRef(null)
@@ -165,7 +169,7 @@ export default function TanitimTuru() {
             width:  hedefRect.width,
             height: hedefRect.height,
             borderRadius: 10,
-            boxShadow: '0 0 0 3px #b8860b, 0 0 24px rgba(184,134,11,0.6)',
+            boxShadow: `0 0 0 3px ${renk.accent}, 0 0 24px ${hexRgba(renk.accent, 0.6)}`,
             pointerEvents: 'none',
           }} />
         </div>
@@ -197,14 +201,14 @@ export default function TanitimTuru() {
         }}>
           {/* Header */}
           <div style={{
-            background: 'linear-gradient(135deg, #0a2463 0%, #153a7a 100%)',
+            background: `var(--${p}-color-navy)`,
             padding: '18px 22px 14px',
           }}>
             <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 10 }}>
               <div>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4 }}>
                   <span style={{
-                    background: '#b8860b',
+                    background: 'rgba(255,255,255,0.2)',
                     color: '#fff',
                     borderRadius: 20,
                     fontSize: 12,
@@ -239,7 +243,7 @@ export default function TanitimTuru() {
             {/* Progress bar */}
             <div style={{ background: 'rgba(255,255,255,0.15)', borderRadius: 4, height: 4 }}>
               <div style={{
-                background: '#b8860b',
+                background: 'rgba(255,255,255,0.6)',
                 borderRadius: 4,
                 height: '100%',
                 width: `${((mevcutAdim + 1) / toplamAdim) * 100}%`,
@@ -308,7 +312,7 @@ export default function TanitimTuru() {
               <button
                 onClick={adimIleri}
                 style={{
-                  background: '#0a2463',
+                  background: `var(--${p}-color-navy)`,
                   border: 'none',
                   borderRadius: 8,
                   color: '#fff',
@@ -319,7 +323,7 @@ export default function TanitimTuru() {
                   display: 'flex',
                   alignItems: 'center',
                   gap: 7,
-                  boxShadow: '0 2px 8px rgba(10,36,99,0.3)',
+                  boxShadow: `0 2px 8px ${hexRgba(renk.primary, 0.3)}`,
                 }}
               >
                 {sonAdimMi ? (

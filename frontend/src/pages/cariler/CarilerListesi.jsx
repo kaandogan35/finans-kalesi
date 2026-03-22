@@ -1,6 +1,6 @@
 /**
  * CarilerListesi — Cari Hesaplar Ana Sayfası
- * 3 Tema Sistemi (Banking / Earthy / Dark)
+ * Tek Tema: ParamGo
  * Silme onayı: Saf React state (Bootstrap JS yasak)
  */
 
@@ -10,7 +10,7 @@ import { toast } from 'sonner'
 import { carilerApi } from '../../api/cariler'
 import useTemaStore from '../../stores/temaStore'
 
-const prefixMap = { banking: 'b', earthy: 'e', dark: 'd' }
+const prefixMap = { paramgo: 'p' }
 
 // ─── Para Formatlayıcı ────────────────────────────────────────────────────────
 function paraBicimlendir(tutar) {
@@ -171,7 +171,7 @@ function SilmeOnayModal({ cari, onOnayla, onIptal, yukleniyor, p }) {
 export default function CarilerListesi() {
   const navigate = useNavigate()
   const aktifTema = useTemaStore((s) => s.aktifTema)
-  const p = prefixMap[aktifTema] || 'b'
+  const p = prefixMap[aktifTema] || 'p'
 
   const [cariler, setCariler]       = useState([])
   const [toplam, setToplam]         = useState(0)
@@ -376,13 +376,13 @@ export default function CarilerListesi() {
                 {/* Alacak */}
                 <div className={`${p}-cari-amount ${p}-cari-amount-pos`}>
                   <i className="bi bi-arrow-down-circle-fill" />
-                  <span>{paraBicimlendir(cari.toplam_alacak)}</span>
+                  <span className="financial-num">{paraBicimlendir(cari.toplam_alacak)}</span>
                 </div>
 
                 {/* Borç */}
                 <div className={`${p}-cari-amount ${p}-cari-amount-neg`}>
                   <i className="bi bi-arrow-up-circle-fill" />
-                  <span>{paraBicimlendir(cari.toplam_borc)}</span>
+                  <span className="financial-num">{paraBicimlendir(cari.toplam_borc)}</span>
                 </div>
 
                 {/* Aksiyon */}

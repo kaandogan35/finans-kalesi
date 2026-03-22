@@ -1,5 +1,5 @@
 /**
- * Finans Kalesi — Auth Store (Zustand)
+ * ParamGo — Auth Store (Zustand)
  *
  * Kullanıcı oturum bilgisi burada saklanır.
  * Uygulama genelinde useAuthStore() hook'u ile erişilir.
@@ -53,7 +53,7 @@ const useAuthStore = create(
           const kullanici = yanit.data.veri.kullanici
           set({ kullanici, girisYapildi: true, yukleniyor: false })
           // Tema store'u güncelle
-          useTemaStore.getState().temaAyarla(kullanici.tema_adi || 'banking')
+          useTemaStore.getState().temaAyarla(kullanici.tema_adi || 'paramgo')
         } catch {
           get().tokenlarıTemizle()
           set({ yukleniyor: false, girisYapildi: false })
@@ -70,7 +70,7 @@ const useAuthStore = create(
         get().tokenlariAyarla(tokenlar.access_token, tokenlar.refresh_token)
         set({ kullanici, girisYapildi: true })
         // Tema store'u güncelle
-        useTemaStore.getState().temaAyarla(kullanici.tema_adi || 'banking')
+        useTemaStore.getState().temaAyarla(kullanici.tema_adi || 'paramgo')
         return kullanici
       },
 
@@ -86,7 +86,7 @@ const useAuthStore = create(
         } finally {
           get().tokenlarıTemizle()
           set({ kullanici: null, girisYapildi: false })
-          useTemaStore.getState().temaAyarla('banking')
+          useTemaStore.getState().temaAyarla('paramgo')
         }
       },
     }),

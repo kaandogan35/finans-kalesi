@@ -1,7 +1,7 @@
 /**
  * KayitOl — Ücretsiz Hesap Oluşturma
  * Split-screen: Sol dekoratif panel + Sag form
- * GirisYap ile aynı tema sistemi (b/e/d prefix)
+ * Tek tema: ParamGo (p prefix)
  */
 
 import { useState } from 'react'
@@ -11,7 +11,9 @@ import { authApi } from '../../api/auth'
 import useAuthStore from '../../stores/authStore'
 import useTemaStore from '../../stores/temaStore'
 
-const prefixMap = { banking: 'b', earthy: 'e', dark: 'd' }
+import ParamGoLogo from '../../logo/ParamGoLogo'
+
+const prefixMap = { paramgo: 'p' }
 
 const AVANTAJLAR = [
   { ikon: 'bi-people-fill',            baslik: 'Cari Hesaplar',     aciklama: '25 cari — ücretsiz sonsuza kadar' },
@@ -24,7 +26,7 @@ export default function KayitOl() {
   const navigate = useNavigate()
   const { girisYap } = useAuthStore()
   const aktifTema = useTemaStore((s) => s.aktifTema)
-  const p = prefixMap[aktifTema] || 'b'
+  const p = prefixMap[aktifTema] || 'p'
 
   const [form, setForm] = useState({
     firma_adi:    '',
@@ -107,13 +109,7 @@ export default function KayitOl() {
         {/* Marka */}
         <div className={`${p}-giris-sol-anim-1`}>
           <div className={`${p}-giris-marka-wrap`}>
-            <div className={`${p}-giris-marka-ikon`}>
-              <i className="bi bi-shield-lock-fill" />
-            </div>
-            <div>
-              <div className={`${p}-giris-marka-baslik`}>Finans Kalesi</div>
-              <div className={`${p}-giris-marka-alt`}>KOBİ Finans Yönetimi</div>
-            </div>
+            <ParamGoLogo size="md" variant="white" />
           </div>
         </div>
 
@@ -151,7 +147,7 @@ export default function KayitOl() {
             ))}
           </div>
           <p className={`${p}-giris-copyright`}>
-            &copy; 2026 Finans Kalesi &middot; Tüm hakları saklıdır
+            &copy; 2026 ParamGo &middot; Tüm hakları saklıdır
           </p>
         </div>
       </div>
@@ -164,11 +160,8 @@ export default function KayitOl() {
             <div className={`${p}-giris-kart-ic`}>
 
               {/* Mobil logo */}
-              <div className="d-flex d-lg-none align-items-center justify-content-center gap-2 mb-4">
-                <div className={`${p}-giris-mobil-logo`}>
-                  <i className="bi bi-shield-lock-fill" />
-                </div>
-                <span className={`${p}-giris-mobil-baslik`}>Finans Kalesi</span>
+              <div className="d-flex d-lg-none align-items-center justify-content-center mb-4">
+                <ParamGoLogo size="sm" />
               </div>
 
               {/* Form başlığı */}
@@ -190,9 +183,7 @@ export default function KayitOl() {
                   <div key={a} style={{
                     width: a === adim ? 28 : 8, height: 8, borderRadius: 4,
                     transition: 'all 0.3s',
-                    background: a === adim
-                      ? (p === 'b' ? 'var(--b-color-navy)' : p === 'e' ? 'var(--e-color-terracotta)' : '#f59e0b')
-                      : (p === 'd' ? 'rgba(255,255,255,0.15)' : 'var(--b-border, #e5e8f0)'),
+                    background: a === adim ? '#10B981' : 'var(--p-border, #e5e8f0)',
                   }} />
                 ))}
               </div>
@@ -310,7 +301,7 @@ export default function KayitOl() {
                         onClick={() => { setAdim(1); setHata('') }}
                         className={`${p}-giris-btn`}
                         style={{ flex: '0 0 48px', background: 'transparent',
-                          border: p === 'd' ? '1px solid rgba(255,255,255,0.15)' : '1px solid var(--b-border, #e5e8f0)' }}
+                          border: '1px solid var(--p-border, #e5e8f0)' }}
                       >
                         <i className="bi bi-arrow-left" />
                       </button>
@@ -351,7 +342,7 @@ export default function KayitOl() {
           </div>
 
           <p className={`${p}-giris-mobil-copyright d-lg-none text-center mt-4`}>
-            &copy; 2026 Finans Kalesi &middot; Tüm hakları saklıdır
+            &copy; 2026 ParamGo &middot; Tüm hakları saklıdır
           </p>
         </div>
       </div>
