@@ -108,11 +108,11 @@ Aşağıdaki anahtar kelimelerden **herhangi biri** mesajda geçiyorsa **iki şe
 **Ekstra tasarım yönergesi verilmemişse:** Aynı modülün mevcut `.jsx` dosyasını veya
 en son tamamlanmış sayfayı referans al — aynı dil, aynı renk, aynı bileşen yapısı.
 
-> **Aktif tasarım sistemi:** Obsidian Vault koyu glassmorphism.
+> **Aktif tasarım sistemi:** ParamGo v2 — Açık tema, emerald primary (#10B981), beyaz kartlar, #F8F9FA zemin.
 > Teknik kurallar → `react-bootstrap-ui.md`
 > Tasarım kalitesi → `frontend-design` Skill
 >
-> **ESKİ (kullanılmaz):** `ikas-tasarim.md`
+> **ESKİ (kullanılmaz):** `ikas-tasarim.md`, Obsidian Vault koyu glassmorphism
 
 ---
 

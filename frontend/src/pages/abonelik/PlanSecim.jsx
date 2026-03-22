@@ -70,22 +70,49 @@ export default function PlanSecim() {
 
   const planlar = [
     {
-      id: 'ucretsiz', ad: 'Ücretsiz', ikon: 'bi-gift', btnSinif: 'pasif',
-      ozellikler: ['Cari yönetimi', 'Çek/Senet takibi', 'Kasa yönetimi', 'Ödeme takibi', 'Vade hesaplayıcı'],
-      kisitlamalar: ['PDF/Excel rapor yok', 'Veri dışa aktarma yok', 'Tek kullanıcı'],
+      id: 'ucretsiz', ad: 'Başlangıç', ikon: 'bi-gift', btnSinif: 'pasif',
+      aciklama: 'Yeni başlayanlar için temel özellikler',
+      ozellikler: [
+        '1 kullanıcı',
+        '30 cari hesap',
+        '10 çek/senet kaydı (aylık, sıfırlanır)',
+        'Kasa yönetimi (1 yıl ücretsiz deneme)',
+        'Ödeme takibi',
+        'Vade hesaplayıcı',
+      ],
+      kisitlamalar: [
+        'PDF & Excel rapor (Standart\'ta mevcut)',
+        'Çoklu kullanıcı (Standart\'ta mevcut)',
+      ],
     },
     {
       id: 'standart', ad: 'Standart', ikon: 'bi-star-fill', btnSinif: 'primary',
+      aciklama: 'Büyüyen işletmeler için tam özellik seti',
       fiyat: standartGosterilen, fiyatYillik: FIYATLAR.standart.yillik,
       tasarruf: fmt(FIYATLAR.standart.aylik * 12 - FIYATLAR.standart.yillik),
       onerilen: true, kampanya: kampanyaAktif && !yillik,
-      ozellikler: ['Ücretsiz plandaki her şey', 'PDF ve Excel raporlar', 'Veri dışa aktarma', '3 kullanıcıya kadar'],
+      ozellikler: [
+        '2 kullanıcıya kadar',
+        'Sınırsız cari hesap',
+        '50 çek/senet kaydı (aylık, sıfırlanır)',
+        'Sınırsız kasa yönetimi',
+        'Ödeme takibi',
+        'Vade hesaplayıcı',
+        'PDF & Excel rapor',
+        'Veri dışa aktarma',
+      ],
     },
     {
       id: 'kurumsal', ad: 'Kurumsal', ikon: 'bi-building-fill', btnSinif: 'mavi',
+      aciklama: 'Büyük ekipler için tam kontrol ve öncelikli destek',
       fiyat: kurumGosterilen, fiyatYillik: FIYATLAR.kurumsal.yillik,
       tasarruf: fmt(FIYATLAR.kurumsal.aylik * 12 - FIYATLAR.kurumsal.yillik),
-      ozellikler: ['Standart plandaki her şey', 'Sınırsız kullanıcı', 'Yapay zeka asistanı', 'API erişimi', 'Öncelikli destek'],
+      ozellikler: [
+        '10 kullanıcıya kadar',
+        'Sınırsız her şey',
+        'Tüm Standart özellikler',
+        'Öncelikli destek',
+      ],
     },
   ]
 
@@ -311,7 +338,7 @@ export default function PlanSecim() {
             onClick={() => setYillik(true)}
           >
             Yıllık
-            <span className="abn-tasarruf-chip ms-2">%27'ye kadar tasarruf</span>
+            <span className="abn-tasarruf-chip ms-2">%27 Tasarruf</span>
           </span>
         </div>
 
@@ -339,7 +366,7 @@ export default function PlanSecim() {
                   </div>
 
                   {/* İkon + Ad */}
-                  <div className="d-flex align-items-center gap-2 mb-3">
+                  <div className="d-flex align-items-center gap-2 mb-1">
                     <div
                       className={iconBoxCls}
                       style={{ width: 34, height: 34, borderRadius: 9, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}
@@ -351,6 +378,9 @@ export default function PlanSecim() {
                     </div>
                     <span className={`${p}-abn-plan-name`}>{pl.ad}</span>
                   </div>
+                  {pl.aciklama && (
+                    <div style={{ fontSize: 12, color: 'var(--p-text-muted)', marginBottom: 12 }}>{pl.aciklama}</div>
+                  )}
 
                   {/* Fiyat */}
                   <div className="mb-2">
@@ -412,6 +442,14 @@ export default function PlanSecim() {
               </div>
             )
           })}
+        </div>
+
+        {/* iOS/Android notu */}
+        <div style={{ textAlign: 'center', marginBottom: 28 }}>
+          <span style={{ fontSize: 13, fontWeight: 600, color: 'var(--p-color-primary)' }}>
+            <i className="bi bi-phone-fill me-2" />
+            Web'den aldığınız abonelik iOS ve Android uygulamasında da geçerlidir.
+          </span>
         </div>
 
         {/* ÖDEME GEÇMİŞİ */}

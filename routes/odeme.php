@@ -75,13 +75,13 @@ elseif ($parca_sayisi === 2) {
     }
 }
 
-// ─── /api/odemeler/{id}/tamamla ───
-elseif ($parca_sayisi === 3 && $yol_parcalari[2] === 'tamamla') {
+// ─── /api/odemeler/{id}/arama-kaydi ───
+elseif ($parca_sayisi === 3 && $yol_parcalari[2] === 'arama-kaydi') {
     $kayit_id = (int)$yol_parcalari[1];
     if ($kayit_id <= 0) {
         Response::hata('Gecersiz kayit ID', 400);
     } elseif ($metod === 'PUT') {
-        $odeme->tamamla($payload, $kayit_id, $girdi);
+        $odeme->aramaKaydi($payload, $kayit_id, $girdi);
     } else {
         Response::hata('Bu HTTP metodu desteklenmiyor', 405);
     }

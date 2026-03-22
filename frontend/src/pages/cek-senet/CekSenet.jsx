@@ -385,6 +385,15 @@ export default function CekSenet() {
   const cekBilgi  = sinirler?.cek_aylik
   const cekLimitDolu = cekDurum === 'dolu'
 
+  // ─ FAB ───────────────────────────────────────────────────────────────────────
+  const [fabAcik, setFabAcik] = useState(false)
+
+  useEffect(() => {
+    const handler = (e) => { if (e.key === 'Escape' && fabAcik) setFabAcik(false) }
+    document.addEventListener('keydown', handler)
+    return () => document.removeEventListener('keydown', handler)
+  }, [fabAcik])
+
   // ─ Tab & Filtre ─────────────────────────────────────────────────────────────
   const [aktifTab, setAktifTab] = useState(0)
   const [filtre, setFiltre] = useState({
@@ -587,7 +596,7 @@ export default function CekSenet() {
       tur: item.tur, firma_adi: item.firma_adi, cari_id: item.cari_id,
       asil_borclu: item.asil_borclu, evrak_no: item.evrak_no, banka: item.banka || '',
       vade_tarihi: item.vade_tarihi, islem_tarihi: item.islem_tarihi,
-      tutarStr: formatParaInput(String(item.tutar)),
+      tutarStr: formatParaInput(String(item.tutar ?? 0).replace('.', ',')),
     })
     setPortfoyDzlId(item.id); setPortfoyModal(true)
   }
@@ -671,7 +680,7 @@ export default function CekSenet() {
       tur: item.tur, firma_adi: item.firma_adi, cari_id: item.cari_id,
       asil_borclu: item.asil_borclu, evrak_no: item.evrak_no, banka: item.banka || '',
       vade_tarihi: item.vade_tarihi, tahsil_tarihi: item.tahsil_tarihi,
-      tutarStr: formatParaInput(String(item.tutar)),
+      tutarStr: formatParaInput(String(item.tutar ?? 0).replace('.', ',')),
     })
     setTahsilDzlId(item.id); setTahsilDzlModal(true)
   }
@@ -731,7 +740,7 @@ export default function CekSenet() {
       tur: item.tur, firma_adi: item.firma_adi, cari_id: item.cari_id,
       asil_borclu: item.asil_borclu || '', evrak_no: item.evrak_no, banka: item.banka,
       vade_tarihi: item.vade_tarihi, islem_tarihi: item.islem_tarihi,
-      tutarStr: formatParaInput(String(item.tutar)),
+      tutarStr: formatParaInput(String(item.tutar ?? 0).replace('.', ',')),
     })
     setKendiDzlId(item.id); setKendiModal(true)
   }
@@ -808,7 +817,7 @@ export default function CekSenet() {
   const ciroDzlAc = (item) => {
     setCiroDzlForm({
       vade_tarihi: item.vade_tarihi, ciro_tarihi: item.ciro_tarihi,
-      tutarStr: formatParaInput(String(item.tutar)),
+      tutarStr: formatParaInput(String(item.tutar ?? 0).replace('.', ',')),
       asil_firma: item.asil_firma, teslim_yeri: item.teslim_yeri,
       cari_id: item.cari_id, ciro_edilen_cari_id: item.ciro_edilen_cari_id,
       evrak_no: item.evrak_no, tur: item.tur,
@@ -1252,7 +1261,7 @@ export default function CekSenet() {
                       {cekBilgi.mevcut}/{cekBilgi.sinir} bu ay
                     </div>
                   )}
-                  <button className={`${p}-btn-accent`}
+                  <button className={`${p}-btn-accent d-none d-md-flex align-items-center`}
                     data-tur="cek-ekle-btn"
                     onClick={() => { setPortfoyForm(portfoyBosluk()); setPortfoyDzlId(null); setPortfoyModal(true) }}
                     disabled={cekLimitDolu}
@@ -1476,7 +1485,7 @@ export default function CekSenet() {
                       {cekBilgi.mevcut}/{cekBilgi.sinir} bu ay
                     </div>
                   )}
-                  <button className={`${p}-btn-accent`}
+                  <button className={`${p}-btn-accent d-none d-md-flex align-items-center`}
                     onClick={() => { setKendiForm(kendiBosluk()); setKendiDzlId(null); setKendiModal(true) }}
                     disabled={cekLimitDolu}
                     title={cekLimitDolu ? 'Aylık çek/senet limiti doldu. Planı yükseltin.' : 'Yeni borç evrakı ekle'}
@@ -2216,6 +2225,47 @@ export default function CekSenet() {
           </button>
         </div>
       </Modal>
+
+      {/* ─── FAB — Hızlı İşlem ──────────────────────────────────────────── */}
+      {fabAcik && <div className="p-fab-backdrop" onClick={() => setFabAcik(false)} />}
+      <div className="p-fab-wrap">
+        {fabAcik && (
+          <div className="p-fab-menu">
+            <button
+              className="p-fab-item"
+              onClick={() => { setFabAcik(false); setKendiForm(kendiBosluk()); setKendiDzlId(null); setKendiModal(true) }}
+              disabled={cekLimitDolu}
+              type="button"
+            >
+              <span className="p-fab-item-label">Yeni Borç Evrakı</span>
+              <span className="p-fab-item-icon" style={cekLimitDolu ? { opacity: 0.45 } : undefined}>
+                <i className="bi bi-arrow-up-circle-fill" />
+              </span>
+            </button>
+            <button
+              className="p-fab-item"
+              onClick={() => { setFabAcik(false); setPortfoyForm(portfoyBosluk()); setPortfoyDzlId(null); setPortfoyModal(true) }}
+              disabled={cekLimitDolu}
+              type="button"
+            >
+              <span className="p-fab-item-label">Yeni Portföy Evrakı</span>
+              <span className="p-fab-item-icon" style={cekLimitDolu ? { opacity: 0.45 } : undefined}>
+                <i className="bi bi-file-earmark-plus-fill" />
+              </span>
+            </button>
+          </div>
+        )}
+        <button
+          className="p-fab-btn"
+          onClick={() => setFabAcik(v => !v)}
+          type="button"
+          aria-label="Hızlı işlem"
+        >
+          <span className={`p-fab-btn-icon${fabAcik ? ' p-fab-open' : ''}`}>
+            <i className="bi bi-plus-lg" />
+          </span>
+        </button>
+      </div>
 
     </div>
   )

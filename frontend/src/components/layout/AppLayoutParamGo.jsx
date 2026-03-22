@@ -4,9 +4,6 @@ import useAuthStore from '../../stores/authStore'
 import '../../temalar/paramgo.css'
 import ParamGoLogo from '../../logo/ParamGoLogo'
 import UpgradeBildirim from '../UpgradeBildirim'
-import TanitimTuru from '../tanitim-turu/TanitimTuru'
-import useTurStore from '../../stores/turStore'
-import { TUR_ADIMLAR, ROTA_TUR } from '../tanitim-turu/turlar'
 
 // ─── Navigasyon menüsü ────────────────────────────────────────────────────────
 const menuItems = [
@@ -69,16 +66,8 @@ export default function AppLayoutParamGo() {
 
   const adKisalt = kisalt(kullanici?.ad_soyad)
 
-  const turBaslat = useTurStore((s) => s.turBaslat)
-  const handleTurBaslat = () => {
-    const turAdi = ROTA_TUR[location.pathname] || 'dashboard'
-    const adimlar = TUR_ADIMLAR[turAdi]
-    if (adimlar) turBaslat(turAdi, adimlar)
-  }
-
   return (
     <div className="p-app">
-      <TanitimTuru />
 
       {/* ── Mobil overlay ──────────────────────────────────────────────── */}
       {sidebarOpen && (
@@ -194,33 +183,6 @@ export default function AppLayoutParamGo() {
         </main>
 
       </div>
-
-      {/* ── Tanıtım Turu ? Butonu ──────────────────────────────────────────── */}
-      <button
-        onClick={handleTurBaslat}
-        type="button"
-        aria-label="Tanıtım turunu başlat"
-        title="Tanıtım Turu"
-        style={{
-          position: 'fixed',
-          bottom: 24, right: 24,
-          width: 52, height: 52,
-          borderRadius: '50%',
-          background: 'var(--p-color-primary)',
-          border: '2px solid var(--p-color-primary-dark)',
-          color: 'var(--p-text-on-primary)',
-          fontSize: 20,
-          fontWeight: 700,
-          cursor: 'pointer',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          boxShadow: '0 4px 16px rgba(16,185,129,0.4)',
-          zIndex: 1050,
-        }}
-      >
-        <i className="bi bi-question-lg" />
-      </button>
 
     </div>
   )

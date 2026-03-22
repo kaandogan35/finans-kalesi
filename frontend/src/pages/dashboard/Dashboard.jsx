@@ -14,8 +14,6 @@ import cekSenetApi      from '../../api/cekSenet'
 import useAuthStore     from '../../stores/authStore'
 import useTemaStore     from '../../stores/temaStore'
 import { temaRenkleri } from '../../lib/temaRenkleri'
-import HosgeldinPrompt  from '../../components/tanitim-turu/HosgeldinPrompt'
-import useTurStore      from '../../stores/turStore'
 
 // ─── Tema Prefix ────────────────────────────────────────────────────────────
 const prefixMap = { paramgo: 'p' }
@@ -190,9 +188,6 @@ export default function Dashboard() {
   const p = prefixMap[aktifTema] || 'p'
   const renkler = temaRenkleri[aktifTema] || temaRenkleri.paramgo
 
-  // Tur yükleme
-  const yukleTurlar = useTurStore((s) => s.yukleTurlar)
-  useEffect(() => { yukleTurlar() }, [yukleTurlar])
 
   // Veri state
   const [dash,   setDash]   = useState(null)
@@ -358,8 +353,6 @@ export default function Dashboard() {
   // ─── Render ───────────────────────────────────────────────────────────────
   return (
     <div className={`${p}-page-root`}>
-      <HosgeldinPrompt />
-
       {/* ─── Başlık ────────────────────────────────────────────────────────── */}
       <div className={`${p}-page-header ${p}-greeting`}>
         <div className={`${p}-page-header-left`}>

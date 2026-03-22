@@ -89,6 +89,54 @@ Her bileşen bu kurallara uyar — ileride sıfır düzeltme hedefi:
 > Her yeni sayfa veya bileşen bu standartlara UYMALDIR. Mevcut sayfalar da bu standartlara çekilecektir.
 > `{p}` = aktif temanın prefix'i (`b`, `e`, `d`)
 
+### Sayfa Header Standardı (Zorunlu — Tüm Sayfalar)
+
+Tüm sayfalar aşağıdaki ortak header yapısını kullanmalıdır:
+
+```jsx
+<div className={`${p}-page-header`}>
+  <div className={`${p}-page-header-left`}>
+    <div className={`${p}-page-header-icon`}>
+      <i className="bi bi-[sayfa-ikonu]-fill" />
+    </div>
+    <div>
+      <h1 className={`${p}-page-title`}>Sayfa Başlığı</h1>
+      <p className={`${p}-page-sub`}>Alt açıklama metni</p>
+    </div>
+  </div>
+  <div className={`${p}-page-header-right`}>
+    {/* Sayfa-spesifik aksiyon butonları */}
+  </div>
+</div>
+```
+
+**Sayfa ikonları:**
+| Sayfa | İkon |
+|-------|------|
+| Dashboard | `bi-grid-1x2-fill` |
+| Cari Hesaplar | `bi-people-fill` |
+| Çek/Senet | `bi-file-earmark-text-fill` |
+| Ödeme Takip | `bi-credit-card-2-front-fill` |
+| Kasa | `bi-safe-fill` |
+| Vade Hesaplayıcı | `bi-calculator-fill` |
+
+**Kurallar:**
+- Her sayfa `${p}-page-header-icon` ile tutarlı ikon kutusu kullanır (44x44, radius 14)
+- Başlık her zaman `h1` + `${p}-page-title` class'ı kullanır (h4, h2 vb. YASAK)
+- Alt başlık `p` + `${p}-page-sub` class'ı kullanır
+- Aksiyon butonları sağ tarafta `${p}-page-header-right` içinde
+- Inline style ile font-size, margin override YASAK — CSS class'lar kullanılır
+- Sayfa-spesifik title/subtitle class'ları (`${p}-odm-sayfa-baslik`, `${p}-cek-title` vb.) kullanılmaz
+
+### Topbar Standardı
+
+Topbar (AppLayoutBanking) şu yapıdadır:
+- **Sol:** Finans Kalesi marka logosu (Link → Dashboard) — ikon (42x42) + marka metni
+- **Sağ:** Hamburger menü ikonu (sadece mobilde görünür)
+- Breadcrumb ve profil avatarı YOKTUR — topbar sade tutulur
+- Topbar'da sayfa başlığı (h1) YOKTUR — başlık sayfa içindeki page-header'dadır
+- Topbar yüksekliği: `80px` (`--b-topbar-height`)
+
 ### Tipografi Hiyerarşisi
 
 | Eleman | Font Size | Weight | Family | Color |
@@ -110,7 +158,7 @@ Her bileşen bu kurallara uyar — ileride sıfır düzeltme hedefi:
 
 | Özellik | Değer |
 |---------|-------|
-| Border radius | `var(--{p}-radius-card)` — tema bazlı: B=10px, E=12px, D=12px |
+| Border radius | `14px` — tüm temalarda aynı (`var(--{p}-radius-card)` = 14px) |
 | Border | `1px solid var(--{p}-border)` |
 | Shadow | `var(--{p}-shadow-card)` |
 | Hover shadow | `var(--{p}-shadow-card-hover)` |
@@ -120,7 +168,7 @@ Her bileşen bu kurallara uyar — ileride sıfır düzeltme hedefi:
 | Section body padding | `20px 22px` |
 
 **Tema bazlı dekoratif farklar (izin verilen):**
-- Banking: border-left 4px accent renk
+- Banking: border-left 4px accent renk (yalnızca CSS class ile, inline style YASAK)
 - Earthy: bottom bar 3px accent renk
 - Dark: top gradient 1px accent renk
 - Bu farklar beklenen davranıştır — yapısal değerler (radius, padding, shadow) tüm temalarda aynı olmalıdır.
@@ -129,7 +177,7 @@ Her bileşen bu kurallara uyar — ileride sıfır düzeltme hedefi:
 
 | Özellik | Değer |
 |---------|-------|
-| Border radius | 16px |
+| Border radius | 14px |
 | Shadow | `var(--{p}-shadow-modal)` |
 | Backdrop | `var(--{p}-bg-overlay)` |
 | Header padding | 20px 24px |
@@ -169,6 +217,63 @@ Bu 4 breakpoint dışında yeni breakpoint eklenmez. Mevcut `576px`, `640px`, `1
 | Veri-driven: progress bar width, animasyon değerleri | ✅ İzinli |
 | Tema rengi: `color: '#xxx'`, `background: '#xxx'`, `rgba(...)` | ❌ YASAK — CSS class kullan |
 | Sabit boyut: `width: '200px'`, `height: '50px'` | ⚠️ Mümkünse CSS class'a taşı |
+| `borderLeft` / `borderLeftColor` inline | ❌ YASAK — CSS class kullan |
+
+### İnline borderRadius Standartları (JSX)
+
+Inline `borderRadius` kullanılması gereken durumlarda aşağıdaki değerler zorunludur:
+
+| Eleman Tipi | borderRadius | Örnek |
+|-------------|-------------|-------|
+| Kart, panel, glass-card, KPI kart | `14` | `borderRadius: 14` |
+| Modal, drawer | `14` | `borderRadius: 14` |
+| Buton, input, arama kutusu, avatar | `10` | `borderRadius: 10` |
+| Badge, tag, etiket | `10` | `borderRadius: 10` |
+| Pill badge (kasıtlı tam yuvarlak) | `20` | İSTİSNA — izinli |
+| Progress bar (3px yükseklik) | `2` | İSTİSNA — izinli |
+| Legend kare (10x10px) | `2` | İSTİSNA — izinli |
+
+**YASAK değerler:** `6`, `7`, `8`, `12`, `16`, `20` (pill hariç) — bunlar eski tasarım kalıntılarıdır.
+
+### Dekoratif İkon Opaklığı
+
+Kartların arka planında dekoratif amaçlı kullanılan büyük ikonlar:
+
+```jsx
+// DOĞRU
+<i className="bi bi-wallet2" style={{ opacity: 0.35 }} />
+
+// YANLIŞ — çok silik, görünmez
+<i className="bi bi-wallet2" style={{ opacity: 0.04 }} />
+<i className="bi bi-wallet2" style={{ opacity: 0.06 }} />
+<i className="bi bi-wallet2" style={{ opacity: 0.08 }} />
+<i className="bi bi-wallet2" style={{ opacity: 0.20 }} />
+```
+
+- Dekoratif ikon opacity **her zaman `0.35`**
+- `0.5` disabled buton state'i için İSTİSNA — izinli
+- `0.65`/`0.75` metin/alan opacity'leri için İSTİSNA — izinli (ikon değil)
+
+### Finansal Değer Gösterimi (JSX)
+
+TL(), paraFormat() veya herhangi bir parasal değer gösteren JSX elemanlarına **`financial-num`** CSS sınıfı eklenmeli:
+
+```jsx
+// DOĞRU
+<span className="financial-num">{TL(tutar)}</span>
+<div className="financial-num" style={{ fontSize: 22 }}>{paraFormat(toplam)}</div>
+
+// YANLIŞ — financial-num eksik
+<span>{TL(tutar)}</span>
+<div style={{ fontSize: 22 }}>{paraFormat(toplam)}</div>
+```
+
+### Tablo Başlık Gradient'i
+
+Tablo `thead th` elemanları gradient arka plan kullanmalıdır (CSS'te tanımlı):
+```css
+background: linear-gradient(90deg, rgba(10,36,99,0.06) 0%, rgba(10,36,99,0.01) 100%);
+```
 
 ### CSS Class İsimlendirme Kuralı
 

@@ -159,11 +159,25 @@ class CariController {
     }
 
     // ─── POST /api/cariler/toplu ───
+    // kolon_eslesme (JSON): {"csv_kolon_adi": "sistem_alani", ...}
+    // Desteklenen sistem alanları: cari_adi, bakiye, telefon, vergi_no, email, adres, cari_turu, yetkili_kisi
+    // Mükerrer tespit: önce vergi_no (varsa), sonra cari_adi ile eşleşme
+    // Eşleşen caride sadece bakiye güncellenir, yeni caride tüm alanlar oluşturulur
     public function topluYukle($payload) {
         try {
             if (empty($_FILES['dosya']) || $_FILES['dosya']['error'] !== UPLOAD_ERR_OK) {
                 Response::hata('CSV dosyasi yuklenemedi', 400);
                 return;
+            }
+
+            // Kolon eşleşme haritası (frontend gönderir)
+            // Format: {"CSV Başlık Adı": "sistem_alanı", ...}
+            $eslesme_ham = $_POST['kolon_eslesme'] ?? '{}';
+            $kolon_eslesme = json_decode($eslesme_ham, true) ?? [];
+            // Harita: csv_kolon → sistem_alani (küçük harf anahtarlar)
+            $eslesme = [];
+            foreach ($kolon_eslesme as $csv_k => $sistem_k) {
+                $eslesme[mb_strtolower(trim($csv_k))] = trim($sistem_k);
             }
 
             $dosya = $_FILES['dosya']['tmp_name'];
@@ -174,77 +188,143 @@ class CariController {
             }
 
             // İlk satır başlık
-            $basliklar = fgetcsv($handle, 0, ',');
-            if (!$basliklar) {
+            $raw_basliklar = fgetcsv($handle, 0, ',');
+            if (!$raw_basliklar) {
                 fclose($handle);
                 Response::hata('Dosya bos veya gecersiz', 400);
                 return;
             }
+            $raw_basliklar = array_map(function($b) { return mb_strtolower(trim($b)); }, $raw_basliklar);
 
-            // Beklenen sütun adları (küçük harf, trim)
-            $basliklar = array_map(function($b) { return mb_strtolower(trim($b)); }, $basliklar);
+            // Kolon eşleşmesi varsa uygula, yoksa CSV başlıklarını doğrudan kullan
+            $sistem_basliklar = [];
+            foreach ($raw_basliklar as $csv_k) {
+                $sistem_basliklar[] = $eslesme[$csv_k] ?? $csv_k;
+            }
 
             $basarili_sayisi = 0;
+            $guncellenen_sayisi = 0;
             $hatali_sayisi   = 0;
-            $hatali_satirlar = array();
+            $hatali_satirlar = [];
             $satirNo = 1;
 
             while (($satir = fgetcsv($handle, 0, ',')) !== false) {
                 $satirNo++;
-                if (count($satir) < count($basliklar)) {
+                if (count($satir) < count($sistem_basliklar)) {
                     $hatali_sayisi++;
-                    $hatali_satirlar[] = array('satir' => $satirNo, 'hata' => 'Eksik sutun sayisi');
+                    $hatali_satirlar[] = ['satir' => $satirNo, 'hata' => 'Eksik sutun sayisi'];
                     continue;
                 }
 
-                $veri = array_combine($basliklar, array_map('trim', $satir));
+                $veri = array_combine($sistem_basliklar, array_map('trim', $satir));
 
                 if (empty($veri['cari_adi'])) {
                     $hatali_sayisi++;
-                    $hatali_satirlar[] = array('satir' => $satirNo, 'hata' => 'cari_adi zorunludur');
+                    $hatali_satirlar[] = ['satir' => $satirNo, 'hata' => 'cari_adi zorunludur'];
                     continue;
                 }
 
-                $gecerli_turler = array('musteri', 'tedarikci', 'her_ikisi');
+                $gecerli_turler = ['musteri', 'tedarikci', 'her_ikisi'];
                 $cari_turu = !empty($veri['cari_turu']) ? $veri['cari_turu'] : 'musteri';
                 if (!in_array($cari_turu, $gecerli_turler)) {
                     $cari_turu = 'musteri';
                 }
 
-                try {
-                    // Plan sınırı kontrolü (her kayıt için)
-                    SinirKontrol::kontrol($payload, 'cari');
+                $bakiye = isset($veri['bakiye']) && $veri['bakiye'] !== ''
+                    ? (float)str_replace(['.', ','], ['', '.'], $veri['bakiye'])
+                    : null;
 
-                    $this->cariKart->olustur($payload['sirket_id'], array(
-                        'cari_adi'    => $veri['cari_adi'],
-                        'cari_turu'   => $cari_turu,
-                        'vergi_no'    => $veri['vergi_no']    ?? null,
-                        'telefon'     => $veri['telefon']     ?? null,
-                        'email'       => $veri['email']       ?? null,
-                        'adres'       => $veri['adres']       ?? null,
-                        'yetkili_kisi'=> $veri['yetkili_kisi']?? null,
-                    ));
-                    $basarili_sayisi++;
+                try {
+                    // Mükerrer kontrolü: vergi_no veya cari_adi eşleşmesi
+                    $mevcut_id = $this->_mukererBul(
+                        $payload['sirket_id'],
+                        $veri['cari_adi'],
+                        $veri['vergi_no'] ?? null
+                    );
+
+                    if ($mevcut_id) {
+                        // Sadece bakiyeyi güncelle
+                        if ($bakiye !== null) {
+                            $this->cariKart->bakiye_dogrudan_yaz($payload['sirket_id'], $mevcut_id, $bakiye);
+                        }
+                        $guncellenen_sayisi++;
+                    } else {
+                        // Plan sınırı kontrolü (yeni kayıt için)
+                        SinirKontrol::kontrol($payload, 'cari');
+
+                        $yeni_cari_veri = [
+                            'cari_adi'     => $veri['cari_adi'],
+                            'cari_turu'    => $cari_turu,
+                            'vergi_no'     => $veri['vergi_no']     ?? null,
+                            'telefon'      => $veri['telefon']      ?? null,
+                            'email'        => $veri['email']        ?? null,
+                            'adres'        => $veri['adres']        ?? null,
+                            'yetkili_kisi' => $veri['yetkili_kisi'] ?? null,
+                        ];
+                        $yeni = $this->cariKart->olustur($payload['sirket_id'], $yeni_cari_veri);
+
+                        // Bakiyeyi doğrudan yaz (hareketler tablosuna dokunmadan)
+                        if ($bakiye !== null && $yeni) {
+                            $this->cariKart->bakiye_dogrudan_yaz($payload['sirket_id'], $yeni['id'], $bakiye);
+                        }
+                        $basarili_sayisi++;
+                    }
                 } catch (Exception $kayitHata) {
                     $hatali_sayisi++;
-                    $hatali_satirlar[] = array(
+                    $hatali_satirlar[] = [
                         'satir' => $satirNo,
                         'hata'  => $kayitHata->getMessage(),
-                    );
+                    ];
                 }
             }
 
             fclose($handle);
 
-            Response::basarili(array(
-                'basarili_sayisi' => $basarili_sayisi,
-                'hatali_sayisi'   => $hatali_sayisi,
-                'hatali_satirlar' => $hatali_satirlar,
-            ), "$basarili_sayisi kayit yuklendi");
+            Response::basarili([
+                'basarili_sayisi'   => $basarili_sayisi,
+                'guncellenen_sayisi' => $guncellenen_sayisi,
+                'hatali_sayisi'     => $hatali_sayisi,
+                'hatali_satirlar'   => $hatali_satirlar,
+            ], "{$basarili_sayisi} yeni kayit, {$guncellenen_sayisi} bakiye guncellendi");
         } catch (Exception $e) {
             error_log('Cari toplu yukle hatasi: ' . $e->getMessage());
             Response::sunucu_hatasi('Toplu yukleme basarisiz');
         }
+    }
+
+    // ─── Mükerrer cari bul (şifreli veri nedeniyle PHP'de çözülerek karşılaştırılır) ───
+    private function _mukererBul($sirket_id, $cari_adi, $vergi_no = null) {
+        // Tüm aktif carileri çek (küçük veri setinde makul)
+        $sql  = "SELECT id, cari_adi_sifreli, vergi_no_sifreli FROM cari_kartlar
+                 WHERE sirket_id = ? AND silindi_mi = 0 AND aktif_mi = 1";
+        $stmt = $this->db->prepare($sql);
+        $stmt->execute([$sirket_id]);
+        $cariler = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+        $aranan_adi     = mb_strtolower(trim($cari_adi));
+        $aranan_vergi   = !empty($vergi_no) ? preg_replace('/\D/', '', trim($vergi_no)) : null;
+
+        foreach ($cariler as $c) {
+            // Vergi no eşleşmesi (öncelikli)
+            if ($aranan_vergi !== null && !empty($c['vergi_no_sifreli'])) {
+                $mevcut_vergi = SistemKripto::coz($c['vergi_no_sifreli']);
+                if ($mevcut_vergi !== null) {
+                    $mevcut_vergi = preg_replace('/\D/', '', trim($mevcut_vergi));
+                    if ($aranan_vergi === $mevcut_vergi && $aranan_vergi !== '') {
+                        return (int)$c['id'];
+                    }
+                }
+            }
+            // İsim eşleşmesi
+            if (!empty($c['cari_adi_sifreli'])) {
+                $mevcut_adi = SistemKripto::coz($c['cari_adi_sifreli']);
+                if ($mevcut_adi !== null && mb_strtolower(trim($mevcut_adi)) === $aranan_adi) {
+                    return (int)$c['id'];
+                }
+            }
+        }
+
+        return null;
     }
 
     // ─── PUT /api/cariler/{id} ───

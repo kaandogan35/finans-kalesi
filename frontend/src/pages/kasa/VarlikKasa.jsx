@@ -610,7 +610,7 @@ function AyKapanisModal({ open, onClose, kapanislar, onKaydet, yatirimGuncelDege
       }
       setForm({
         donem: sonraPeriod(),
-        devredenStok:  sonKapanis ? String(sonKapanis.sanal_stok) : '',
+        devredenStok:  sonKapanis ? formatParaInput(String(sonKapanis.sanal_stok ?? 0).replace('.', ',')) : '',
         kesilenFatura: '', karMarji: '35',
         gelenAlis: '', alacaklar: '', borclar: '', bankaKasaNakdi: '',
       })
@@ -1061,7 +1061,7 @@ function AylikBilanco({ kapanislar, setKapanislar, yatirimGuncelDeger = 0, p, re
 
             {/* Glow buton */}
             <button onClick={acEkle}
-              className={`${p}-kasa-btn-accent d-flex align-items-center gap-2`}
+              className={`${p}-kasa-btn-accent d-none d-md-flex align-items-center gap-2`}
               style={{
                 borderRadius:50, padding:'12px 28px',
                 boxShadow:`0 4px 20px ${hexRgba(renkler.accent, 0.35)}, 0 0 60px ${hexRgba(renkler.accent, 0.08)}`,
@@ -1193,6 +1193,18 @@ function AylikBilanco({ kapanislar, setKapanislar, yatirimGuncelDeger = 0, p, re
         duzenlenen={duzenlenenKapanis}
         p={p} renkler={renkler}
       />
+
+      {/* ── Mobil FAB ── */}
+      <div className="p-fab-wrap">
+        <button
+          className="p-fab-btn"
+          onClick={acEkle}
+          type="button"
+          aria-label="Ay kapanışı yap"
+        >
+          <span className="p-fab-btn-icon"><i className="bi bi-plus-lg" /></span>
+        </button>
+      </div>
     </div>
   )
 }
@@ -1451,7 +1463,7 @@ function OrtakCarisi({ ortakHareketler, setOrtakHareketler, p, renkler }) {
               placeholder="Ortak adı filtrele..." className={`${p}-kasa-search`} />
           </div>
           <button onClick={() => setModalAcik(true)}
-            className={`${p}-kasa-btn-accent d-flex align-items-center gap-2`}
+            className={`${p}-kasa-btn-accent d-none d-md-flex align-items-center gap-2`}
             style={{ borderRadius:50, padding:'10px 22px', boxShadow:`0 3px 10px ${hexRgba(renkler.accent, 0.3)}` }}>
             <i className="bi bi-plus-lg" />Kullanım / Çekim Ekle
           </button>
@@ -1626,6 +1638,18 @@ function OrtakCarisi({ ortakHareketler, setOrtakHareketler, p, renkler }) {
         mevcutOrtaklar={ortaklar} onKaydet={islemEkle}
         p={p} renkler={renkler}
       />
+
+      {/* ── Mobil FAB ── */}
+      <div className="p-fab-wrap">
+        <button
+          className="p-fab-btn"
+          onClick={() => setModalAcik(true)}
+          type="button"
+          aria-label="Kullanım / Çekim ekle"
+        >
+          <span className="p-fab-btn-icon"><i className="bi bi-plus-lg" /></span>
+        </button>
+      </div>
     </div>
   )
 }
@@ -2433,7 +2457,7 @@ function NakitAkisi({ secilenAy, secilenYil, setSecilenAy, setSecilenYil, hareke
       <DortKart ozet={hesap} p={p} renkler={renkler} />
 
       {/* Yeni İşlem Ekle */}
-      <div className="d-flex justify-content-center mb-4">
+      <div className="d-none d-md-flex justify-content-center mb-4">
         <button onClick={() => setModalAcik(true)} className={`${p}-kasa-btn-accent d-flex align-items-center gap-2`}
           style={{ borderRadius:50, padding:'12px 36px' }}>
           <i className="bi bi-plus-circle-fill" style={{ fontSize:18 }} />
@@ -2671,6 +2695,18 @@ function NakitAkisi({ secilenAy, secilenYil, setSecilenAy, setSecilenYil, hareke
             </div>
           </div>
         )}
+      </div>
+
+      {/* ── Mobil FAB ── */}
+      <div className="p-fab-wrap">
+        <button
+          className="p-fab-btn"
+          onClick={() => setModalAcik(true)}
+          type="button"
+          aria-label="Yeni işlem ekle"
+        >
+          <span className="p-fab-btn-icon"><i className="bi bi-plus-lg" /></span>
+        </button>
       </div>
 
       <KategoriDetayModal
@@ -3079,7 +3115,7 @@ function YatirimKalesi({ yatirimlar, setYatirimlar, p, renkler }) {
               <i className="bi bi-graph-up-arrow me-1" style={{ fontSize:13 }} />Fiyatları Güncelle
             </button>
           )}
-          <button onClick={acEkle} className={`${p}-kasa-btn-accent d-flex align-items-center gap-2`} style={{ borderRadius:50 }}>
+          <button onClick={acEkle} className={`${p}-kasa-btn-accent d-none d-md-flex align-items-center gap-2`} style={{ borderRadius:50 }}>
             <i className="bi bi-plus-lg" />Varlık Ekle
           </button>
         </div>
@@ -3302,6 +3338,18 @@ function YatirimKalesi({ yatirimlar, setYatirimlar, p, renkler }) {
         p={p}
         renkler={renkler}
       />
+
+      {/* ── Mobil FAB ── */}
+      <div className="p-fab-wrap">
+        <button
+          className="p-fab-btn"
+          onClick={acEkle}
+          type="button"
+          aria-label="Varlık ekle"
+        >
+          <span className="p-fab-btn-icon"><i className="bi bi-plus-lg" /></span>
+        </button>
+      </div>
     </div>
   )
 }

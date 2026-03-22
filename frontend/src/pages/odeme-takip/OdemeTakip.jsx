@@ -1,25 +1,37 @@
-import { useState, useEffect, useMemo, useRef, useCallback } from 'react'
-import { useNavigate, useLocation } from 'react-router-dom'
+import { useState, useEffect, useCallback } from 'react'
 import { odemeApi } from '../../api/odeme'
 import { carilerApi } from '../../api/cariler'
 import useTemaStore from '../../stores/temaStore'
-import { temaRenkleri, hexRgba } from '../../lib/temaRenkleri'
+import { temaRenkleri } from '../../lib/temaRenkleri'
 
 const prefixMap = { paramgo: 'p' }
 
-/* ═══════════════════════════════════════════════════════════════
-   YARDIMCI FONKSİYONLAR
-   ═══════════════════════════════════════════════════════════════ */
+/* ═══ YARDIMCI FONKSİYONLAR ═══ */
 
 const TL = (n) =>
   new Intl.NumberFormat('tr-TR', {
-    style: 'currency', currency: 'TRY', maximumFractionDigits: 0,
-  }).format(n || 0)
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  }).format(n || 0) + ' ₺'
 
 const tarihStr = (t) => {
   if (!t) return '—'
-  return new Intl.DateTimeFormat('tr-TR', { day: '2-digit', month: 'long', year: 'numeric' })
-    .format(new Date(t + 'T00:00:00'))
+  return new Intl.DateTimeFormat('tr-TR', {
+    day: '2-digit', month: 'long', year: 'numeric',
+  }).format(new Date(t + 'T00:00:00'))
+}
+
+const tarihKisa = (t) => {
+  if (!t) return '—'
+  return new Intl.DateTimeFormat('tr-TR', {
+    day: '2-digit', month: 'short',
+  }).format(new Date(t + 'T00:00:00'))
+}
+
+const bugunStr = (offset = 0) => {
+  const d = new Date()
+  d.setDate(d.getDate() + offset)
+  return d.toISOString().slice(0, 10)
 }
 
 const gunFarki = (t) => {
@@ -28,434 +40,217 @@ const gunFarki = (t) => {
   return Math.floor((new Date(t + 'T00:00:00') - b) / 86400000)
 }
 
-const bugunStr = (offset = 0) => {
-  const d = new Date(); d.setDate(d.getDate() + offset)
-  return d.toISOString().slice(0, 10)
-}
-
-/* ═══════════════════════════════════════════════════════════════
-   SABİTLER
-   ═══════════════════════════════════════════════════════════════ */
-
-const ARAMA_SECENEKLERI = [
-  { id: 'cevap_yok',  emoji: '📵', label: 'Cevap Vermedi' },
-  { id: 'soz_alindi', emoji: '💬', label: 'Görüştüm — Söz Verdi' },
-  { id: 'tamamlandi', emoji: '✅', label: 'Ödedi / Tahsil Ettim' },
-  { id: 'ertelendi',  emoji: '⏰', label: 'Ertele (Tarih Seç)' },
+/* ═══ TABS ═══ */
+const TABS = [
+  { id: 'aranmasi_gerekenler', label: 'Aranması Gerekenler', icon: 'bi-telephone-fill' },
+  { id: 'arandi',              label: 'Arandı',               icon: 'bi-telephone-outbound' },
+  { id: 'soz_alinanlar',       label: 'Söz Alınanlar',        icon: 'bi-calendar-check' },
+  { id: 'tamamlandi',          label: 'Tamamlandı',           icon: 'bi-check-circle-fill' },
 ]
 
-const ONCELIK_SIRA = { kritik: 0, yuksek: 1, normal: 2, dusuk: 3 }
-
-/* ═══════════════════════════════════════════════════════════════
-   TABLO YARDIMCILARI
-   ═══════════════════════════════════════════════════════════════ */
-
-function kenariRenkCls(tarih, durum, p) {
-  if (durum === 'tamamlandi') return `${p}-odm-td-border-success`
-  const fark = gunFarki(tarih)
-  if (fark === null) return ''
-  if (fark < 0)   return `${p}-odm-td-border-danger`
-  if (fark === 0) return `${p}-odm-td-border-warning`
-  if (fark <= 3)  return `${p}-odm-td-border-warning`
-  return ''
-}
-
-function vadeBadge(tarih, durum, p) {
-  if (durum === 'tamamlandi') return { text: 'Tamamlandı', cls: `${p}-odm-badge-success` }
-  const fark = gunFarki(tarih)
-  if (fark === null) return null
-  if (fark === 0)  return { text: 'Bugün',                    cls: `${p}-odm-badge-warning` }
-  if (fark > 0)   return { text: `${fark} gün kaldı`,        cls: `${p}-odm-badge-success` }
-  return                  { text: `${Math.abs(fark)} gün geçti`, cls: `${p}-odm-badge-danger` }
-}
-
-function isPulse(k) {
-  return k.oncelik === 'kritik' && gunFarki(k.vade_tarihi) < 0 && k.arama_durumu === 'aranmadi'
-}
-
-/* ═══════════════════════════════════════════════════════════════
-   ANA BİLEŞEN
-   ═══════════════════════════════════════════════════════════════ */
+/* ═══ ANA BİLEŞEN ═══ */
 
 export default function OdemeTakip() {
-  const navigate = useNavigate()
-  const location = useLocation()
   const aktifTema = useTemaStore((s) => s.aktifTema)
   const p = prefixMap[aktifTema] || 'p'
   const renkler = temaRenkleri[aktifTema] || temaRenkleri.paramgo
 
-  const ONCELIK_META = {
-    kritik: { label: 'Kritik',  cls: `${p}-odm-oncelik-kritik` },
-    yuksek: { label: 'Yüksek',  cls: `${p}-odm-oncelik-yuksek` },
-    normal: { label: 'Normal', cls: `${p}-odm-oncelik-normal` },
-    dusuk:  { label: 'Düşük',  cls: `${p}-odm-oncelik-dusuk` },
-  }
+  /* ── State ── */
+  const [liste,           setListe]           = useState([])
+  const [toplam,          setToplam]          = useState(0)
+  const [yukleniyor,      setYukleniyor]      = useState(true)
+  const [apiHatasi,       setApiHatasi]       = useState(false)
+  const [aktifTab,        setAktifTab]        = useState('aranmasi_gerekenler')
+  const [ozet,            setOzet]            = useState(null)
+  const [tabSayilari,     setTabSayilari]     = useState({})
+  const [arama,           setArama]           = useState('')
+  const [cariListesi,     setCariListesi]      = useState([])
 
-  const ARAMA_DURUM_META = {
-    aranmadi:   { label: 'Aranmadı',   cls: `${p}-odm-arama-aranmadi`,   icon: 'bi-telephone' },
-    cevap_yok:  { label: 'Cevap Yok',  cls: `${p}-odm-arama-cevapyok`,  icon: 'bi-telephone-x' },
-    soz_alindi: { label: 'Söz Alındı', cls: `${p}-odm-arama-sozalindi`, icon: 'bi-check2' },
-    tamamlandi: { label: 'Tamamlandı', cls: `${p}-odm-arama-tamamlandi`, icon: 'bi-check-circle-fill' },
-  }
+  // Arama Kaydı Modal
+  const [aramaModalId,    setAramaModalId]    = useState(null)
+  const [aramaAksiyon,    setAramaAksiyon]    = useState('') // cevap_vermedi | soz_verildi | tamamlandi
+  const [aramaNot,        setAramaNot]        = useState('')
+  const [aramaHatTarihi,  setAramaHatTarihi]  = useState('')
+  const [aramaSozTarihi,  setAramaSozTarihi]  = useState('')
+  const [aramaGun,        setAramaGun]        = useState('30')
+  const [aramaYukleniyor, setAramaYukleniyor] = useState(false)
+  const [aramaHata,       setAramaHata]       = useState('')
 
-  const drawerRef = useRef(null)
+  // Sil modal
+  const [silId,           setSilId]           = useState(null)
+  const [silYukleniyor,   setSilYukleniyor]   = useState(false)
 
-  const [liste,            setListe]            = useState([])
-  const [yukleniyor,       setYukleniyor]       = useState(true)
-  const [apiHatasi,        setApiHatasi]        = useState(false)
-  const [aktifFiltre,      setAktifFiltre]      = useState('bu_hafta')
-  const [aramaTerm,        setAramaTerm]        = useState('')
-  const [debouncedArama,   setDebouncedArama]   = useState('')
-  const [secilenKayitId,   setSecilenKayitId]   = useState(null)
-  const [aramaModaliId,    setAramaModaliId]    = useState(null)
-  const [kpiVerisi,        setKpiVerisi]        = useState(null)
-  const [filtrePaneli,     setFiltrePaneli]     = useState(false)
-  const [oncelikFiltre,    setOncelikFiltre]    = useState('')
-  const [baslangicTarihi,  setBaslangicTarihi]  = useState('')
-  const [bitisTarihi,      setBitisTarihi]      = useState('')
-  const [menuAcikId,       setMenuAcikId]       = useState(null)
-  const [menuPos,          setMenuPos]          = useState({ top: 0, left: 0 })
-  const [aramaSonucu,      setAramaSonucu]      = useState(null)
-  const [aramaNotText,     setAramaNotText]     = useState('')
-  const [hatirlaticiTarihi,setHatirlaticiTarihi]= useState('')
+  // Yeni kayıt modal
+  const [showEkle,        setShowEkle]        = useState(false)
+  const [ekleForm,        setEkleForm]        = useState({ cari_id: '', yon: 'tahsilat', oncelik: 'normal' })
+  const [ekleYukleniyor,  setEkleYukleniyor]  = useState(false)
+  const [ekleHata,        setEkleHata]        = useState('')
 
-  // Düzenleme modu — null=yeni kayıt, sayı=mevcut kaydı düzenle
-  const [duzenlemeId, setDuzenlemeId] = useState(null)
-
-  // Silme onay modalı
-  const [silOnayId, setSilOnayId] = useState(null)
-  const [silYukleniyor, setSilYukleniyor] = useState(false)
-
-  // Yeni Kayıt Ekle modal state'leri
-  const BOSH_YENI_FORM = { firma_adi: '', ilgili_kisi: '', telefon: '', tutar: '', yon: 'tahsilat', soz_tarihi: bugunStr(0), oncelik: 'normal', cari_id: null, cari_sabit: false }
-  const [showYeniModal,        setShowYeniModal]        = useState(false)
-  const [yeniForm,             setYeniForm]             = useState(BOSH_YENI_FORM)
-  const [yeniKaydetYukleniyor, setYeniKaydetYukleniyor] = useState(false)
-  const [yeniFormHata,         setYeniFormHata]         = useState('')
-
-  // Cari filtresi ve listesi
-  const [cariFiltre,  setCariFiltre]  = useState('')
-  const [cariListesi, setCariListesi] = useState([])
-
-  const secilenKayit = useMemo(() => liste.find(k => k.id === secilenKayitId) || null, [liste, secilenKayitId])
-  const aramaModali  = useMemo(() => liste.find(k => k.id === aramaModaliId)  || null, [liste, aramaModaliId])
-
-  // Drawer açıldığında görünür alana kaydır
-  useEffect(() => {
-    if (secilenKayit && drawerRef.current) {
-      setTimeout(() => {
-        drawerRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' })
-      }, 50)
-    }
-  }, [secilenKayitId])
-
-  useEffect(() => {
-    const veriGetir = async () => {
-      try {
-        const [listeRes, ozetRes, cariRes] = await Promise.all([
-          odemeApi.listele(),
-          odemeApi.ozet(),
-          carilerApi.listele({ adet: 100 }),
-        ])
-        const kayitlar = listeRes.data?.veri?.kayitlar || listeRes.data?.veri || []
-        setListe(kayitlar.map(k => ({ ...k, vade_tarihi: k.vade_tarihi || k.soz_tarihi, arama_gecmisi: Array.isArray(k.arama_gecmisi) ? k.arama_gecmisi : [] })))
-        setKpiVerisi(ozetRes.data?.veri || null)
-        setCariListesi(cariRes.data?.veri?.cariler || [])
-      } catch {
-        setApiHatasi(true)
-      } finally {
-        setYukleniyor(false)
-      }
-    }
-    veriGetir()
-  }, [])
-
-  // Cari sayfasından yönlendirilince otomatik modal aç + cari bilgilerini doldur
-  useEffect(() => {
-    const state = location.state
-    if (state?.onceden_cari_id && state?.onceden_cari_adi) {
-      // Bakiyeyi input formatına çevir: 5000000 → "5.000.000"
-      const bakiyeStr = state.onceden_bakiye > 0
-        ? Math.round(state.onceden_bakiye).toString().replace(/\B(?=(\d{3})+(?!\d))/g, '.')
-        : ''
-      setYeniForm({
-        ...BOSH_YENI_FORM,
-        firma_adi: state.onceden_cari_adi,
-        cari_id: state.onceden_cari_id,
-        cari_sabit: true,
-        tutar: bakiyeStr,
-      })
-      setYeniFormHata('')
-      setShowYeniModal(true)
-      // State'i temizle (tekrar açılmasını önle)
-      window.history.replaceState({}, '')
-    }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [])
-
-  useEffect(() => {
-    const t = setTimeout(() => setDebouncedArama(aramaTerm), 300)
-    return () => clearTimeout(t)
-  }, [aramaTerm])
-
+  /* ── ESC kapatma ── */
   useEffect(() => {
     const fn = (e) => {
-      if (e.key !== 'Escape') return
-      if (silOnayId) { setSilOnayId(null) }
-      else if (showYeniModal) { setShowYeniModal(false); setYeniForm(BOSH_YENI_FORM); setYeniFormHata(''); setDuzenlemeId(null) }
-      else if (aramaModaliId) { setAramaModaliId(null); resetModal() }
-      else if (menuAcikId) setMenuAcikId(null)
-      else if (secilenKayitId) setSecilenKayitId(null)
+      if (e.key === 'Escape') {
+        setAramaModalId(null)
+        setSilId(null)
+        setShowEkle(false)
+      }
     }
     document.addEventListener('keydown', fn)
     return () => document.removeEventListener('keydown', fn)
-  }, [silOnayId, showYeniModal, aramaModaliId, menuAcikId, secilenKayitId])
+  }, [])
+
+  /* ── Veri yükleme ── */
+  const veriGetir = useCallback(async (tab = aktifTab) => {
+    setYukleniyor(true)
+    setApiHatasi(false)
+    try {
+      const params = { tab, adet: 100 }
+      if (arama.trim()) params.arama = arama.trim()
+
+      const [listeRes, ozetRes] = await Promise.all([
+        odemeApi.listele(params),
+        odemeApi.ozet(),
+      ])
+
+      const kayitlar = listeRes.data?.veri?.kayitlar || []
+      setListe(kayitlar)
+      setToplam(listeRes.data?.veri?.toplam || kayitlar.length)
+
+      const ozetVeri = ozetRes.data?.veri || {}
+      setOzet(ozetVeri)
+      setTabSayilari(ozetVeri.tab_sayilari || {})
+    } catch {
+      setApiHatasi(true)
+    } finally {
+      setYukleniyor(false)
+    }
+  }, [aktifTab, arama])
 
   useEffect(() => {
-    document.body.style.overflow = (aramaModaliId || showYeniModal || silOnayId) ? 'hidden' : ''
-    return () => { document.body.style.overflow = '' }
-  }, [aramaModaliId, showYeniModal, silOnayId])
+    veriGetir(aktifTab)
+  }, [aktifTab])
 
   useEffect(() => {
-    if (!menuAcikId) return
-    const fn = () => setMenuAcikId(null)
-    document.addEventListener('click', fn)
-    return () => document.removeEventListener('click', fn)
-  }, [menuAcikId])
+    const t = setTimeout(() => veriGetir(aktifTab), 350)
+    return () => clearTimeout(t)
+  }, [arama])
 
-  const filtreliListe = useMemo(() => {
-    let s = [...liste]
-    if (aktifFiltre === 'bu_hafta') {
-      const bugun = new Date(); bugun.setHours(0,0,0,0)
-      const gun = bugun.getDay()
-      const pzt = new Date(bugun); pzt.setDate(bugun.getDate() - (gun === 0 ? 6 : gun - 1))
-      const pzr = new Date(pzt);   pzr.setDate(pzt.getDate() + 6); pzr.setHours(23,59,59,999)
-      s = s.filter(k => { const v = new Date(k.vade_tarihi + 'T00:00:00'); return v >= pzt && v <= pzr })
-    } else if (aktifFiltre === 'gecikmus') {
-      const bugun = new Date(); bugun.setHours(0,0,0,0)
-      s = s.filter(k => new Date(k.vade_tarihi + 'T00:00:00') < bugun && k.durum !== 'tamamlandi')
-    } else if (aktifFiltre === 'arandi')    { s = s.filter(k => k.arama_durumu !== 'aranmadi') }
-    else if (aktifFiltre === 'soz_alindi') { s = s.filter(k => k.arama_durumu === 'soz_alindi') }
-    if (debouncedArama.trim()) {
-      const q = debouncedArama.toLowerCase()
-      s = s.filter(k => k.firma_adi.toLowerCase().includes(q) || (k.cari_adi || '').toLowerCase().includes(q) || (k.telefon && k.telefon.includes(q)))
+  // Cari listesi (bir kez yükle)
+  useEffect(() => {
+    carilerApi.listele({ adet: 500, siralama: 'ad_asc' })
+      .then(r => setCariListesi(r.data?.veri?.cariler || []))
+      .catch(() => {})
+  }, [])
+
+  /* ── Tab değiştir ── */
+  const tabDegistir = (tabId) => {
+    setAktifTab(tabId)
+    setArama('')
+  }
+
+  /* ── Arama kaydı submit ── */
+  const aramaKaydiGonder = async () => {
+    if (!aramaAksiyon) { setAramaHata('Bir seçenek seçin'); return }
+    if (aramaAksiyon === 'cevap_vermedi' && !aramaHatTarihi) {
+      setAramaHata('Tekrar arama tarihi zorunludur')
+      return
     }
-    if (oncelikFiltre)   s = s.filter(k => k.oncelik === oncelikFiltre)
-    if (baslangicTarihi) s = s.filter(k => k.vade_tarihi >= baslangicTarihi)
-    if (bitisTarihi)     s = s.filter(k => k.vade_tarihi <= bitisTarihi)
-    if (cariFiltre)      s = s.filter(k => String(k.cari_id) === cariFiltre)
-    return s.sort((a, b) => {
-      const d = ONCELIK_SIRA[a.oncelik] - ONCELIK_SIRA[b.oncelik]
-      return d !== 0 ? d : a.vade_tarihi.localeCompare(b.vade_tarihi)
-    })
-  }, [liste, aktifFiltre, debouncedArama, oncelikFiltre, baslangicTarihi, bitisTarihi, cariFiltre])
+    if (aramaAksiyon === 'soz_verildi' && !aramaSozTarihi) {
+      setAramaHata('Söz tarihi zorunludur')
+      return
+    }
 
-  // Alacak Yaşlandırma — tahsilat kayıtlarından hesaplanır (her bucket: geçen gün)
-  const yaslima = useMemo(() => {
-    const bugun = new Date(); bugun.setHours(0,0,0,0)
-    const alacaklar = liste.filter(k => k.yon === 'tahsilat' && k.durum !== 'tamamlandi' && k.durum !== 'iptal')
-    const toplamTutar = alacaklar.reduce((s, k) => s + (parseFloat(k.tutar) || 0), 0)
-    const buckets = [
-      { aralik: '0 – 30 Gün',  min: 0,  max: 30,  cls: `${p}-odm-yas-0` },
-      { aralik: '31 – 60 Gün', min: 31, max: 60,  cls: `${p}-odm-yas-1` },
-      { aralik: '61 – 90 Gün', min: 61, max: 90,  cls: `${p}-odm-yas-2` },
-      { aralik: '90+ Gün',     min: 91, max: Infinity, cls: `${p}-odm-yas-3` },
-    ]
-    return buckets.map(b => {
-      const tutar = alacaklar
-        .filter(k => {
-          const vade = new Date((k.vade_tarihi || k.soz_tarihi) + 'T00:00:00')
-          const gecenGun = Math.max(0, Math.floor((bugun - vade) / 86400000))
-          return gecenGun >= b.min && gecenGun <= b.max
-        })
-        .reduce((s, k) => s + (parseFloat(k.tutar) || 0), 0)
-      const oran = toplamTutar > 0 ? Math.round((tutar / toplamTutar) * 1000) / 10 : 0
-      return { ...b, tutar, oran }
-    })
-  }, [liste, p])
-
-  // Yaklaşan Giden Ödemeler — önümüzdeki 15 gün, yon=odeme
-  const yaklasan = useMemo(() => {
-    const bugun = new Date(); bugun.setHours(0,0,0,0)
-    const sonGun = new Date(bugun); sonGun.setDate(bugun.getDate() + 15)
-    return liste
-      .filter(k => {
-        if (k.yon !== 'odeme' || k.durum === 'tamamlandi' || k.durum === 'iptal') return false
-        const v = new Date((k.vade_tarihi || k.soz_tarihi) + 'T00:00:00')
-        return v >= bugun && v <= sonGun
-      })
-      .sort((a, b) => (a.vade_tarihi || a.soz_tarihi).localeCompare(b.vade_tarihi || b.soz_tarihi))
-      .slice(0, 8)
-      .map(k => ({
-        id: k.id,
-        firma: k.firma_adi,
-        tur: 'Ödeme',
-        tutar: parseFloat(k.tutar) || 0,
-        tarih: k.vade_tarihi || k.soz_tarihi,
-        ikon: 'bi-arrow-up-right-circle',
-      }))
-  }, [liste])
-
-  const resetModal = () => { setAramaSonucu(null); setAramaNotText(''); setHatirlaticiTarihi('') }
-  const modalAc    = (kayit) => { resetModal(); setAramaModaliId(kayit.id) }
-
-  const yeniEkleKaydet = async () => {
-    if (!yeniForm.firma_adi.trim()) { setYeniFormHata('Firma adı zorunludur.'); return }
-    if (!yeniForm.soz_tarihi)       { setYeniFormHata('Vade tarihi zorunludur.'); return }
-    setYeniFormHata('')
-    setYeniKaydetYukleniyor(true)
-    const tutar = parseFloat(yeniForm.tutar.replace(/\./g, '').replace(',', '.')) || 0
+    setAramaYukleniyor(true)
+    setAramaHata('')
     try {
-      const payload = { ...yeniForm, tutar }
-      delete payload.cari_sabit // Backend'e gönderme
-      const res   = await odemeApi.olustur(payload)
-      const kayit = res.data?.veri || {}
-      setListe(prev => [{ ...kayit, vade_tarihi: kayit.vade_tarihi || kayit.soz_tarihi || yeniForm.soz_tarihi, arama_gecmisi: [], arama_durumu: 'aranmadi' }, ...prev])
-      setYeniKaydetYukleniyor(false)
-      setShowYeniModal(false)
-      setYeniForm(BOSH_YENI_FORM)
-    } catch {
-      setYeniKaydetYukleniyor(false)
-      setYeniFormHata('Kayıt kaydedilemedi. Lütfen bağlantınızı kontrol edip tekrar deneyin.')
+      const payload = { aksiyon: aramaAksiyon, not: aramaNot || undefined }
+      if (aramaAksiyon === 'cevap_vermedi')  payload.hatirlatma_tarihi = aramaHatTarihi
+      if (aramaAksiyon === 'soz_verildi')    payload.soz_tarihi = aramaSozTarihi
+      if (aramaAksiyon === 'tamamlandi')     payload.hatirlatma_gun = parseInt(aramaGun) || 30
+
+      await odemeApi.aramaKaydi(aramaModalId, payload)
+      setAramaModalId(null)
+      resetAramaModal()
+      await veriGetir(aktifTab)
+    } catch (err) {
+      setAramaHata(err.response?.data?.hata || 'Bir hata oluştu')
+    } finally {
+      setAramaYukleniyor(false)
     }
   }
 
-  const aramaKaydet = async () => {
-    if (!aramaSonucu || !aramaModaliId) return
-    const yeniGecmis = { tarih: bugunStr(0), sonuc: aramaSonucu === 'ertelendi' ? 'soz_alindi' : aramaSonucu, not: aramaNotText }
-    const yeniDurum  = aramaSonucu === 'tamamlandi' ? 'tamamlandi' : aramaSonucu === 'ertelendi' ? 'soz_alindi' : aramaSonucu
-    const oncekiListe = liste
-    setListe(prev => prev.map(k => {
-      if (k.id !== aramaModaliId) return k
-      return {
-        ...k, arama_durumu: yeniDurum,
-        ...(aramaSonucu === 'tamamlandi' ? { durum: 'tamamlandi' } : {}),
-        ...(aramaSonucu === 'ertelendi'  ? { durum: 'ertelendi' }  : {}),
-        son_arama_tarihi: bugunStr(0), son_not: aramaNotText || null,
-        arama_gecmisi: [yeniGecmis, ...(k.arama_gecmisi || [])],
-      }
-    }))
-    setAramaModaliId(null); resetModal()
-    try {
-      await odemeApi.guncelle(aramaModaliId, {
-        arama_durumu: yeniDurum,
-        ...(aramaSonucu === 'tamamlandi' ? { durum: 'tamamlandi' } : {}),
-        ...(aramaSonucu === 'ertelendi'  ? { durum: 'ertelendi' }  : {}),
-        son_arama_tarihi: bugunStr(0),
-        son_not: aramaNotText || null,
-      })
-    } catch {
-      setListe(oncekiListe)
-    }
+  const resetAramaModal = () => {
+    setAramaAksiyon('')
+    setAramaNot('')
+    setAramaHatTarihi('')
+    setAramaSozTarihi('')
+    setAramaGun('30')
+    setAramaHata('')
   }
 
-  const tamamlaKayit = async (id, e) => {
-    e.stopPropagation()
-    const oncekiListe = liste
-    setListe(prev => prev.map(k => k.id === id ? { ...k, durum: 'tamamlandi', arama_durumu: 'tamamlandi' } : k))
-    try {
-      await odemeApi.tamamla(id)
-    } catch {
-      setListe(oncekiListe)
-    }
-  }
-
-  const kayitSil = (id, e) => {
-    if (e) e.stopPropagation()
-    setSilOnayId(id)
-  }
-
+  /* ── Sil ── */
   const silOnaylaVeSil = async () => {
-    if (!silOnayId) return
     setSilYukleniyor(true)
-    const oncekiListe = liste
-    setListe(prev => prev.filter(k => k.id !== silOnayId))
-    if (secilenKayitId === silOnayId) setSecilenKayitId(null)
     try {
-      await odemeApi.sil(silOnayId)
+      await odemeApi.sil(silId)
+      setSilId(null)
+      await veriGetir(aktifTab)
     } catch {
-      setListe(oncekiListe)
+      /* hata */
     } finally {
       setSilYukleniyor(false)
-      setSilOnayId(null)
     }
   }
 
-  const duzenlemeBasla = (kayit, e) => {
-    if (e) e.stopPropagation()
-    const tutarStr = kayit.tutar
-      ? new Intl.NumberFormat('tr-TR', { maximumFractionDigits: 2 }).format(kayit.tutar)
-      : ''
-    setYeniForm({
-      firma_adi:   kayit.firma_adi   || '',
-      ilgili_kisi: kayit.ilgili_kisi || '',
-      telefon:     kayit.telefon     || '',
-      tutar:       tutarStr,
-      yon:         kayit.yon         || 'tahsilat',
-      soz_tarihi:  kayit.vade_tarihi || kayit.soz_tarihi || bugunStr(0),
-      oncelik:     kayit.oncelik     || 'normal',
-      cari_id:     kayit.cari_id     || null,
-      cari_sabit:  false,
-    })
-    setYeniFormHata('')
-    setDuzenlemeId(kayit.id)
-    setShowYeniModal(true)
-  }
-
-  const duzenlemeKaydet = async () => {
-    if (!yeniForm.firma_adi.trim()) { setYeniFormHata('Firma adı zorunludur.'); return }
-    if (!yeniForm.soz_tarihi)       { setYeniFormHata('Vade tarihi zorunludur.'); return }
-    setYeniFormHata('')
-    setYeniKaydetYukleniyor(true)
-    const tutar = parseFloat(yeniForm.tutar.replace(/\./g, '').replace(',', '.')) || 0
+  /* ── Yeni Ekle ── */
+  const ekleKaydet = async () => {
+    if (!ekleForm.cari_id) { setEkleHata('Cari seçimi zorunludur'); return }
+    setEkleYukleniyor(true)
+    setEkleHata('')
     try {
-      const payload = { ...yeniForm, tutar }
-      delete payload.cari_sabit
-      const res   = await odemeApi.guncelle(duzenlemeId, payload)
-      const kayit = res.data?.veri || {}
-      setListe(prev => prev.map(k => k.id === duzenlemeId
-        ? { ...k, ...kayit, vade_tarihi: kayit.vade_tarihi || kayit.soz_tarihi || yeniForm.soz_tarihi }
-        : k
-      ))
-      setYeniKaydetYukleniyor(false)
-      setShowYeniModal(false)
-      setYeniForm(BOSH_YENI_FORM)
-      setDuzenlemeId(null)
-    } catch {
-      setYeniKaydetYukleniyor(false)
-      setYeniFormHata('Kayıt güncellenemedi. Lütfen bağlantınızı kontrol edip tekrar deneyin.')
+      await odemeApi.olustur({
+        cari_id: ekleForm.cari_id,
+        yon: ekleForm.yon,
+        oncelik: ekleForm.oncelik,
+        durum: 'bekliyor',
+      })
+      setShowEkle(false)
+      setEkleForm({ cari_id: '', yon: 'tahsilat', oncelik: 'normal' })
+      setAktifTab('aranmasi_gerekenler')
+      await veriGetir('aranmasi_gerekenler')
+    } catch (err) {
+      setEkleHata(err.response?.data?.hata || 'Eklenemedi')
+    } finally {
+      setEkleYukleniyor(false)
     }
   }
 
-  const KPI_TANIM = [
-    { key: 'bu_hafta_vadeli', label: 'Bu Hafta Vadeli',   icon: 'bi-calendar-week',        cls: `${p}-odm-kpi-primary` },
-    { key: 'bekleyen_tutar',  label: 'Bekleyen Tahsilat', icon: 'bi-hourglass-split',      cls: `${p}-odm-kpi-info`, format: v => TL(v) },
-    { key: 'bu_hafta_aranan', label: 'Bu Hafta Aranan',   icon: 'bi-telephone-outbound',   cls: `${p}-odm-kpi-success` },
-    { key: 'gecikmus',        label: 'Gecikmiş Alacak',   icon: 'bi-exclamation-triangle', cls: `${p}-odm-kpi-danger` },
-  ]
+  /* ── Aralanacak kaydı bul ── */
+  const aramaModalKayit = aramaModalId ? liste.find(k => k.id === aramaModalId) : null
+  const silKayit        = silId        ? liste.find(k => k.id === silId)        : null
 
-  const toplamYaslima  = yaslima.reduce((s, b) => s + b.tutar, 0)
-  const toplamYaklasan = yaklasan.reduce((s, o) => s + o.tutar, 0)
-  const donemAdi = new Date().toLocaleDateString('tr-TR', { month: 'long', year: 'numeric' })
+  /* ── Görünen ad (cari_id varsa cari_adi, yoksa firma_adi) ── */
+  const gorununAd = (k) => k.cari_adi || k.firma_adi || '—'
+
+  /* ── Söz tarihi badge rengi ── */
+  const sozBadge = (tarih) => {
+    if (!tarih) return null
+    const fark = gunFarki(tarih)
+    if (fark === null) return null
+    if (fark < 0)  return { cls: 'danger',  text: `${Math.abs(fark)} gün geçti` }
+    if (fark === 0) return { cls: 'warning', text: 'Bugün' }
+    if (fark <= 3)  return { cls: 'warning', text: `${fark} gün kaldı` }
+    return { cls: 'success', text: `${fark} gün kaldı` }
+  }
 
   /* ═══════════════════════════════════════════════════════════════
      RENDER
      ═══════════════════════════════════════════════════════════════ */
+
   return (
-    <div className={`${p}-odm-page`}>
+    <div className={`${p}-page-root`}>
 
-      {/* ── API Hata Banner ── */}
-      {apiHatasi && (
-        <div className={`${p}-odm-hata-banner`}>
-          <i className="bi bi-exclamation-triangle-fill" style={{ fontSize: 16, flexShrink: 0 }} />
-          <span>Veriler sunucudan yüklenemedi. Lütfen sayfayı yenileyin.</span>
-          <button onClick={() => navigate(0)} className={`${p}-odm-hata-btn`}>
-            Yenile
-          </button>
-        </div>
-      )}
-
-      {/* ── Sayfa Başlığı ── */}
+      {/* ─── SAYFA HEADER ──────────────────────────────────── */}
       <div className={`${p}-page-header`}>
         <div className={`${p}-page-header-left`}>
           <div className={`${p}-page-header-icon`}>
@@ -463,809 +258,405 @@ export default function OdemeTakip() {
           </div>
           <div>
             <h1 className={`${p}-page-title`}>Ödeme Takip</h1>
-            <p className={`${p}-page-sub`}>
-              Tahsilat takibi · Alacak yaşlandırma · Yaklaşan ödemeler
-            </p>
+            <p className={`${p}-page-sub`}>Tahsilat ve ödeme süreçlerini takip edin</p>
           </div>
         </div>
         <div className={`${p}-page-header-right`}>
-          <button data-tur="odeme-ekle-btn" className={`${p}-btn-save ${p}-btn-save-default ${p}-odm-yeni-btn`} onClick={() => { setYeniForm(BOSH_YENI_FORM); setYeniFormHata(''); setShowYeniModal(true) }}>
-            <i className="bi bi-plus-lg" />
-            Yeni Ekle
+          <button
+            onClick={() => setShowEkle(true)}
+            className={`${p}-cym-btn-new d-flex align-items-center gap-2`}
+          >
+            <i className="bi bi-plus-lg" /> Takibe Al
           </button>
         </div>
       </div>
 
-      {/* ═══════════════════════════════════════════════════════════
-          BÖLÜM 1 — KPI Bandı
-          ═══════════════════════════════════════════════════════════ */}
-      <div className={`${p}-odm-kpi-grid`} data-tur="odeme-listesi">
-        {KPI_TANIM.map(kpi => {
-          const ham = kpiVerisi?.[kpi.key] ?? 0
-          const deger = yukleniyor ? '—' : kpi.format ? kpi.format(ham) : (kpi.key === 'bekleyen_tutar' ? TL(ham) : `${ham} ${kpi.key === 'bu_hafta_aranan' ? 'kişi' : 'kayıt'}`)
-          return (
-            <div key={kpi.key} className={`${p}-kpi-card ${p}-odm-kpi-card`}>
-              <i className={`bi ${kpi.icon} ${p}-odm-kpi-deco ${kpi.cls}`} />
-              <div className={`${p}-kpi-label`}>{kpi.label}</div>
-              <div className={`${p}-kpi-value ${kpi.cls}${kpi.key === 'bekleyen_tutar' ? ' financial-num' : ''}`}>
-                {deger}
+      {/* ─── DASHBOARD KARTLARI ───────────────────────────── */}
+      <div className="row g-3 mb-4">
+        {[
+          {
+            label: 'Aranması Gereken',
+            value: ozet?.bugun_aranmasi_gereken ?? '—',
+            icon:  'bi-telephone-fill',
+            renk:  renkler.danger,
+            tab:   'aranmasi_gerekenler',
+            desc:  'Bugün aranması gereken',
+          },
+          {
+            label: 'Söz Tarihi Geçmiş',
+            value: ozet?.soz_tarihi_gecmis ?? '—',
+            icon:  'bi-exclamation-triangle-fill',
+            renk:  renkler.warning,
+            tab:   'soz_alinanlar',
+            desc:  'Ödeme yapılmamış sözler',
+          },
+          {
+            label: 'Bekleyen Söz',
+            value: ozet?.bekleyen_soz ?? '—',
+            icon:  'bi-calendar-event-fill',
+            renk:  renkler.info,
+            tab:   'soz_alinanlar',
+            desc:  'Tarihi gelmemiş sözler',
+          },
+          {
+            label: 'Bu Ay Tamamlanan',
+            value: ozet?.bu_ay_tamamlanan ?? '—',
+            icon:  'bi-check-circle-fill',
+            renk:  renkler.success,
+            tab:   'tamamlandi',
+            desc:  'Bu ay tahsil edildi',
+          },
+        ].map((kpi, i) => (
+          <div key={i} className="col-12 col-sm-6 col-xl-3">
+            <div className={`${p}-cek-kpi`} onClick={() => tabDegistir(kpi.tab)} style={{ cursor: 'pointer' }}>
+              <i className={`bi ${kpi.icon} ${p}-kpi-deco`} style={{ color: kpi.renk }} />
+              <h6 style={{
+                fontSize: 11, fontWeight: 600, color: renkler.textSec,
+                textTransform: 'uppercase', letterSpacing: '0.8px', margin: '0 0 10px',
+              }}>
+                {kpi.label}
+              </h6>
+              <div className="financial-num" style={{ fontSize: 28, fontWeight: 800, color: kpi.renk, lineHeight: 1 }}>
+                {kpi.value}
               </div>
+              <p style={{ fontSize: 12, color: renkler.textSec, fontWeight: 500, margin: '8px 0 0' }}>
+                {kpi.desc}
+              </p>
             </div>
-          )
-        })}
+          </div>
+        ))}
       </div>
 
-      {/* ═══════════════════════════════════════════════════════════
-          BÖLÜM 2 — Bilanço Satırı
-          ═══════════════════════════════════════════════════════════ */}
-      <div className={`${p}-odm-analytics-row`}>
+      {/* ─── TABS + ARAMA + İÇERİK ──────────────────────── */}
+      <div className={`${p}-cym-glass-card`}>
 
-        {/* ── Sol: Alacak Yaşlandırma ── */}
-        <div className={`${p}-odm-card`}>
-          <div className={`${p}-odm-kart-header`}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-              <div className={`${p}-odm-kart-ikon ${p}-odm-kart-ikon-accent`}>
-                <i className="bi bi-clock-history" />
-              </div>
-              <div>
-                <div className={`${p}-odm-kart-baslik`}>Alacak Yaşlandırma</div>
-                <div className={`${p}-odm-kart-aciklama`}>
-                  Toplam: <strong className={`${p}-odm-accent-text ${p}-odm-mono financial-num`}>{TL(toplamYaslima)}</strong>
-                </div>
-              </div>
+        {/* Tab bar + Arama */}
+        <div className={`${p}-cym-toolbar`}>
+          <div className="d-flex align-items-center justify-content-between flex-wrap gap-2">
+            <div className="d-flex gap-2 flex-wrap" style={{ overflowX: 'auto', WebkitOverflowScrolling: 'touch', scrollbarWidth: 'none' }}>
+              {TABS.map(tab => {
+                const sayi = tabSayilari[tab.id]
+                const aktif = aktifTab === tab.id
+                return (
+                  <button
+                    key={tab.id}
+                    onClick={() => tabDegistir(tab.id)}
+                    className={`${p}-cym-tab-btn ${aktif ? `${p}-cym-tab-active` : ''}`}
+                  >
+                    <i className={`bi ${tab.icon}`} />
+                    {tab.label}
+                    {sayi > 0 && (
+                      <span className={`${p}-cym-tab-badge ${aktif ? `${p}-cym-tab-badge-active` : ''}`}>
+                        {sayi}
+                      </span>
+                    )}
+                  </button>
+                )
+              })}
             </div>
-            <span className={`${p}-odm-donem-badge`}>
-              {donemAdi}
-            </span>
-          </div>
-
-          {yaslima.map((y) => (
-            <div key={y.aralik} className={`${p}-odm-yas-item`}>
-              <div className={`${p}-odm-yas-header`}>
-                <span className={`${p}-odm-yas-aralik`}>{y.aralik}</span>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                  <span className={`${p}-odm-yas-tutar ${y.cls} financial-num`}>{TL(y.tutar)}</span>
-                  <span className={`${p}-odm-yas-oran ${y.cls}`}>
-                    %{y.oran}
-                  </span>
-                </div>
-              </div>
-              <div className={`${p}-odm-yas-bar-bg`}>
-                <div className={`${p}-odm-yas-bar-fill ${y.cls}`} style={{ width: `${y.oran}%` }} />
-              </div>
+            <div className={`${p}-cym-search-wrap`}>
+              <i className={`bi bi-search ${p}-cym-search-icon`} />
+              <input
+                type="text"
+                placeholder="Cari adı veya telefon ara..."
+                value={arama}
+                onChange={e => setArama(e.target.value)}
+                className={`${p}-cym-search-input`}
+              />
+              {arama && (
+                <button onClick={() => setArama('')} className={`${p}-cym-search-clear`}>
+                  <i className="bi bi-x" />
+                </button>
+              )}
             </div>
-          ))}
-
-          {/* DSO Özet */}
-          <div className={`${p}-odm-dso-box`}>
-            <div className={`${p}-odm-dso-label`}>
-              <i className="bi bi-graph-up me-2" />
-              DSO — Ort. Tahsilat Süresi
-            </div>
-            <span className={`${p}-odm-dso-value`}>43 Gün</span>
           </div>
         </div>
 
-        {/* ── Sağ: Yaklaşan Ödemeler ── */}
-        <div className={`${p}-odm-card`}>
-          <div className={`${p}-odm-kart-header`}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-              <div className={`${p}-odm-kart-ikon ${p}-odm-kart-ikon-danger`}>
-                <i className="bi bi-calendar-x" />
-              </div>
-              <div>
-                <div className={`${p}-odm-kart-baslik`}>Yaklaşan Ödemeler</div>
-                <div className={`${p}-odm-kart-aciklama`}>Önümüzdeki 15 gün — giden</div>
-              </div>
-            </div>
-            <div style={{ textAlign: 'right' }}>
-              <div className={`${p}-odm-yaklasan-toplam financial-num`}>{TL(toplamYaklasan)}</div>
-              <div className={`${p}-odm-yaklasan-alt`}>{yaklasan.length} kalem</div>
-            </div>
+        {/* İçerik */}
+        {yukleniyor ? (
+          <div className="d-flex flex-column align-items-center justify-content-center py-5">
+            <div className={`${p}-cym-spinner mb-3`} />
+            <span className={`${p}-cym-loading-text`}>Yükleniyor...</span>
           </div>
-
-          {yaklasan.length === 0 ? (
-            <div className={`${p}-odm-bos-durum`}>
-              <i className={`bi bi-check-circle ${p}-odm-bos-ikon-success`} />
-              Önümüzdeki 15 günde giden ödeme yok.
+        ) : apiHatasi ? (
+          <div className="d-flex flex-column align-items-center justify-content-center text-center py-5 px-3">
+            <div className={`${p}-cym-error-icon`}>
+              <i className="bi bi-exclamation-circle" />
             </div>
-          ) : yaklasan.map((o) => {
-            const fark = gunFarki(o.tarih)
-            const acil = fark !== null && fark <= 3
-            return (
-              <div key={o.id} className={`${p}-odm-odeme-item`}>
-                <div className={`${p}-odm-odeme-ikon ${p}-odm-odeme-ikon-danger`}>
-                  <i className={`bi ${o.ikon}`} />
-                </div>
-                <div style={{ flex: 1, minWidth: 0 }}>
-                  <div className={`${p}-odm-odeme-firma`}>{o.firma}</div>
-                  <div className={`${p}-odm-odeme-tur`}>{o.tur}</div>
-                </div>
-                <span className={`${p}-odm-odeme-gun ${acil ? `${p}-odm-odeme-gun-acil` : ''}`}>
-                  {fark === 0 ? 'Bugün' : `${fark}g`}
-                </span>
-                <span className={`${p}-odm-odeme-tutar financial-num`}>{TL(o.tutar)}</span>
-              </div>
-            )
-          })}
-        </div>
-      </div>
-
-      {/* ═══════════════════════════════════════════════════════════
-          BÖLÜM 3 — Filtre + Arama
-          ═══════════════════════════════════════════════════════════ */}
-      <div className={`${p}-odm-filtre-bar`} data-tur="filtreler">
-        <div className={`${p}-odm-arama-wrap`}>
-          <i className={`bi bi-search ${p}-odm-arama-ikon`} />
-          <input
-            className={`${p}-odm-arama-input`}
-            placeholder="Firma, müşteri veya telefon..."
-            value={aramaTerm}
-            onChange={e => setAramaTerm(e.target.value)}
-          />
-        </div>
-        <div className={`${p}-odm-tab-wrap`}>
-          {[
-            { id: 'tumuu',       label: 'Tümü' },
-            { id: 'bu_hafta',   label: 'Bu Hafta' },
-            { id: 'gecikmus',   label: 'Gecikmiş' },
-            { id: 'arandi',     label: 'Arandı' },
-            { id: 'soz_alindi', label: 'Söz Alındı' },
-          ].map(t => (
-            <button key={t.id} className={`${p}-odm-tab${aktifFiltre === t.id ? ` ${p}-odm-tab-active` : ''}`} onClick={() => setAktifFiltre(t.id)}>
-              {t.label}
+            <p className={`${p}-cym-error-text`}>Veriler yüklenemedi.</p>
+            <button onClick={() => veriGetir(aktifTab)} className={`${p}-cym-retry-btn d-flex align-items-center gap-2`}>
+              <i className="bi bi-arrow-clockwise" /> Tekrar Dene
             </button>
-          ))}
-        </div>
-        <button className={`${p}-odm-filtre-btn${filtrePaneli ? ` ${p}-odm-filtre-btn-aktif` : ''}`} onClick={() => setFiltrePaneli(prev => !prev)}>
-          <i className="bi bi-funnel" />
-          {filtrePaneli ? 'Kapat' : 'Filtrele'}
-        </button>
-      </div>
-
-      {filtrePaneli && (
-        <div className={`${p}-odm-filtre-panel`}>
-          <div>
-            <div className={`${p}-odm-filtre-label`}>Öncelik</div>
-            <select className={`${p}-odm-select`} value={oncelikFiltre} onChange={e => setOncelikFiltre(e.target.value)}>
-              <option value="">Tümü</option>
-              <option value="kritik">Kritik</option>
-              <option value="yuksek">Yüksek</option>
-              <option value="normal">Normal</option>
-              <option value="dusuk">Düşük</option>
-            </select>
           </div>
+        ) : liste.length === 0 ? (
+          <BosList tab={aktifTab} p={p} />
+        ) : (
           <div>
-            <div className={`${p}-odm-filtre-label`}>Cari Hesap</div>
-            <select className={`${p}-odm-select`} value={cariFiltre} onChange={e => setCariFiltre(e.target.value)}>
-              <option value="">Tüm Cariler</option>
-              {cariListesi.map(c => (
-                <option key={c.id} value={String(c.id)}>{c.cari_adi}</option>
-              ))}
-            </select>
+            {liste.map(kayit => (
+              <KayitKart
+                key={kayit.id}
+                kayit={kayit}
+                p={p}
+                aktifTab={aktifTab}
+                gorununAd={gorununAd}
+                tarihStr={tarihStr}
+                tarihKisa={tarihKisa}
+                sozBadge={sozBadge}
+                TL={TL}
+                onAramaKaydi={() => {
+                  setAramaModalId(kayit.id)
+                  resetAramaModal()
+                }}
+                onSil={() => setSilId(kayit.id)}
+              />
+            ))}
+            {toplam > liste.length && (
+              <div className={`${p}-cym-pagination-bar`}>
+                <small className={`${p}-cym-pagination-info`}>
+                  {liste.length} / {toplam} kayıt gösteriliyor
+                </small>
+              </div>
+            )}
           </div>
-          <div>
-            <div className={`${p}-odm-filtre-label`}>Vade Başlangıç</div>
-            <input type="date" className={`${p}-odm-date-input`} value={baslangicTarihi} onChange={e => setBaslangicTarihi(e.target.value)} />
-          </div>
-          <div>
-            <div className={`${p}-odm-filtre-label`}>Vade Bitiş</div>
-            <input type="date" className={`${p}-odm-date-input`} value={bitisTarihi} onChange={e => setBitisTarihi(e.target.value)} />
-          </div>
-        </div>
-      )}
-
-      {/* ═══════════════════════════════════════════════════════════
-          BÖLÜM 4 — Liste + Sağ Drawer
-          ═══════════════════════════════════════════════════════════ */}
-      <div className={`${p}-odm-layout`}>
-        <div className={`${p}-odm-main`}>
-
-          {yukleniyor ? (
-            <div className={`${p}-odm-loading-box`}>
-              <div className={`${p}-odm-spinner`} />
-            </div>
-
-          ) : filtreliListe.length === 0 ? (
-            <div className={`${p}-odm-empty-state`}>
-              <div className={`${p}-odm-empty-ikon`}>
-                <i className="bi bi-inbox" />
-              </div>
-              <h3 className={`${p}-odm-empty-baslik`}>Kayıt bulunamadı</h3>
-              <p className={`${p}-odm-empty-aciklama`}>Bu filtreye uyan tahsilat kaydı yok.</p>
-            </div>
-
-          ) : (
-            <>
-              {/* ── Desktop Tablo ── */}
-              <div className="d-none d-md-block">
-                <div className={`${p}-odm-tablo-wrap`}>
-                  <div className="table-responsive">
-                    <table className={`${p}-odm-table`}>
-                      <thead>
-                        <tr>
-                          <th className={`${p}-odm-td-border`} />
-                          <th>Firma / Müşteri</th>
-                          <th>Tutar</th>
-                          <th>Vade Tarihi</th>
-                          <th>Öncelik</th>
-                          <th>Arama Durumu</th>
-                          <th style={{ width: 110 }}>İşlem</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {filtreliListe.map(k => {
-                          const vb     = vadeBadge(k.vade_tarihi, k.durum, p)
-                          const ad     = ARAMA_DURUM_META[k.arama_durumu] || ARAMA_DURUM_META.aranmadi
-                          const om     = ONCELIK_META[k.oncelik]           || ONCELIK_META.normal
-                          const kenari = kenariRenkCls(k.vade_tarihi, k.durum, p)
-                          const pulse  = isPulse(k)
-                          return (
-                            <tr
-                              key={k.id}
-                              className={`${pulse ? `${p}-odm-kritik-pulse` : ''}${secilenKayitId === k.id ? ` ${p}-odm-tr-secili` : ''}`}
-                              onClick={() => setSecilenKayitId(k.id === secilenKayitId ? null : k.id)}
-                            >
-                              <td className={`${p}-odm-td-border ${kenari}`} />
-
-                              <td>
-                                <div className={`${p}-odm-firma`}>{k.firma_adi}</div>
-                                <div className={`${p}-odm-cari`}>{k.cari_adi}</div>
-                              </td>
-
-                              <td>
-                                <span className={`${p}-odm-tutar-cell ${k.durum === 'tamamlandi' ? `${p}-odm-tutar-done` : ''} financial-num`}>
-                                  {TL(k.tutar)}
-                                </span>
-                              </td>
-
-                              <td>
-                                <div className={`${p}-odm-tarih-cell`}>{tarihStr(k.vade_tarihi)}</div>
-                                {vb && <span className={`${p}-odm-badge ${vb.cls}`} style={{ marginTop: 4 }}>{vb.text}</span>}
-                              </td>
-
-                              <td>
-                                <span className={`${p}-odm-badge ${om.cls}`}>
-                                  <span className={`${p}-odm-oncelik-dot`} />
-                                  {om.label}
-                                </span>
-                              </td>
-
-                              <td>
-                                <span className={`${p}-odm-badge ${ad.cls}`}>
-                                  <i className={`bi ${ad.icon}`} style={{ fontSize: 11 }} />
-                                  {ad.label}
-                                </span>
-                                {k.son_not && (
-                                  <div className={`${p}-odm-son-not`}>
-                                    {k.son_not}
-                                  </div>
-                                )}
-                              </td>
-
-                              <td onClick={e => e.stopPropagation()}>
-                                <div className={`${p}-odm-aksiyon-grup`}>
-                                  <button className={`${p}-odm-icon-btn ${p}-odm-icon-btn-accent`} title="Arama Kaydı" onClick={() => modalAc(k)}>
-                                    <i className="bi bi-telephone" />
-                                  </button>
-                                  {k.durum !== 'tamamlandi' && (
-                                    <button className={`${p}-odm-icon-btn ${p}-odm-icon-btn-success`} title="Tahsil Edildi" onClick={(e) => tamamlaKayit(k.id, e)}>
-                                      <i className="bi bi-check-circle" />
-                                    </button>
-                                  )}
-                                  <button className={`${p}-odm-icon-btn`} onClick={(e) => {
-                                    e.stopPropagation()
-                                    if (menuAcikId === k.id) { setMenuAcikId(null); return }
-                                    const rect = e.currentTarget.getBoundingClientRect()
-                                    setMenuPos({ top: rect.top, left: rect.right })
-                                    setMenuAcikId(k.id)
-                                  }}>
-                                    <i className="bi bi-three-dots-vertical" />
-                                  </button>
-                                </div>
-                              </td>
-                            </tr>
-                          )
-                        })}
-                      </tbody>
-                    </table>
-                  </div>
-                </div>
-              </div>
-
-              {/* ── Mobil Kart Görünümü ── */}
-              <div className="d-md-none">
-                {filtreliListe.map(k => {
-                  const vb     = vadeBadge(k.vade_tarihi, k.durum, p)
-                  const ad     = ARAMA_DURUM_META[k.arama_durumu] || ARAMA_DURUM_META.aranmadi
-                  const om     = ONCELIK_META[k.oncelik]           || ONCELIK_META.normal
-                  const kenari = kenariRenkCls(k.vade_tarihi, k.durum, p)
-                  const pulse  = isPulse(k)
-                  return (
-                    <div
-                      key={k.id}
-                      className={`${p}-odm-mobil-kart${pulse ? ` ${p}-odm-kritik-pulse` : ''}`}
-                      onClick={() => setSecilenKayitId(k.id === secilenKayitId ? null : k.id)}
-                    >
-                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 9 }}>
-                        <div>
-                          <div className={`${p}-odm-firma`}>{k.firma_adi}</div>
-                          <div className={`${p}-odm-cari`}>{k.cari_adi}</div>
-                        </div>
-                        <div className={`${p}-odm-tutar-cell ${k.durum === 'tamamlandi' ? `${p}-odm-tutar-done` : ''} financial-num`}>
-                          {TL(k.tutar)}
-                        </div>
-                      </div>
-                      <div style={{ display: 'flex', flexWrap: 'wrap', gap: 5, marginBottom: 11 }}>
-                        {vb && <span className={`${p}-odm-badge ${vb.cls}`}>{vb.text}</span>}
-                        <span className={`${p}-odm-badge ${om.cls}`}>{om.label}</span>
-                        <span className={`${p}-odm-badge ${ad.cls}`}>
-                          <i className={`bi ${ad.icon}`} style={{ fontSize: 11 }} />{ad.label}
-                        </span>
-                      </div>
-                      <div className={`${p}-odm-aksiyon-grup`} onClick={e => e.stopPropagation()}>
-                        <button className={`${p}-odm-icon-btn ${p}-odm-icon-btn-accent`} style={{ width: 44, height: 44 }} onClick={() => modalAc(k)}>
-                          <i className="bi bi-telephone" />
-                        </button>
-                        {k.durum !== 'tamamlandi' && (
-                          <button className={`${p}-odm-icon-btn ${p}-odm-icon-btn-success`} style={{ width: 44, height: 44 }} onClick={(e) => tamamlaKayit(k.id, e)}>
-                            <i className="bi bi-check-circle" />
-                          </button>
-                        )}
-                        <button className={`${p}-odm-icon-btn`} style={{ width: 44, height: 44 }} onClick={(e) => duzenlemeBasla(k, e)}>
-                          <i className="bi bi-pencil" />
-                        </button>
-                      </div>
-                    </div>
-                  )
-                })}
-              </div>
-            </>
-          )}
-        </div>
-
-        {/* ═══════════════════════════════════════════════════════════
-            Context Menu (Fixed Position — tablo dışında)
-            ═══════════════════════════════════════════════════════════ */}
-        {menuAcikId && (() => {
-          const kayit = liste.find(k => k.id === menuAcikId)
-          if (!kayit) return null
-          return (
-            <>
-              <div style={{ position: 'fixed', inset: 0, zIndex: 999 }} onClick={() => setMenuAcikId(null)} />
-              <div
-                className={`${p}-odm-context-menu`}
-                style={{ position: 'fixed', top: menuPos.top, left: menuPos.left, transform: 'translate(-100%, -100%)', zIndex: 1000 }}
-              >
-                <button className={`${p}-odm-menu-item`} onClick={(e) => { setMenuAcikId(null); duzenlemeBasla(kayit, e) }}>
-                  <i className="bi bi-pencil" />Düzenle
-                </button>
-                <button className={`${p}-odm-menu-item ${p}-odm-menu-danger`} onClick={(e) => { setMenuAcikId(null); kayitSil(kayit.id, e) }}>
-                  <i className="bi bi-trash" />Sil
-                </button>
-              </div>
-            </>
-          )
-        })()}
-
-        {/* ═══════════════════════════════════════════════════════════
-            BÖLÜM 5 — Sağ Drawer (Detay Paneli)
-            ═══════════════════════════════════════════════════════════ */}
-        {secilenKayit && (
-          <>
-            <div className={`${p}-odm-drawer-overlay`} onClick={() => setSecilenKayitId(null)} />
-            <div ref={drawerRef} className={`${p}-odm-drawer`}>
-              {/* Drawer Header */}
-              <div className={`${p}-odm-drawer-header`}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                  <div className={`${p}-odm-drawer-avatar`}>
-                    <i className="bi bi-person-fill" />
-                  </div>
-                  <div>
-                    <div className={`${p}-odm-drawer-firma`}>
-                      {secilenKayit.firma_adi}
-                    </div>
-                    <div className={`${p}-odm-drawer-cari`}>{secilenKayit.cari_adi}</div>
-                  </div>
-                </div>
-                <button className={`${p}-modal-close`} onClick={() => setSecilenKayitId(null)}>
-                  <i className="bi bi-x-lg" />
-                </button>
-              </div>
-
-              <div className={`${p}-odm-drawer-body`}>
-                {/* Tutar Kutusu */}
-                <div className={`${p}-odm-drawer-tutar-box`}>
-                  <div className={`${p}-odm-drawer-tutar-label`}>
-                    Bekleyen Tutar
-                  </div>
-                  <div className={`${p}-odm-drawer-tutar-value financial-num`}>
-                    {TL(secilenKayit.tutar)}
-                  </div>
-                  <div style={{ display: 'flex', gap: 6, marginTop: 10, flexWrap: 'wrap' }}>
-                    {(() => {
-                      const vb = vadeBadge(secilenKayit.vade_tarihi, secilenKayit.durum, p)
-                      const ad = ARAMA_DURUM_META[secilenKayit.arama_durumu] || ARAMA_DURUM_META.aranmadi
-                      return (
-                        <>
-                          {vb && <span className={`${p}-odm-badge ${vb.cls}`}>{vb.text}</span>}
-                          <span className={`${p}-odm-badge ${ad.cls}`}>
-                            <i className={`bi ${ad.icon}`} style={{ fontSize: 11 }} />{ad.label}
-                          </span>
-                        </>
-                      )
-                    })()}
-                  </div>
-                </div>
-
-                {/* Vade + Telefon */}
-                <div className={`${p}-odm-drawer-info`}>
-                  <i className={`bi bi-calendar3 ${p}-odm-drawer-info-ikon`} />
-                  Vade: <strong className={`${p}-odm-drawer-info-strong`}>{tarihStr(secilenKayit.vade_tarihi)}</strong>
-                </div>
-                {secilenKayit.telefon && (
-                  <div className={`${p}-odm-drawer-info`} style={{ marginBottom: 18 }}>
-                    <i className={`bi bi-telephone ${p}-odm-drawer-info-ikon`} />
-                    <a href={`tel:${secilenKayit.telefon}`} className={`${p}-odm-drawer-tel-link`}>
-                      {secilenKayit.telefon}
-                    </a>
-                  </div>
-                )}
-
-                <button
-                  className={`${p}-btn-save ${p}-btn-save-default ${p}-odm-drawer-arama-btn`}
-                  onClick={() => modalAc(secilenKayit)}
-                >
-                  <i className="bi bi-telephone-outbound" />
-                  Arama Kaydı Ekle
-                </button>
-
-                {/* Arama Geçmişi */}
-                <div className={`${p}-odm-section-header`}>
-                  <div className={`${p}-odm-section-bar ${p}-odm-section-bar-info`} />
-                  <span className={`${p}-odm-section-label ${p}-odm-section-label-info`}>Arama Geçmişi</span>
-                </div>
-
-                {(secilenKayit.arama_gecmisi || []).length === 0 ? (
-                  <div className={`${p}-odm-empty-timeline`}>
-                    <i className="bi bi-telephone-minus" style={{ fontSize: 22, display: 'block', marginBottom: 8 }} />
-                    <div>Henüz arama yapılmadı</div>
-                  </div>
-                ) : (
-                  <ul className={`${p}-odm-timeline`}>
-                    {(secilenKayit.arama_gecmisi || []).map((a, i) => {
-                      const meta = ARAMA_DURUM_META[a.sonuc] || ARAMA_DURUM_META.aranmadi
-                      return (
-                        <li key={i} className={`${p}-odm-tl-item`}>
-                          <div className={`${p}-odm-tl-dot ${meta.cls}`}>
-                            <i className={`bi ${meta.icon}`} />
-                          </div>
-                          <div style={{ flex: 1 }}>
-                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                              <span className={`${p}-odm-tl-sonuc ${meta.cls}`}>{meta.label}</span>
-                              <span className={`${p}-odm-tl-tarih`}>{tarihStr(a.tarih)}</span>
-                            </div>
-                            {a.not && (
-                              <div className={`${p}-odm-tl-not`}>
-                                {a.not}
-                              </div>
-                            )}
-                          </div>
-                        </li>
-                      )
-                    })}
-                  </ul>
-                )}
-              </div>
-            </div>
-          </>
         )}
       </div>
 
       {/* ═══════════════════════════════════════════════════════════
-          BÖLÜM 6 — "Aradım" Modalı
+          MODAL — ARAMA KAYDI
           ═══════════════════════════════════════════════════════════ */}
-      {aramaModali && (
+      {aramaModalId && (
         <>
-          <div className={`${p}-modal-overlay`} />
+          <div
+            className={`${p}-modal-overlay`}
+            onClick={() => { setAramaModalId(null); resetAramaModal() }}
+          />
           <div className={`${p}-modal-center`}>
-            <div className={`${p}-modal-box`} style={{ maxWidth: 500 }}>
+            <div className={`${p}-modal-box`} style={{ maxWidth: 480 }}>
 
               {/* Header */}
-              <div className={`${p}-modal-header ${p}-mh-default`} aria-labelledby="arama-modal-title">
+              <div className={`${p}-modal-header ${p}-mh-default`}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-                  <div className={`${p}-modal-icon ${p}-modal-icon-default`}>
-                    <i className="bi bi-telephone-outbound" />
+                  <div className={`${p}-modal-icon`} style={{
+                    width: 36, height: 36, background: 'rgba(16,185,129,0.1)',
+                    borderRadius: 10, display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  }}>
+                    <i className="bi bi-telephone-fill" style={{ color: 'var(--p-color-primary)', fontSize: 16 }} />
                   </div>
                   <div>
-                    <h2 id="arama-modal-title" className={`${p}-modal-title`}>Arama Kaydı</h2>
-                    <div className={`${p}-modal-sub`}>
-                      {aramaModali.firma_adi} — {aramaModali.cari_adi}
-                    </div>
-                  </div>
-                </div>
-                <button className={`${p}-modal-close`} onClick={() => { setAramaModaliId(null); resetModal() }}>
-                  <i className="bi bi-x-lg" />
-                </button>
-              </div>
-
-              {/* Gövde */}
-              <div className={`${p}-modal-body`}>
-                {/* Section: Arama Sonucu */}
-                <div className={`${p}-odm-section-header`}>
-                  <div className={`${p}-odm-section-bar ${p}-odm-section-bar-accent`} />
-                  <span className={`${p}-odm-section-label ${p}-odm-section-label-accent`}>Arama Sonucu</span>
-                </div>
-
-                <div style={{ display: 'flex', flexDirection: 'column', gap: 7, marginBottom: 20 }}>
-                  {ARAMA_SECENEKLERI.map(s => (
-                    <button key={s.id} className={`${p}-odm-radio-kart${aramaSonucu === s.id ? ` ${p}-odm-radio-selected` : ''}`} onClick={() => setAramaSonucu(s.id)}>
-                      <span style={{ fontSize: 20 }}>{s.emoji}</span>
-                      <span>{s.label}</span>
-                      {aramaSonucu === s.id && <i className={`bi bi-check-circle-fill ms-auto ${p}-odm-radio-check`} />}
-                    </button>
-                  ))}
-                </div>
-
-                {aramaSonucu === 'ertelendi' && (
-                  <div style={{ marginBottom: 20 }}>
-                    <div className={`${p}-odm-section-header`}>
-                      <div className={`${p}-odm-section-bar ${p}-odm-section-bar-info`} />
-                      <span className={`${p}-odm-section-label ${p}-odm-section-label-info`}>Hatırlatıcı Tarihi</span>
-                    </div>
-                    <input type="date" className="form-control" value={hatirlaticiTarihi} onChange={e => setHatirlaticiTarihi(e.target.value)} min={bugunStr(1)} />
-                  </div>
-                )}
-
-                {/* Section: Not */}
-                <div className={`${p}-odm-section-header`}>
-                  <div className={`${p}-odm-section-bar ${p}-odm-section-bar-info`} />
-                  <span className={`${p}-odm-section-label ${p}-odm-section-label-info`}>
-                    Not <span className={`${p}-odm-section-label-muted`}>(isteğe bağlı)</span>
-                  </span>
-                </div>
-                <textarea
-                  className="form-control"
-                  style={{ minHeight: 80, resize: 'vertical' }}
-                  placeholder="Söylediği şeyi buraya yaz..."
-                  value={aramaNotText}
-                  onChange={e => setAramaNotText(e.target.value)}
-                />
-              </div>
-
-              {/* Footer */}
-              <div className={`${p}-modal-footer`}>
-                <button className={`${p}-btn-cancel`} onClick={() => { setAramaModaliId(null); resetModal() }}>İptal</button>
-                <button
-                  className={`${p}-btn-save ${p}-btn-save-default`}
-                  disabled={!aramaSonucu}
-                  onClick={aramaKaydet}
-                  style={{ opacity: !aramaSonucu ? 0.5 : 1 }}
-                >
-                  <i className="bi bi-check-lg" />
-                  Kaydet
-                </button>
-              </div>
-
-            </div>
-          </div>
-        </>
-      )}
-
-      {/* ═══════════════════════════════════════════════════════════
-          BÖLÜM 7 — Yeni Kayıt Ekle Modalı
-          ═══════════════════════════════════════════════════════════ */}
-      {showYeniModal && (
-        <>
-          <div className={`${p}-modal-overlay`} />
-          <div className={`${p}-modal-center`}>
-            <div className={`${p}-modal-box`} style={{ maxWidth: 520 }}>
-
-              {/* Header */}
-              <div className={`${p}-modal-header ${p}-mh-default`} aria-labelledby="yeni-modal-title">
-                <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-                  <div className={`${p}-modal-icon ${p}-modal-icon-default`}>
-                    <i className={duzenlemeId ? 'bi bi-pencil-fill' : 'bi bi-plus-circle-fill'} />
-                  </div>
-                  <div>
-                    <h2 id="yeni-modal-title" className={`${p}-modal-title`}>{duzenlemeId ? 'Kaydı Düzenle' : 'Yeni Kayıt Ekle'}</h2>
-                    <div className={`${p}-modal-sub`}>Tahsilat veya ödeme takibi</div>
+                    <h2 className={`${p}-modal-title`}>Arama Kaydı</h2>
+                    {aramaModalKayit && (
+                      <div className={`${p}-modal-sub`}>{gorununAd(aramaModalKayit)}</div>
+                    )}
                   </div>
                 </div>
                 <button
-                  onClick={() => { setShowYeniModal(false); setYeniForm(BOSH_YENI_FORM); setYeniFormHata(''); setDuzenlemeId(null) }}
                   className={`${p}-modal-close`}
+                  onClick={() => { setAramaModalId(null); resetAramaModal() }}
                 >
                   <i className="bi bi-x-lg" />
                 </button>
               </div>
 
-              {/* Form Gövde */}
+              {/* Body */}
               <div className={`${p}-modal-body`}>
 
-                {/* Hata mesajı */}
-                {yeniFormHata && (
-                  <div className={`${p}-odm-form-hata`}>
-                    <i className="bi bi-exclamation-circle" />
-                    {yeniFormHata}
-                  </div>
-                )}
-
-                {/* Bölüm 1: Firma Bilgileri */}
-                <div className={`${p}-odm-section-header`}>
-                  <div className={`${p}-odm-section-bar ${p}-odm-section-bar-success`} />
-                  <span className={`${p}-odm-section-label ${p}-odm-section-label-success`}>Firma Bilgileri</span>
-                </div>
-
-                {/* Cari Hesabına Bağla */}
-                {!yeniForm.cari_sabit && (
-                  <div style={{ marginBottom: 14 }}>
-                    <label className={`${p}-odm-form-label`}>Cari Hesabına Bağla (Opsiyonel)</label>
-                    <select
-                      className="form-select"
-                      value={yeniForm.cari_id ?? ''}
-                      onChange={e => {
-                        const id = e.target.value ? parseInt(e.target.value) : null
-                        const cari = cariListesi.find(c => c.id === id)
-                        setYeniForm(prev => ({
-                          ...prev,
-                          cari_id: id,
-                          firma_adi: cari ? cari.cari_adi : prev.firma_adi,
-                        }))
-                      }}
-                    >
-                      <option value="">— Cari seçin (opsiyonel) —</option>
-                      {cariListesi.map(c => (
-                        <option key={c.id} value={c.id}>{c.cari_adi}</option>
-                      ))}
-                    </select>
-                  </div>
-                )}
-
-                <div style={{ marginBottom: 14 }}>
-                  <label className={`${p}-odm-form-label`}>
-                    Firma Adı <span className={`${p}-odm-required`}>*</span>
-                    {yeniForm.cari_sabit && <span style={{ fontSize: 11, marginLeft: 8, opacity: 0.65 }}>(Cari kaydından)</span>}
-                  </label>
-                  <input
-                    className="form-control"
-                    value={yeniForm.firma_adi}
-                    onChange={e => setYeniForm(prev => ({ ...prev, firma_adi: e.target.value }))}
-                    placeholder="Firma veya kişi adı..."
-                    readOnly={!!yeniForm.cari_sabit}
-                    style={yeniForm.cari_sabit ? { opacity: 0.75, cursor: 'default' } : undefined}
-                  />
-                </div>
-
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginBottom: 14 }}>
-                  <div>
-                    <label className={`${p}-odm-form-label`}>İlgili Kişi</label>
-                    <input
-                      className="form-control"
-                      value={yeniForm.ilgili_kisi}
-                      onChange={e => setYeniForm(prev => ({ ...prev, ilgili_kisi: e.target.value }))}
-                      placeholder="Ad Soyad..."
-                    />
-                  </div>
-                  <div>
-                    <label className={`${p}-odm-form-label`}>Telefon</label>
-                    <input
-                      className="form-control"
-                      value={yeniForm.telefon}
-                      onChange={e => setYeniForm(prev => ({ ...prev, telefon: e.target.value }))}
-                      placeholder="05xx xxx xx xx"
-                    />
-                  </div>
-                </div>
-
-                {/* Bölüm 2: İşlem Detayları */}
-                <div className={`${p}-odm-section-header`} style={{ marginTop: 6 }}>
-                  <div className={`${p}-odm-section-bar ${p}-odm-section-bar-info`} />
-                  <span className={`${p}-odm-section-label ${p}-odm-section-label-info`}>İşlem Detayları</span>
-                </div>
-
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginBottom: 14 }}>
-                  <div>
-                    <label className={`${p}-odm-form-label`}>
-                      Yön <span className={`${p}-odm-required`}>*</span>
-                    </label>
-                    <select
-                      className="form-select"
-                      value={yeniForm.yon}
-                      onChange={e => setYeniForm(prev => ({ ...prev, yon: e.target.value }))}
-                    >
-                      <option value="tahsilat">Tahsilat (Alacak)</option>
-                      <option value="odeme">Ödeme (Borç)</option>
-                    </select>
-                  </div>
-                  <div>
-                    <label className={`${p}-odm-form-label`}>Tutar (₺)</label>
-                    <input
-                      className="form-control"
-                      value={yeniForm.tutar}
-                      onChange={e => {
-                        // Nokta sadece binlik ayraç — girişten çıkar, yeniden ekle
-                        let v = e.target.value.replace(/[^0-9,]/g, '')
-                        const parts = v.split(',')
-                        if (parts.length > 2) v = parts[0] + ',' + parts.slice(1).join('')
-                        const [tam, kesir] = v.split(',')
-                        const fmt = (tam || '').replace(/\B(?=(\d{3})+(?!\d))/g, '.')
-                        setYeniForm(prev => ({ ...prev, tutar: kesir !== undefined ? fmt + ',' + kesir.slice(0, 2) : fmt }))
-                      }}
-                      placeholder="0"
-                      style={{ fontVariantNumeric: 'tabular-nums' }}
-                    />
-                  </div>
-                </div>
-
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginBottom: 14 }}>
-                  <div>
-                    <label className={`${p}-odm-form-label`}>
-                      Vade Tarihi <span className={`${p}-odm-required`}>*</span>
-                    </label>
-                    <input
-                      type="date"
-                      className="form-control"
-                      value={yeniForm.soz_tarihi}
-                      onChange={e => setYeniForm(prev => ({ ...prev, soz_tarihi: e.target.value }))}
-                    />
-                  </div>
-                  <div>
-                    <label className={`${p}-odm-form-label`}>Öncelik</label>
-                    <select
-                      className="form-select"
-                      value={yeniForm.oncelik}
-                      onChange={e => setYeniForm(prev => ({ ...prev, oncelik: e.target.value }))}
-                    >
-                      <option value="dusuk">Düşük</option>
-                      <option value="normal">Normal</option>
-                      <option value="yuksek">Yüksek</option>
-                      <option value="kritik">Kritik</option>
-                    </select>
-                  </div>
-                </div>
-
-                {/* Önizleme */}
-                {(yeniForm.firma_adi || yeniForm.tutar) && (
-                  <div className={`${p}-odm-preview-box`}>
-                    <div className={`${p}-odm-preview-label`}>Kayıt Önizleme</div>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                      <div>
-                        <div className={`${p}-odm-preview-firma`}>{yeniForm.firma_adi || '—'}</div>
-                        <div className={`${p}-odm-preview-detay`}>
-                          {yeniForm.yon === 'tahsilat' ? 'Tahsilat' : 'Ödeme'} · Vade: {yeniForm.soz_tarihi || '—'}
-                        </div>
-                      </div>
-                      {yeniForm.tutar && (
-                        <div className={`${p}-odm-preview-tutar ${yeniForm.yon === 'tahsilat' ? `${p}-odm-preview-tutar-success` : `${p}-odm-preview-tutar-danger`} financial-num`}>
-                          ₺{yeniForm.tutar}
-                        </div>
+                {/* Seçenekler */}
+                {[
+                  {
+                    id: 'cevap_vermedi',
+                    icon: 'bi-telephone-x-fill',
+                    color: '#EF4444',
+                    bg: '#fef2f2',
+                    label: 'Cevap Vermedi',
+                    desc: 'Tekrar aranacak tarih belirle',
+                  },
+                  {
+                    id: 'soz_verildi',
+                    icon: 'bi-chat-square-dots-fill',
+                    color: '#3B82F6',
+                    bg: '#eff6ff',
+                    label: 'Söz Verdi',
+                    desc: 'Ödeme tarihi gir, Söz Alınanlar\'a düşer',
+                  },
+                  {
+                    id: 'tamamlandi',
+                    icon: 'bi-check-circle-fill',
+                    color: '#10B981',
+                    bg: '#ecfdf5',
+                    label: 'Tahsilat Alındı',
+                    desc: 'X gün sonra tekrar hatırlatılır',
+                  },
+                ].map(opt => (
+                  <div
+                    key={opt.id}
+                    onClick={() => setAramaAksiyon(opt.id)}
+                    style={{
+                      display: 'flex', alignItems: 'center', gap: 14,
+                      padding: '12px 14px',
+                      border: `2px solid ${aramaAksiyon === opt.id ? opt.color : 'var(--p-border)'}`,
+                      borderRadius: 10, marginBottom: 8, cursor: 'pointer',
+                      background: aramaAksiyon === opt.id ? opt.bg : 'transparent',
+                      transition: 'var(--p-transition)',
+                    }}
+                  >
+                    <div style={{
+                      width: 36, height: 36, borderRadius: 8, flexShrink: 0,
+                      background: opt.bg,
+                      display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    }}>
+                      <i className={`bi ${opt.icon}`} style={{ color: opt.color, fontSize: 16 }} />
+                    </div>
+                    <div style={{ flex: 1 }}>
+                      <div style={{ fontWeight: 700, fontSize: 14, color: 'var(--p-text)' }}>{opt.label}</div>
+                      <div style={{ fontSize: 12, color: 'var(--p-text-muted)' }}>{opt.desc}</div>
+                    </div>
+                    <div style={{
+                      width: 18, height: 18, borderRadius: '50%',
+                      border: `2px solid ${aramaAksiyon === opt.id ? opt.color : 'var(--p-border-strong)'}`,
+                      background: aramaAksiyon === opt.id ? opt.color : 'transparent',
+                      flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    }}>
+                      {aramaAksiyon === opt.id && (
+                        <i className="bi bi-check" style={{ color: '#fff', fontSize: 10, fontWeight: 900 }} />
                       )}
                     </div>
                   </div>
+                ))}
+
+                {/* Dinamik ek alanlar */}
+                {aramaAksiyon === 'cevap_vermedi' && (
+                  <div style={{ marginTop: 16 }}>
+                    <label style={{ fontSize: 12, fontWeight: 600, color: 'var(--p-text-label)', display: 'block', marginBottom: 6 }}>
+                      Tekrar Arama Tarihi *
+                    </label>
+                    <input
+                      type="date"
+                      min={bugunStr(1)}
+                      value={aramaHatTarihi}
+                      onChange={e => setAramaHatTarihi(e.target.value)}
+                      style={{
+                        width: '100%', height: 42, padding: '0 12px',
+                        border: '1px solid var(--p-border)', borderRadius: 10,
+                        background: 'var(--p-bg-input)', color: 'var(--p-text)',
+                        fontSize: 13, outline: 'none',
+                      }}
+                    />
+                  </div>
+                )}
+
+                {aramaAksiyon === 'soz_verildi' && (
+                  <div style={{ marginTop: 16 }}>
+                    <label style={{ fontSize: 12, fontWeight: 600, color: 'var(--p-text-label)', display: 'block', marginBottom: 6 }}>
+                      Söz Verilen Tarih *
+                    </label>
+                    <input
+                      type="date"
+                      min={bugunStr(0)}
+                      value={aramaSozTarihi}
+                      onChange={e => setAramaSozTarihi(e.target.value)}
+                      style={{
+                        width: '100%', height: 42, padding: '0 12px',
+                        border: '1px solid var(--p-border)', borderRadius: 10,
+                        background: 'var(--p-bg-input)', color: 'var(--p-text)',
+                        fontSize: 13, outline: 'none',
+                      }}
+                    />
+                  </div>
+                )}
+
+                {aramaAksiyon === 'tamamlandi' && (
+                  <div style={{ marginTop: 16 }}>
+                    <label style={{ fontSize: 12, fontWeight: 600, color: 'var(--p-text-label)', display: 'block', marginBottom: 6 }}>
+                      Kaç Gün Sonra Tekrar Hatırlat?
+                    </label>
+                    <div style={{ display: 'flex', gap: 8 }}>
+                      {['15', '30', '45', '60', '90'].map(g => (
+                        <button
+                          key={g}
+                          onClick={() => setAramaGun(g)}
+                          style={{
+                            flex: 1, height: 38, border: `2px solid ${aramaGun === g ? 'var(--p-color-primary)' : 'var(--p-border)'}`,
+                            borderRadius: 10, background: aramaGun === g ? 'rgba(16,185,129,0.08)' : 'transparent',
+                            color: aramaGun === g ? 'var(--p-color-primary)' : 'var(--p-text-muted)',
+                            fontWeight: aramaGun === g ? 700 : 500, fontSize: 12, cursor: 'pointer',
+                            transition: 'var(--p-transition)',
+                          }}
+                        >
+                          {g} gün
+                        </button>
+                      ))}
+                      <input
+                        type="number"
+                        min={1}
+                        max={365}
+                        value={aramaGun}
+                        onChange={e => setAramaGun(e.target.value)}
+                        placeholder="Özel"
+                        style={{
+                          width: 72, height: 38, padding: '0 8px',
+                          border: '1px solid var(--p-border)', borderRadius: 10,
+                          background: 'var(--p-bg-input)', color: 'var(--p-text)',
+                          fontSize: 13, textAlign: 'center', outline: 'none',
+                        }}
+                      />
+                    </div>
+                  </div>
+                )}
+
+                {/* Not alanı */}
+                <div style={{ marginTop: 14 }}>
+                  <label style={{ fontSize: 12, fontWeight: 600, color: 'var(--p-text-label)', display: 'block', marginBottom: 6 }}>
+                    Görüşme Notu (opsiyonel)
+                  </label>
+                  <textarea
+                    rows={2}
+                    placeholder="Görüşme hakkında not..."
+                    value={aramaNot}
+                    onChange={e => setAramaNot(e.target.value)}
+                    style={{
+                      width: '100%', padding: '10px 12px',
+                      border: '1px solid var(--p-border)', borderRadius: 10,
+                      background: 'var(--p-bg-input)', color: 'var(--p-text)',
+                      fontSize: 13, resize: 'none', outline: 'none',
+                    }}
+                  />
+                </div>
+
+                {aramaHata && (
+                  <div style={{
+                    marginTop: 10, padding: '8px 12px',
+                    background: 'var(--p-bg-badge-danger)',
+                    border: '1px solid #fecaca', borderRadius: 8,
+                    color: 'var(--p-color-danger)', fontSize: 12,
+                  }}>
+                    <i className="bi bi-exclamation-circle" style={{ marginRight: 6 }} />
+                    {aramaHata}
+                  </div>
                 )}
               </div>
 
               {/* Footer */}
               <div className={`${p}-modal-footer`}>
                 <button
-                  onClick={() => { setShowYeniModal(false); setYeniForm(BOSH_YENI_FORM); setYeniFormHata(''); setDuzenlemeId(null) }}
+                  onClick={() => { setAramaModalId(null); resetAramaModal() }}
                   className={`${p}-btn-cancel`}
                   style={{ flex: 1 }}
                 >
                   İptal
                 </button>
                 <button
-                  onClick={duzenlemeId ? duzenlemeKaydet : yeniEkleKaydet}
-                  disabled={yeniKaydetYukleniyor || !yeniForm.firma_adi.trim()}
+                  onClick={aramaKaydiGonder}
+                  disabled={aramaYukleniyor || !aramaAksiyon}
                   className={`${p}-btn-save ${p}-btn-save-default`}
-                  style={{ flex: 2, opacity: (yeniKaydetYukleniyor || !yeniForm.firma_adi.trim()) ? 0.5 : 1, display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 8 }}
+                  style={{
+                    flex: 2,
+                    display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 8,
+                    opacity: (aramaYukleniyor || !aramaAksiyon) ? 0.5 : 1,
+                  }}
                 >
-                  {yeniKaydetYukleniyor
-                    ? <><div className={`${p}-odm-spinner`} style={{ width: 16, height: 16, borderWidth: 2 }} />Kaydediliyor...</>
-                    : duzenlemeId
-                      ? <><i className="bi bi-check-lg" />Güncelle</>
-                      : <><i className="bi bi-check-lg" />Kaydet</>
+                  {aramaYukleniyor
+                    ? <><Spinner />Kaydediliyor...</>
+                    : <><i className="bi bi-check-lg" />Kaydet</>
                   }
                 </button>
               </div>
@@ -1276,65 +667,414 @@ export default function OdemeTakip() {
       )}
 
       {/* ═══════════════════════════════════════════════════════════
-          BÖLÜM 8 — Silme Onay Modalı
+          MODAL — SİLME ONAY
           ═══════════════════════════════════════════════════════════ */}
-      {silOnayId && (() => {
-        const silinecek = liste.find(k => k.id === silOnayId)
-        return (
-          <>
-            <div className={`${p}-modal-overlay`} />
-            <div className={`${p}-modal-center`}>
-              <div className={`${p}-modal-box`} style={{ maxWidth: 420 }}>
-                <div className={`${p}-modal-header ${p}-mh-danger`} aria-labelledby="sil-modal-title">
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-                    <div className={`${p}-modal-icon ${p}-modal-icon-red`}>
-                      <i className="bi bi-trash3-fill" />
-                    </div>
-                    <div>
-                      <h2 id="sil-modal-title" className={`${p}-modal-title`}>Kaydı Sil</h2>
-                      <div className={`${p}-modal-sub`}>Bu işlem geri alınamaz</div>
-                    </div>
+      {silId && (
+        <>
+          <div className={`${p}-modal-overlay`} onClick={() => !silYukleniyor && setSilId(null)} />
+          <div className={`${p}-modal-center`}>
+            <div className={`${p}-modal-box`} style={{ maxWidth: 420 }}>
+              <div className={`${p}-modal-header ${p}-mh-danger`}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                  <div className={`${p}-modal-icon ${p}-modal-icon-red`}>
+                    <i className="bi bi-trash3-fill" />
                   </div>
-                  <button className={`${p}-modal-close`} onClick={() => !silYukleniyor && setSilOnayId(null)}>
-                    <i className="bi bi-x-lg" />
-                  </button>
+                  <div>
+                    <h2 className={`${p}-modal-title`}>Kaydı Sil</h2>
+                    <div className={`${p}-modal-sub`}>Bu işlem geri alınamaz</div>
+                  </div>
                 </div>
-                <div className={`${p}-modal-body`} style={{ textAlign: 'center', padding: '28px 24px' }}>
-                  {silinecek && (
-                    <div className={`${p}-odm-preview-box`} style={{ marginBottom: 0 }}>
-                      <div className={`${p}-odm-preview-firma`} style={{ fontSize: 15 }}>{silinecek.firma_adi}</div>
-                      <div className={`${p}-odm-preview-detay`}>
-                        {silinecek.yon === 'tahsilat' ? 'Tahsilat' : 'Ödeme'} · <span className="financial-num">{TL(silinecek.tutar)}</span> · Vade: {tarihStr(silinecek.vade_tarihi)}
-                      </div>
+                <button className={`${p}-modal-close`} onClick={() => !silYukleniyor && setSilId(null)}>
+                  <i className="bi bi-x-lg" />
+                </button>
+              </div>
+              <div className={`${p}-modal-body`} style={{ textAlign: 'center', padding: '24px' }}>
+                {silKayit && (
+                  <div style={{
+                    padding: '12px 16px', background: 'var(--p-bg-badge-danger)',
+                    border: '1px solid #fecaca', borderRadius: 10,
+                  }}>
+                    <div style={{ fontWeight: 700, fontSize: 15, color: 'var(--p-text)' }}>
+                      {gorununAd(silKayit)}
                     </div>
-                  )}
-                </div>
-                <div className={`${p}-modal-footer`}>
-                  <button
-                    className={`${p}-btn-cancel`}
-                    style={{ flex: 1 }}
-                    onClick={() => setSilOnayId(null)}
-                    disabled={silYukleniyor}
-                  >
-                    Vazgeç
-                  </button>
-                  <button
-                    className={`${p}-btn-save ${p}-btn-save-red`}
-                    style={{ flex: 1, display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 8, opacity: silYukleniyor ? 0.6 : 1 }}
-                    onClick={silOnaylaVeSil}
-                    disabled={silYukleniyor}
-                  >
-                    {silYukleniyor
-                      ? <><div className={`${p}-odm-spinner`} style={{ width: 16, height: 16, borderWidth: 2 }} />Siliniyor...</>
-                      : <><i className="bi bi-trash3" />Evet, Sil</>
-                    }
-                  </button>
-                </div>
+                    {silKayit.cari_bakiye != null && (
+                      <div style={{ fontSize: 13, color: 'var(--p-text-muted)', marginTop: 2 }} className="financial-num">
+                        Bakiye: {TL(silKayit.cari_bakiye)}
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
+              <div className={`${p}-modal-footer`}>
+                <button className={`${p}-btn-cancel`} style={{ flex: 1 }} onClick={() => setSilId(null)} disabled={silYukleniyor}>
+                  Vazgeç
+                </button>
+                <button
+                  className={`${p}-btn-save ${p}-btn-save-red`}
+                  style={{ flex: 1, display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 8, opacity: silYukleniyor ? 0.6 : 1 }}
+                  onClick={silOnaylaVeSil}
+                  disabled={silYukleniyor}
+                >
+                  {silYukleniyor
+                    ? <><Spinner />Siliniyor...</>
+                    : <><i className="bi bi-trash3" />Evet, Sil</>
+                  }
+                </button>
               </div>
             </div>
-          </>
-        )
-      })()}
+          </div>
+        </>
+      )}
+
+      {/* ═══════════════════════════════════════════════════════════
+          MODAL — YENİ TAKIBE AL
+          ═══════════════════════════════════════════════════════════ */}
+      {showEkle && (
+        <>
+          <div className={`${p}-modal-overlay`} onClick={() => setShowEkle(false)} />
+          <div className={`${p}-modal-center`}>
+            <div className={`${p}-modal-box`} style={{ maxWidth: 460 }}>
+              <div className={`${p}-modal-header ${p}-mh-default`}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                  <div style={{
+                    width: 36, height: 36, borderRadius: 10,
+                    background: 'rgba(16,185,129,0.1)',
+                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  }}>
+                    <i className="bi bi-person-plus-fill" style={{ color: 'var(--p-color-primary)', fontSize: 16 }} />
+                  </div>
+                  <div>
+                    <h2 className={`${p}-modal-title`}>Ödeme Takibine Al</h2>
+                    <div className={`${p}-modal-sub`}>Seçilen cari Aranması Gerekenler\'e düşer</div>
+                  </div>
+                </div>
+                <button className={`${p}-modal-close`} onClick={() => setShowEkle(false)}>
+                  <i className="bi bi-x-lg" />
+                </button>
+              </div>
+              <div className={`${p}-modal-body`}>
+                <div style={{ marginBottom: 14 }}>
+                  <label style={{ fontSize: 12, fontWeight: 600, color: 'var(--p-text-label)', display: 'block', marginBottom: 6 }}>
+                    Cari *
+                  </label>
+                  <select
+                    value={ekleForm.cari_id}
+                    onChange={e => setEkleForm(f => ({ ...f, cari_id: e.target.value }))}
+                    style={{
+                      width: '100%', height: 42, padding: '0 12px',
+                      border: '1px solid var(--p-border)', borderRadius: 10,
+                      background: 'var(--p-bg-input)', color: 'var(--p-text)',
+                      fontSize: 13, outline: 'none',
+                    }}
+                  >
+                    <option value="">— Cari seçin —</option>
+                    {cariListesi.map(c => (
+                      <option key={c.id} value={c.id}>
+                        {c.cari_adi} {c.bakiye > 0 ? `(${TL(c.bakiye)})` : ''}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+                  <div>
+                    <label style={{ fontSize: 12, fontWeight: 600, color: 'var(--p-text-label)', display: 'block', marginBottom: 6 }}>
+                      Yön
+                    </label>
+                    <select
+                      value={ekleForm.yon}
+                      onChange={e => setEkleForm(f => ({ ...f, yon: e.target.value }))}
+                      style={{
+                        width: '100%', height: 42, padding: '0 12px',
+                        border: '1px solid var(--p-border)', borderRadius: 10,
+                        background: 'var(--p-bg-input)', color: 'var(--p-text)',
+                        fontSize: 13, outline: 'none',
+                      }}
+                    >
+                      <option value="tahsilat">Tahsilat (Alacak)</option>
+                      <option value="odeme">Ödeme (Borç)</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label style={{ fontSize: 12, fontWeight: 600, color: 'var(--p-text-label)', display: 'block', marginBottom: 6 }}>
+                      Öncelik
+                    </label>
+                    <select
+                      value={ekleForm.oncelik}
+                      onChange={e => setEkleForm(f => ({ ...f, oncelik: e.target.value }))}
+                      style={{
+                        width: '100%', height: 42, padding: '0 12px',
+                        border: '1px solid var(--p-border)', borderRadius: 10,
+                        background: 'var(--p-bg-input)', color: 'var(--p-text)',
+                        fontSize: 13, outline: 'none',
+                      }}
+                    >
+                      <option value="dusuk">Düşük</option>
+                      <option value="normal">Normal</option>
+                      <option value="yuksek">Yüksek</option>
+                      <option value="kritik">Kritik</option>
+                    </select>
+                  </div>
+                </div>
+
+                {ekleHata && (
+                  <div style={{
+                    marginTop: 12, padding: '8px 12px',
+                    background: 'var(--p-bg-badge-danger)',
+                    border: '1px solid #fecaca', borderRadius: 8,
+                    color: 'var(--p-color-danger)', fontSize: 12,
+                  }}>
+                    <i className="bi bi-exclamation-circle" style={{ marginRight: 6 }} />
+                    {ekleHata}
+                  </div>
+                )}
+              </div>
+              <div className={`${p}-modal-footer`}>
+                <button className={`${p}-btn-cancel`} style={{ flex: 1 }} onClick={() => setShowEkle(false)}>
+                  İptal
+                </button>
+                <button
+                  onClick={ekleKaydet}
+                  disabled={ekleYukleniyor || !ekleForm.cari_id}
+                  className={`${p}-btn-save ${p}-btn-save-default`}
+                  style={{
+                    flex: 2,
+                    display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 8,
+                    opacity: (ekleYukleniyor || !ekleForm.cari_id) ? 0.5 : 1,
+                  }}
+                >
+                  {ekleYukleniyor
+                    ? <><Spinner />Ekleniyor...</>
+                    : <><i className="bi bi-plus-lg" />Takibe Al</>
+                  }
+                </button>
+              </div>
+            </div>
+          </div>
+        </>
+      )}
+
+      {/* Spinner animasyonu */}
+      <style>{`
+        @keyframes spin { to { transform: rotate(360deg) } }
+      `}</style>
     </div>
+  )
+}
+
+/* ═══ KAYIT KART BİLEŞENİ ═══ */
+
+function KayitKart({ kayit, p, aktifTab, gorununAd, tarihStr, tarihKisa, sozBadge, TL, onAramaKaydi, onSil }) {
+  const [expand, setExpand] = useState(false)
+
+  const ad = gorununAd(kayit)
+  const badge = sozBadge(kayit.soz_tarihi)
+  const hatBadge = sozBadge(kayit.hatirlatma_tarihi)
+
+  const ONCELIK_RENK = {
+    kritik: '#EF4444', yuksek: '#F59E0B', normal: '#10B981', dusuk: '#6B7280',
+  }
+
+  const DURUM_LABEL = {
+    bekliyor:      'Bekliyor',
+    cevap_vermedi: 'Cevap Vermedi',
+    soz_verildi:   'Söz Verildi',
+    tamamlandi:    'Tamamlandı',
+  }
+
+  const renk = ONCELIK_RENK[kayit.oncelik] || '#6B7280'
+
+  return (
+    <div style={{
+      borderBottom: '1px solid var(--p-border)',
+      padding: '14px 16px',
+      transition: 'background var(--p-transition)',
+    }}
+      onMouseEnter={e => e.currentTarget.style.background = 'var(--p-bg-table-row-hover)'}
+      onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
+    >
+      <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+
+        {/* Öncelik çizgisi */}
+        <div style={{ width: 4, borderRadius: 2, background: renk, alignSelf: 'stretch', minHeight: 48, flexShrink: 0 }} />
+
+        {/* Ana bilgi */}
+        <div style={{ flex: 1, minWidth: 0 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+            <span style={{ fontWeight: 700, fontSize: 14, color: 'var(--p-text)' }}>{ad}</span>
+            {kayit.cari_telefon && (
+              <span style={{ fontSize: 12, color: 'var(--p-text-muted)' }}>
+                <i className="bi bi-telephone" style={{ marginRight: 3 }} />
+                {kayit.cari_telefon}
+              </span>
+            )}
+          </div>
+
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 4, flexWrap: 'wrap' }}>
+            {/* Bakiye */}
+            {kayit.cari_bakiye != null && (
+              <span style={{ fontSize: 12, fontWeight: 600, color: 'var(--p-text-muted)' }} className="financial-num">
+                {TL(kayit.cari_bakiye)}
+              </span>
+            )}
+
+            {/* Yön */}
+            <span style={{
+              fontSize: 11, fontWeight: 600, padding: '2px 7px',
+              borderRadius: 10,
+              background: kayit.yon === 'tahsilat' ? 'var(--p-bg-badge-success)' : 'var(--p-bg-badge-danger)',
+              color: kayit.yon === 'tahsilat' ? 'var(--p-color-success)' : 'var(--p-color-danger)',
+            }}>
+              {kayit.yon === 'tahsilat' ? 'Tahsilat' : 'Ödeme'}
+            </span>
+
+            {/* Söz tarihi */}
+            {kayit.soz_tarihi && badge && (
+              <span style={{
+                fontSize: 11, fontWeight: 600, padding: '2px 7px', borderRadius: 10,
+                background: badge.cls === 'danger' ? 'var(--p-bg-badge-danger)'
+                  : badge.cls === 'warning' ? 'var(--p-bg-badge-warning)'
+                  : 'var(--p-bg-badge-success)',
+                color: badge.cls === 'danger' ? 'var(--p-color-danger)'
+                  : badge.cls === 'warning' ? 'var(--p-color-warning)'
+                  : 'var(--p-color-success)',
+              }}>
+                <i className="bi bi-calendar3" style={{ marginRight: 4 }} />
+                {tarihKisa(kayit.soz_tarihi)} · {badge.text}
+              </span>
+            )}
+
+            {/* Hatırlatma tarihi (arandı tab için) */}
+            {aktifTab === 'arandi' && kayit.hatirlatma_tarihi && (
+              <>
+                {kayit.durum === 'bekliyor' && (
+                  <span style={{
+                    fontSize: 11, fontWeight: 600, padding: '2px 7px', borderRadius: 10,
+                    background: '#eff6ff', color: '#3B82F6',
+                  }}>
+                    <i className="bi bi-clock" style={{ marginRight: 3 }} />
+                    Planlanmış Hatırlatma
+                  </span>
+                )}
+                <span style={{ fontSize: 11, color: 'var(--p-text-muted)' }}>
+                  <i className="bi bi-bell" style={{ marginRight: 3 }} />
+                  {tarihKisa(kayit.hatirlatma_tarihi)} arancak
+                </span>
+              </>
+            )}
+
+            {/* Son arama tarihi */}
+            {kayit.son_arama_tarihi && (
+              <span style={{ fontSize: 11, color: 'var(--p-text-muted)' }}>
+                <i className="bi bi-clock-history" style={{ marginRight: 3 }} />
+                Son: {tarihKisa(kayit.son_arama_tarihi)}
+              </span>
+            )}
+          </div>
+        </div>
+
+        {/* Aksiyon butonları */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexShrink: 0 }}>
+          {/* Arama Kaydı (tamamlandi tab'ında gösterme) */}
+          {aktifTab !== 'tamamlandi' && (
+            <button
+              onClick={onAramaKaydi}
+              title="Arama Kaydı"
+              style={{
+                width: 36, height: 36, borderRadius: 10, border: '1px solid var(--p-border)',
+                background: 'var(--p-bg-card)', color: 'var(--p-color-primary)',
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                cursor: 'pointer', transition: 'var(--p-transition)', fontSize: 14,
+              }}
+            >
+              <i className="bi bi-telephone-fill" />
+            </button>
+          )}
+          {/* Sil */}
+          <button
+            onClick={onSil}
+            title="Sil"
+            style={{
+              width: 36, height: 36, borderRadius: 10, border: '1px solid var(--p-border)',
+              background: 'var(--p-bg-card)', color: 'var(--p-color-danger)',
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              cursor: 'pointer', transition: 'var(--p-transition)', fontSize: 14,
+            }}
+          >
+            <i className="bi bi-trash3" />
+          </button>
+          {/* Genişlet */}
+          {kayit.gorusme_notu && (
+            <button
+              onClick={() => setExpand(x => !x)}
+              title="Not göster"
+              style={{
+                width: 36, height: 36, borderRadius: 10, border: '1px solid var(--p-border)',
+                background: 'var(--p-bg-card)', color: 'var(--p-text-muted)',
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                cursor: 'pointer', transition: 'var(--p-transition)', fontSize: 14,
+              }}
+            >
+              <i className={`bi bi-chevron-${expand ? 'up' : 'down'}`} />
+            </button>
+          )}
+        </div>
+      </div>
+
+      {/* Görüşme notu */}
+      {expand && kayit.gorusme_notu && (
+        <div style={{
+          marginTop: 10, marginLeft: 16,
+          padding: '8px 12px',
+          background: 'var(--p-bg-badge-warning)',
+          borderRadius: 8, fontSize: 12,
+          color: 'var(--p-text-secondary)',
+          borderLeft: '3px solid var(--p-color-warning)',
+        }}>
+          <i className="bi bi-chat-square-text" style={{ marginRight: 6 }} />
+          {kayit.gorusme_notu}
+        </div>
+      )}
+    </div>
+  )
+}
+
+/* ═══ BOŞ LİSTE ═══ */
+
+function BosList({ tab, p }) {
+  const meta = {
+    aranmasi_gerekenler: { icon: 'bi-telephone-fill', text: 'Aranması gereken kayıt yok', sub: 'Cari listesinden "Takibe Al" diyerek buraya ekleyebilirsiniz' },
+    arandi:              { icon: 'bi-telephone-outbound', text: 'Arandı kaydı yok', sub: 'Cevap vermedi olarak işaretlenen ve tarihi henüz gelmeyenler burada görünür' },
+    soz_alinanlar:       { icon: 'bi-calendar-check', text: 'Söz alınan kayıt yok', sub: 'Müşteriden söz tarihi alındığında bu sekmeye düşer' },
+    tamamlandi:          { icon: 'bi-check-circle-fill', text: 'Tamamlanan kayıt yok', sub: 'Tahsilat tamamlandığında bu sekmeye düşer' },
+  }
+  const m = meta[tab] || meta.aranmasi_gerekenler
+
+  return (
+    <div style={{ padding: '48px 24px', textAlign: 'center' }}>
+      <div style={{
+        width: 56, height: 56, borderRadius: 14, margin: '0 auto 16px',
+        background: 'var(--p-bg-table-header)',
+        display: 'flex', alignItems: 'center', justifyContent: 'center',
+      }}>
+        <i className={`bi ${m.icon}`} style={{ fontSize: 22, color: 'var(--p-text-muted)', opacity: 0.35 }} />
+      </div>
+      <div style={{ fontWeight: 700, fontSize: 15, color: 'var(--p-text)', marginBottom: 6 }}>{m.text}</div>
+      <div style={{ fontSize: 12, color: 'var(--p-text-muted)', maxWidth: 320, margin: '0 auto' }}>{m.sub}</div>
+    </div>
+  )
+}
+
+/* ═══ SPINNER ═══ */
+
+function Spinner() {
+  return (
+    <div style={{
+      width: 14, height: 14,
+      border: '2px solid rgba(255,255,255,0.3)',
+      borderTopColor: '#fff',
+      borderRadius: '50%',
+      animation: 'spin 0.8s linear infinite',
+    }} />
   )
 }

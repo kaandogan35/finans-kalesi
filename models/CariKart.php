@@ -269,6 +269,25 @@ class CariKart {
         ];
     }
 
+    // Bakiyeyi doğrudan yaz (toplu yükleme + Excel import için)
+    // NOT: cari_hareketler tablosuna dokunmaz, sadece bakiye sütununu günceller
+    public function bakiye_dogrudan_yaz($sirket_id, $cari_id, $bakiye) {
+        $bakiye = (float)$bakiye;
+        // Pozitif bakiye = müşteri borçlu (alacak). Negatif = biz borçluyuz.
+        $toplam_borc   = $bakiye > 0 ? $bakiye : 0;
+        $toplam_alacak = $bakiye < 0 ? abs($bakiye) : 0;
+
+        $sql = "UPDATE cari_kartlar
+                SET bakiye = ?,
+                    toplam_borc = ?,
+                    toplam_alacak = ?,
+                    son_islem_tarihi = NOW()
+                WHERE id = ? AND sirket_id = ? AND silindi_mi = 0";
+        $stmt = $this->db->prepare($sql);
+        $stmt->execute([$bakiye, $toplam_borc, $toplam_alacak, $cari_id, $sirket_id]);
+        return $stmt->rowCount() > 0;
+    }
+
     // Cari kart var mı kontrolü
     public function var_mi($sirket_id, $cari_id) {
         $sql  = "SELECT id FROM cari_kartlar
