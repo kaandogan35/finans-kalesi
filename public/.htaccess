@@ -4,6 +4,9 @@
 # 1. /api/ ile başlayan istekler → PHP backend (index.php)
 # 2. Diğer istekler → React frontend (frontend-build/index.html)
 
+# Ana sayfa önceliği: önce index.html (landing page), sonra index.php (API)
+DirectoryIndex index.html index.php
+
 # URL yeniden yazma motorunu aç
 RewriteEngine On
 
