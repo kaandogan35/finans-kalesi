@@ -19,6 +19,7 @@ require_once BASE_PATH . '/controllers/CariController.php';
 // JWT dogrulama — her cari endpoint'i giris gerektirir
 $payload = AuthMiddleware::dogrula();
 // dogrula() basarisizsa zaten exit yapiyor, buraya gelinmez
+YetkiKontrol::modul_kontrol($payload, 'cari');
 
 // Veritabani baglantisi
 $db = Database::baglan();

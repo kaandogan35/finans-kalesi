@@ -82,8 +82,8 @@ class AbonelikController {
     public function yukselt(array $girdi): void {
         $payload = AuthMiddleware::dogrula();
 
-        // Sadece şirket sahibi veya admin plan değiştirebilir
-        if (!in_array($payload['rol'], ['sahip', 'admin'], true)) {
+        // Yalnızca şirket sahibi plan değiştirebilir
+        if ($payload['rol'] !== 'sahip') {
             Response::hata('Plan değiştirme yetkiniz yok', 403);
             return;
         }

@@ -51,15 +51,13 @@ function formatTarihInput(val) {
 
 let _id = 0
 const yeniId = () => String(++_id)
-const yeniFatura = () => ({ id: yeniId(), no: '', tutar: '', tarih: '' })
-const yeniCek    = () => ({ id: yeniId(), aciklama: '', tutar: '', vadeTarih: '' })
-const yeniBorc   = () => ({ id: yeniId(), aciklama: '', tutar: '', gun: '' })
+const yeniFatura = () => ({ id: yeniId(), tutar: '', tarih: '' })
+const yeniCek    = () => ({ id: yeniId(), tutar: '', vadeTarih: '' })
 
 const SEKMELER = [
+  { key: 'portfoy',    label: 'Çek Ortalama Vadesi', icon: 'bi-collection'  },
   { key: 'fatura-ort', label: 'Fatura Ort. Tarihi',  icon: 'bi-receipt'     },
-  { key: 'fazla-cek',  label: 'Fazla Çek Vadesi',    icon: 'bi-calculator'  },
-  { key: 'portfoy',    label: 'Portföy Ort. Vadesi',  icon: 'bi-collection'  },
-  { key: 'tek-cek',    label: 'Tek Çeke Bağlama',    icon: 'bi-link-45deg'  },
+  { key: 'fazla-cek',  label: 'Fazla Çek Ort. Tarihi', icon: 'bi-calculator'  },
 ]
 
 // ─── Yardımcı Alt Bileşenler ──────────────────────────────────────────────────
@@ -123,7 +121,7 @@ export default function VadeHesaplayici() {
   const p = prefixMap[aktifTema] || 'p'
   const renkler = temaRenkleri[aktifTema] || temaRenkleri.paramgo
 
-  const [aktifSekme, setAktifSekme] = useState('fatura-ort')
+  const [aktifSekme, setAktifSekme] = useState('portfoy')
 
   // Sekme 1
   const [s1RefTarih, setS1RefTarih]   = useState(bugunTarih())
@@ -138,10 +136,6 @@ export default function VadeHesaplayici() {
   // Sekme 3
   const [s3RefTarih, setS3RefTarih] = useState(bugunTarih())
   const [s3Cekler, setS3Cekler]     = useState([yeniCek()])
-
-  // Sekme 4
-  const [s4RefTarih, setS4RefTarih] = useState(bugunTarih())
-  const [s4Borclar, setS4Borclar]   = useState([yeniBorc()])
 
   // ─── Yeni satır eklendikten sonra ilk inputa otomatik fokus ─────────────
   const [fokusId, setFokusId] = useState(null)
@@ -175,7 +169,7 @@ export default function VadeHesaplayici() {
       const fIso = displayToIso(f.tarih)
       if (!fIso) continue
       const gun = Math.round((new Date(fIso) - ref) / 86400000)
-      if (gun < 0) return { hata: `"${f.no || f.tarih}" faturası için negatif gün farkı — fatura tarihi referans tarihinden önce olamaz` }
+      if (gun < 0) return { hata: `"${f.tarih}" faturası için negatif gün farkı — fatura tarihi referans tarihinden önce olamaz` }
       const tutar = parseTutar(f.tutar)
       const agirlik = tutar * gun
       toplamTutar += tutar; toplamAgirlik += agirlik
@@ -228,28 +222,6 @@ export default function VadeHesaplayici() {
     return { satirlar, toplamTutar, toplamAgirlik, basitOrt, agirlikliOrt, ortVade, enErken, enGec }
   }, [s3RefTarih, s3Cekler])
 
-  const s4Sonuc = useMemo(() => {
-    const refIso = displayToIso(s4RefTarih)
-    if (!refIso) return null
-    const dolular = s4Borclar.filter(b => b.tutar && b.gun !== '' && parseTutar(b.tutar) > 0 && Number(b.gun) >= 0)
-    if (dolular.length === 0) return null
-    let toplamBorc = 0, toplamAgirlik = 0
-    const satirlar = dolular.map(b => {
-      const tutar = parseTutar(b.tutar), gun = Number(b.gun)
-      const agirlik = tutar * gun
-      toplamBorc += tutar; toplamAgirlik += agirlik
-      return { ...b, tutar, gun, agirlik }
-    })
-    if (toplamBorc === 0) return null
-    const adilVade  = Math.round(toplamAgirlik / toplamBorc)
-    const vadeTarih = new Date(refIso); vadeTarih.setDate(vadeTarih.getDate() + adilVade)
-    const gunler    = dolular.map(b => Number(b.gun))
-    const enErkenGun = Math.min(...gunler), enGecGun = Math.max(...gunler)
-    const enErken   = new Date(refIso); enErken.setDate(enErken.getDate() + enErkenGun)
-    const enGec     = new Date(refIso); enGec.setDate(enGec.getDate() + enGecGun)
-    return { satirlar, toplamBorc, toplamAgirlik, adilVade, vadeTarih, enErken, enGec, enErkenGun, enGecGun }
-  }, [s4RefTarih, s4Borclar])
-
   // ─── Satır Yönetimi ───────────────────────────────────────────────────────
   const s1Ekle = () => { const y = yeniFatura(); setS1Faturalar(prev => [...prev, y]); setFokusId(y.id) }
   const s1Sil  = id  => setS1Faturalar(prev => prev.length > 1 ? prev.filter(f => f.id !== id) : prev)
@@ -258,10 +230,6 @@ export default function VadeHesaplayici() {
   const s3Ekle = () => { const y = yeniCek(); setS3Cekler(prev => [...prev, y]); setFokusId(y.id) }
   const s3Sil  = id  => setS3Cekler(prev => prev.length > 1 ? prev.filter(c => c.id !== id) : prev)
   const s3Set  = (id,k,v) => setS3Cekler(prev => prev.map(c => c.id===id ? {...c,[k]:v} : c))
-
-  const s4Ekle = () => { const y = yeniBorc(); setS4Borclar(prev => [...prev, y]); setFokusId(y.id) }
-  const s4Sil  = id  => setS4Borclar(prev => prev.length > 1 ? prev.filter(b => b.id !== id) : prev)
-  const s4Set  = (id,k,v) => setS4Borclar(prev => prev.map(b => b.id===id ? {...b,[k]:v} : b))
 
   // ─── Render ───────────────────────────────────────────────────────────────
   return (
@@ -317,17 +285,15 @@ export default function VadeHesaplayici() {
                   <table className={`${p}-vade-input-table`}>
                     <thead>
                       <tr>
-                        <th className={`${p}-vade-th`} style={{ width:'30%' }}>Fatura No</th>
-                        <th className={`${p}-vade-th`} style={{ width:'28%' }}>Tutar (₺)</th>
-                        <th className={`${p}-vade-th`} style={{ width:'30%' }}>Tarih</th>
+                        <th className={`${p}-vade-th`} style={{ width:'45%' }}>Tutar (₺)</th>
+                        <th className={`${p}-vade-th`} style={{ width:'43%' }}>Tarih</th>
                         <th style={{ width:36 }}></th>
                       </tr>
                     </thead>
                     <tbody>
                       {s1Faturalar.map(f => (
                         <tr key={f.id}>
-                          <td style={{ padding:'0 6px 4px 0' }}><input data-focus-id={f.id} type="text" className={`${p}-vade-input-sm`} placeholder="F-001" value={f.no} onChange={e => s1Set(f.id,'no',e.target.value)} onKeyDown={e => handleSatirEnter(e, s1Ekle)} /></td>
-                          <td style={{ padding:'0 6px 4px' }}><input type="text" inputMode="decimal" className={`${p}-vade-input-sm`} placeholder="0,00" value={f.tutar} onChange={e => s1Set(f.id,'tutar',formatTutarInput(e.target.value))} onKeyDown={e => handleSatirEnter(e, s1Ekle)} /></td>
+                          <td style={{ padding:'0 6px 4px 0' }}><input data-focus-id={f.id} type="text" inputMode="decimal" className={`${p}-vade-input-sm`} placeholder="0,00" value={f.tutar} onChange={e => s1Set(f.id,'tutar',formatTutarInput(e.target.value))} onKeyDown={e => handleSatirEnter(e, s1Ekle)} /></td>
                           <td style={{ padding:'0 6px 4px' }}><input type="text" inputMode="numeric" className={`${p}-vade-input-sm`} placeholder="gg.aa.yyyy" value={f.tarih} onChange={e => s1Set(f.id,'tarih',formatTarihInput(e.target.value))} onKeyDown={e => handleSatirEnter(e, s1Ekle)} /></td>
                           <td style={{ padding:'0 0 4px 6px' }}>
                             <button className={`${p}-vade-sil-btn`} onClick={() => s1Sil(f.id)} title="Satırı sil">
@@ -365,7 +331,7 @@ export default function VadeHesaplayici() {
                       <table className={`${p}-vade-table`} style={{ minWidth:420 }}>
                         <thead>
                           <tr>
-                            <th>#</th><th>Fatura No</th>
+                            <th>#</th>
                             <th style={{ textAlign:'right' }}>Tutar (₺)</th>
                             <th style={{ textAlign:'right' }}>Vade Gün</th>
                             <th style={{ textAlign:'right' }}>Tutar × Gün</th>
@@ -375,7 +341,6 @@ export default function VadeHesaplayici() {
                           {s1Sonuc.satirlar.map((f,i) => (
                             <tr key={f.id}>
                               <td className={`${p}-vade-td-muted`}>{i+1}</td>
-                              <td className={`${p}-vade-td-sec`}>{f.no||'—'}</td>
                               <td className={`${p}-vade-num financial-num ${p}-vade-td-success`} style={{ textAlign:'right' }}>{paraFormat(f.tutar)}</td>
                               <td className={`${p}-vade-num`} style={{ textAlign:'right' }}>{f.gun}</td>
                               <td className={`${p}-vade-num financial-num ${p}-vade-td-accent`} style={{ textAlign:'right' }}>{paraFormat(f.agirlik)}</td>
@@ -384,7 +349,7 @@ export default function VadeHesaplayici() {
                         </tbody>
                         <tfoot>
                           <tr>
-                            <td colSpan={2} className={`${p}-vade-tfoot-label`}>TOPLAM</td>
+                            <td colSpan={1} className={`${p}-vade-tfoot-label`}>TOPLAM</td>
                             <td className={`${p}-vade-num financial-num ${p}-vade-td-success`} style={{ textAlign:'right', fontWeight:700 }}>{paraFormat(s1Sonuc.toplamTutar)}</td>
                             <td></td>
                             <td className={`${p}-vade-num financial-num ${p}-vade-td-accent`} style={{ textAlign:'right', fontWeight:700 }}>{paraFormat(s1Sonuc.toplamAgirlik)}</td>
@@ -557,17 +522,15 @@ export default function VadeHesaplayici() {
                   <table className={`${p}-vade-input-table`}>
                     <thead>
                       <tr>
-                        <th className={`${p}-vade-th`} style={{ width:'30%' }}>Açıklama</th>
-                        <th className={`${p}-vade-th`} style={{ width:'28%' }}>Tutar (₺)</th>
-                        <th className={`${p}-vade-th`} style={{ width:'30%' }}>Vade Tarihi</th>
+                        <th className={`${p}-vade-th`} style={{ width:'45%' }}>Tutar (₺)</th>
+                        <th className={`${p}-vade-th`} style={{ width:'43%' }}>Vade Tarihi</th>
                         <th style={{ width:36 }}></th>
                       </tr>
                     </thead>
                     <tbody>
                       {s3Cekler.map(c => (
                         <tr key={c.id}>
-                          <td style={{ padding:'0 6px 4px 0' }}><input data-focus-id={c.id} type="text" className={`${p}-vade-input-sm`} placeholder="Açıklama" value={c.aciklama} onChange={e => s3Set(c.id,'aciklama',e.target.value)} onKeyDown={e => handleSatirEnter(e, s3Ekle)} /></td>
-                          <td style={{ padding:'0 6px 4px' }}><input type="text" inputMode="decimal" className={`${p}-vade-input-sm`} placeholder="0,00" value={c.tutar} onChange={e => s3Set(c.id,'tutar',formatTutarInput(e.target.value))} onKeyDown={e => handleSatirEnter(e, s3Ekle)} /></td>
+                          <td style={{ padding:'0 6px 4px 0' }}><input data-focus-id={c.id} type="text" inputMode="decimal" className={`${p}-vade-input-sm`} placeholder="0,00" value={c.tutar} onChange={e => s3Set(c.id,'tutar',formatTutarInput(e.target.value))} onKeyDown={e => handleSatirEnter(e, s3Ekle)} /></td>
                           <td style={{ padding:'0 6px 4px' }}><input type="text" inputMode="numeric" className={`${p}-vade-input-sm`} placeholder="gg.aa.yyyy" value={c.vadeTarih} onChange={e => s3Set(c.id,'vadeTarih',formatTarihInput(e.target.value))} onKeyDown={e => handleSatirEnter(e, s3Ekle)} /></td>
                           <td style={{ padding:'0 0 4px 6px' }}>
                             <button className={`${p}-vade-sil-btn`} onClick={() => s3Sil(c.id)} title="Satırı sil">
@@ -605,7 +568,7 @@ export default function VadeHesaplayici() {
                       <table className={`${p}-vade-table`} style={{ minWidth:380 }}>
                         <thead>
                           <tr>
-                            <th>#</th><th>Açıklama</th>
+                            <th>#</th>
                             <th style={{ textAlign:'right' }}>Tutar (₺)</th>
                             <th style={{ textAlign:'right' }}>Vade Gün</th>
                             <th style={{ textAlign:'right' }}>Tutar × Gün</th>
@@ -615,7 +578,6 @@ export default function VadeHesaplayici() {
                           {s3Sonuc.satirlar.map((c,i) => (
                             <tr key={c.id}>
                               <td className={`${p}-vade-td-muted`}>{i+1}</td>
-                              <td className={`${p}-vade-td-sec`}>{c.aciklama||'—'}</td>
                               <td className={`${p}-vade-num financial-num ${p}-vade-td-success`} style={{ textAlign:'right' }}>{paraFormat(c.tutar)}</td>
                               <td className={`${p}-vade-num`} style={{ textAlign:'right' }}>{c.gun}</td>
                               <td className={`${p}-vade-num financial-num ${p}-vade-td-accent`} style={{ textAlign:'right' }}>{paraFormat(c.agirlik)}</td>
@@ -624,7 +586,7 @@ export default function VadeHesaplayici() {
                         </tbody>
                         <tfoot>
                           <tr>
-                            <td colSpan={2} className={`${p}-vade-tfoot-label`}>TOPLAM</td>
+                            <td colSpan={1} className={`${p}-vade-tfoot-label`}>TOPLAM</td>
                             <td className={`${p}-vade-num financial-num ${p}-vade-td-success`} style={{ textAlign:'right', fontWeight:700 }}>{paraFormat(s3Sonuc.toplamTutar)}</td>
                             <td></td>
                             <td className={`${p}-vade-num financial-num ${p}-vade-td-accent`} style={{ textAlign:'right', fontWeight:700 }}>{paraFormat(s3Sonuc.toplamAgirlik)}</td>
@@ -680,144 +642,6 @@ export default function VadeHesaplayici() {
         </div>
       )}
 
-      {/* ═══════════════════════════════════════════════════════════════════
-          SEKME 4 — Birden Fazla Borcu Tek Çeke Bağlama
-      ══════════════════════════════════════════════════════════════════════ */}
-      {aktifSekme === 'tek-cek' && (
-        <div className={`row g-3 ${p}-vade-animate`}>
-          {/* Sol: Giriş */}
-          <div className="col-lg-6">
-            <div className={`${p}-vade-card h-100`}>
-              <KartBaslik p={p} icon="bi-link-45deg" baslik="Borç Listesi" alt="Farklı vadelerdeki borçları tek çeke bağla" variant="purple" />
-              <div style={{ padding:20 }}>
-                <SectionTitle p={p} label="Referans Tarihi" />
-                <div className="mb-4">
-                  <label className={`${p}-vade-label`}>Referans Tarihi (genellikle bugün)</label>
-                  <input type="text" inputMode="numeric" className={`${p}-vade-input`} placeholder="gg.aa.yyyy" value={s4RefTarih} onChange={e => setS4RefTarih(formatTarihInput(e.target.value))} />
-                </div>
-
-                <SectionTitlePurple p={p} label={`Borçlar (${s4Borclar.length} adet)`} />
-                <div className="table-responsive mb-3">
-                  <table className={`${p}-vade-input-table`}>
-                    <thead>
-                      <tr>
-                        <th className={`${p}-vade-th`} style={{ width:'32%' }}>Açıklama</th>
-                        <th className={`${p}-vade-th`} style={{ width:'30%' }}>Borç (₺)</th>
-                        <th className={`${p}-vade-th`} style={{ width:'26%' }}>Kalan Gün</th>
-                        <th style={{ width:36 }}></th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {s4Borclar.map(b => (
-                        <tr key={b.id}>
-                          <td style={{ padding:'0 6px 4px 0' }}><input data-focus-id={b.id} type="text" className={`${p}-vade-input-sm`} placeholder="Tedarikçi A" value={b.aciklama} onChange={e => s4Set(b.id,'aciklama',e.target.value)} onKeyDown={e => handleSatirEnter(e, s4Ekle)} /></td>
-                          <td style={{ padding:'0 6px 4px' }}><input type="text" inputMode="decimal" className={`${p}-vade-input-sm`} placeholder="0,00" value={b.tutar} onChange={e => s4Set(b.id,'tutar',formatTutarInput(e.target.value))} onKeyDown={e => handleSatirEnter(e, s4Ekle)} /></td>
-                          <td style={{ padding:'0 6px 4px' }}><input type="number" className={`${p}-vade-input-sm`} placeholder="30" min="0" value={b.gun} onChange={e => s4Set(b.id,'gun',e.target.value)} onKeyDown={e => handleSatirEnter(e, s4Ekle)} /></td>
-                          <td style={{ padding:'0 0 4px 6px' }}>
-                            <button className={`${p}-vade-sil-btn`} onClick={() => s4Sil(b.id)} title="Satırı sil">
-                              <i className="bi bi-trash3" style={{ fontSize:12 }} />
-                            </button>
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-                <button className={`${p}-vade-ekle-btn`} onClick={s4Ekle}>
-                  <i className="bi bi-plus-circle" style={{ fontSize:15 }} />Borç Ekle
-                </button>
-              </div>
-            </div>
-          </div>
-
-          {/* Sağ: Sonuçlar */}
-          <div className="col-lg-6">
-            <div className={`${p}-vade-card h-100`}>
-              <KartBaslik p={p} icon="bi-graph-up" baslik="Tek Çek Hesabı" alt="Gerçek zamanlı hesaplama" />
-              <div style={{ padding:20 }}>
-                {!s4Sonuc && <BeklePanel p={p} icon="bi-link-45deg" mesaj="Referans tarihi ve en az 1 borç bilgisi girin" />}
-                {s4Sonuc && (
-                  <>
-                    <SectionTitlePurple p={p} label="Detay Tablosu" />
-                    <div className="table-responsive mb-4">
-                      <table className={`${p}-vade-table`} style={{ minWidth:380 }}>
-                        <thead>
-                          <tr>
-                            <th>#</th><th>Açıklama</th>
-                            <th style={{ textAlign:'right' }}>Borç (₺)</th>
-                            <th style={{ textAlign:'right' }}>Kalan Gün</th>
-                            <th style={{ textAlign:'right' }}>Borç × Gün</th>
-                          </tr>
-                        </thead>
-                        <tbody>
-                          {s4Sonuc.satirlar.map((b,i) => (
-                            <tr key={b.id}>
-                              <td className={`${p}-vade-td-muted`}>{i+1}</td>
-                              <td className={`${p}-vade-td-sec`}>{b.aciklama||'—'}</td>
-                              <td className={`${p}-vade-num financial-num ${p}-vade-td-danger`} style={{ textAlign:'right' }}>{paraFormat(b.tutar)}</td>
-                              <td className={`${p}-vade-num`} style={{ textAlign:'right' }}>{b.gun}</td>
-                              <td className={`${p}-vade-num financial-num ${p}-vade-td-accent`} style={{ textAlign:'right' }}>{paraFormat(b.agirlik)}</td>
-                            </tr>
-                          ))}
-                        </tbody>
-                        <tfoot>
-                          <tr>
-                            <td colSpan={2} className={`${p}-vade-tfoot-label`}>TOPLAM</td>
-                            <td className={`${p}-vade-num financial-num ${p}-vade-td-danger`} style={{ textAlign:'right', fontWeight:700 }}>{paraFormat(s4Sonuc.toplamBorc)}</td>
-                            <td></td>
-                            <td className={`${p}-vade-num financial-num ${p}-vade-td-accent`} style={{ textAlign:'right', fontWeight:700 }}>{paraFormat(s4Sonuc.toplamAgirlik)}</td>
-                          </tr>
-                        </tfoot>
-                      </table>
-                    </div>
-
-                    <div className="row g-2 mb-3">
-                      <div className="col-6">
-                        <div className={`${p}-vade-result-secondary`}>
-                          <div className={`${p}-vade-result-label`}>En Erken Vade</div>
-                          <div className={`${p}-vade-result-date-sm ${p}-vade-td-success`}>{tarihFormat(s4Sonuc.enErken)}</div>
-                          <div className={`${p}-vade-result-unit`}>{s4Sonuc.enErkenGun} gün</div>
-                        </div>
-                      </div>
-                      <div className="col-6">
-                        <div className={`${p}-vade-result-secondary`}>
-                          <div className={`${p}-vade-result-label`}>En Geç Vade</div>
-                          <div className={`${p}-vade-result-date-sm ${p}-vade-td-danger`}>{tarihFormat(s4Sonuc.enGec)}</div>
-                          <div className={`${p}-vade-result-unit`}>{s4Sonuc.enGecGun} gün</div>
-                        </div>
-                      </div>
-                    </div>
-
-                    <div className="row g-2">
-                      <div className="col-sm-5">
-                        <div className={`${p}-vade-result-main`} style={{ height:'100%' }}>
-                          <div className={`${p}-vade-result-main-label`}>
-                            <i className="bi bi-calendar-week me-1" />Adil Vade
-                          </div>
-                          <div className={`${p}-vade-result-hero-lg`}>{s4Sonuc.adilVade}</div>
-                          <div className={`${p}-vade-result-hint`} style={{ fontSize:13 }}>gün</div>
-                        </div>
-                      </div>
-                      <div className="col-sm-7">
-                        <div className={`${p}-vade-result-secondary d-flex flex-column justify-content-center`} style={{ height:'100%' }}>
-                          <div className={`${p}-vade-result-label`}>Tek Çek Vade Tarihi</div>
-                          <div className={`${p}-vade-result-date-lg`}>{tarihFormat(s4Sonuc.vadeTarih)}</div>
-                          <div className={`${p}-vade-result-hint`}>Referans tarihi + {s4Sonuc.adilVade} gün</div>
-                          <div className={`${p}-vade-divider`} />
-                          <div className={`${p}-vade-result-hint`}>
-                            Toplam Borç:{' '}
-                            <span className={`${p}-vade-num financial-num ${p}-vade-td-danger`} style={{ fontWeight:700 }}>₺{paraFormat(s4Sonuc.toplamBorc)}</span>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  </>
-                )}
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   )
 }

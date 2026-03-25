@@ -13,6 +13,7 @@ require_once BASE_PATH . '/controllers/OdemeTakipController.php';
 
 // JWT dogrulama
 $payload = AuthMiddleware::dogrula();
+YetkiKontrol::modul_kontrol($payload, 'odemeler');
 
 // Veritabani baglantisi
 $db = Database::baglan();

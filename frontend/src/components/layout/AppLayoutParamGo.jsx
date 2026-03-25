@@ -1,20 +1,33 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import { Outlet, NavLink, Link, useNavigate, useLocation } from 'react-router-dom'
 import useAuthStore from '../../stores/authStore'
 import '../../temalar/paramgo.css'
 import ParamGoLogo from '../../logo/ParamGoLogo'
 import UpgradeBildirim from '../UpgradeBildirim'
+import BildirimZili from '../BildirimZili'
 
 // ─── Navigasyon menüsü ────────────────────────────────────────────────────────
-const menuItems = [
-  { path: '/dashboard',        icon: 'bi-speedometer2',       label: 'Dashboard',         breadcrumb: 'Genel Bakış' },
-  { path: '/cariler',          icon: 'bi-people',             label: 'Cari Hesaplar',     breadcrumb: 'Cari Hesaplar' },
-  { path: '/cek-senet',        icon: 'bi-file-earmark-text',  label: 'Çek / Senet',       breadcrumb: 'Çek / Senet' },
-  { path: '/odemeler',         icon: 'bi-calendar-check',     label: 'Ödeme Takip',       breadcrumb: 'Ödeme Takip' },
-  { path: '/kasa',             icon: 'bi-safe',               label: 'Kasa',              breadcrumb: 'Varlık & Kasa' },
-  { path: '/vade-hesaplayici', icon: 'bi-calculator',         label: 'Vade Hesaplayıcı',  breadcrumb: 'Vade Hesaplayıcı' },
-  { path: '/ayarlar/tema',     icon: 'bi-palette',            label: 'Tema Ayarları',     breadcrumb: 'Tema Ayarları' },
+const TUM_MENU_ITEMS = [
+  { path: '/dashboard',        icon: 'bi-speedometer2',       label: 'Dashboard',         breadcrumb: 'Genel Bakış',      modul: 'dashboard'        },
+  { path: '/cariler',          icon: 'bi-people',             label: 'Cari Hesaplar',     breadcrumb: 'Cari Hesaplar',    modul: 'cari'             },
+  { path: '/cek-senet',        icon: 'bi-file-earmark-text',  label: 'Çek / Senet',       breadcrumb: 'Çek / Senet',      modul: 'cek_senet'        },
+  { path: '/odemeler',         icon: 'bi-calendar-check',     label: 'Ödeme Takip',       breadcrumb: 'Ödeme Takip',      modul: 'odemeler'         },
+  { path: '/kasa',             icon: 'bi-safe',               label: 'Kasa',              breadcrumb: 'Varlık & Kasa',    modul: 'kasa'             },
+  { path: '/vade-hesaplayici', icon: 'bi-calculator',         label: 'Vade Hesaplayıcı',  breadcrumb: 'Vade Hesaplayıcı', modul: 'vade_hesaplayici' },
+  { path: '/veresiye',         icon: 'bi-journal-bookmark',   label: 'Veresiye Defteri',  breadcrumb: 'Veresiye Defteri', modul: 'veresiye'         },
 ]
+
+function gorunurMenuHesapla(kullanici) {
+  if (!kullanici || kullanici.rol === 'sahip') return TUM_MENU_ITEMS
+  let izinliModuller = []
+  try {
+    const parsed = typeof kullanici.yetkiler === 'string'
+      ? JSON.parse(kullanici.yetkiler)
+      : (kullanici.yetkiler || {})
+    izinliModuller = parsed?.moduller || []
+  } catch { izinliModuller = [] }
+  return TUM_MENU_ITEMS.filter(item => izinliModuller.includes(item.modul))
+}
 
 // ─── İsim kısaltması ──────────────────────────────────────────────────────────
 function kisalt(adSoyad) {
@@ -34,6 +47,8 @@ export default function AppLayoutParamGo() {
   const cikisYap  = useAuthStore((s) => s.cikisYap)
   const navigate  = useNavigate()
   const location  = useLocation()
+
+  const menuItems = useMemo(() => gorunurMenuHesapla(kullanici), [kullanici])
 
   // Aktif sayfa bilgisi
   const aktifMenu = menuItems.find((m) => location.pathname.startsWith(m.path)) || menuItems[0]
@@ -105,10 +120,46 @@ export default function AppLayoutParamGo() {
             </NavLink>
           ))}
 
-          {/* Ayarlar bölümü */}
+          {/* Sistem bölümü */}
           <div className="p-nav-section" style={{ marginTop: 8 }}>
             <span className="p-nav-section-label">Sistem</span>
           </div>
+          {kullanici?.rol === 'sahip' && (
+            <>
+              <NavLink
+                to="/kullanicilar"
+                className={({ isActive }) => `p-nav-btn${isActive ? ' p-nav-active' : ''}`}
+                onClick={() => setSidebarOpen(false)}
+              >
+                <i className="bi bi-person-gear p-nav-icon" aria-hidden="true" />
+                <span>Kullanıcılar</span>
+              </NavLink>
+              <NavLink
+                to="/guvenlik"
+                className={({ isActive }) => `p-nav-btn${isActive ? ' p-nav-active' : ''}`}
+                onClick={() => setSidebarOpen(false)}
+              >
+                <i className="bi bi-shield-lock p-nav-icon" aria-hidden="true" />
+                <span>Güvenlik</span>
+              </NavLink>
+            </>
+          )}
+          <NavLink
+            to="/raporlar"
+            className={({ isActive }) => `p-nav-btn${isActive ? ' p-nav-active' : ''}`}
+            onClick={() => setSidebarOpen(false)}
+          >
+            <i className="bi bi-bar-chart-line p-nav-icon" aria-hidden="true" />
+            <span>Raporlar</span>
+          </NavLink>
+          <NavLink
+            to="/bildirimler"
+            className={({ isActive }) => `p-nav-btn${isActive ? ' p-nav-active' : ''}`}
+            onClick={() => setSidebarOpen(false)}
+          >
+            <i className="bi bi-bell p-nav-icon" aria-hidden="true" />
+            <span>Bildirimler</span>
+          </NavLink>
           <NavLink
             to="/abonelik"
             className={({ isActive }) => `p-nav-btn${isActive ? ' p-nav-active' : ''}`}
@@ -161,6 +212,7 @@ export default function AppLayoutParamGo() {
           </Link>
 
           <div className="p-topbar-right">
+            <BildirimZili />
             {/* Hamburger (sadece mobil) */}
             <button
               className="p-icon-btn p-hamburger"

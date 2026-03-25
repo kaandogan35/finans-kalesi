@@ -289,12 +289,14 @@ CREATE TABLE IF NOT EXISTS `yatirim_kasasi` (
     `yatirim_adi` VARCHAR(255) NOT NULL,
     `miktar_sifreli` TEXT NOT NULL COMMENT 'AES-256-GCM',
     `birim_fiyat_sifreli` TEXT NOT NULL COMMENT 'AES-256-GCM',
+    `guncel_fiyat_sifreli` TEXT DEFAULT NULL COMMENT 'AES-256-GCM güncel piyasa fiyatı',
     `alis_tarihi` DATE NOT NULL,
     `doviz_kodu` VARCHAR(10) NOT NULL DEFAULT 'TRY',
     `kategori` VARCHAR(100) DEFAULT NULL,
     `silindi_mi` TINYINT(1) NOT NULL DEFAULT 0,
     `silinme_tarihi` DATETIME DEFAULT NULL,
     `olusturma_tarihi` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    `guncelleme_tarihi` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     PRIMARY KEY (`id`),
     KEY `idx_yatirim_sirket` (`sirket_id`),
     KEY `idx_yatirim_silindi` (`sirket_id`, `silindi_mi`),
@@ -345,6 +347,7 @@ CREATE TABLE IF NOT EXISTS `ay_kapanislar` (
     `sanal_stok_sifreli` TEXT DEFAULT NULL,
     `net_varlik_sifreli` TEXT DEFAULT NULL,
     `silindi_mi` TINYINT(1) NOT NULL DEFAULT 0,
+    `silinme_tarihi` DATETIME DEFAULT NULL,
     `olusturma_tarihi` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
     PRIMARY KEY (`id`),
     UNIQUE KEY `uq_ay_kapanislar_donem` (`sirket_id`, `donem`),
@@ -460,6 +463,79 @@ CREATE TABLE IF NOT EXISTS `mail_log` (
     KEY `idx_mail_sirket` (`sirket_id`),
     KEY `idx_mail_turu` (`mail_turu`),
     KEY `idx_mail_tarih` (`olusturma_tarihi`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- =====================================================
+-- 18. VERESİYE İŞLEMLER (Faturasız satış / açık hesap)
+-- =====================================================
+CREATE TABLE IF NOT EXISTS `veresiye_islemler` (
+    `id` INT UNSIGNED NOT NULL AUTO_INCREMENT,
+    `sirket_id` INT UNSIGNED NOT NULL,
+    `cari_id` INT UNSIGNED NOT NULL,
+    `tur` ENUM('satis','odeme') NOT NULL DEFAULT 'satis',
+    `tutar` DECIMAL(12,2) NOT NULL,
+    `aciklama_sifreli` TEXT DEFAULT NULL COMMENT 'AES-256-GCM',
+    `tarih` DATE NOT NULL,
+    `olusturan_id` INT UNSIGNED NOT NULL,
+    `silindi_mi` TINYINT(1) NOT NULL DEFAULT 0,
+    `silinme_tarihi` DATETIME DEFAULT NULL,
+    `olusturma_tarihi` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    PRIMARY KEY (`id`),
+    KEY `idx_ver_sirket` (`sirket_id`),
+    KEY `idx_ver_cari` (`sirket_id`, `cari_id`),
+    KEY `idx_ver_tarih` (`sirket_id`, `tarih`),
+    KEY `idx_ver_silindi` (`sirket_id`, `silindi_mi`),
+    CONSTRAINT `fk_ver_sirket` FOREIGN KEY (`sirket_id`)
+        REFERENCES `sirketler` (`id`) ON DELETE CASCADE ON UPDATE CASCADE,
+    CONSTRAINT `fk_ver_cari` FOREIGN KEY (`cari_id`)
+        REFERENCES `cari_kartlar` (`id`) ON DELETE CASCADE ON UPDATE CASCADE,
+    CONSTRAINT `fk_ver_olusturan` FOREIGN KEY (`olusturan_id`)
+        REFERENCES `kullanicilar` (`id`) ON DELETE CASCADE ON UPDATE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- =====================================================
+-- 19. GİRİŞ GEÇMİŞİ (Login history)
+-- =====================================================
+CREATE TABLE IF NOT EXISTS `giris_gecmisi` (
+    `id` INT UNSIGNED NOT NULL AUTO_INCREMENT,
+    `sirket_id` INT UNSIGNED NOT NULL,
+    `kullanici_id` INT UNSIGNED NOT NULL,
+    `ip_adresi` VARCHAR(45) NOT NULL,
+    `cihaz_bilgisi` VARCHAR(500) DEFAULT NULL,
+    `cihaz_turu` VARCHAR(50) DEFAULT NULL COMMENT 'masaustu, mobil, tablet',
+    `tarayici` VARCHAR(100) DEFAULT NULL,
+    `isletim_sistemi` VARCHAR(100) DEFAULT NULL,
+    `basarili_mi` TINYINT(1) NOT NULL DEFAULT 1,
+    `basarisizlik_nedeni` VARCHAR(100) DEFAULT NULL,
+    `tarih` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    PRIMARY KEY (`id`),
+    KEY `idx_giris_kullanici` (`sirket_id`, `kullanici_id`),
+    KEY `idx_giris_tarih` (`sirket_id`, `tarih`),
+    CONSTRAINT `fk_giris_sirket` FOREIGN KEY (`sirket_id`)
+        REFERENCES `sirketler` (`id`) ON DELETE CASCADE ON UPDATE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- =====================================================
+-- 20. GÜVENLİK AYARLARI (Şirket bazlı güvenlik politikaları)
+-- =====================================================
+CREATE TABLE IF NOT EXISTS `guvenlik_ayarlari` (
+    `id` INT UNSIGNED NOT NULL AUTO_INCREMENT,
+    `sirket_id` INT UNSIGNED NOT NULL,
+    `min_sifre_uzunlugu` TINYINT UNSIGNED NOT NULL DEFAULT 8,
+    `sifre_buyuk_harf_zorunlu` TINYINT(1) NOT NULL DEFAULT 0,
+    `sifre_sayi_zorunlu` TINYINT(1) NOT NULL DEFAULT 0,
+    `sifre_ozel_karakter_zorunlu` TINYINT(1) NOT NULL DEFAULT 0,
+    `sifre_gecerlilik_gun` INT UNSIGNED DEFAULT NULL COMMENT 'NULL = süre yok',
+    `hesap_kilitleme_deneme` INT UNSIGNED NOT NULL DEFAULT 5,
+    `hesap_kilitleme_sure_dk` INT UNSIGNED NOT NULL DEFAULT 30,
+    `ip_beyaz_liste` JSON DEFAULT NULL,
+    `ip_kara_liste` JSON DEFAULT NULL,
+    `olusturma_tarihi` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    `guncelleme_tarihi` DATETIME DEFAULT NULL ON UPDATE CURRENT_TIMESTAMP,
+    PRIMARY KEY (`id`),
+    UNIQUE KEY `uq_guvenlik_sirket` (`sirket_id`),
+    CONSTRAINT `fk_guvenlik_sirket` FOREIGN KEY (`sirket_id`)
+        REFERENCES `sirketler` (`id`) ON DELETE CASCADE ON UPDATE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- =====================================================

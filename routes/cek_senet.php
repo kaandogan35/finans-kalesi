@@ -17,6 +17,7 @@ require_once BASE_PATH . '/controllers/CekSenetController.php';
 
 // JWT dogrulama — her endpoint giris gerektirir
 $payload = AuthMiddleware::dogrula();
+YetkiKontrol::modul_kontrol($payload, 'cek_senet');
 
 // Veritabani baglantisi
 $db = Database::baglan();

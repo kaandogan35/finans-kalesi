@@ -15,19 +15,22 @@ class SinirKontrol {
     // -1 = sınırsız
     const SINIRLAR = [
         'ucretsiz' => [
-            'cari_toplam'    => 25,   // Toplam cari kart
-            'cek_aylik'      => 10,   // Aylık çek/senet ekleme
-            'kasa_gecmis_ay' => 2,    // Kasa geçmişi (ay)
+            'cari_toplam'     => 25,   // Toplam cari kart
+            'cek_aylik'       => 10,   // Aylık çek/senet ekleme
+            'kasa_gecmis_ay'  => 2,    // Kasa geçmişi (ay)
+            'kullanici_sayisi'=> 1,    // Toplam kullanıcı
         ],
         'standart' => [
-            'cari_toplam'    => 500,
-            'cek_aylik'      => 200,
-            'kasa_gecmis_ay' => 24,
+            'cari_toplam'     => 500,
+            'cek_aylik'       => 200,
+            'kasa_gecmis_ay'  => 24,
+            'kullanici_sayisi'=> 2,
         ],
         'kurumsal' => [
-            'cari_toplam'    => -1,
-            'cek_aylik'      => -1,
-            'kasa_gecmis_ay' => -1,
+            'cari_toplam'     => -1,
+            'cek_aylik'       => -1,
+            'kasa_gecmis_ay'  => -1,
+            'kullanici_sayisi'=> 10,
         ],
     ];
 
@@ -37,6 +40,17 @@ class SinirKontrol {
         $stmt = $db->prepare(
             "SELECT COUNT(*) FROM cari_kartlar
              WHERE sirket_id = :sid AND silindi_mi = 0"
+        );
+        $stmt->execute([':sid' => $sirket_id]);
+        return (int) $stmt->fetchColumn();
+    }
+
+    // ─── Aktif Kullanıcı Sayısı ─────────────────────────────
+    public static function kullaniciSayisi(int $sirket_id): int {
+        $db = Database::baglan();
+        $stmt = $db->prepare(
+            "SELECT COUNT(*) FROM kullanicilar
+             WHERE sirket_id = :sid AND aktif_mi = 1"
         );
         $stmt->execute([':sid' => $sirket_id]);
         return (int) $stmt->fetchColumn();
@@ -57,7 +71,7 @@ class SinirKontrol {
     }
 
     // ─── Kontrol + 403 (Sınır Aşılmışsa) ──────────────────
-    // $tur: 'cari' | 'cek'
+    // $tur: 'cari' | 'cek' | 'kullanici'
     public static function kontrol(array $payload, string $tur): void {
         $plan     = $payload['plan'] ?? 'ucretsiz';
         $sinirlar = self::SINIRLAR[$plan] ?? self::SINIRLAR['ucretsiz'];
@@ -94,6 +108,21 @@ class SinirKontrol {
                 exit;
             }
         }
+
+        if ($tur === 'kullanici') {
+            $sinir = $sinirlar['kullanici_sayisi'];
+            $mevcut = self::kullaniciSayisi($sirket);
+            if ($mevcut >= $sinir) {
+                Response::json([
+                    'basarili' => false,
+                    'hata'     => "Planınızda en fazla {$sinir} kullanıcı tanımlayabilirsiniz. Mevcut: {$mevcut}. Planınızı yükseltin.",
+                    'kod'      => 'SINIR_ASILDI',
+                    'sinir'    => $sinir,
+                    'mevcut'   => $mevcut,
+                ], 403);
+                exit;
+            }
+        }
     }
 
     // ─── Durum Özeti (API için) ─────────────────────────────
@@ -108,6 +137,8 @@ class SinirKontrol {
         $cari_sinir = $sinirlar['cari_toplam'];
         $cek_sinir  = $sinirlar['cek_aylik'];
         $kasa_ay    = $sinirlar['kasa_gecmis_ay'];
+        $k_sinir    = $sinirlar['kullanici_sayisi'];
+        $k_mevcut   = self::kullaniciSayisi($sirket);
 
         return [
             'plan' => $plan,
@@ -126,6 +157,12 @@ class SinirKontrol {
             'kasa_gecmis_ay' => [
                 'sinir'   => $kasa_ay,
                 'sinirsiz'=> $kasa_ay === -1,
+            ],
+            'kullanici' => [
+                'mevcut'  => $k_mevcut,
+                'sinir'   => $k_sinir,
+                'yuzde'   => round(($k_mevcut / $k_sinir) * 100),
+                'sinirsiz'=> false,
             ],
         ];
     }

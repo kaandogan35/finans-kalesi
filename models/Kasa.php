@@ -263,7 +263,8 @@ class Kasa {
     // Yatırımları listele (çözülmüş)
     public function yatirimlar_listele($sirket_id) {
         $sql = "SELECT id, yatirim_adi, alis_tarihi, doviz_kodu, kategori,
-                       miktar_sifreli, birim_fiyat_sifreli, olusturma_tarihi
+                       miktar_sifreli, birim_fiyat_sifreli, guncel_fiyat_sifreli,
+                       olusturma_tarihi
                 FROM yatirim_kasasi
                 WHERE sirket_id = ? AND silindi_mi = 0
                 ORDER BY alis_tarihi DESC";
@@ -274,10 +275,14 @@ class Kasa {
 
         $yatirimlar = array();
         foreach ($satirlar as $satir) {
-            $miktar      = $this->coz($satir['miktar_sifreli']);
-            $birim_fiyat = $this->coz($satir['birim_fiyat_sifreli']);
-            $miktar_f    = ($miktar !== null) ? (float)$miktar : null;
-            $fiyat_f     = ($birim_fiyat !== null) ? (float)$birim_fiyat : null;
+            $miktar        = $this->coz($satir['miktar_sifreli']);
+            $birim_fiyat   = $this->coz($satir['birim_fiyat_sifreli']);
+            $guncel_fiyat  = !empty($satir['guncel_fiyat_sifreli'])
+                ? $this->coz($satir['guncel_fiyat_sifreli'])
+                : null;
+            $miktar_f      = ($miktar !== null) ? (float)$miktar : null;
+            $fiyat_f       = ($birim_fiyat !== null) ? (float)$birim_fiyat : null;
+            $guncel_f      = ($guncel_fiyat !== null) ? (float)$guncel_fiyat : null;
 
             $yatirimlar[] = array(
                 'id'           => $satir['id'],
@@ -286,7 +291,7 @@ class Kasa {
                 'miktar'       => $miktar_f,
                 'birim_fiyat'  => $fiyat_f,
                 'toplam_deger' => ($miktar_f !== null && $fiyat_f !== null) ? round($miktar_f * $fiyat_f, 2) : null,
-                'guncel_fiyat' => null,
+                'guncel_fiyat' => $guncel_f,
                 'alis_tarihi'  => $satir['alis_tarihi'],
                 'doviz_kodu'   => $satir['doviz_kodu'],
                 'kategori'     => $satir['kategori'],
@@ -350,6 +355,33 @@ class Kasa {
         $stmt = $this->db->prepare($sql);
         $stmt->execute($params);
         return $stmt->rowCount() > 0;
+    }
+
+    // Güncel fiyatları toplu güncelle (aynı tur'a sahip tüm kayıtlar)
+    public function guncel_fiyat_toplu_guncelle($sirket_id, $fiyatlar) {
+        // $fiyatlar = [ 'Ata Altın' => 4200.50, 'Dolar ($)' => 38.50, ... ]
+        $guncellenen = 0;
+
+        foreach ($fiyatlar as $tur => $fiyat) {
+            if ($fiyat === null) {
+                // Boş bırakılan: guncel_fiyat_sifreli = NULL yap
+                $sql = "UPDATE yatirim_kasasi
+                        SET guncel_fiyat_sifreli = NULL
+                        WHERE sirket_id = ? AND yatirim_adi = ? AND silindi_mi = 0";
+                $stmt = $this->db->prepare($sql);
+                $stmt->execute([$sirket_id, $tur]);
+            } else {
+                $sifreli = $this->sifrele((string)$fiyat);
+                $sql = "UPDATE yatirim_kasasi
+                        SET guncel_fiyat_sifreli = ?
+                        WHERE sirket_id = ? AND yatirim_adi = ? AND silindi_mi = 0";
+                $stmt = $this->db->prepare($sql);
+                $stmt->execute([$sifreli, $sirket_id, $tur]);
+            }
+            $guncellenen += $stmt->rowCount();
+        }
+
+        return $guncellenen;
     }
 
     // Yatırım sil — SOFT DELETE (silindi_mi = 1)
@@ -475,7 +507,7 @@ class Kasa {
                        banka_nakdi_sifreli, yatirim_birikimi_sifreli,
                        smm_sifreli, sanal_stok_sifreli, net_varlik_sifreli
                 FROM ay_kapanislar
-                WHERE sirket_id = ?
+                WHERE sirket_id = ? AND silindi_mi = 0
                 ORDER BY donem ASC";
         $stmt = $this->db->prepare($sql);
         $stmt->execute([$sirket_id]);
@@ -503,20 +535,26 @@ class Kasa {
         return array('kapanislar' => $liste);
     }
 
-    // Yeni ay kapanışı kaydet
+    // Yeni ay kapanışı kaydet (soft-delete edilmiş aynı dönem varsa geri getirir)
     public function bilanco_kaydet($sirket_id, $veri) {
-        $sql = "INSERT INTO ay_kapanislar
-                (sirket_id, donem, kar_marji,
-                 donem_basi_stok_sifreli, kesilen_fatura_sifreli,
-                 gelen_alis_sifreli, alacaklar_sifreli, borclar_sifreli,
-                 banka_nakdi_sifreli, yatirim_birikimi_sifreli,
-                 smm_sifreli, sanal_stok_sifreli, net_varlik_sifreli)
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
-        $stmt = $this->db->prepare($sql);
-        $stmt->execute([
-            $sirket_id,
-            $veri['donem'],
-            isset($veri['kar_marji']) ? (float)$veri['kar_marji'] : 35,
+        // Önce aktif (silinmemiş) kayıt var mı kontrol et
+        $aktif_kontrol = $this->db->prepare(
+            "SELECT id FROM ay_kapanislar WHERE sirket_id = ? AND donem = ? AND silindi_mi = 0"
+        );
+        $aktif_kontrol->execute([$sirket_id, $veri['donem']]);
+        if ($aktif_kontrol->fetch(PDO::FETCH_ASSOC)) {
+            throw new RuntimeException('Bu dönem için zaten aktif bir kayıt mevcut: ' . $veri['donem']);
+        }
+
+        // Aynı dönem için soft-delete edilmiş kayıt var mı kontrol et
+        $kontrol = $this->db->prepare(
+            "SELECT id FROM ay_kapanislar WHERE sirket_id = ? AND donem = ? AND silindi_mi = 1"
+        );
+        $kontrol->execute([$sirket_id, $veri['donem']]);
+        $silinen = $kontrol->fetch(PDO::FETCH_ASSOC);
+
+        $kar_marji = isset($veri['kar_marji']) ? (float)$veri['kar_marji'] : 35;
+        $sifreli = [
             $this->sifrele((string)($veri['donem_basi_stok']  ?? 0)),
             $this->sifrele((string)($veri['kesilen_fatura']   ?? 0)),
             $this->sifrele((string)($veri['gelen_alis']       ?? 0)),
@@ -527,7 +565,33 @@ class Kasa {
             $this->sifrele((string)($veri['smm']              ?? 0)),
             $this->sifrele((string)($veri['sanal_stok']       ?? 0)),
             $this->sifrele((string)($veri['net_varlik']       ?? 0)),
-        ]);
+        ];
+
+        if ($silinen) {
+            // Soft-delete edilmiş kaydı geri getir ve yeni verilerle güncelle
+            $sql = "UPDATE ay_kapanislar
+                    SET silindi_mi = 0, kar_marji = ?,
+                        donem_basi_stok_sifreli = ?, kesilen_fatura_sifreli = ?,
+                        gelen_alis_sifreli = ?, alacaklar_sifreli = ?, borclar_sifreli = ?,
+                        banka_nakdi_sifreli = ?, yatirim_birikimi_sifreli = ?,
+                        smm_sifreli = ?, sanal_stok_sifreli = ?, net_varlik_sifreli = ?,
+                        olusturma_tarihi = NOW()
+                    WHERE id = ? AND sirket_id = ?";
+            $stmt = $this->db->prepare($sql);
+            $stmt->execute(array_merge([$kar_marji], $sifreli, [(int)$silinen['id'], $sirket_id]));
+            return (int)$silinen['id'];
+        }
+
+        // Yeni kayıt oluştur
+        $sql = "INSERT INTO ay_kapanislar
+                (sirket_id, donem, kar_marji,
+                 donem_basi_stok_sifreli, kesilen_fatura_sifreli,
+                 gelen_alis_sifreli, alacaklar_sifreli, borclar_sifreli,
+                 banka_nakdi_sifreli, yatirim_birikimi_sifreli,
+                 smm_sifreli, sanal_stok_sifreli, net_varlik_sifreli)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
+        $stmt = $this->db->prepare($sql);
+        $stmt->execute(array_merge([$sirket_id, $veri['donem'], $kar_marji], $sifreli));
         return (int)$this->db->lastInsertId();
     }
 
@@ -545,7 +609,7 @@ class Kasa {
                     smm_sifreli = ?,
                     sanal_stok_sifreli = ?,
                     net_varlik_sifreli = ?
-                WHERE id = ? AND sirket_id = ?";
+                WHERE id = ? AND sirket_id = ? AND silindi_mi = 0";
         $stmt = $this->db->prepare($sql);
         $stmt->execute([
             isset($veri['kar_marji']) ? (float)$veri['kar_marji'] : 35,
@@ -567,7 +631,7 @@ class Kasa {
 
     // Ay kapanışı sil (soft delete — bilanço kayıtları arşiv niteliğinde, geri alınabilir)
     public function bilanco_sil($sirket_id, $bilanco_id) {
-        $sql = "UPDATE ay_kapanislar SET silindi_mi = 1 WHERE id = ? AND sirket_id = ?";
+        $sql = "UPDATE ay_kapanislar SET silindi_mi = 1 WHERE id = ? AND sirket_id = ? AND silindi_mi = 0";
         $stmt = $this->db->prepare($sql);
         $stmt->execute([$bilanco_id, $sirket_id]);
         return $stmt->rowCount() > 0;

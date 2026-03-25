@@ -41,6 +41,11 @@ switch ($islem) {
         $cron->aylikBilanco();
         break;
 
+    case 'bildirim-kontrol':
+        if ($metod !== 'GET') { Response::hata('Sadece GET kabul edilir', 405); break; }
+        $cron->bildirimKontrol();
+        break;
+
     default:
         Response::bulunamadi("Cron endpoint bulunamadi: " . htmlspecialchars($islem, ENT_QUOTES, 'UTF-8'));
         break;

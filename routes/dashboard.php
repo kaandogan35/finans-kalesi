@@ -15,6 +15,7 @@ require_once BASE_PATH . '/controllers/DashboardController.php';
 
 // JWT dogrulama — dashboard da giriş gerektirir
 $payload = AuthMiddleware::dogrula();
+YetkiKontrol::modul_kontrol($payload, 'dashboard');
 
 // Veritabani baglantisi
 $db = Database::baglan();

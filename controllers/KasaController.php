@@ -181,6 +181,24 @@ class KasaController {
         }
     }
 
+    // ─── POST /api/kasa/yatirimlar/fiyat ───
+    public function guncel_fiyat_guncelle($payload, $girdi) {
+        try {
+            if (empty($girdi['fiyatlar']) || !is_array($girdi['fiyatlar'])) {
+                Response::dogrulama_hatasi(array('fiyatlar' => 'Fiyat listesi zorunludur'));
+                return;
+            }
+
+            $kasa = new Kasa($this->db);
+            $guncellenen = $kasa->guncel_fiyat_toplu_guncelle($payload['sirket_id'], $girdi['fiyatlar']);
+
+            Response::basarili(array('guncellenen' => $guncellenen), 'Guncel fiyatlar kaydedildi');
+        } catch (Exception $e) {
+            error_log('Kasa guncel_fiyat_guncelle hatasi: ' . $e->getMessage());
+            Response::sunucu_hatasi('Fiyatlar guncellenemedi');
+        }
+    }
+
     // ─── DELETE /api/kasa/yatirimlar/{id} ───
     public function yatirim_sil($payload, $yatirim_id) {
         try {
@@ -292,11 +310,14 @@ class KasaController {
             Response::basarili(array('id' => $id), 'Ay kapanisi kaydedildi', 201);
         } catch (Exception $e) {
             error_log('Kasa bilanco_kaydet hatasi: ' . $e->getMessage());
-            // Muhtemelen UNIQUE constraint ihlali (aynı dönem tekrar)
-            if (strpos($e->getMessage(), 'Duplicate') !== false) {
-                Response::hata('Bu donem icin zaten kayit var', 409);
+            // Aktif kayıt kontrolü (model tarafından fırlatılan RuntimeException)
+            if (strpos($e->getMessage(), 'Bu dönem için zaten aktif') !== false) {
+                Response::hata('Bu dönem için zaten kayıt var', 409);
+            // MySQL UNIQUE constraint ihlali (güvenlik ağı)
+            } elseif (strpos($e->getMessage(), 'Duplicate') !== false) {
+                Response::hata('Bu dönem için zaten kayıt var', 409);
             } else {
-                Response::sunucu_hatasi('Bilanco kaydedilemedi');
+                Response::sunucu_hatasi('Sunucu hatasi: ' . $e->getMessage());
             }
         }
     }
@@ -315,7 +336,7 @@ class KasaController {
             Response::basarili(null, 'Bilanco guncellendi');
         } catch (Exception $e) {
             error_log('Kasa bilanco_guncelle hatasi: ' . $e->getMessage());
-            Response::sunucu_hatasi('Bilanco guncellenemedi');
+            Response::sunucu_hatasi('Sunucu hatasi: ' . $e->getMessage());
         }
     }
 
@@ -326,14 +347,14 @@ class KasaController {
             $basarili = $kasa->bilanco_sil($payload['sirket_id'], $bilanco_id);
 
             if (!$basarili) {
-                Response::bulunamadi('Bilanco bulunamadi');
+                Response::hata('Kayıt bulunamadı veya zaten silinmiş', 404);
                 return;
             }
 
             Response::basarili(null, 'Bilanco silindi');
         } catch (Exception $e) {
             error_log('Kasa bilanco_sil hatasi: ' . $e->getMessage());
-            Response::sunucu_hatasi('Bilanco silinemedi');
+            Response::sunucu_hatasi('Sunucu hatasi: ' . $e->getMessage());
         }
     }
 }

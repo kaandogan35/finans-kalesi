@@ -30,7 +30,7 @@ class Kullanici {
      * ID ile kullanici bul
      */
     public function id_ile_bul($id) {
-        $sql = "SELECT id, sirket_id, ad_soyad, email, telefon, rol, aktif_mi, son_giris, olusturma_tarihi 
+        $sql = "SELECT id, sirket_id, ad_soyad, email, telefon, rol, yetkiler, aktif_mi, son_giris, olusturma_tarihi
                 FROM kullanicilar WHERE id = ? LIMIT 1";
         $stmt = $this->db->prepare($sql);
         $stmt->execute([$id]);
@@ -42,10 +42,10 @@ class Kullanici {
      */
     public function olustur($veri) {
         $sifre_hash = password_hash($veri['sifre'], PASSWORD_BCRYPT, ['cost' => 12]);
-        
-        $sql = "INSERT INTO kullanicilar (sirket_id, ad_soyad, email, sifre_hash, telefon, rol, aktif_mi) 
-                VALUES (?, ?, ?, ?, ?, ?, 1)";
-        
+
+        $sql = "INSERT INTO kullanicilar (sirket_id, ad_soyad, email, sifre_hash, telefon, rol, yetkiler, aktif_mi)
+                VALUES (?, ?, ?, ?, ?, ?, ?, 1)";
+
         $stmt = $this->db->prepare($sql);
         $stmt->execute([
             $veri['sirket_id'],
@@ -53,10 +53,66 @@ class Kullanici {
             $veri['email'],
             $sifre_hash,
             $veri['telefon'] ?? null,
-            $veri['rol'] ?? 'personel'
+            $veri['rol'] ?? 'personel',
+            $veri['yetkiler'] ?? null,
         ]);
-        
+
         return (int) $this->db->lastInsertId();
+    }
+
+    /**
+     * Şirketin tüm kullanıcılarını listele
+     */
+    public function sirket_kullanicilari(int $sirket_id): array {
+        $sql = "SELECT id, sirket_id, ad_soyad, email, telefon, rol, yetkiler, aktif_mi, son_giris, olusturma_tarihi
+                FROM kullanicilar
+                WHERE sirket_id = ? AND aktif_mi = 1
+                ORDER BY olusturma_tarihi ASC";
+        $stmt = $this->db->prepare($sql);
+        $stmt->execute([$sirket_id]);
+        return $stmt->fetchAll();
+    }
+
+    /**
+     * Kullanıcı güncelle (ad, telefon, rol, yetkiler, aktif_mi)
+     */
+    public function guncelle(int $id, int $sirket_id, array $veri): bool {
+        $sql = "UPDATE kullanicilar
+                SET ad_soyad = :ad_soyad,
+                    telefon  = :telefon,
+                    rol      = :rol,
+                    yetkiler = :yetkiler,
+                    aktif_mi = :aktif_mi
+                WHERE id = :id AND sirket_id = :sirket_id";
+        $stmt = $this->db->prepare($sql);
+        return $stmt->execute([
+            ':ad_soyad'  => $veri['ad_soyad'],
+            ':telefon'   => $veri['telefon'] ?? null,
+            ':rol'       => $veri['rol'],
+            ':yetkiler'  => $veri['yetkiler'] ?? null,
+            ':aktif_mi'  => $veri['aktif_mi'] ?? 1,
+            ':id'        => $id,
+            ':sirket_id' => $sirket_id,
+        ]);
+    }
+
+    /**
+     * Kullanıcı sil (soft delete — aktif_mi = 0)
+     */
+    public function sil(int $id, int $sirket_id): bool {
+        $sql = "UPDATE kullanicilar SET aktif_mi = 0 WHERE id = :id AND sirket_id = :sirket_id";
+        $stmt = $this->db->prepare($sql);
+        return $stmt->execute([':id' => $id, ':sirket_id' => $sirket_id]);
+    }
+
+    /**
+     * Şifre güncelle (sahip başkasının şifresini sıfırlar)
+     */
+    public function sifre_guncelle(int $id, int $sirket_id, string $yeni_sifre): bool {
+        $hash = password_hash($yeni_sifre, PASSWORD_BCRYPT, ['cost' => 12]);
+        $sql  = "UPDATE kullanicilar SET sifre_hash = :hash WHERE id = :id AND sirket_id = :sirket_id";
+        $stmt = $this->db->prepare($sql);
+        return $stmt->execute([':hash' => $hash, ':id' => $id, ':sirket_id' => $sirket_id]);
     }
     
     /**

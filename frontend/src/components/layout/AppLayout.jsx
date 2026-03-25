@@ -4,29 +4,51 @@
  * koyu-tema.md + react-bootstrap-ui.md kurallarına uyar
  */
 
-import { useState } from 'react'
+import { useState, useMemo } from 'react'
 import { NavLink, Outlet, useNavigate, useLocation } from 'react-router-dom'
 import useAuthStore from '../../stores/authStore'
 import UpgradeBildirim from '../UpgradeBildirim'
 import ParamGoLogo from '../../logo/ParamGoLogo'
 
 // ─── Menü Öğeleri ─────────────────────────────────────────────────────────────
-const menuOgeleri = [
-  { yol: '/dashboard', etiket: 'Dashboard',      icon: 'bi-speedometer2',             renk: '#10B981', rgb: '16,185,129'  },
-  { yol: '/cariler',   etiket: 'Cari Hesaplar',   icon: 'bi-people-fill',              renk: '#10b981', rgb: '16,185,129'  },
-  { yol: '/cek-senet', etiket: 'Çek / Senet',    icon: 'bi-file-earmark-text-fill',   renk: '#10B981', rgb: '16,185,129'  },
-  { yol: '/odemeler',  etiket: 'Ödemeler',        icon: 'bi-credit-card-2-front-fill', renk: '#10B981', rgb: '16,185,129'  },
-  { yol: '/kasa',             etiket: 'Varlık & Kasa',    icon: 'bi-safe-fill',                renk: '#10B981', rgb: '16,185,129'  },
-  { yol: '/vade-hesaplayici', etiket: 'Vade Hesaplayıcı', icon: 'bi-calculator-fill',          renk: '#10B981', rgb: '16,185,129'  },
-  { yol: '/ayarlar/tema',     etiket: 'Tema Ayarları',    icon: 'bi-palette-fill',             renk: '#10B981', rgb: '16,185,129'  },
+const TUM_MENU = [
+  { yol: '/dashboard',        etiket: 'Dashboard',        icon: 'bi-speedometer2',             renk: '#10B981', rgb: '16,185,129', modul: 'dashboard'         },
+  { yol: '/cariler',          etiket: 'Cari Hesaplar',    icon: 'bi-people-fill',              renk: '#10B981', rgb: '16,185,129', modul: 'cari'              },
+  { yol: '/cek-senet',        etiket: 'Çek / Senet',      icon: 'bi-file-earmark-text-fill',   renk: '#10B981', rgb: '16,185,129', modul: 'cek_senet'         },
+  { yol: '/odemeler',         etiket: 'Ödemeler',         icon: 'bi-credit-card-2-front-fill', renk: '#10B981', rgb: '16,185,129', modul: 'odemeler'          },
+  { yol: '/kasa',             etiket: 'Varlık & Kasa',    icon: 'bi-safe-fill',                renk: '#10B981', rgb: '16,185,129', modul: 'kasa'              },
+  { yol: '/vade-hesaplayici', etiket: 'Vade Hesaplayıcı', icon: 'bi-calculator-fill',          renk: '#10B981', rgb: '16,185,129', modul: 'vade_hesaplayici'  },
+  { yol: '/kullanicilar',     etiket: 'Kullanıcılar',     icon: 'bi-person-gear',              renk: '#10B981', rgb: '16,185,129', modul: '__sahip_only__'    },
+  { yol: '/ayarlar/tema',     etiket: 'Tema Ayarları',    icon: 'bi-palette-fill',             renk: '#10B981', rgb: '16,185,129', modul: null                },
 ]
 
+function gorunurMenuHesapla(kullanici) {
+  if (!kullanici) return TUM_MENU
+  if (kullanici.rol === 'sahip') return TUM_MENU
+
+  let izinliModuller = []
+  try {
+    const parsed = typeof kullanici.yetkiler === 'string'
+      ? JSON.parse(kullanici.yetkiler)
+      : (kullanici.yetkiler || {})
+    izinliModuller = parsed?.moduller || []
+  } catch {
+    izinliModuller = []
+  }
+
+  return TUM_MENU.filter(item => {
+    if (item.modul === '__sahip_only__') return false
+    if (item.modul === null) return true
+    return izinliModuller.includes(item.modul)
+  })
+}
+
 // ─── Aktif Sayfa Başlığı ──────────────────────────────────────────────────────
-function aktifSayfaBul(pathname) {
-  const eslesen = [...menuOgeleri]
+function aktifSayfaBul(pathname, menuListesi) {
+  const eslesen = [...menuListesi]
     .sort((a, b) => b.yol.length - a.yol.length)
     .find(m => pathname.startsWith(m.yol))
-  return eslesen || menuOgeleri[0]
+  return eslesen || menuListesi[0] || TUM_MENU[0]
 }
 
 // ─── Tarih Formatı ─────────────────────────────────────────────────────────────
@@ -198,7 +220,7 @@ const CSS = `
 `
 
 // ─── Sidebar İçeriği ──────────────────────────────────────────────────────────
-function SidebarIcerik({ kullanici, handleCikis, onKapat }) {
+function SidebarIcerik({ kullanici, handleCikis, onKapat, menuOgeleri }) {
   return (
     <div className="fk-sidebar d-flex flex-column h-100">
 
@@ -340,7 +362,8 @@ export default function AppLayout() {
     navigate('/giris')
   }
 
-  const aktifSayfa = aktifSayfaBul(location.pathname)
+  const menuOgeleri = useMemo(() => gorunurMenuHesapla(kullanici), [kullanici])
+  const aktifSayfa = aktifSayfaBul(location.pathname, menuOgeleri)
 
   return (
     <div
@@ -360,12 +383,13 @@ export default function AppLayout() {
           kullanici={kullanici}
           handleCikis={handleCikis}
           onKapat={() => setSidebarAcik(false)}
+          menuOgeleri={menuOgeleri}
         />
       </aside>
 
       {/* ─── Desktop Sidebar ── */}
       <aside className="fk-sidebar-desktop d-none d-lg-flex flex-column">
-        <SidebarIcerik kullanici={kullanici} handleCikis={handleCikis} />
+        <SidebarIcerik kullanici={kullanici} handleCikis={handleCikis} menuOgeleri={menuOgeleri} />
       </aside>
 
       {/* ─── İçerik Sütunu ── */}

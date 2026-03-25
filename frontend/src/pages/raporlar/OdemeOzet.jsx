@@ -1,0 +1,292 @@
+/**
+ * OdemeOzet.jsx — Ödeme Takip Özet Raporu
+ * Bar chart (tahsilat vs ödeme) + durum dağılımı + tablo
+ * rpr- prefix
+ */
+
+import { useState, useEffect } from 'react'
+import { raporlarApi } from '../../api/raporlar'
+import { toast } from 'sonner'
+import {
+  Chart as ChartJS, CategoryScale, LinearScale, BarElement, Title, Tooltip, Legend,
+} from 'chart.js'
+import { Bar } from 'react-chartjs-2'
+
+ChartJS.register(CategoryScale, LinearScale, BarElement, Title, Tooltip, Legend)
+
+const TL = (n) =>
+  new Intl.NumberFormat('tr-TR', { style: 'currency', currency: 'TRY', minimumFractionDigits: 2 }).format(n ?? 0)
+
+const DURUM_ETIKET = {
+  bekliyor: 'Bekliyor',
+  cevap_vermedi: 'Cevap Vermedi',
+  soz_verildi: 'Söz Verildi',
+  tamamlandi: 'Tamamlandı',
+  iptal: 'İptal',
+}
+const DURUM_BADGE = {
+  bekliyor: 'rpr-badge-amber',
+  cevap_vermedi: 'rpr-badge-red',
+  soz_verildi: 'rpr-badge-blue',
+  tamamlandi: 'rpr-badge-emerald',
+  iptal: 'rpr-badge-gray',
+}
+const YON_ETIKET = { tahsilat: 'Tahsilat', odeme: 'Ödeme' }
+
+const AY_ADLARI = {
+  '01': 'Oca', '02': 'Şub', '03': 'Mar', '04': 'Nis', '05': 'May', '06': 'Haz',
+  '07': 'Tem', '08': 'Ağu', '09': 'Eyl', '10': 'Eki', '11': 'Kas', '12': 'Ara',
+}
+
+export default function OdemeOzet() {
+  const [veri, setVeri] = useState(null)
+  const [yukleniyor, setYukleniyor] = useState(true)
+  const yil = new Date().getFullYear()
+  const [filtre, setFiltre] = useState({
+    baslangic_tarihi: `${yil}-01-01`,
+    bitis_tarihi: `${yil}-12-31`,
+    durum: '',
+  })
+
+  useEffect(() => { getir() }, [])
+
+  const getir = async (f = filtre) => {
+    setYukleniyor(true)
+    try {
+      const params = {}
+      if (f.baslangic_tarihi) params.baslangic_tarihi = f.baslangic_tarihi
+      if (f.bitis_tarihi) params.bitis_tarihi = f.bitis_tarihi
+      if (f.durum) params.durum = f.durum
+      const { data } = await raporlarApi.odemeOzet(params)
+      if (data.basarili) setVeri(data.veri)
+    } catch {
+      toast.error('Ödeme özet raporu yüklenemedi')
+    } finally {
+      setYukleniyor(false)
+    }
+  }
+
+  const uygula = () => getir(filtre)
+
+  // PDF
+  const pdfIndir = async () => {
+    const html2pdf = (await import('html2pdf.js')).default
+    const el = document.getElementById('rpr-odeme-tablo')
+    if (!el) return
+    toast.info('PDF hazırlanıyor…')
+    const wrapper = document.createElement('div')
+    wrapper.innerHTML = `
+      <div style="padding:20px;font-family:Arial,sans-serif">
+        <div style="display:flex;align-items:center;gap:10px;margin-bottom:4px">
+          <svg width="36" height="36" viewBox="0 0 120 120" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <defs><linearGradient id="pg" x1="0" y1="0" x2="120" y2="120" gradientUnits="userSpaceOnUse"><stop offset="0%" stop-color="#10B981"/><stop offset="100%" stop-color="#059669"/></linearGradient></defs>
+            <rect width="120" height="120" rx="28" fill="url(#pg)"/>
+            <path d="M38 88V36H62C70.837 36 78 43.163 78 52C78 60.837 70.837 68 62 68H38" stroke="#fff" stroke-width="9" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+            <path d="M68 62L82 48M82 48L68 34M82 48H56" stroke="#fff" stroke-width="7" stroke-linecap="round" stroke-linejoin="round" opacity="0.6"/>
+          </svg>
+          <div>
+            <div style="font-family:'Plus Jakarta Sans',Arial,sans-serif;font-weight:800;font-size:18px;color:#1A1A1A;letter-spacing:-0.04em">Param<span style="color:#10B981;font-weight:700">Go</span></div>
+          </div>
+        </div>
+        <h2 style="color:#10B981;margin:12px 0 4px">Ödeme Özet Raporu</h2>
+        <p style="color:#6B7280;font-size:12px;margin-bottom:16px">${new Date().toLocaleDateString('tr-TR')} tarihli rapor</p>
+        ${el.outerHTML}
+      </div>`
+    document.body.appendChild(wrapper)
+    try {
+      await html2pdf().set({
+        margin: [10, 10, 10, 10],
+        filename: `odeme_ozet_${new Date().toISOString().split('T')[0]}.pdf`,
+        html2canvas: { scale: 2 },
+        jsPDF: { unit: 'mm', format: 'a4', orientation: 'landscape' },
+      }).from(wrapper).save()
+      toast.success('PDF indirildi')
+    } catch { toast.error('PDF oluşturulamadı') }
+    finally { document.body.removeChild(wrapper) }
+  }
+
+  // Excel
+  const excelIndir = async () => {
+    if (!veri?.durum_dagilim?.length) return
+    const { utils, writeFile } = await import('xlsx')
+    const satirlar = veri.durum_dagilim.map((d) => ({
+      'Durum': DURUM_ETIKET[d.durum] || d.durum,
+      'Yön': YON_ETIKET[d.yon] || d.yon,
+      'Adet': d.adet,
+      'Toplam Tutar (₺)': d.toplam_tutar,
+    }))
+    const ws = utils.json_to_sheet(satirlar)
+    ws['!cols'] = [{ wch: 18 }, { wch: 12 }, { wch: 10 }, { wch: 18 }]
+    const wb = utils.book_new()
+    utils.book_append_sheet(wb, ws, 'Ödeme Özet')
+    writeFile(wb, `odeme_ozet_${new Date().toISOString().split('T')[0]}.xlsx`)
+    toast.success('Excel indirildi')
+  }
+
+  // KPI verisi
+  const tahsilatOzet = (veri?.yon_ozet || []).find((y) => y.yon === 'tahsilat') || {}
+  const odemeOzet = (veri?.yon_ozet || []).find((y) => y.yon === 'odeme') || {}
+  const geciken = veri?.geciken || {}
+
+  // Aylık trend chart
+  const aylar = [...new Set((veri?.aylik_trend || []).map((t) => t.ay))].sort()
+  const tahsilatAylik = aylar.map((ay) => {
+    const row = (veri?.aylik_trend || []).find((t) => t.ay === ay && t.yon === 'tahsilat')
+    return parseFloat(row?.toplam_tutar || 0)
+  })
+  const odemeAylik = aylar.map((ay) => {
+    const row = (veri?.aylik_trend || []).find((t) => t.ay === ay && t.yon === 'odeme')
+    return parseFloat(row?.toplam_tutar || 0)
+  })
+
+  const barData = aylar.length > 0 ? {
+    labels: aylar.map((ay) => {
+      const [y, m] = ay.split('-')
+      return `${AY_ADLARI[m] || m} ${y}`
+    }),
+    datasets: [
+      { label: 'Tahsilat', data: tahsilatAylik, backgroundColor: '#10B981', borderRadius: 6, barPercentage: 0.5 },
+      { label: 'Ödeme', data: odemeAylik, backgroundColor: '#6366F1', borderRadius: 6, barPercentage: 0.5 },
+    ],
+  } : null
+
+  const barOptions = {
+    responsive: true,
+    maintainAspectRatio: false,
+    plugins: {
+      legend: {
+        position: 'top',
+        labels: { usePointStyle: true, pointStyle: 'circle', padding: 16, font: { size: 12 } },
+      },
+      tooltip: { callbacks: { label: (ctx) => `${ctx.dataset.label}: ${TL(ctx.raw)}` } },
+    },
+    scales: {
+      y: {
+        ticks: {
+          callback: (v) => new Intl.NumberFormat('tr-TR', { notation: 'compact' }).format(v),
+          font: { size: 11 }, color: '#9CA3AF',
+        },
+        grid: { color: 'rgba(0,0,0,0.04)' },
+      },
+      x: { ticks: { font: { size: 11 }, color: '#6B7280' }, grid: { display: false } },
+    },
+  }
+
+  if (yukleniyor) {
+    return <div className="rpr-loading"><div className="rpr-spinner" /> Yükleniyor…</div>
+  }
+
+  return (
+    <div>
+      {/* Filtre */}
+      <div className="rpr-filter-bar">
+        <div className="rpr-filter-group">
+          <span className="rpr-filter-label">Başlangıç</span>
+          <input type="date" className="rpr-filter-input" value={filtre.baslangic_tarihi}
+            onChange={(e) => setFiltre({ ...filtre, baslangic_tarihi: e.target.value })} />
+        </div>
+        <div className="rpr-filter-group">
+          <span className="rpr-filter-label">Bitiş</span>
+          <input type="date" className="rpr-filter-input" value={filtre.bitis_tarihi}
+            onChange={(e) => setFiltre({ ...filtre, bitis_tarihi: e.target.value })} />
+        </div>
+        <div className="rpr-filter-group">
+          <span className="rpr-filter-label">Durum</span>
+          <select className="rpr-filter-input" value={filtre.durum}
+            onChange={(e) => setFiltre({ ...filtre, durum: e.target.value })}>
+            <option value="">Tümü</option>
+            {Object.entries(DURUM_ETIKET).map(([k, v]) => <option key={k} value={k}>{v}</option>)}
+          </select>
+        </div>
+        <button className="rpr-filter-btn rpr-filter-btn-primary" onClick={uygula}>
+          <i className="bi bi-funnel-fill" /> Filtrele
+        </button>
+        <div className="rpr-export-bar">
+          <button className="rpr-export-btn" onClick={pdfIndir}>
+            <i className="bi bi-file-earmark-pdf-fill" /> PDF
+          </button>
+          <button className="rpr-export-btn" onClick={excelIndir}>
+            <i className="bi bi-file-earmark-excel-fill" /> Excel
+          </button>
+        </div>
+      </div>
+
+      {/* KPI */}
+      <div className="rpr-kpi-row">
+        <div className="rpr-kpi">
+          <div className="rpr-kpi-accent" style={{ background: '#10B981' }} />
+          <div className="rpr-kpi-label">Tahsilat</div>
+          <div className="rpr-kpi-value financial-num">{TL(tahsilatOzet.toplam_tutar)}</div>
+          <i className="bi bi-arrow-down-circle rpr-kpi-icon" />
+        </div>
+        <div className="rpr-kpi">
+          <div className="rpr-kpi-accent" style={{ background: '#6366F1' }} />
+          <div className="rpr-kpi-label">Ödeme</div>
+          <div className="rpr-kpi-value financial-num">{TL(odemeOzet.toplam_tutar)}</div>
+          <i className="bi bi-arrow-up-circle rpr-kpi-icon" />
+        </div>
+        <div className="rpr-kpi">
+          <div className="rpr-kpi-accent" style={{ background: '#F59E0B' }} />
+          <div className="rpr-kpi-label">Bekleyen Tahsilat</div>
+          <div className="rpr-kpi-value financial-num">{TL(tahsilatOzet.bekleyen_tutar)}</div>
+          <i className="bi bi-hourglass-split rpr-kpi-icon" />
+        </div>
+        <div className="rpr-kpi">
+          <div className="rpr-kpi-accent" style={{ background: '#DC2626' }} />
+          <div className="rpr-kpi-label">Geciken ({geciken.adet ?? 0} adet)</div>
+          <div className="rpr-kpi-value financial-num" style={{ color: '#DC2626' }}>{TL(geciken.toplam_tutar)}</div>
+          <i className="bi bi-exclamation-triangle rpr-kpi-icon" />
+        </div>
+      </div>
+
+      {/* Grafik */}
+      {barData && (
+        <div className="rpr-card">
+          <div className="rpr-card-header">
+            <h3 className="rpr-card-title"><i className="bi bi-bar-chart-fill" /> Aylık Tahsilat vs Ödeme</h3>
+          </div>
+          <div className="rpr-card-body">
+            <div className="rpr-chart-wrap">
+              <Bar data={barData} options={barOptions} />
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Tablo */}
+      <div className="rpr-card">
+        <div className="rpr-card-header">
+          <h3 className="rpr-card-title"><i className="bi bi-table" /> Durum Dağılımı</h3>
+        </div>
+        <div className="table-responsive" id="rpr-odeme-tablo">
+          <table className="table table-hover align-middle rpr-table mb-0">
+            <thead>
+              <tr>
+                <th>Durum</th>
+                <th>Yön</th>
+                <th className="text-end">Adet</th>
+                <th className="text-end">Toplam Tutar</th>
+              </tr>
+            </thead>
+            <tbody>
+              {(!veri?.durum_dagilim || veri.durum_dagilim.length === 0) ? (
+                <tr><td colSpan={4} className="text-center py-5 text-muted">Veri bulunamadı</td></tr>
+              ) : veri.durum_dagilim.map((d, i) => (
+                <tr key={i}>
+                  <td>
+                    <span className={`rpr-badge ${DURUM_BADGE[d.durum] || 'rpr-badge-gray'}`}>
+                      {DURUM_ETIKET[d.durum] || d.durum}
+                    </span>
+                  </td>
+                  <td>{YON_ETIKET[d.yon] || d.yon}</td>
+                  <td className="text-end">{d.adet}</td>
+                  <td className="text-end financial-num" style={{ fontWeight: 600 }}>{TL(d.toplam_tutar)}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  )
+}

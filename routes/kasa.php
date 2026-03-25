@@ -23,6 +23,7 @@ require_once BASE_PATH . '/controllers/KasaController.php';
 
 // JWT dogrulama (tüm kasa endpoint'leri için)
 $payload = AuthMiddleware::dogrula();
+YetkiKontrol::modul_kontrol($payload, 'kasa');
 
 // Veritabani baglantisi
 $db = Database::baglan();
@@ -80,6 +81,15 @@ elseif ($parca_sayisi === 2 && $yol_parcalari[1] === 'yatirimlar') {
         default:
             Response::hata('Bu HTTP metodu desteklenmiyor', 405);
             break;
+    }
+}
+
+// ─── /api/kasa/yatirimlar/fiyat ───
+elseif ($parca_sayisi === 3 && $yol_parcalari[1] === 'yatirimlar' && $yol_parcalari[2] === 'fiyat') {
+    if ($metod === 'POST') {
+        $kasa->guncel_fiyat_guncelle($payload, $girdi);
+    } else {
+        Response::hata('Bu HTTP metodu desteklenmiyor', 405);
     }
 }
 

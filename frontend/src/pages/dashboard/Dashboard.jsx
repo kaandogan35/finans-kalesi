@@ -94,6 +94,59 @@ function KpiKart({ baslik, deger, alt, ikon, link, yukleniyor, p, ikonRenk }) {
   )
 }
 
+// ─── Net Çek / Senet KPI Kartı ────────────────────────────────────────────────
+// Büyük: Net pozisyon (Tahsil edilecek − Borçlu)
+// Küçük: İki ayrı kalem detayı
+function NetCekKpiKart({ alacakToplam, borcToplam, yukleniyor, p, renkler }) {
+  const net       = alacakToplam - borcToplam
+  const pozitif   = net >= 0
+  const animNet   = useAnimatedNumber(net)
+
+  return (
+    <div className={`${p}-kpi-card`}>
+      <i
+        className={`bi bi-arrow-left-right ${p}-kpi-deco`}
+        style={{ color: renkler.info }}
+      />
+      <h6 className={`${p}-kpi-label`}>Net Çek / Senet</h6>
+
+      {yukleniyor ? (
+        <div className={`${p}-skeleton`} style={{ height: 30, width: '75%', marginBottom: 8 }} />
+      ) : (
+        <div
+          className={`${p}-kpi-value financial-num`}
+          style={{ color: pozitif ? renkler.success : renkler.danger }}
+        >
+          {net > 0 ? '+' : ''}{TL(animNet)} ₺
+        </div>
+      )}
+
+      {/* Küçük detay satırları */}
+      {yukleniyor ? (
+        <>
+          <div className={`${p}-skeleton`} style={{ height: 11, width: '65%', marginBottom: 5 }} />
+          <div className={`${p}-skeleton`} style={{ height: 11, width: '55%', marginBottom: 6 }} />
+        </>
+      ) : (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 3, marginTop: 5 }}>
+          <span style={{ fontSize: 11, fontWeight: 600, color: renkler.success, display: 'flex', alignItems: 'center', gap: 4 }}>
+            <i className="bi bi-arrow-down-circle" style={{ fontSize: 10 }} />
+            Tahsildeki: {TLKisa(alacakToplam)}
+          </span>
+          <span style={{ fontSize: 11, fontWeight: 600, color: renkler.danger, display: 'flex', alignItems: 'center', gap: 4 }}>
+            <i className="bi bi-arrow-up-circle" style={{ fontSize: 10 }} />
+            Borçlu: {TLKisa(borcToplam)}
+          </span>
+        </div>
+      )}
+
+      <Link to="/cek-senet" className={`${p}-link-accent`} style={{ fontSize: 11, marginTop: 4 }}>
+        Detaylar <i className="bi bi-arrow-up-right" style={{ fontSize: 10 }} />
+      </Link>
+    </div>
+  )
+}
+
 // ─── Risk Seviye Rozeti ───────────────────────────────────────────────────────
 function VadeRozeti({ gun, p }) {
   if (gun === null) return null
@@ -281,6 +334,10 @@ export default function Dashboard() {
   const cekKarsilıksız  = parseFloat(cek?.karsilıksız?.toplam ?? 0)
   const cekKarsilıksızAdet = cek?.karsilıksız?.adet ?? 0
 
+  // Net Çek Pozisyonu (dashboard API'sinden gelen alacak/borç ayrımı)
+  const cekAlacakToplam = parseFloat(dash?.cekSenet?.alacak_toplam ?? 0)
+  const cekBorcToplam   = parseFloat(dash?.cekSenet?.borc_toplam   ?? 0)
+
   // Ödemeler
   const bekleyenToplam = parseFloat(dash?.odeme?.bekleyen_toplam ?? 0)
   const bekleyenAdet   = dash?.odeme?.bekleyen_adet ?? 0
@@ -298,12 +355,12 @@ export default function Dashboard() {
   const selamlama = sh < 12 ? 'Günaydın' : sh < 18 ? 'İyi günler' : 'İyi akşamlar'
   const ad = kullanici?.ad_soyad?.split(' ')[0] || ''
 
-  // ─── KPI Veri Dizisi ─────────────────────────────────────────────────────
+  // ─── KPI Veri Dizisi (5 standart kart — 6. slot NetCekKpiKart) ───────────
   const kpiler = [
     {
       baslik: 'Toplam Alacak',
       deger: topAlacak,
-      alt: `${aktifCari} aktif cari`,
+      alt: `${aktifCari} aktif cari · Net: ${netPozitif ? '+' : ''}${TLKisa(netPozisyon)}`,
       ikon: 'bi-arrow-down-circle-fill',
       ikonRenk: renkler.success,
       link: '/cariler',
@@ -311,7 +368,9 @@ export default function Dashboard() {
     {
       baslik: 'Toplam Borç',
       deger: topBorc,
-      alt: `Net: ${netPozitif ? '+' : ''}${TLKisa(netPozisyon)}`,
+      alt: topBorc > 0
+        ? `Alacak/Borç: %${alacakYuzde} / %${borcYuzde}`
+        : 'Borç kaydı yok',
       ikon: 'bi-arrow-up-circle-fill',
       ikonRenk: renkler.danger,
       link: '/cariler',
@@ -319,23 +378,20 @@ export default function Dashboard() {
     {
       baslik: 'Kasa Bakiyesi',
       deger: kasaBakiye,
-      alt: kasaGiris > 0 ? `Bu ay giriş: ${TLKisa(kasaGiris)}` : 'Nakit varlığı',
+      alt: (kasaGiris > 0 || kasaCikis > 0)
+        ? `↑ ${TLKisa(kasaGiris)} · ↓ ${TLKisa(kasaCikis)} bu ay`
+        : 'Nakit varlığı',
       ikon: 'bi-safe-fill',
       ikonRenk: renkler.info,
       link: '/kasa',
     },
-    {
-      baslik: 'Portföydeki Çekler',
-      deger: cekPortfoyde,
-      alt: `${cekPortfoyAdet} adet`,
-      ikon: 'bi-file-earmark-text-fill',
-      ikonRenk: renkler.info,
-      link: '/cek-senet',
-    },
+    // 4. slot → NetCekKpiKart (ayrı render edilecek)
     {
       baslik: 'Bekleyen Ödemeler',
       deger: bekleyenToplam,
-      alt: `${bekleyenAdet} işlem bekliyor`,
+      alt: bekleyenAdet > 0
+        ? `${bekleyenAdet} kayıt takip bekliyor`
+        : 'Bekleyen işlem yok',
       ikon: 'bi-credit-card-2-front-fill',
       ikonRenk: renkler.primary,
       link: '/odemeler',
@@ -343,7 +399,7 @@ export default function Dashboard() {
     {
       baslik: 'Likidite Tahmini',
       deger: likidite,
-      alt: 'Kasa + Alacak toplamı',
+      alt: `${TLKisa(kasaBakiye)} kasa + ${TLKisa(topAlacak)} alacak`,
       ikon: 'bi-graph-up-arrow',
       ikonRenk: renkler.info,
       link: null,
@@ -392,10 +448,20 @@ export default function Dashboard() {
       </div>
 
       {/* ─── KPI Kartları (6'lı, 3 sütun) ────────────────────────────────── */}
+      {/* Slot 1-3: Alacak, Borç, Kasa | Slot 4: Net Çek/Senet | Slot 5-6: Ödemeler, Likidite */}
       <div className={`${p}-kpi-grid-3`} data-tur="kpi-kartlar">
-        {kpiler.map((k) => (
-          <KpiKart key={k.baslik} {...k} yukleniyor={yukl} p={p} />
-        ))}
+        <KpiKart key={kpiler[0].baslik} {...kpiler[0]} yukleniyor={yukl} p={p} />
+        <KpiKart key={kpiler[1].baslik} {...kpiler[1]} yukleniyor={yukl} p={p} />
+        <KpiKart key={kpiler[2].baslik} {...kpiler[2]} yukleniyor={yukl} p={p} />
+        <NetCekKpiKart
+          alacakToplam={cekAlacakToplam}
+          borcToplam={cekBorcToplam}
+          yukleniyor={yukl}
+          p={p}
+          renkler={renkler}
+        />
+        <KpiKart key={kpiler[3].baslik} {...kpiler[3]} yukleniyor={yukl} p={p} />
+        <KpiKart key={kpiler[4].baslik} {...kpiler[4]} yukleniyor={yukl} p={p} />
       </div>
 
       {/* ─── Risk Uyarı Bandı (Karşılıksız Çek) ──────────────────────────── */}
@@ -525,31 +591,65 @@ export default function Dashboard() {
             </div>
           ) : (
             <>
+              {/* Portföy, Tahsil, Borçlu satırları */}
               {[
-                { etiket: 'Portföyde',   tutar: cekPortfoyde,    renk: renkler.info,    ikon: 'bi-archive-fill' },
-                { etiket: 'Tahsilde',    tutar: cekTahsilToplam, renk: renkler.info,    ikon: 'bi-hourglass-split' },
-                { etiket: 'Ödendi',      tutar: cekOdendi,       renk: renkler.success, ikon: 'bi-check-circle-fill' },
-                { etiket: 'Karşılıksız', tutar: cekKarsilıksız,  renk: renkler.danger,  ikon: 'bi-x-circle-fill' },
-              ].map(({ etiket, tutar, renk, ikon }) => (
+                { etiket: 'Portföy',     tutar: cekPortfoyde,    renk: renkler.info,    ikon: 'bi-archive-fill',      aciklama: 'Elinizdeki çek/senet' },
+                { etiket: 'Tahsil',      tutar: cekAlacakToplam, renk: renkler.success, ikon: 'bi-hourglass-split',   aciklama: 'Tahsil edilecek alacak' },
+                { etiket: 'Borçlu Çek',  tutar: cekBorcToplam,   renk: renkler.danger,  ikon: 'bi-arrow-up-circle-fill', aciklama: 'Ödenecek borç çeki' },
+              ].map(({ etiket, tutar, renk, ikon, aciklama }) => (
                 <div key={etiket} className={`${p}-metric-row`}>
                   <span className={`d-flex align-items-center gap-2 ${p}-metric-label`}>
                     <i className={`bi ${ikon}`} style={{ color: renk, fontSize: 12 }} />
-                    {etiket}
+                    <span>
+                      {etiket}
+                      <span style={{ display: 'block', fontSize: 10, opacity: 0.55, fontWeight: 400 }}>{aciklama}</span>
+                    </span>
                   </span>
                   <span className={`${p}-metric-value financial-num`} style={{ color: tutar > 0 ? renk : renkler.textSec }}>
                     {tutar > 0 ? `${TL(tutar)} ₺` : '—'}
                   </span>
                 </div>
               ))}
-              {(cekPortfoyde + cekTahsilToplam + cekOdendi) > 0 && (
-                <div style={{ padding: '10px 20px' }}>
+
+              {/* Net Durum — Tahsil − Borçlu */}
+              {(() => {
+                const net = cekAlacakToplam - cekBorcToplam
+                const pozitif = net >= 0
+                return (
+                  <div
+                    style={{
+                      margin: '10px 20px 8px',
+                      padding: '10px 14px',
+                      borderRadius: 10,
+                      background: pozitif ? `${renkler.success}12` : `${renkler.danger}12`,
+                      border: `1px solid ${pozitif ? renkler.success : renkler.danger}30`,
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'space-between',
+                    }}
+                  >
+                    <span style={{ fontSize: 12, fontWeight: 700, color: pozitif ? renkler.success : renkler.danger, display: 'flex', alignItems: 'center', gap: 6 }}>
+                      <i className={`bi ${pozitif ? 'bi-graph-up-arrow' : 'bi-graph-down-arrow'}`} style={{ fontSize: 13 }} />
+                      Net Durum
+                      <span style={{ fontSize: 10, fontWeight: 400, opacity: 0.7 }}>(Tahsil − Borçlu)</span>
+                    </span>
+                    <span className="financial-num" style={{ fontSize: 15, fontWeight: 800, color: pozitif ? renkler.success : renkler.danger }}>
+                      {net > 0 ? '+' : ''}{TL(net)} ₺
+                    </span>
+                  </div>
+                )
+              })()}
+
+              {/* Oran çubuğu: Tahsil vs Borçlu */}
+              {(cekAlacakToplam + cekBorcToplam) > 0 && (
+                <div style={{ padding: '4px 20px 8px' }}>
                   <OranCubugu
-                    etiket1={`Aktif %${Math.round(((cekPortfoyde + cekTahsilToplam) / (cekPortfoyde + cekTahsilToplam + cekOdendi + cekKarsilıksız || 1)) * 100)}`}
-                    yuzde1={Math.round(((cekPortfoyde + cekTahsilToplam) / (cekPortfoyde + cekTahsilToplam + cekOdendi + cekKarsilıksız || 1)) * 100)}
-                    renk1={renkler.info}
-                    etiket2={`Kapandı %${Math.round(((cekOdendi + cekKarsilıksız) / (cekPortfoyde + cekTahsilToplam + cekOdendi + cekKarsilıksız || 1)) * 100)}`}
-                    yuzde2={Math.round(((cekOdendi + cekKarsilıksız) / (cekPortfoyde + cekTahsilToplam + cekOdendi + cekKarsilıksız || 1)) * 100)}
-                    renk2={renkler.textSec}
+                    etiket1={`Tahsil %${Math.round((cekAlacakToplam / (cekAlacakToplam + cekBorcToplam)) * 100)}`}
+                    yuzde1={Math.round((cekAlacakToplam / (cekAlacakToplam + cekBorcToplam)) * 100)}
+                    renk1={renkler.success}
+                    etiket2={`Borçlu %${Math.round((cekBorcToplam / (cekAlacakToplam + cekBorcToplam)) * 100)}`}
+                    yuzde2={Math.round((cekBorcToplam / (cekAlacakToplam + cekBorcToplam)) * 100)}
+                    renk2={renkler.danger}
                     p={p}
                   />
                 </div>
@@ -586,12 +686,15 @@ export default function Dashboard() {
                         <i className="bi bi-file-earmark-text" style={{ fontSize: 14 }} />
                       </div>
                       <div>
-                        <p style={{ margin: 0, fontSize: 13, fontWeight: 600 }}>
-                          {v.seri_no || 'Seri yok'}
+                        <p style={{ margin: 0, fontSize: 13, fontWeight: 600, maxWidth: 160, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                          {v.cari_adi || v.seri_no || 'Cari bilgisi yok'}
                         </p>
                         <p className={`${p}-metric-label`} style={{ margin: '2px 0 0', fontSize: 11 }}>
                           <i className="bi bi-calendar3 me-1" style={{ fontSize: 10 }} />
                           {tarihFmt(v.vade_tarihi)}
+                          {v.seri_no && (
+                            <span style={{ opacity: 0.5, marginLeft: 5 }}>· {v.seri_no}</span>
+                          )}
                         </p>
                       </div>
                     </div>

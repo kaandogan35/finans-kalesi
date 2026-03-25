@@ -14,6 +14,9 @@
  *
  *   Aylık bilanço (her ayın 1'i 09:00):
  *   0 9 1 * * wget -q -O /dev/null "https://app.finanskalesi.com/api/cron/aylik-bilanco?key=CRON_SECRET_DEGERI"
+ *
+ *   Bildirim kontrolü (saatlik):
+ *   0 * * * * wget -q -O /dev/null "https://app.finanskalesi.com/api/cron/bildirim-kontrol?key=CRON_SECRET_DEGERI"
  */
 
 class CronController {
@@ -343,6 +346,148 @@ class CronController {
             'gonderilen'=> $gonderilen,
             'basarisiz' => $basarisiz,
             'toplam'    => count($sirketler),
+        ]);
+    }
+
+    // ──────────────────────────────────────────────────────────
+    // BİLDİRİM KONTROLÜ
+    // Saatlik — vadesi yaklaşan ödemeler ve çek/senetler için
+    // uygulama içi bildirim + email oluşturur
+    // ──────────────────────────────────────────────────────────
+    public function bildirimKontrol(): void {
+        $this->cronDogrula();
+
+        $sirketler    = $this->aktifSirketleriGetir();
+        $olusturulan  = 0;
+
+        foreach ($sirketler as $sirket) {
+            try {
+                $sid = (int)$sirket['sirket_id'];
+
+                // Sahip kullanıcı ID (bildirim gönderilecek kişi)
+                $bildirim_model = new Bildirim();
+                $sahipler = $bildirim_model->sirket_sahipleri($sid);
+                if (empty($sahipler)) continue;
+
+                // ── 1. Yaklaşan ödeme vadeleri (3 gün, 1 gün, bugün) ──
+                $stmt = $this->db->prepare(
+                    "SELECT id, firma_adi, aciklama, tutar, soz_tarihi,
+                            DATEDIFF(soz_tarihi, CURDATE()) AS gun_kaldi
+                     FROM odeme_takip
+                     WHERE sirket_id = :sid
+                       AND silindi_mi = 0
+                       AND durum = 'bekliyor'
+                       AND soz_tarihi BETWEEN CURDATE() AND DATE_ADD(CURDATE(), INTERVAL 3 DAY)
+                     ORDER BY soz_tarihi ASC
+                     LIMIT 50"
+                );
+                $stmt->execute([':sid' => $sid]);
+                $yaklasan_odemeler = $stmt->fetchAll();
+
+                foreach ($yaklasan_odemeler as $odeme) {
+                    $gun = (int)$odeme['gun_kaldi'];
+                    $oncelik = $gun === 0 ? 'kritik' : ($gun === 1 ? 'yuksek' : 'normal');
+                    $gun_metin = $gun === 0 ? 'BUGÜN' : "$gun gün sonra";
+
+                    foreach ($sahipler as $sahip) {
+                        $sonuc = BildirimOlusturucu::gonder([
+                            'sirket_id'    => $sid,
+                            'kullanici_id' => $sahip['id'],
+                            'tip'          => 'odeme_vade',
+                            'baslik'       => "{$odeme['firma_adi']} — ödeme vadesi {$gun_metin}",
+                            'mesaj'        => number_format((float)$odeme['tutar'], 2, ',', '.') . " TL tutarındaki ödeme {$gun_metin} vadeli. " . ($odeme['aciklama'] ?? ''),
+                            'oncelik'      => $oncelik,
+                            'kaynak_turu'  => 'odeme_takip',
+                            'kaynak_id'    => (int)$odeme['id'],
+                            'aksiyon_url'  => '/odemeler',
+                        ]);
+                        if ($sonuc !== false) $olusturulan++;
+                    }
+                }
+
+                // ── 2. Geciken ödemeler ──
+                $stmt2 = $this->db->prepare(
+                    "SELECT id, firma_adi, aciklama, tutar, soz_tarihi,
+                            DATEDIFF(CURDATE(), soz_tarihi) AS gun_gecmis
+                     FROM odeme_takip
+                     WHERE sirket_id = :sid
+                       AND silindi_mi = 0
+                       AND durum = 'bekliyor'
+                       AND soz_tarihi < CURDATE()
+                       AND soz_tarihi >= DATE_SUB(CURDATE(), INTERVAL 30 DAY)
+                     ORDER BY soz_tarihi ASC
+                     LIMIT 30"
+                );
+                $stmt2->execute([':sid' => $sid]);
+                $geciken_odemeler = $stmt2->fetchAll();
+
+                foreach ($geciken_odemeler as $odeme) {
+                    $gun = (int)$odeme['gun_gecmis'];
+
+                    foreach ($sahipler as $sahip) {
+                        $sonuc = BildirimOlusturucu::gonder([
+                            'sirket_id'    => $sid,
+                            'kullanici_id' => $sahip['id'],
+                            'tip'          => 'geciken_odeme',
+                            'baslik'       => "{$odeme['firma_adi']} — ödeme {$gun} gün gecikti",
+                            'mesaj'        => number_format((float)$odeme['tutar'], 2, ',', '.') . " TL tutarındaki ödeme {$gun} gündür gecikiyor.",
+                            'oncelik'      => $gun > 7 ? 'kritik' : 'yuksek',
+                            'kaynak_turu'  => 'odeme_takip',
+                            'kaynak_id'    => (int)$odeme['id'],
+                            'aksiyon_url'  => '/odemeler',
+                        ]);
+                        if ($sonuc !== false) $olusturulan++;
+                    }
+                }
+
+                // ── 3. Yaklaşan çek/senet vadeleri (7, 3, 1 gün, bugün) ──
+                $stmt3 = $this->db->prepare(
+                    "SELECT id, cari_adi_sifreli, tutar, vade_tarihi, tur,
+                            DATEDIFF(vade_tarihi, CURDATE()) AS gun_kaldi
+                     FROM cek_senetler
+                     WHERE sirket_id = :sid
+                       AND silindi_mi = 0
+                       AND durum = 'portfoyde'
+                       AND vade_tarihi BETWEEN CURDATE() AND DATE_ADD(CURDATE(), INTERVAL 7 DAY)
+                     ORDER BY vade_tarihi ASC
+                     LIMIT 50"
+                );
+                $stmt3->execute([':sid' => $sid]);
+                $yaklasan_cekler = $stmt3->fetchAll();
+
+                foreach ($yaklasan_cekler as $cek) {
+                    $gun = (int)$cek['gun_kaldi'];
+                    $oncelik = $gun <= 1 ? 'yuksek' : 'normal';
+                    $gun_metin = $gun === 0 ? 'BUGÜN' : "$gun gün sonra";
+                    $tur = $cek['tur'] === 'cek' ? 'Çek' : 'Senet';
+
+                    // Cari adı şifreli — çözmeye gerek yok, kısa bilgi yeterli
+                    foreach ($sahipler as $sahip) {
+                        $sonuc = BildirimOlusturucu::gonder([
+                            'sirket_id'    => $sid,
+                            'kullanici_id' => $sahip['id'],
+                            'tip'          => 'cek_vade',
+                            'baslik'       => "{$tur} vadesi {$gun_metin}",
+                            'mesaj'        => number_format((float)$cek['tutar'], 2, ',', '.') . " TL tutarındaki {$tur} {$gun_metin} vadeli.",
+                            'oncelik'      => $oncelik,
+                            'kaynak_turu'  => 'cek_senet',
+                            'kaynak_id'    => (int)$cek['id'],
+                            'aksiyon_url'  => '/cek-senet',
+                        ]);
+                        if ($sonuc !== false) $olusturulan++;
+                    }
+                }
+
+            } catch (Exception $e) {
+                error_log("CronController::bildirimKontrol sirket {$sirket['sirket_id']}: " . $e->getMessage());
+            }
+        }
+
+        header('Content-Type: application/json');
+        echo json_encode([
+            'basarili'    => true,
+            'olusturulan' => $olusturulan,
+            'toplam'      => count($sirketler),
         ]);
     }
 }

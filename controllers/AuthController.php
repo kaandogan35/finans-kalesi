@@ -14,12 +14,14 @@ class AuthController {
     private $kullanici_model;
     private $sirket_model;
     private $abonelik_model;
+    private $guvenlik_model;
 
     public function __construct() {
         $this->kullanici_model = new Kullanici();
         $this->sirket_model = new Sirket();
         $db = Database::baglan();
         $this->abonelik_model = new Abonelik($db);
+        $this->guvenlik_model = new Guvenlik();
     }
     
     /**
@@ -193,6 +195,10 @@ class AuthController {
             return;
         }
 
+        // User-Agent bilgilerini çözümle (giriş geçmişi için)
+        $ua = $_SERVER['HTTP_USER_AGENT'] ?? null;
+        $cihaz_bilgi = Guvenlik::user_agent_cozumle($ua);
+
         // 3. Kullaniciyi bul
         $kullanici = $this->kullanici_model->eposta_ile_bul($girdi['email']);
 
@@ -205,6 +211,9 @@ class AuthController {
 
         // 4. Hesap aktif mi?
         if (!$kullanici['aktif_mi']) {
+            // Giriş geçmişi kaydet (başarısız)
+            $this->girisGecmisiKaydet($kullanici, $ip, $ua, $cihaz_bilgi, false, 'hesap_askida');
+
             SistemLog::kaydet(
                 SistemLog::GIRIS_BASARISIZ,
                 'hesap_askida: ' . $girdi['email'],
@@ -215,9 +224,29 @@ class AuthController {
             return;
         }
 
+        // 4b. Hesap kilitli mi kontrol et
+        $kilitli_kadar = $this->guvenlik_model->hesap_kilitli_mi((int)$kullanici['id']);
+        if ($kilitli_kadar) {
+            $this->girisGecmisiKaydet($kullanici, $ip, $ua, $cihaz_bilgi, false, 'hesap_kilitli');
+            Response::hata('Hesabınız çok fazla başarısız deneme nedeniyle kilitlendi. ' . date('H:i', strtotime($kilitli_kadar)) . ' tarihine kadar bekleyin.', 423);
+            return;
+        }
+
         // 5. Sifreyi dogrula
         if (!$this->kullanici_model->sifre_dogrula($girdi['sifre'], $kullanici['sifre_hash'])) {
-            // Başarısız denemeyi logla (rate limiter bunu sayar)
+            // Başarısız giriş sayısını artır
+            $this->guvenlik_model->basarisiz_giris_artir((int)$kullanici['id']);
+
+            // Hesap kilitleme kontrolü
+            $basarisiz = $this->guvenlik_model->basarisiz_giris_sayisi((int)$kullanici['id']);
+            $ayarlar = $this->guvenlik_model->ayarlar_getir((int)$kullanici['sirket_id']);
+            if ($basarisiz >= $ayarlar['hesap_kilitleme_deneme']) {
+                $this->guvenlik_model->hesap_kilitle((int)$kullanici['id'], (int)$ayarlar['hesap_kilitleme_sure_dk']);
+            }
+
+            // Giriş geçmişi kaydet (başarısız)
+            $this->girisGecmisiKaydet($kullanici, $ip, $ua, $cihaz_bilgi, false, 'yanlis_sifre');
+
             SistemLog::kaydet(
                 SistemLog::GIRIS_BASARISIZ,
                 'yanlis_sifre, hash: ' . substr(hash('sha256', $girdi['email']), 0, 12),
@@ -228,34 +257,72 @@ class AuthController {
             return;
         }
 
+        // 5b. 2FA kontrolü — aktifse kod zorunlu
+        if (!empty($kullanici['iki_faktor_aktif']) && $kullanici['iki_faktor_aktif']) {
+            if (empty($girdi['totp_kodu'])) {
+                // Şifre doğru ama 2FA kodu gerekli — özel yanıt dön
+                Response::hata('İki faktörlü doğrulama kodu gerekli', 428, ['iki_faktor_gerekli' => true]);
+                return;
+            }
+
+            // TOTP kodunu doğrula
+            $secret = SistemKripto::coz($kullanici['iki_faktor_gizli_sifreli'] ?? '');
+            if (!$secret || !TOTPHelper::dogrula($secret, $girdi['totp_kodu'])) {
+                // Yedek kod kontrolü
+                $yedek_json = SistemKripto::coz($kullanici['iki_faktor_yedek_kodlar_sifreli'] ?? '');
+                $yedek_kodlar = $yedek_json ? json_decode($yedek_json, true) : [];
+                $kod_index = array_search(strtoupper(trim($girdi['totp_kodu'])), $yedek_kodlar);
+
+                if ($kod_index === false) {
+                    $this->girisGecmisiKaydet($kullanici, $ip, $ua, $cihaz_bilgi, false, 'hatali_2fa_kodu');
+                    Response::hata('Doğrulama kodu hatalı', 401);
+                    return;
+                }
+
+                // Yedek kod kullanıldı — listeden çıkar
+                unset($yedek_kodlar[$kod_index]);
+                $yedek_kodlar = array_values($yedek_kodlar);
+                $yedek_sifreli = SistemKripto::sifrele(json_encode($yedek_kodlar));
+                $db = Database::baglan();
+                $stmt = $db->prepare("UPDATE kullanicilar SET iki_faktor_yedek_kodlar_sifreli = :yedek WHERE id = :id");
+                $stmt->execute([':yedek' => $yedek_sifreli, ':id' => (int)$kullanici['id']]);
+            }
+        }
+
         try {
-            // 6. Sirket temasini al
+            // 6. Başarısız giriş sayısını sıfırla
+            $this->guvenlik_model->basarisiz_giris_sifirla((int)$kullanici['id']);
+
+            // 7. Sirket temasini al
             $sirket = $this->sirket_model->id_ile_bul($kullanici['sirket_id']);
 
-            // 7. Tokenlar olustur (plan bilgisi de JWT'ye ekleniyor)
+            // 8. Tokenlar olustur (plan bilgisi de JWT'ye ekleniyor)
             $kullanici_bilgi = [
                 'id'        => $kullanici['id'],
                 'sirket_id' => $kullanici['sirket_id'],
                 'rol'       => $kullanici['rol'],
                 'tema_adi'  => $sirket['tema_adi'] ?? 'paramgo',
                 'plan'      => $sirket['abonelik_plani'] ?? 'ucretsiz',
+                'yetkiler'  => $kullanici['yetkiler'] ?? null,
             ];
 
             $access_token = JWTHelper::access_token_olustur($kullanici_bilgi);
             $refresh = JWTHelper::refresh_token_olustur($kullanici_bilgi);
 
-            // 8. Refresh token kaydet
+            // 9. Refresh token kaydet
             $this->kullanici_model->refresh_token_kaydet(
                 $kullanici['id'],
                 $refresh['token'],
                 $refresh['son_kullanim']
             );
 
-            // 9. Son giris zamanini guncelle
-            // (numara kayması: eski 9→11, şimdi 10→12)
+            // 10. Son giris zamanini guncelle
             $this->kullanici_model->son_giris_guncelle($kullanici['id']);
 
-            // 10. Basarili girisi logla (PII maskeleme)
+            // 11. Giriş geçmişi kaydet (başarılı)
+            $this->girisGecmisiKaydet($kullanici, $ip, $ua, $cihaz_bilgi, true);
+
+            // 12. Basarili girisi logla (PII maskeleme)
             SistemLog::kaydet(
                 SistemLog::GIRIS_BASARILI,
                 'giris_basarili, hash: ' . substr(hash('sha256', $kullanici['email']), 0, 12),
@@ -263,7 +330,7 @@ class AuthController {
                 (int)$kullanici['id']
             );
 
-            // 11. Farklı IP kontrolü — yeni cihazdan giriş uyarısı
+            // 13. Farklı IP kontrolü — yeni cihazdan giriş uyarısı
             try {
                 $mevcut_ip = SistemLog::ip_al();
                 $db_check  = Database::baglan();
@@ -295,7 +362,7 @@ class AuthController {
                 error_log('Güvenlik uyarı maili gönderilemedi: ' . $e->getMessage());
             }
 
-            // 12. Basarili yanit
+            // 14. Basarili yanit
             Response::basarili([
                 'kullanici' => [
                     'id'        => (int) $kullanici['id'],
@@ -305,6 +372,7 @@ class AuthController {
                     'rol'       => $kullanici['rol'],
                     'tema_adi'  => $sirket['tema_adi'] ?? 'paramgo',
                     'plan'      => $sirket['abonelik_plani'] ?? 'ucretsiz',
+                    'yetkiler'  => $kullanici['yetkiler'] ?? null,
                 ],
                 'tokenlar' => [
                     'access_token'  => $access_token,
@@ -316,6 +384,27 @@ class AuthController {
 
         } catch (Exception $e) {
             Response::sunucu_hatasi('Giris hatasi: ' . $e->getMessage());
+        }
+    }
+
+    /**
+     * Giriş geçmişi kaydı oluştur (başarılı veya başarısız)
+     */
+    private function girisGecmisiKaydet($kullanici, $ip, $ua, $cihaz_bilgi, $basarili, $neden = null) {
+        try {
+            $this->guvenlik_model->giris_kaydet([
+                'sirket_id'           => (int)$kullanici['sirket_id'],
+                'kullanici_id'        => (int)$kullanici['id'],
+                'ip_adresi'           => $ip,
+                'cihaz_bilgisi'       => $ua ? substr($ua, 0, 500) : null,
+                'cihaz_turu'          => $cihaz_bilgi['cihaz_turu'],
+                'tarayici'            => $cihaz_bilgi['tarayici'],
+                'isletim_sistemi'     => $cihaz_bilgi['isletim_sistemi'],
+                'basarili_mi'         => $basarili ? 1 : 0,
+                'basarisizlik_nedeni' => $neden,
+            ]);
+        } catch (Exception $e) {
+            error_log('Giriş geçmişi kaydedilemedi: ' . $e->getMessage());
         }
     }
     
@@ -356,12 +445,15 @@ class AuthController {
             
             // 5. Yeni tokenlar olustur
             $sirket = $this->sirket_model->id_ile_bul($token_kayit['sirket_id']);
+            // Güncel yetkiler için kullanıcıyı DB'den al
+            $k_bilgi = $this->kullanici_model->id_ile_bul((int)$token_kayit['kullanici_id']);
             $kullanici_bilgi = [
                 'id'        => (int) $token_kayit['kullanici_id'],
                 'sirket_id' => (int) $token_kayit['sirket_id'],
                 'rol'       => $token_kayit['rol'],
                 'tema_adi'  => $sirket['tema_adi'] ?? 'paramgo',
                 'plan'      => $sirket['abonelik_plani'] ?? 'ucretsiz',
+                'yetkiler'  => $k_bilgi['yetkiler'] ?? null,
             ];
             
             $yeni_access = JWTHelper::access_token_olustur($kullanici_bilgi);
@@ -562,7 +654,9 @@ class AuthController {
         $sirket = $this->sirket_model->id_ile_bul($kullanici['sirket_id']);
         $kullanici['tema_adi'] = $sirket['tema_adi'] ?? 'paramgo';
         $kullanici['plan']     = $sirket['abonelik_plani'] ?? 'ucretsiz';
+        // yetkiler zaten id_ile_bul() sorgusuyla geliyor
 
+        unset($kullanici['sifre_hash']);
         Response::basarili(['kullanici' => $kullanici]);
     }
 }

@@ -43,7 +43,29 @@ class AuthMiddleware {
             exit;
         }
         
-        // 4. Kullanici bilgilerini dondur
+        // 4. IP beyaz/kara liste kontrolu
+        try {
+            $guvenlik = new Guvenlik();
+            $ayarlar = $guvenlik->ayarlar_getir((int)$payload['sirket_id']);
+            $ip = SistemLog::ip_al();
+
+            // Kara listede mi?
+            if (!empty($ayarlar['ip_kara_liste']) && in_array($ip, $ayarlar['ip_kara_liste'])) {
+                Response::yasak('Bu IP adresinden erişim engellendi.');
+                exit;
+            }
+
+            // Beyaz liste varsa, sadece izin verilenler geçebilir
+            if (!empty($ayarlar['ip_beyaz_liste']) && !in_array($ip, $ayarlar['ip_beyaz_liste'])) {
+                Response::yasak('Bu IP adresinden erişim izni yok.');
+                exit;
+            }
+        } catch (Exception $e) {
+            // IP kontrolü hatası uygulamayı durdurmamalı
+            error_log('IP kontrol hatasi: ' . $e->getMessage());
+        }
+
+        // 5. Kullanici bilgilerini dondur
         // Bu bilgiler controller'larda kullanilacak:
         //   $kullanici['sub']       → Kullanici ID
         //   $kullanici['sirket_id'] → Sirket ID (multi-tenant filtre icin)

@@ -81,33 +81,52 @@ class DashboardController
     // Döndürür:
     //   portfoyde_toplam  → durum='portfoyde' olan çek/senetlerin toplam TL tutarı
     //   portfoyde_adet    → durum='portfoyde' olan çek/senet sayısı
+    //   alacak_toplam     → alacak_ceki/alacak_senedi (portföyde + tahsilde) toplam TL
+    //   borc_toplam       → borc_ceki/borc_senedi (portföyde) toplam TL
     //   yaklasan_vadeler  → bugünden 30 gün içinde vadesi gelen, portföydeki/tahsildeki 5 kayıt
     private function cek_senet_ozet(int $sirket_id): array
     {
-        // Portföy toplamı
+        // Portföy toplamı + alacak/borç ayrımı
         $stmt = $this->db->prepare(
             "SELECT
                 COALESCE(SUM(CASE WHEN durum = 'portfoyde' THEN tutar_tl ELSE 0 END), 0) AS portfoyde_toplam,
-                COUNT(CASE WHEN durum = 'portfoyde' THEN 1 END) AS portfoyde_adet
+                COUNT(CASE WHEN durum = 'portfoyde' THEN 1 END) AS portfoyde_adet,
+                COALESCE(SUM(CASE WHEN tur IN ('alacak_ceki','alacak_senedi')
+                    AND durum IN ('portfoyde','tahsile_verildi') THEN tutar_tl ELSE 0 END), 0) AS alacak_toplam,
+                COALESCE(SUM(CASE WHEN tur IN ('borc_ceki','borc_senedi')
+                    AND durum = 'portfoyde' THEN tutar_tl ELSE 0 END), 0) AS borc_toplam
              FROM cek_senetler
              WHERE sirket_id = :sirket_id AND silindi_mi = 0"
         );
         $stmt->execute([':sirket_id' => $sirket_id]);
         $ozet = $stmt->fetch(PDO::FETCH_ASSOC);
 
-        // Yaklaşan vadeler (bugün → +30 gün, portföyde veya tahsilde olan)
+        // Yaklaşan vadeler (bugün → +30 gün) — cari adı ile birlikte
         $stmt2 = $this->db->prepare(
-            "SELECT id, seri_no, vade_tarihi, tutar_tl, durum
-             FROM cek_senetler
-             WHERE sirket_id = :sirket_id
-               AND silindi_mi = 0
-               AND durum IN ('portfoyde', 'tahsile_verildi')
-               AND vade_tarihi BETWEEN CURDATE() AND DATE_ADD(CURDATE(), INTERVAL 30 DAY)
-             ORDER BY vade_tarihi ASC
+            "SELECT cs.id, cs.seri_no, cs.vade_tarihi, cs.tutar_tl, cs.durum, cs.tur,
+                    ck.cari_adi_sifreli
+             FROM cek_senetler cs
+             LEFT JOIN cari_kartlar ck
+                ON cs.cari_id = ck.id AND ck.silindi_mi = 0
+             WHERE cs.sirket_id = :sirket_id
+               AND cs.silindi_mi = 0
+               AND cs.durum IN ('portfoyde', 'tahsile_verildi')
+               AND cs.vade_tarihi BETWEEN CURDATE() AND DATE_ADD(CURDATE(), INTERVAL 30 DAY)
+             ORDER BY cs.vade_tarihi ASC
              LIMIT 5"
         );
         $stmt2->execute([':sirket_id' => $sirket_id]);
-        $ozet['yaklasan_vadeler'] = $stmt2->fetchAll(PDO::FETCH_ASSOC);
+        $vadeler = $stmt2->fetchAll(PDO::FETCH_ASSOC);
+
+        // Şifreli cari adını çöz
+        $kripto = new SistemKripto();
+        foreach ($vadeler as &$v) {
+            $v['cari_adi'] = $v['cari_adi_sifreli'] ? $kripto->coz($v['cari_adi_sifreli']) : null;
+            unset($v['cari_adi_sifreli']);
+        }
+        unset($v);
+
+        $ozet['yaklasan_vadeler'] = $vadeler;
 
         return $ozet;
     }

@@ -15,6 +15,7 @@ import useAuthStore from '../../stores/authStore'
 import {
   hareketleriGetir, hareketEkle, hareketSil,
   yatirimlariGetir, yatirimEkle, yatirimGuncelle as yatirimGuncelleApi, yatirimSil,
+  guncelFiyatlariKaydet,
   ortaklariGetir, ortakHareketEkle, ortakHareketSil,
   bilancoListele, bilancoKaydet, bilancoGuncelle, bilancoSil,
 } from '../../api/kasa'
@@ -24,6 +25,11 @@ const prefixMap = { paramgo: 'p' }
 // ─── Yardımcılar ──────────────────────────────────────────────────────────────
 const TL = (n) =>
   new Intl.NumberFormat('tr-TR', { style: 'currency', currency: 'TRY', minimumFractionDigits: 2 }).format(n ?? 0)
+const kTL = (n) => {
+  const v = n ?? 0
+  const decimals = Math.abs(v) >= 1_000_000 ? 2 : 0
+  return new Intl.NumberFormat('tr-TR', { style: 'currency', currency: 'TRY', minimumFractionDigits: decimals, maximumFractionDigits: decimals }).format(v)
+}
 const tarihFmt  = (s) => (s ? new Date(s).toLocaleDateString('tr-TR') : '—')
 const bugunTarih = () => new Date().toISOString().split('T')[0]
 const formatParaInput = (value) => {
@@ -80,7 +86,7 @@ const kartEtiket = (c)     => ({ fontSize:11, fontWeight:600, textTransform:'upp
 
 // ─── Ortak Hesaplama ──────────────────────────────────────────────────────────
 function hesaplaOzet(hareketler, kapanislar = []) {
-  const siraliKap = [...kapanislar].sort((a,b) => a.donem.localeCompare(b.donem))
+  const siraliKap = [...kapanislar].sort((a,b) => donemNormalize(a.donem).localeCompare(donemNormalize(b.donem)))
   const sonKapanis = siraliKap[siraliKap.length - 1] || null
   const oncekiAyBankaNakit = sonKapanis ? sonKapanis.banka_nakdi : 0
   const girisler = hareketler.filter(h => h.islem_tipi === 'giris')
@@ -113,20 +119,28 @@ function DegisimBadge({ fark, tersCevirim = false, renkler }) {
 }
 
 // ─── Dönem Filtresi (Paylaşımlı) ─────────────────────────────────────────────
-function DonemFiltresi({ secilenAy, secilenYil, setSecilenAy, setSecilenYil, p, renkler }) {
+function DonemFiltresi({ secilenAy, secilenYil, setSecilenAy, setSecilenYil, tumZamanlar, setTumZamanlar, p, renkler }) {
   return (
     <div className="d-flex align-items-center justify-content-between flex-wrap gap-2 mb-4">
       <span className={`${p}-kasa-donem-label`}>
         Dönem:{' '}
-        <span className={`${p}-kasa-donem-highlight`}>{AY_ADLARI[secilenAy-1]} {secilenYil}</span>
+        <span className={`${p}-kasa-donem-highlight`}>
+          {tumZamanlar ? 'Tüm Zamanlar' : `${AY_ADLARI[secilenAy-1]} ${secilenYil}`}
+        </span>
       </span>
       <div className="d-flex gap-2">
-        <select value={secilenAy} onChange={e => setSecilenAy(Number(e.target.value))}
-          className={`${p}-kasa-donem-select`} style={{ width:110 }}>
+        <select value={tumZamanlar ? 0 : secilenAy} onChange={e => {
+            const v = Number(e.target.value)
+            if (v === 0) { setTumZamanlar(true) }
+            else { setTumZamanlar(false); setSecilenAy(v) }
+          }}
+          className={`${p}-kasa-donem-select`} style={{ width:130 }}>
+          <option value={0}>— Tüm Zamanlar —</option>
           {AY_ADLARI.map((ad,i) => <option key={i} value={i+1}>{ad}</option>)}
         </select>
-        <select value={secilenYil} onChange={e => setSecilenYil(Number(e.target.value))}
-          className={`${p}-kasa-donem-select`} style={{ width:80 }}>
+        <select value={secilenYil} disabled={tumZamanlar}
+          onChange={e => { setTumZamanlar(false); setSecilenYil(Number(e.target.value)) }}
+          className={`${p}-kasa-donem-select`} style={{ width:80, opacity: tumZamanlar ? 0.5 : 1 }}>
           {[2024,2025,2026,2027].map(y => <option key={y} value={y}>{y}</option>)}
         </select>
       </div>
@@ -150,7 +164,7 @@ function DortKart({ ozet, p, renkler }) {
           <div className={`${p}-kasa-kpi-card`}>
             <i className={`bi ${k.ikon} ${p}-kasa-kpi-deco`} style={{ color:k.numColor }} />
             <h6 className={`${p}-kasa-kpi-label`}>{k.label}</h6>
-            <div className={`financial-num ${p}-kasa-kpi-val`} style={{ color:k.numColor }}>{TL(k.deger)}</div>
+            <div className={`financial-num ${p}-kasa-kpi-val`} style={{ color:k.numColor }}>{kTL(k.deger)}</div>
             {k.fark !== undefined && <div style={{ marginTop:8, position:'relative', zIndex:1 }}><DegisimBadge fark={k.fark} tersCevirim={k.ters} renkler={renkler} /></div>}
             {k.alt && <p className={`${p}-kasa-text-muted`} style={{ margin:'8px 0 0', position:'relative', zIndex:1 }}>{k.alt}</p>}
           </div>
@@ -484,11 +498,24 @@ function NakitModal({ open, onClose, initialTur, onKaydet, hareketler, p, renkle
   )
 }
 
-// ─── Dönem Formatlayıcı ───────────────────────────────────────────────────────
+// ─── Dönem Normalizasyonu — karşılaştırma ve sıralama için YYYY-MM'e çevirir ─
+// Hem "03-2026" (eski MM-YYYY) hem "2026-03" (yeni YYYY-MM) desteklenir
+const donemNormalize = (d) => {
+  if (!d) return ''
+  const parts = d.split('-')
+  if (parts[0].length === 4) return d               // Zaten YYYY-MM
+  return `${parts[1]}-${parts[0]}`                  // MM-YYYY → YYYY-MM
+}
+
+// ─── Dönem Formatlayıcı — hem YYYY-MM hem MM-YYYY destekler ──────────────────
 const donemFmt = (d) => {
   if (!d) return '—'
-  const [ay, yil] = d.split('-')
-  return AY_ADLARI[parseInt(ay)-1]?.slice(0,3) + ' ' + (yil?.slice(2) ?? '')
+  const parts = d.split('-')
+  // YYYY-MM: parts[0] 4 hane → [yil, ay]; MM-YYYY: parts[0] 2 hane → [ay, yil]
+  const [yil, ay] = parts[0].length === 4
+    ? [parts[0], parts[1]]
+    : [parts[1], parts[0]]
+  return (AY_ADLARI[parseInt(ay) - 1]?.slice(0, 3) ?? '?') + ' ' + (yil?.slice(2) ?? '')
 }
 
 // ─── SVG Bilanço Büyüme Grafiği ───────────────────────────────────────────────
@@ -500,7 +527,7 @@ function BilancoGrafik({ kapanislar, renkler, p }) {
     <div style={{ padding:'24px', textAlign:'center', color:renkler.textSec, fontSize:13 }}>Henüz kapanış kaydı yok</div>
   )
 
-  const sirali = [...kapanislar].sort((a,b) => a.donem.localeCompare(b.donem))
+  const sirali = [...kapanislar].sort((a,b) => donemNormalize(a.donem).localeCompare(donemNormalize(b.donem)))
 
   if (sirali.length === 1) {
     const k = sirali[0]
@@ -573,19 +600,23 @@ function BilancoGrafik({ kapanislar, renkler, p }) {
 
 // ─── Ay Kapanış Modalı ────────────────────────────────────────────────────────
 function AyKapanisModal({ open, onClose, kapanislar, onKaydet, yatirimGuncelDeger = 0, duzenlenen = null, p, renkler }) {
-  const siraliKap  = [...kapanislar].sort((a,b) => a.donem.localeCompare(b.donem))
+  const siraliKap  = [...kapanislar].sort((a,b) => donemNormalize(a.donem).localeCompare(donemNormalize(b.donem)))
   const sonKapanis = siraliKap[siraliKap.length - 1] || null
 
   const sonraPeriod = () => {
     if (!sonKapanis) {
       const bugun = new Date()
-      return `${String(bugun.getMonth()+1).padStart(2,'0')}-${bugun.getFullYear()}`
+      return `${bugun.getFullYear()}-${String(bugun.getMonth()+1).padStart(2,'0')}`
     }
-    const [ay, yil] = sonKapanis.donem.split('-')
-    let nextAy  = parseInt(ay) + 1
-    let nextYil = parseInt(yil)
+    const parts = sonKapanis.donem.split('-')
+    // Hem YYYY-MM hem MM-YYYY destekle
+    let yil, ay
+    if (parts[0].length === 4) { yil = parseInt(parts[0]); ay = parseInt(parts[1]) }
+    else                        { ay  = parseInt(parts[0]); yil = parseInt(parts[1]) }
+    let nextAy  = ay + 1
+    let nextYil = yil
     if (nextAy > 12) { nextAy = 1; nextYil++ }
-    return `${String(nextAy).padStart(2,'0')}-${nextYil}`
+    return `${nextYil}-${String(nextAy).padStart(2,'0')}`
   }
 
   const [form, setForm] = useState({
@@ -642,8 +673,10 @@ function AyKapanisModal({ open, onClose, kapanislar, onKaydet, yatirimGuncelDege
 
   const kaydet = () => {
     if (!form.donem.trim()) { toast.error('Dönem alanı zorunludur.'); return }
-    if (kapanislar.some(k => k.donem === form.donem.trim() && k.id !== duzenlenen?.id)) {
-      toast.warning(`${form.donem} dönemi zaten kayıtlı.`)
+    // Format farkını normalize ederek karşılaştır (MM-YYYY ve YYYY-MM her ikisi de yakalanır)
+    const yeniDonemNorm = donemNormalize(form.donem.trim())
+    if (kapanislar.some(k => donemNormalize(k.donem) === yeniDonemNorm && k.id !== duzenlenen?.id)) {
+      toast.warning(`${donemFmt(form.donem)} dönemi zaten kayıtlı.`)
       return
     }
     onKaydet({
@@ -661,7 +694,6 @@ function AyKapanisModal({ open, onClose, kapanislar, onKaydet, yatirimGuncelDege
       sanal_stok:      sanaiStok,
       net_varlik:      netVarlik,
     })
-    toast.success(duzenlenen ? 'Kayıt güncellendi.' : 'Ay kapanışı kaydedildi.')
     onClose()
   }
 
@@ -887,7 +919,7 @@ function AylikBilanco({ kapanislar, setKapanislar, yatirimGuncelDeger = 0, p, re
   const [sayfa,            setSayfa]            = useState(1)
   const sayfaBasi = 10
 
-  const sirali     = [...kapanislar].sort((a,b) => a.donem.localeCompare(b.donem))
+  const sirali     = [...kapanislar].sort((a,b) => donemNormalize(a.donem).localeCompare(donemNormalize(b.donem)))
   const sonKapanis = sirali[sirali.length - 1] || null
   const onceki     = sirali[sirali.length - 2] || null
 
@@ -908,9 +940,10 @@ function AylikBilanco({ kapanislar, setKapanislar, yatirimGuncelDeger = 0, p, re
       setDuzenlenenKapanis(null)
       try {
         await bilancoGuncelle(duzenlenenKapanis.id, yeni)
-      } catch {
+        toast.success('Kayıt güncellendi.')
+      } catch (err) {
         if (onceki) setKapanislar(prev => prev.map(k => k.id === duzenlenenKapanis.id ? onceki : k))
-        toast.error('Güncelleme kaydedilemedi.')
+        toast.error(err?.response?.data?.hata || 'Güncelleme kaydedilemedi.')
       }
     } else {
       const geciciId = Date.now()
@@ -921,9 +954,10 @@ function AylikBilanco({ kapanislar, setKapanislar, yatirimGuncelDeger = 0, p, re
         const res = await bilancoKaydet(yeni)
         const gercekId = res.data?.veri?.id
         if (gercekId) setKapanislar(prev => prev.map(k => k.id === geciciId ? { ...k, id: gercekId } : k))
-      } catch {
+        toast.success('Ay kapanışı kaydedildi.')
+      } catch (err) {
         setKapanislar(prev => prev.filter(k => k.id !== geciciId))
-        toast.error('Kayıt kaydedilemedi.')
+        toast.error(err?.response?.data?.hata || 'Kayıt kaydedilemedi.')
       }
     }
   }
@@ -933,9 +967,10 @@ function AylikBilanco({ kapanislar, setKapanislar, yatirimGuncelDeger = 0, p, re
     setSilOnayId(null)
     try {
       await bilancoSil(id)
-    } catch {
+      toast.success('Kayıt silindi.')
+    } catch (err) {
       if (yedek) setKapanislar(prev => [...prev, yedek])
-      toast.error('Kayıt silinemedi.')
+      toast.error(err?.response?.data?.hata || 'Kayıt silinemedi.')
     }
   }
 
@@ -1381,7 +1416,20 @@ function OrtakCarisi({ ortakHareketler, setOrtakHareketler, p, renkler }) {
   const [arama,     setArama]     = useState('')
   const [silOnayId, setSilOnayId] = useState(null)
   const [sayfa,     setSayfa]     = useState(1)
+  const bugunO = new Date()
+  const [ocAy,   setOcAy]   = useState(bugunO.getMonth() + 1)
+  const [ocYil,  setOcYil]  = useState(bugunO.getFullYear())
+  const [ocTum,  setOcTum]  = useState(true)
   const sayfaBasi = 10
+
+  // Tarih filtresi uygula
+  const tarihliHareketler = useMemo(() => {
+    if (ocTum) return ortakHareketler
+    return ortakHareketler.filter(h => {
+      const d = new Date(h.tarih + 'T00:00:00')
+      return d.getMonth() + 1 === ocAy && d.getFullYear() === ocYil
+    })
+  }, [ortakHareketler, ocAy, ocYil, ocTum])
 
   // Benzersiz ortak listesi (ekleme sırasına göre)
   const ortaklar = useMemo(() => {
@@ -1397,18 +1445,18 @@ function OrtakCarisi({ ortakHareketler, setOrtakHareketler, p, renkler }) {
   // Her ortak için bakiye hesapla
   const ortakBakiye = useMemo(() => {
     return ortaklar.map(ad => {
-      const giris = ortakHareketler.filter(h => h.ortak_adi===ad && h.islem_tipi==='para_girisi').reduce((s,h)=>s+(h.tutar ?? 0),0)
-      const cikis  = ortakHareketler.filter(h => h.ortak_adi===ad && h.islem_tipi==='para_cikisi').reduce((s,h) =>s+(h.tutar ?? 0),0)
+      const giris = tarihliHareketler.filter(h => h.ortak_adi===ad && h.islem_tipi==='para_girisi').reduce((s,h)=>s+(h.tutar ?? 0),0)
+      const cikis  = tarihliHareketler.filter(h => h.ortak_adi===ad && h.islem_tipi==='para_cikisi').reduce((s,h) =>s+(h.tutar ?? 0),0)
       return { ad, bakiye: giris - cikis }
     })
-  }, [ortaklar, ortakHareketler])
+  }, [ortaklar, tarihliHareketler])
 
   // Filtreli + sıralı liste
   const filtrelendi = useMemo(() => {
-    const sirali = [...ortakHareketler].sort((a,b) => b.tarih.localeCompare(a.tarih) || b.id-a.id)
+    const sirali = [...tarihliHareketler].sort((a,b) => b.tarih.localeCompare(a.tarih) || b.id-a.id)
     if (!arama.trim()) return sirali
     return sirali.filter(h => h.ortak_adi.toLowerCase().includes(arama.toLowerCase()))
-  }, [ortakHareketler, arama])
+  }, [tarihliHareketler, arama])
 
   const toplamSayfa = Math.ceil(filtrelendi.length / sayfaBasi)
   const sayfaliVeri = filtrelendi.slice((sayfa-1)*sayfaBasi, sayfa*sayfaBasi)
@@ -1444,17 +1492,19 @@ function OrtakCarisi({ ortakHareketler, setOrtakHareketler, p, renkler }) {
   )
 
   // Toplam giriş / çıkış hesapla
-  const toplamGiris = useMemo(() => ortakHareketler.filter(h => h.islem_tipi==='para_girisi').reduce((s,h) => s+(h.tutar??0), 0), [ortakHareketler])
-  const toplamCikis = useMemo(() => ortakHareketler.filter(h => h.islem_tipi==='para_cikisi').reduce((s,h) => s+(h.tutar??0), 0), [ortakHareketler])
+  const toplamGiris = useMemo(() => tarihliHareketler.filter(h => h.islem_tipi==='para_girisi').reduce((s,h) => s+(h.tutar??0), 0), [tarihliHareketler])
+  const toplamCikis = useMemo(() => tarihliHareketler.filter(h => h.islem_tipi==='para_cikisi').reduce((s,h) => s+(h.tutar??0), 0), [tarihliHareketler])
   const toplamNet = toplamGiris - toplamCikis
 
   return (
     <div>
+      <DonemFiltresi secilenAy={ocAy} secilenYil={ocYil} setSecilenAy={setOcAy} setSecilenYil={setOcYil} tumZamanlar={ocTum} setTumZamanlar={setOcTum} p={p} renkler={renkler} />
+
       {/* Başlık + Filtre + Buton */}
       <div className="d-flex align-items-center justify-content-between flex-wrap gap-3 mb-4">
         <div>
           <h2 className={`${p}-kasa-text-primary`} style={{ fontSize:'1.1rem', fontWeight:800, margin:0, opacity:0.9 }}>Ortak Cari Hesapları</h2>
-          <p className={`mb-0 ${p}-kasa-text-muted`} style={{ fontSize:13 }}>{ortaklar.length} ortak · {ortakHareketler.length} işlem</p>
+          <p className={`mb-0 ${p}-kasa-text-muted`} style={{ fontSize:13 }}>{ortaklar.length} ortak · {tarihliHareketler.length} işlem</p>
         </div>
         <div className="d-flex gap-2 flex-wrap align-items-center">
           <div style={{ width:220, position:'relative' }}>
@@ -1474,17 +1524,21 @@ function OrtakCarisi({ ortakHareketler, setOrtakHareketler, p, renkler }) {
       {ortakHareketler.length > 0 && (
         <div className="row g-3 mb-4">
           {[
-            { label:'Toplam Giriş', deger:toplamGiris, renk:renkler.success, ikon:'bi-arrow-down-circle-fill' },
-            { label:'Toplam Çıkış', deger:toplamCikis, renk:renkler.danger, ikon:'bi-arrow-up-circle-fill' },
-            { label:'Net Bakiye', deger:toplamNet, renk: toplamNet >= 0 ? renkler.success : renkler.danger, ikon:'bi-wallet2' },
+            { label:'Toplam Giriş', deger:toplamGiris, renk:renkler.success, ikon:'bi-arrow-down-circle-fill', alt:'Seçili dönemde ortaktan gelen toplam' },
+            { label:'Toplam Çıkış', deger:toplamCikis, renk:renkler.danger, ikon:'bi-arrow-up-circle-fill', alt:'Seçili dönemde ortağa çıkan toplam' },
+            { label:'Net Bakiye', deger:toplamNet, renk: toplamNet >= 0 ? renkler.success : renkler.danger, ikon:'bi-wallet2', alt:'Giriş − Çıkış farkı' },
           ].map((k,i) => (
             <div key={i} className="col-12 col-md-4">
-              <div className={`${p}-kasa-kpi-card`} style={{ position:'relative', overflow:'hidden' }}>
-                <i className={`bi ${k.ikon}`} style={{ position:'absolute', right:14, top:14, fontSize:28, opacity:0.35, color:renkler.text }} />
-                <div className={`${p}-kasa-text-sec`} style={{ fontSize:11, fontWeight:700, textTransform:'uppercase', letterSpacing:'0.06em', marginBottom:8 }}>{k.label}</div>
-                <div className="financial-num" style={{ fontSize:'1.4rem', fontWeight:800, lineHeight:1.1, color: k.renk }}>
+              <div className={`${p}-kasa-kpi-card`}>
+                <i className={`bi ${k.ikon} ${p}-kasa-kpi-deco`} style={{ color:k.renk }} />
+                <div className="d-flex align-items-center gap-2 mb-2">
+                  <div className={`${p}-kasa-icon-box`} style={{ background:hexRgba(k.renk, 0.12) }}><i className={`bi ${k.ikon}`} style={{ color:k.renk, fontSize:17 }} /></div>
+                  <span className={`${p}-kasa-kpi-label`}>{k.label}</span>
+                </div>
+                <div className={`financial-num ${p}-kasa-kpi-val`} style={{ textShadow:`0 0 20px ${hexRgba(k.renk, 0.2)}` }}>
                   {k.label === 'Net Bakiye' && toplamNet >= 0 ? '+' : ''}{k.label === 'Toplam Çıkış' ? '-' : ''}{TL(k.deger)}
                 </div>
+                <p className={`${p}-kasa-text-muted`} style={{ fontSize:11, margin:'8px 0 0', fontWeight:500 }}>{k.alt}</p>
               </div>
             </div>
           ))}
@@ -1659,7 +1713,7 @@ function GostergePaneli({ hareketler, kapanislar, yatirimGuncelDeger, secilenAy,
   const [secilenTarih, setSecilenTarih] = useState(bugunTarih())
 
   const hesap = useMemo(() => {
-    const siraliKap = [...kapanislar].sort((a,b) => a.donem.localeCompare(b.donem))
+    const siraliKap = [...kapanislar].sort((a,b) => donemNormalize(a.donem).localeCompare(donemNormalize(b.donem)))
     const sonKapanis = siraliKap[siraliKap.length - 1] || null
     const oncekiKapanis = siraliKap[siraliKap.length - 2] || null
 
@@ -2366,7 +2420,7 @@ function KategoriDetayModal({ show, onClose, kategori, tip, hareketler, p, renkl
 }
 
 // ─── Nakit Akışı ─────────────────────────────────────────────────────────────
-function NakitAkisi({ secilenAy, secilenYil, setSecilenAy, setSecilenYil, hareketler, setHareketler, kapanislar, p, renkler }) {
+function NakitAkisi({ secilenAy, secilenYil, setSecilenAy, setSecilenYil, tumZamanlar, setTumZamanlar, hareketler, setHareketler, kapanislar, p, renkler }) {
   const [modalAcik,    setModalAcik]    = useState(false)
   const [silOnayId,    setSilOnayId]    = useState(null)
   const [sayfa,        setSayfa]        = useState(1)
@@ -2376,7 +2430,7 @@ function NakitAkisi({ secilenAy, secilenYil, setSecilenAy, setSecilenYil, hareke
 
   const hesap = useMemo(() => {
     const ozet = hesaplaOzet(hareketler, kapanislar)
-    const siraliKap = [...(kapanislar ?? [])].sort((a,b) => a.donem.localeCompare(b.donem))
+    const siraliKap = [...(kapanislar ?? [])].sort((a,b) => donemNormalize(a.donem).localeCompare(donemNormalize(b.donem)))
     const sonKap = siraliKap[siraliKap.length - 1] || null
     const tarihler = [...new Set(hareketler.map(h => h.tarih))].sort()
     let bakiye = sonKap ? sonKap.banka_nakdi : 0
@@ -2449,7 +2503,7 @@ function NakitAkisi({ secilenAy, secilenYil, setSecilenAy, setSecilenYil, hareke
   return (
     <div>
       {/* ── Dönem Seçici (En Üstte) ── */}
-      <DonemFiltresi secilenAy={secilenAy} secilenYil={secilenYil} setSecilenAy={setSecilenAy} setSecilenYil={setSecilenYil} p={p} renkler={renkler} />
+      <DonemFiltresi secilenAy={secilenAy} secilenYil={secilenYil} setSecilenAy={setSecilenAy} setSecilenYil={setSecilenYil} tumZamanlar={tumZamanlar} setTumZamanlar={setTumZamanlar} p={p} renkler={renkler} />
 
       {/* ══════════════════════════════════════════════════════════════
           ÜST SATIR — 4'lü KPI Grid
@@ -2724,8 +2778,8 @@ function NakitAkisi({ secilenAy, secilenYil, setSecilenAy, setSecilenYil, hareke
 
 // ─── Yatırım Kalesi — Sabitler ────────────────────────────────────────────────
 const VARLIK_TIPI_CFG = {
-  Altin: { icon:'bi-circle-fill',       color:'#d97706', label:'Altın' },
-  Doviz: { icon:'bi-currency-exchange', color:'#0891b2', label:'Döviz' },
+  Altin: { icon:'bi-coin',              color:'#d97706', label:'Altın' },
+  Doviz: { icon:'bi-cash-coin',         color:'#0891b2', label:'Döviz' },
   Diger: { icon:'bi-box-seam',          color:'rgba(255,255,255,0.5)', label:'Diğer' },
 }
 const ALTIN_TURLERI = ['Çeyrek Altın', 'Yarım Altın', 'Gram Altın', 'Ata Altın', 'Külçe Altın']
@@ -3023,22 +3077,35 @@ function YatirimKalesi({ yatirimlar, setYatirimlar, p, renkler }) {
   const [duzenlenen,     setDuzenlenen]     = useState(null)
   const [silOnayId,      setSilOnayId]      = useState(null)
   const [showFiyatModal, setShowFiyatModal] = useState(false)
+  const bugunY = new Date()
+  const [ykAy,  setYkAy]  = useState(bugunY.getMonth() + 1)
+  const [ykYil, setYkYil] = useState(bugunY.getFullYear())
+  const [ykTum, setYkTum] = useState(true)
+
+  // Tarih filtresi uygula (alış tarihine göre)
+  const tarihliYatirimlar = useMemo(() => {
+    if (ykTum) return yatirimlar
+    return yatirimlar.filter(y => {
+      const d = new Date((y.alis_tarihi || '') + 'T00:00:00')
+      return d.getMonth() + 1 === ykAy && d.getFullYear() === ykYil
+    })
+  }, [yatirimlar, ykAy, ykYil, ykTum])
 
   const ozet = useMemo(() => {
-    const bilancoMaliyet = yatirimlar.reduce((s, y) => s + y.miktar * y.birim_fiyat, 0)
-    const guncelKayitlar = yatirimlar.filter(y => y.guncel_fiyat !== null)
+    const bilancoMaliyet = tarihliYatirimlar.reduce((s, y) => s + y.miktar * y.birim_fiyat, 0)
+    const guncelKayitlar = tarihliYatirimlar.filter(y => y.guncel_fiyat !== null)
     const guncelDeger    = guncelKayitlar.reduce((s, y) => s + y.miktar * y.guncel_fiyat, 0)
     const alisMaliyeti   = guncelKayitlar.reduce((s, y) => s + y.miktar * y.birim_fiyat, 0)
     const kz             = guncelKayitlar.length > 0 ? guncelDeger - alisMaliyeti : null
     const kzYuzde        = (kz !== null && alisMaliyeti > 0) ? (kz / alisMaliyeti) * 100 : null
     return { bilancoMaliyet, guncelDeger, kz, kzYuzde, hicGuncel: guncelKayitlar.length === 0 }
-  }, [yatirimlar])
+  }, [tarihliYatirimlar])
 
   const grupluVeri = useMemo(() =>
     GRUP_SIRASI
-      .map(tip => ({ tip, kayitlar: yatirimlar.filter(y => y.varlık_tipi === tip) }))
+      .map(tip => ({ tip, kayitlar: tarihliYatirimlar.filter(y => y.varlık_tipi === tip) }))
       .filter(g => g.kayitlar.length > 0),
-    [yatirimlar]
+    [tarihliYatirimlar]
   )
 
   const acEkle    = () => { setDuzenlenen(null); setModalAcik(true) }
@@ -3077,12 +3144,25 @@ function YatirimKalesi({ yatirimlar, setYatirimlar, p, renkler }) {
     }
   }
 
-  const fiyatGuncelle = (fiyatlar) => {
+  const fiyatGuncelle = async (fiyatlar) => {
+    // Önce React state'i güncelle (anında yansısın)
     setYatirimlar(prev => prev.map(y => {
       const deger = fiyatlar[y.tur]
       if (deger === undefined || deger === '') return { ...y, guncel_fiyat: null }
       return { ...y, guncel_fiyat: parseParaInput(deger) }
     }))
+
+    // Veritabanına kaydet
+    const apiPayload = {}
+    for (const [tur, deger] of Object.entries(fiyatlar)) {
+      apiPayload[tur] = (deger === undefined || deger === '') ? null : parseParaInput(deger)
+    }
+    try {
+      await guncelFiyatlariKaydet(apiPayload)
+      toast.success('Güncel fiyatlar kaydedildi.')
+    } catch {
+      toast.error('Fiyatlar veritabanına kaydedilemedi.')
+    }
   }
 
   const kzRenk = ozet.kz === null ? renkler.textSec : ozet.kz >= 0 ? renkler.success : renkler.danger
@@ -3092,7 +3172,7 @@ function YatirimKalesi({ yatirimlar, setYatirimlar, p, renkler }) {
   // Portföy dağılımı (donut için)
   const dagılım = useMemo(() => {
     return GRUP_SIRASI.map(tip => {
-      const topTutar = yatirimlar.filter(y => y.varlık_tipi === tip).reduce((s,y) => s + y.miktar * y.birim_fiyat, 0)
+      const topTutar = tarihliYatirimlar.filter(y => y.varlık_tipi === tip).reduce((s,y) => s + y.miktar * y.birim_fiyat, 0)
       return { tip, tutar: topTutar }
     }).filter(d => d.tutar > 0)
   }, [yatirimlar])
@@ -3100,13 +3180,15 @@ function YatirimKalesi({ yatirimlar, setYatirimlar, p, renkler }) {
 
   return (
     <div>
+      <DonemFiltresi secilenAy={ykAy} secilenYil={ykYil} setSecilenAy={setYkAy} setSecilenYil={setYkYil} tumZamanlar={ykTum} setTumZamanlar={setYkTum} p={p} renkler={renkler} />
+
       {/* ── Başlık + Butonlar ── */}
       <div className="d-flex align-items-center justify-content-between flex-wrap gap-3 mb-4">
         <div>
           <h2 className={`${p}-kasa-section-title`} style={{ fontSize:'1.1rem', margin:0 }}>
             <i className="bi bi-safe2 me-2" style={{ color: renkler.accent }} />Yatırım Kalesi
           </h2>
-          <p className={`${p}-kasa-text-muted mb-0`}>Döviz, altın ve birikimleriniz · {yatirimlar.length} varlık</p>
+          <p className={`${p}-kasa-text-muted mb-0`}>Döviz, altın ve birikimleriniz · {tarihliYatirimlar.length} varlık</p>
         </div>
         <div className="d-flex gap-2 flex-wrap">
           {yatirimlar.length > 0 && (
@@ -3126,49 +3208,49 @@ function YatirimKalesi({ yatirimlar, setYatirimlar, p, renkler }) {
         {/* Kart 1 — Bilanço Değeri */}
         <div className="col-12 col-lg-4">
           <div className={`${p}-kasa-kpi-card`}>
-            <i className="bi bi-wallet2" style={{ position:'absolute', right:16, top:16, fontSize:40, opacity:0.35, color: renkler.text }} />
+            <i className={`bi bi-wallet2 ${p}-kasa-kpi-deco`} style={{ color:renkler.accent }} />
             <div className="d-flex align-items-center gap-2 mb-2">
-              <div className={`${p}-kasa-icon-box-sm`} style={{ background: hexRgba(renkler.text, 0.06) }}><i className="bi bi-wallet2" style={{ fontSize:18, color: hexRgba(renkler.text, 0.6) }} /></div>
-              <span className={`${p}-kasa-text-label`} style={{ color: hexRgba(renkler.text, 0.5) }}>Bilanço (Sabit) Değeri</span>
+              <div className={`${p}-kasa-icon-box`} style={{ background:hexRgba(renkler.accent, 0.12) }}><i className="bi bi-wallet2" style={{ color:renkler.accent, fontSize:17 }} /></div>
+              <span className={`${p}-kasa-kpi-label`}>Bilanço (Sabit) Değeri</span>
             </div>
-            <div className={`financial-num ${p}-kasa-fin-num`} style={{ fontSize:'1.6rem', fontWeight:800, color: renkler.text, lineHeight:1.1 }}>{TL(ozet.bilancoMaliyet)}</div>
-            <p className={`${p}-kasa-text-muted`} style={{ margin:'8px 0 0' }}>Kayıtlı alış maliyetlerinizin toplamı</p>
+            <div className={`financial-num ${p}-kasa-kpi-val`} style={{ textShadow:`0 0 20px ${hexRgba(renkler.accent, 0.2)}` }}>{TL(ozet.bilancoMaliyet)}</div>
+            <p className={`${p}-kasa-text-muted`} style={{ fontSize:11, margin:'8px 0 0', fontWeight:500 }}>Kayıtlı alış maliyetlerinizin toplamı</p>
           </div>
         </div>
 
         {/* Kart 2 — Güncel Piyasa Karşılığı */}
         <div className="col-12 col-lg-4">
-          <div className={`${p}-kasa-kpi-card`} >
-            <i className="bi bi-graph-up" style={{ position:'absolute', right:16, top:16, fontSize:40, opacity:0.35, color: renkler.info }} />
+          <div className={`${p}-kasa-kpi-card`}>
+            <i className={`bi bi-graph-up ${p}-kasa-kpi-deco`} style={{ color:renkler.info }} />
             <div className="d-flex align-items-center gap-2 mb-2">
-              <div style={ikonKutu(renkler.info, hexRgba(renkler.info, 0.1))}><i className="bi bi-graph-up" style={{ fontSize:18, color: renkler.info }} /></div>
-              <span className={`${p}-kasa-kpi-label`} style={kartEtiket(renkler.info)}>Güncel Piyasa Karşılığı</span>
+              <div className={`${p}-kasa-icon-box`} style={{ background:hexRgba(renkler.info, 0.12) }}><i className="bi bi-graph-up" style={{ color:renkler.info, fontSize:17 }} /></div>
+              <span className={`${p}-kasa-kpi-label`}>Güncel Piyasa Karşılığı</span>
             </div>
             {ozet.hicGuncel ? (
-              <div className="d-flex align-items-center gap-2 mt-1" style={{ color: hexRgba(renkler.text, 0.35) }}>
+              <div className={`d-flex align-items-center gap-2 mt-1 ${p}-kasa-text-muted`}>
                 <i className="bi bi-info-circle" style={{ fontSize:14 }} />
                 <span style={{ fontSize:13, fontWeight:600 }}>Henüz fiyat girilmedi</span>
               </div>
             ) : (
-              <div className="financial-num" style={{ fontSize:'1.6rem', fontWeight:800, color: renkler.text, lineHeight:1.1 }}>{TL(ozet.guncelDeger)}</div>
+              <div className={`financial-num ${p}-kasa-kpi-val`} style={{ textShadow:`0 0 20px ${hexRgba(renkler.info, 0.2)}` }}>{TL(ozet.guncelDeger)}</div>
             )}
-            <p style={{ margin:'8px 0 0' }} className={`${p}-kasa-text-muted`}>Şu an bozarsanız elde edeceğiniz nakit</p>
+            <p className={`${p}-kasa-text-muted`} style={{ fontSize:11, margin:'8px 0 0', fontWeight:500 }}>Şu an bozarsanız elde edeceğiniz nakit</p>
           </div>
         </div>
 
         {/* Kart 3 — Potansiyel K/Z */}
         <div className="col-12 col-lg-4">
-          <div className={`${p}-kasa-kpi-card`} >
-            <i className={`bi ${kzIkon}`} style={{ position:'absolute', right:16, top:16, fontSize:40, opacity:0.35, color: kzRenk }} />
+          <div className={`${p}-kasa-kpi-card`}>
+            <i className={`bi ${kzIkon} ${p}-kasa-kpi-deco`} style={{ color:kzRenk }} />
             <div className="d-flex align-items-center gap-2 mb-2">
-              <div style={ikonKutu(kzRenk, kzBg)}><i className={`bi ${kzIkon}`} style={{ fontSize:18, color:kzRenk }} /></div>
-              <span className={`${p}-kasa-kpi-label`} style={kartEtiket(kzRenk)}>Potansiyel Kâr / Zarar</span>
+              <div className={`${p}-kasa-icon-box`} style={{ background:kzBg }}><i className={`bi ${kzIkon}`} style={{ color:kzRenk, fontSize:17 }} /></div>
+              <span className={`${p}-kasa-kpi-label`}>Potansiyel Kâr / Zarar</span>
             </div>
             {ozet.kz === null ? (
-              <div className="financial-num" style={{ fontSize:'1.6rem', fontWeight:800, color: hexRgba(renkler.text, 0.35), lineHeight:1.1 }}>—</div>
+              <div className={`${p}-kasa-text-muted`} style={{ fontSize:20, fontWeight:800 }}>—</div>
             ) : (
               <div className="d-flex align-items-baseline gap-3">
-                <div className="financial-num" style={{ fontSize:'1.6rem', fontWeight:800, lineHeight:1.1, color:kzRenk }}>
+                <div className={`financial-num ${p}-kasa-kpi-val`} style={{ textShadow:`0 0 20px ${hexRgba(kzRenk, 0.2)}` }}>
                   {ozet.kz >= 0 ? '+' : ''}{TL(ozet.kz)}
                 </div>
                 {ozet.kzYuzde !== null && (
@@ -3178,7 +3260,7 @@ function YatirimKalesi({ yatirimlar, setYatirimlar, p, renkler }) {
                 )}
               </div>
             )}
-            <p style={{ margin:'8px 0 0' }} className={`${p}-kasa-text-muted`}>Reel piyasaya göre net fark</p>
+            <p className={`${p}-kasa-text-muted`} style={{ fontSize:11, margin:'8px 0 0', fontWeight:500 }}>Reel piyasaya göre net fark</p>
           </div>
         </div>
       </div>
@@ -3191,28 +3273,36 @@ function YatirimKalesi({ yatirimlar, setYatirimlar, p, renkler }) {
           <p style={{ fontSize:13, margin:0 }} className={`${p}-kasa-text-muted`}>Altın, döviz veya diğer birikimlerinizi buradan takip edin.</p>
         </div>
       ) : (
-        <div className="row g-3">
-          {/* Portföy Dağılımı — Mini Panel */}
+        <>
+          {/* ── Portföy Dağılımı — Yatay Şerit ── */}
           {dagılım.length > 1 && (
-            <div className="col-12 col-md-4 col-lg-3">
-              <div className={`${p}-kasa-glass-card`} style={{ padding:'20px', height:'100%' }}>
-                <div style={{ fontSize:13, fontWeight:700, color: renkler.text, marginBottom:16 }}>Portföy Dağılımı</div>
-                {dagılım.map(d => {
+            <div className={`${p}-kasa-glass-card`} style={{ padding:0, marginBottom:'1rem' }}>
+              <div className="px-4 pt-4 pb-3 d-flex align-items-center gap-2" style={{ borderBottom:`1px solid ${hexRgba(renkler.text, 0.06)}` }}>
+                <div className={`${p}-kasa-icon-box-sm`} style={{ background:hexRgba(renkler.accent, 0.1) }}>
+                  <i className="bi bi-pie-chart" style={{ color:renkler.accent, fontSize:14 }} />
+                </div>
+                <div>
+                  <span className={`${p}-kasa-text-primary`} style={{ fontSize:14, fontWeight:700 }}>Portföy Dağılımı</span>
+                  <p className={`mb-0 ${p}-kasa-text-muted`} style={{ fontSize:11 }}>Alış maliyetine göre ağırlıklar</p>
+                </div>
+              </div>
+              <div className="row g-0">
+                {dagılım.map((d, idx) => {
                   const cfg = VARLIK_TIPI_CFG[d.tip] || VARLIK_TIPI_CFG['Diger']
                   const yuzde = dagılımToplam > 0 ? (d.tutar / dagılımToplam) * 100 : 0
                   return (
-                    <div key={d.tip} className="mb-3">
-                      <div className="d-flex align-items-center justify-content-between mb-1">
-                        <div className="d-flex align-items-center gap-2">
-                          <div style={{ width:8, height:8, borderRadius:'50%', background:cfg.color, flexShrink:0 }} />
-                          <span style={{ fontSize:12, fontWeight:600, color: renkler.textSec }}>{cfg.label}</span>
+                    <div key={d.tip} className={`col-12 col-sm`} style={{ borderRight: idx < dagılım.length - 1 ? `1px solid ${hexRgba(renkler.text, 0.06)}` : 'none' }}>
+                      <div style={{ padding:'18px 22px' }}>
+                        <div className="d-flex align-items-center gap-2 mb-2">
+                          <div style={{ width:10, height:10, borderRadius:'50%', background:cfg.color, flexShrink:0, boxShadow:`0 0 8px ${cfg.color}55` }} />
+                          <span className={`${p}-kasa-text-sec`} style={{ fontSize:12, fontWeight:700, textTransform:'uppercase', letterSpacing:'0.06em' }}>{cfg.label}</span>
+                          <span className={`${p}-kasa-text-muted`} style={{ fontSize:11, fontWeight:700, marginLeft:'auto' }}>{yuzde.toFixed(0)}%</span>
                         </div>
-                        <span className="financial-num" style={{ fontSize:11, fontWeight:700, color: hexRgba(renkler.text, 0.5) }}>{yuzde.toFixed(0)}%</span>
+                        <div style={{ height:6, borderRadius:3, background:hexRgba(renkler.text, 0.06), overflow:'hidden', marginBottom:8 }}>
+                          <div style={{ width:`${yuzde}%`, height:'100%', borderRadius:3, background:`linear-gradient(90deg, ${cfg.color}, ${cfg.color}cc)`, transition:'width 0.4s ease', boxShadow:`0 0 8px ${cfg.color}33` }} />
+                        </div>
+                        <div className={`financial-num ${p}-kasa-text-primary`} style={{ fontSize:15, fontWeight:800 }}>{TL(d.tutar)}</div>
                       </div>
-                      <div style={{ height:6, borderRadius:3, background: hexRgba(renkler.text, 0.06), overflow:'hidden' }}>
-                        <div style={{ width:`${yuzde}%`, height:'100%', borderRadius:3, background:cfg.color, transition:'width 0.4s ease' }} />
-                      </div>
-                      <div className="financial-num" style={{ fontSize:10, color: hexRgba(renkler.text, 0.3), marginTop:2 }}>{TL(d.tutar)}</div>
                     </div>
                   )
                 })}
@@ -3220,105 +3310,133 @@ function YatirimKalesi({ yatirimlar, setYatirimlar, p, renkler }) {
             </div>
           )}
 
-          {/* Envanter Kartları (tablo yerine kart görünümü) */}
-          <div className={dagılım.length > 1 ? 'col-12 col-md-8 col-lg-9' : 'col-12'}>
-            {grupluVeri.map(({ tip, kayitlar }) => {
-              const cfg = VARLIK_TIPI_CFG[tip] || VARLIK_TIPI_CFG['Diger']
-              return (
-                <div key={tip} className="mb-4">
-                  {/* Grup Başlığı */}
-                  <div className="d-flex align-items-center gap-2 mb-3">
-                    <div className={`${p}-kasa-icon-box-sm`} style={{ width:28, height:28, borderRadius:10, background:`${cfg.color}18` }}>
-                      <i className={`bi ${cfg.icon}`} style={{ fontSize:14, color:cfg.color }} />
-                    </div>
-                    <span style={{ fontSize:14, fontWeight:800, color:cfg.color, letterSpacing:'0.02em' }}>{cfg.label}</span>
-                    <span className={`${p}-kasa-text-muted`}>· {kayitlar.length} varlık</span>
+          {/* ── Varlık Envanter Grupları ── */}
+          {grupluVeri.map(({ tip, kayitlar }) => {
+            const cfg = VARLIK_TIPI_CFG[tip] || VARLIK_TIPI_CFG['Diger']
+            return (
+              <div key={tip} className="mb-4">
+                {/* Grup Başlığı */}
+                <div className="d-flex align-items-center gap-2 mb-3">
+                  <div className={`${p}-kasa-icon-box-sm`} style={{ background:`${cfg.color}18` }}>
+                    <i className={`bi ${cfg.icon}`} style={{ fontSize:14, color:cfg.color }} />
                   </div>
+                  <span style={{ fontSize:14, fontWeight:800, color:cfg.color, letterSpacing:'0.02em' }}>{cfg.label}</span>
+                  <span className={`${p}-kasa-text-muted`}>· {kayitlar.length} varlık</span>
+                </div>
 
-                  {/* Varlık Kartları */}
-                  <div className="row g-3">
-                    {kayitlar.map(y => {
-                      const alisMaliyet = y.miktar * y.birim_fiyat
-                      const guncelDeger = y.guncel_fiyat !== null ? y.miktar * y.guncel_fiyat : null
-                      const kz          = guncelDeger !== null ? guncelDeger - alisMaliyet : null
-                      const kzYuzde     = (kz !== null && alisMaliyet > 0) ? (kz / alisMaliyet) * 100 : null
-                      return (
-                        <div key={y.id} className="col-12 col-sm-6 col-xl-4">
-                          <div className={`${p}-kasa-glass-card`} style={{ padding:'16px 18px', position:'relative', overflow:'hidden' }}>
-                            {/* Dekoratif ikon */}
-                            <i className={`bi ${cfg.icon}`} style={{ position:'absolute', right:12, bottom:10, fontSize:44, opacity:0.35, color:cfg.color }} />
+                {/* Varlık Kartları */}
+                <div className="row g-3">
+                  {kayitlar.map(y => {
+                    const alisMaliyet = y.miktar * y.birim_fiyat
+                    const guncelDeger = y.guncel_fiyat !== null ? y.miktar * y.guncel_fiyat : null
+                    const kz          = guncelDeger !== null ? guncelDeger - alisMaliyet : null
+                    const kzYuzde     = (kz !== null && alisMaliyet > 0) ? (kz / alisMaliyet) * 100 : null
+                    const kzR         = kz === null ? renkler.textSec : kz >= 0 ? renkler.success : renkler.danger
+                    return (
+                      <div key={y.id} className="col-12 col-sm-6 col-xl-4">
+                        <div className={`${p}-kasa-kpi-card`} style={{ position:'relative', overflow:'hidden' }}>
+                          {/* Dekoratif ikon — alt sağ, butonlarla çakışmasın */}
+                          <i className={`bi ${cfg.icon}`} style={{ position:'absolute', right:14, bottom:14, fontSize:44, opacity:0.35, color:cfg.color, pointerEvents:'none' }} />
 
-                            {/* Üst: Tür + Aksiyon */}
-                            <div className="d-flex align-items-start justify-content-between mb-3">
-                              <div>
-                                <div style={{ fontWeight:800, fontSize:15, color: renkler.text, lineHeight:1.2 }}>{y.tur}</div>
-                                <div style={{ marginTop:2 }} className={`${p}-kasa-text-muted`}>{y.miktar} Adet · {tarihFmt(y.alis_tarihi)}</div>
-                              </div>
-                              {silOnayId === y.id ? (
-                                <div className="d-flex align-items-center gap-1">
-                                  <button onClick={() => sil(y.id)} className={`${p}-kasa-sil-btn`} style={{ fontSize:11, padding:'3px 8px' }}>Sil</button>
-                                  <button onClick={() => setSilOnayId(null)} className={`${p}-kasa-vazgec-btn`} style={{ fontSize:11, padding:'3px 8px' }}>Vazgeç</button>
-                                </div>
-                              ) : (
-                                <div className="d-flex gap-1">
-                                  <button onClick={() => acDuzenle(y)} className={`${p}-kasa-islem-btn`}
-                                    onMouseEnter={e => { e.currentTarget.style.borderColor = renkler.accent }}
-                                    onMouseLeave={e => { e.currentTarget.style.borderColor = '' }}>
-                                    <i className="bi bi-pencil" style={{ fontSize:12, color: renkler.accent }} />
-                                  </button>
-                                  <button onClick={() => setSilOnayId(y.id)} className={`${p}-kasa-islem-btn ${p}-kasa-islem-btn-sil`}
-                                    onMouseEnter={e => { e.currentTarget.style.borderColor = renkler.danger }}
-                                    onMouseLeave={e => { e.currentTarget.style.borderColor = '' }}>
-                                    <i className="bi bi-trash3" style={{ fontSize:12, color: renkler.danger }} />
-                                  </button>
-                                </div>
-                              )}
+                          {/* ── Üst: Avatar + Bilgi + Aksiyonlar ── */}
+                          <div className="d-flex align-items-center gap-3 mb-3">
+                            <div style={{
+                              width:46, height:46, borderRadius:14, flexShrink:0,
+                              background:`linear-gradient(135deg, ${cfg.color}22, ${cfg.color}0a)`,
+                              border:`1px solid ${cfg.color}30`,
+                              display:'flex', alignItems:'center', justifyContent:'center'
+                            }}>
+                              <i className={`bi ${cfg.icon}`} style={{ fontSize:20, color:cfg.color }} />
                             </div>
-
-                            {/* Orta: Alış + Güncel yan yana */}
-                            <div className="row g-2 mb-2">
-                              <div className="col-6">
-                                <div className={`${p}-kasa-text-label`}>Alış Maliyeti</div>
-                                <div className="financial-num" style={{ fontSize:14, fontWeight:700, color: hexRgba(renkler.text, 0.8) }}>{TL(alisMaliyet)}</div>
+                            <div style={{ flex:1, minWidth:0 }}>
+                              <div className={`${p}-kasa-text-primary`} style={{ fontWeight:800, fontSize:15, lineHeight:1.2, whiteSpace:'nowrap', overflow:'hidden', textOverflow:'ellipsis' }}>{y.tur}</div>
+                              <div className={`${p}-kasa-text-muted`} style={{ fontSize:12, marginTop:2 }}>
+                                <span style={{ fontWeight:700 }}>{y.miktar}</span> Adet · {tarihFmt(y.alis_tarihi)}
                               </div>
-                              <div className="col-6 text-end">
-                                <div className={`${p}-kasa-text-label`}>Güncel Değer</div>
-                                <div className="financial-num" style={{ fontSize:14, fontWeight:700, color: guncelDeger !== null ? renkler.text : hexRgba(renkler.text, 0.3) }}>
+                            </div>
+                            {/* Aksiyonlar */}
+                            {silOnayId === y.id ? (
+                              <div className="d-flex align-items-center gap-1" style={{ flexShrink:0 }}>
+                                <button onClick={() => sil(y.id)} className={`${p}-kasa-sil-btn`}>Sil</button>
+                                <button onClick={() => setSilOnayId(null)} className={`${p}-kasa-vazgec-btn`}>Vazgeç</button>
+                              </div>
+                            ) : (
+                              <div className="d-flex gap-1" style={{ flexShrink:0 }}>
+                                <button onClick={() => acDuzenle(y)}
+                                  style={{ background:'none', border:`1px solid ${hexRgba(renkler.text, 0.1)}`, borderRadius:10, width:36, height:36, padding:0, cursor:'pointer', display:'inline-flex', alignItems:'center', justifyContent:'center', transition:'all 0.15s' }}
+                                  onMouseEnter={e => { e.currentTarget.style.borderColor=renkler.accent; e.currentTarget.style.background=hexRgba(renkler.accent, 0.08) }}
+                                  onMouseLeave={e => { e.currentTarget.style.borderColor=hexRgba(renkler.text, 0.1); e.currentTarget.style.background='none' }}>
+                                  <i className="bi bi-pencil" style={{ fontSize:12, color:renkler.accent }} />
+                                </button>
+                                <button onClick={() => setSilOnayId(y.id)}
+                                  style={{ background:hexRgba(renkler.danger, 0.06), border:`1px solid ${hexRgba(renkler.danger, 0.15)}`, borderRadius:10, width:36, height:36, padding:0, cursor:'pointer', display:'inline-flex', alignItems:'center', justifyContent:'center', transition:'border-color 0.15s' }}
+                                  onMouseEnter={e => { e.currentTarget.style.borderColor=renkler.danger }}
+                                  onMouseLeave={e => { e.currentTarget.style.borderColor=hexRgba(renkler.danger, 0.15) }}>
+                                  <i className="bi bi-trash3" style={{ fontSize:12, color:renkler.danger }} />
+                                </button>
+                              </div>
+                            )}
+                          </div>
+
+                          {/* ── Orta: Alış + Güncel kutucukları ── */}
+                          <div className="row g-2 mb-3">
+                            <div className="col-6">
+                              <div style={{ background:hexRgba(renkler.text, 0.03), border:`1px solid ${hexRgba(renkler.text, 0.06)}`, borderRadius:10, padding:'10px 12px' }}>
+                                <div className={`${p}-kasa-text-muted`} style={{ fontSize:10, fontWeight:700, textTransform:'uppercase', letterSpacing:'0.06em', marginBottom:4 }}>Alış Maliyeti</div>
+                                <div className={`financial-num ${p}-kasa-text-primary`} style={{ fontSize:14, fontWeight:700 }}>{TL(alisMaliyet)}</div>
+                              </div>
+                            </div>
+                            <div className="col-6">
+                              <div style={{ background: guncelDeger !== null ? hexRgba(renkler.info, 0.04) : hexRgba(renkler.text, 0.03), border:`1px solid ${guncelDeger !== null ? hexRgba(renkler.info, 0.1) : hexRgba(renkler.text, 0.06)}`, borderRadius:10, padding:'10px 12px' }}>
+                                <div className={`${p}-kasa-text-muted`} style={{ fontSize:10, fontWeight:700, textTransform:'uppercase', letterSpacing:'0.06em', marginBottom:4 }}>Güncel Değer</div>
+                                <div className={`financial-num`} style={{ fontSize:14, fontWeight:700, color: guncelDeger !== null ? renkler.text : hexRgba(renkler.text, 0.3) }}>
                                   {guncelDeger !== null ? TL(guncelDeger) : '—'}
                                 </div>
                               </div>
                             </div>
-
-                            {/* Alt: K/Z barı */}
-                            {kz !== null ? (
-                              <div style={{ background: kz >= 0 ? hexRgba(renkler.success, 0.08) : hexRgba(renkler.danger, 0.06), borderRadius:10, padding:'6px 10px', display:'flex', alignItems:'center', justifyContent:'space-between' }}>
-                                <span style={{ fontSize:11, fontWeight:700, color: kz >= 0 ? renkler.success : renkler.danger }}>
-                                  {kz >= 0 ? 'Kar' : 'Zarar'}
-                                </span>
-                                <div className="d-flex align-items-center gap-2">
-                                  <span className="financial-num" style={{ fontSize:13, fontWeight:800, color: kz >= 0 ? renkler.success : renkler.danger }}>
-                                    {kz >= 0 ? '+' : ''}{TL(kz)}
-                                  </span>
-                                  <span className="badge" style={{ background: kz >= 0 ? hexRgba(renkler.success, 0.15) : hexRgba(renkler.danger, 0.12), color: kz >= 0 ? renkler.success : renkler.danger, fontWeight:700, fontSize:10, padding:'2px 6px', borderRadius:4 }}>
-                                    {kz >= 0 ? '+' : ''}{kzYuzde?.toFixed(1)}%
-                                  </span>
-                                </div>
-                              </div>
-                            ) : (
-                              <div style={{ background: hexRgba(renkler.text, 0.03), borderRadius:10, padding:'6px 10px', textAlign:'center' }}>
-                                <span className={`${p}-kasa-text-muted`}>Güncel fiyat girilmedi</span>
-                              </div>
-                            )}
                           </div>
+
+                          {/* ── Alt: K/Z Durumu ── */}
+                          {kz !== null ? (
+                            <div style={{
+                              background:`linear-gradient(135deg, ${hexRgba(kzR, 0.08)}, ${hexRgba(kzR, 0.03)})`,
+                              border:`1px solid ${hexRgba(kzR, 0.15)}`,
+                              borderRadius:10, padding:'10px 14px',
+                              display:'flex', alignItems:'center', justifyContent:'space-between'
+                            }}>
+                              <div className="d-flex align-items-center gap-2">
+                                <i className={`bi ${kz >= 0 ? 'bi-arrow-up-circle-fill' : 'bi-arrow-down-circle-fill'}`} style={{ fontSize:16, color:kzR }} />
+                                <span style={{ fontSize:12, fontWeight:700, color:kzR }}>{kz >= 0 ? 'Kâr' : 'Zarar'}</span>
+                              </div>
+                              <div className="d-flex align-items-center gap-2">
+                                <span className="financial-num" style={{ fontSize:15, fontWeight:800, color:kzR }}>
+                                  {kz >= 0 ? '+' : ''}{TL(kz)}
+                                </span>
+                                <span style={{ background:hexRgba(kzR, 0.12), color:kzR, fontWeight:700, fontSize:11, padding:'3px 8px', borderRadius:10 }}>
+                                  {kz >= 0 ? '+' : ''}{kzYuzde?.toFixed(1)}%
+                                </span>
+                              </div>
+                            </div>
+                          ) : (
+                            <div style={{
+                              background:hexRgba(renkler.text, 0.03),
+                              border:`1px solid ${hexRgba(renkler.text, 0.06)}`,
+                              borderRadius:10, padding:'10px 14px',
+                              display:'flex', alignItems:'center', justifyContent:'center', gap:8
+                            }}>
+                              <i className="bi bi-info-circle" style={{ fontSize:13, color:hexRgba(renkler.text, 0.3) }} />
+                              <span className={`${p}-kasa-text-muted`} style={{ fontSize:12, fontWeight:600 }}>Güncel fiyat girilmedi</span>
+                            </div>
+                          )}
                         </div>
-                      )
-                    })}
-                  </div>
+                      </div>
+                    )
+                  })}
                 </div>
-              )
-            })}
-          </div>
-        </div>
+              </div>
+            )
+          })}
+        </>
       )}
 
       <YatirimModal
@@ -3367,6 +3485,7 @@ export default function VarlikKasa() {
   const [aktifSekme,  setAktifSekme]  = useState('gosterge')
   const [secilenAy,   setSecilenAy]   = useState(bugun.getMonth() + 1)
   const [secilenYil,  setSecilenYil]  = useState(bugun.getFullYear())
+  const [tumZamanlar, setTumZamanlar] = useState(false)
   const [hareketler,  setHareketler]  = useState([])
   const [gecmisKisitli, setGecmisKisitli] = useState(false)
   const [kapanislar,      setKapanislar]      = useState([])
@@ -3374,25 +3493,30 @@ export default function VarlikKasa() {
   const [yatirimlar,      setYatirimlar]      = useState([])
   const [yukleniyor,      setYukleniyor]      = useState(true)
 
-  // Yatırımlar, ortak hareketler ve bilanço: sadece bir kez yükle
+  // Yatırımlar, ortak hareketler ve bilanço: sadece bir kez yükle (bağımsız)
   useEffect(() => {
-    Promise.all([yatirimlariGetir(), ortaklariGetir(), bilancoListele()])
+    Promise.allSettled([yatirimlariGetir(), ortaklariGetir(), bilancoListele()])
       .then(([yRes, oRes, bRes]) => {
-        if (yRes.data.basarili) setYatirimlar(yRes.data.veri.yatirimlar ?? [])
-        if (oRes.data.basarili) setOrtakHareketler(oRes.data.veri.ortaklar ?? [])
-        if (bRes.data.basarili) setKapanislar(bRes.data.veri.kapanislar ?? [])
+        if (yRes.status === 'fulfilled' && yRes.value.data.basarili)
+          setYatirimlar(yRes.value.data.veri.yatirimlar ?? [])
+        if (oRes.status === 'fulfilled' && oRes.value.data.basarili)
+          setOrtakHareketler(oRes.value.data.veri.ortaklar ?? [])
+        if (bRes.status === 'fulfilled' && bRes.value.data.basarili)
+          setKapanislar(bRes.value.data.veri.kapanislar ?? [])
       })
-      .catch(() => {})
   }, [])
 
   // Kasa hareketleri: seçili ay/yıl değiştiğinde yeniden çek
   useEffect(() => {
-    const ay  = String(secilenAy).padStart(2, '0')
-    const son = new Date(secilenYil, secilenAy, 0).getDate()
-    const bas = `${secilenYil}-${ay}-01`
-    const bit = `${secilenYil}-${ay}-${String(son).padStart(2, '0')}`
+    const params = { adet: 500 }
+    if (!tumZamanlar) {
+      const ay  = String(secilenAy).padStart(2, '0')
+      const son = new Date(secilenYil, secilenAy, 0).getDate()
+      params.baslangic_tarihi = `${secilenYil}-${ay}-01`
+      params.bitis_tarihi = `${secilenYil}-${ay}-${String(son).padStart(2, '0')}`
+    }
     setYukleniyor(true)
-    hareketleriGetir({ baslangic_tarihi: bas, bitis_tarihi: bit, adet: 500 })
+    hareketleriGetir(params)
       .then(res => {
         if (res.data.basarili) {
           setHareketler(res.data.veri.hareketler ?? [])
@@ -3401,9 +3525,9 @@ export default function VarlikKasa() {
       })
       .catch(() => toast.error('Hareketler yüklenemedi.'))
       .finally(() => setYukleniyor(false))
-  }, [secilenAy, secilenYil])
+  }, [secilenAy, secilenYil, tumZamanlar])
 
-  const shared = { secilenAy, secilenYil, setSecilenAy, setSecilenYil, hareketler, setHareketler, kapanislar }
+  const shared = { secilenAy, secilenYil, setSecilenAy, setSecilenYil, tumZamanlar, setTumZamanlar, hareketler, setHareketler, kapanislar }
 
   const yatirimGuncelDeger = yatirimlar
     .filter(y => y.guncel_fiyat !== null)

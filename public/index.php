@@ -59,12 +59,19 @@ require_once BASE_PATH . '/models/Sirket.php';
 require_once BASE_PATH . '/models/Abonelik.php';
 require_once BASE_PATH . '/middleware/PlanKontrol.php';
 require_once BASE_PATH . '/middleware/SinirKontrol.php';
+require_once BASE_PATH . '/middleware/YetkiKontrol.php';
 require_once BASE_PATH . '/controllers/AuthController.php';
 require_once BASE_PATH . '/utils/SmtpHelper.php';
 require_once BASE_PATH . '/utils/MailHelper.php';
 require_once BASE_PATH . '/utils/MailSablonlar.php';
 require_once BASE_PATH . '/controllers/CronController.php';
 require_once BASE_PATH . '/controllers/TurController.php';
+require_once BASE_PATH . '/models/Guvenlik.php';
+require_once BASE_PATH . '/utils/TOTPHelper.php';
+require_once BASE_PATH . '/models/Bildirim.php';
+require_once BASE_PATH . '/utils/BildirimOlusturucu.php';
+require_once BASE_PATH . '/models/Rapor.php';
+require_once BASE_PATH . '/controllers/RaporController.php';
 
 // ============================================
 // 3. MIDDLEWARE'LERİ ÇALIŞTIR
@@ -194,6 +201,31 @@ try {
         // ─── Tanıtım Turu ───
         case 'tur':
             require_once BASE_PATH . '/routes/tur.php';
+            break;
+
+        // ─── Veresiye Defteri ───
+        case 'veresiye':
+            require_once BASE_PATH . '/routes/veresiye.php';
+            break;
+
+        // ─── Kullanıcı Yönetimi ───
+        case 'kullanicilar':
+            require_once BASE_PATH . '/routes/kullanicilar.php';
+            break;
+
+        // ─── Güvenlik ───
+        case 'guvenlik':
+            require_once BASE_PATH . '/routes/guvenlik.php';
+            break;
+
+        // ─── Bildirimler ───
+        case 'bildirimler':
+            require_once BASE_PATH . '/routes/bildirimler.php';
+            break;
+
+        // ─── Raporlar ───
+        case 'raporlar':
+            require_once BASE_PATH . '/routes/raporlar.php';
             break;
 
         // ─── API Ana Sayfa ───

@@ -13,13 +13,14 @@
  */
 
 import { useEffect } from 'react'
-import { BrowserRouter, Routes, Route, Navigate, useNavigate } from 'react-router-dom'
+import { BrowserRouter, Routes, Route, Navigate, Outlet, useNavigate } from 'react-router-dom'
 import useAuthStore from './stores/authStore'
 import ErrorBoundary from './components/ErrorBoundary'
 
 // Layout
-import KorunanSayfa from './components/layout/KorunanSayfa'
-import TemaLayout   from './components/layout/TemaLayout'
+import KorunanSayfa  from './components/layout/KorunanSayfa'
+import TemaLayout    from './components/layout/TemaLayout'
+import ModulKoruma   from './components/layout/ModulKoruma'
 
 // Auth sayfaları
 import GirisYap     from './pages/auth/GirisYap'
@@ -33,8 +34,22 @@ import VarlikKasa     from './pages/kasa/VarlikKasa'
 import CekSenet       from './pages/cek-senet/CekSenet'
 import OdemeTakip       from './pages/odeme-takip/OdemeTakip'
 import VadeHesaplayici  from './pages/vade-hesaplayici/VadeHesaplayici'
-import TemaSecimi       from './pages/ayarlar/TemaSecimi'
-import PlanSecim        from './pages/abonelik/PlanSecim'
+import TemaSecimi        from './pages/ayarlar/TemaSecimi'
+import PlanSecim         from './pages/abonelik/PlanSecim'
+import KullaniciYonetimi from './pages/kullanicilar/KullaniciYonetimi'
+import GuvenlikEkrani      from './pages/guvenlik/GuvenlikEkrani'
+import BildirimlerEkrani  from './pages/bildirimler/BildirimlerEkrani'
+import VeresiyeListesi   from './pages/veresiye/VeresiyeListesi'
+import VeresiyeDetay     from './pages/veresiye/VeresiyeDetay'
+import RaporlarEkrani    from './pages/raporlar/RaporlarEkrani'
+
+// Yalnızca sahip rolü erişebilir — /kullanicilar gibi sayfalar için
+function SahipKoruma() {
+  const { kullanici } = useAuthStore()
+  if (!kullanici) return null
+  if (kullanici.rol !== 'sahip') return <Navigate to="/dashboard" replace />
+  return <Outlet />
+}
 
 // axios.js → auth:logout olayını dinle, React Router ile yönlendir
 function AuthLogoutListener() {
@@ -89,16 +104,51 @@ export default function App() {
         <Route element={<KorunanSayfa />}>
           <Route element={<TemaLayout />}>
             <Route path="/dashboard"             element={<Dashboard />} />
-            <Route path="/cariler"               element={<CariYonetimi />} />
-            <Route path="/cariler/yeni"          element={<Navigate to="/cariler" replace />} />
-            <Route path="/cariler/:id"           element={<Navigate to="/cariler" replace />} />
-            <Route path="/cariler/:id/duzenle"   element={<Navigate to="/cariler" replace />} />
-            <Route path="/cek-senet"             element={<CekSenet />} />
-            <Route path="/odemeler"              element={<OdemeTakip />} />
-            <Route path="/kasa"                  element={<VarlikKasa />} />
-            <Route path="/vade-hesaplayici"      element={<VadeHesaplayici />} />
-            <Route path="/ayarlar/tema"          element={<TemaSecimi />} />
-            <Route path="/abonelik"              element={<PlanSecim />} />
+
+            {/* Modül koruma — cari */}
+            <Route element={<ModulKoruma modul="cari" />}>
+              <Route path="/cariler"               element={<CariYonetimi />} />
+              <Route path="/cariler/yeni"          element={<Navigate to="/cariler" replace />} />
+              <Route path="/cariler/:id"           element={<Navigate to="/cariler" replace />} />
+              <Route path="/cariler/:id/duzenle"   element={<Navigate to="/cariler" replace />} />
+            </Route>
+
+            {/* Modül koruma — cek_senet */}
+            <Route element={<ModulKoruma modul="cek_senet" />}>
+              <Route path="/cek-senet"             element={<CekSenet />} />
+            </Route>
+
+            {/* Modül koruma — odemeler */}
+            <Route element={<ModulKoruma modul="odemeler" />}>
+              <Route path="/odemeler"              element={<OdemeTakip />} />
+            </Route>
+
+            {/* Modül koruma — kasa */}
+            <Route element={<ModulKoruma modul="kasa" />}>
+              <Route path="/kasa"                  element={<VarlikKasa />} />
+            </Route>
+
+            {/* Modül koruma — vade_hesaplayici */}
+            <Route element={<ModulKoruma modul="vade_hesaplayici" />}>
+              <Route path="/vade-hesaplayici"      element={<VadeHesaplayici />} />
+            </Route>
+
+            {/* Modül koruma — veresiye */}
+            <Route element={<ModulKoruma modul="veresiye" />}>
+              <Route path="/veresiye"              element={<VeresiyeListesi />} />
+              <Route path="/veresiye/:cariId"      element={<VeresiyeDetay />} />
+            </Route>
+
+            {/* Sahip only */}
+            <Route element={<SahipKoruma />}>
+              <Route path="/kullanicilar"          element={<KullaniciYonetimi />} />
+              <Route path="/guvenlik"              element={<GuvenlikEkrani />} />
+              <Route path="/abonelik"              element={<PlanSecim />} />
+            </Route>
+
+            <Route path="/bildirimler"             element={<BildirimlerEkrani />} />
+            <Route path="/raporlar"               element={<RaporlarEkrani />} />
+            <Route path="/ayarlar/tema"            element={<TemaSecimi />} />
           </Route>
         </Route>
 
