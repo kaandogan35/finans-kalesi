@@ -108,6 +108,43 @@ class KasaController {
         }
     }
 
+    // ─── POST /api/kasa/cekmece-kapanis ───
+    public function cekmece_kapanis($payload, $girdi) {
+        try {
+            $veri = $girdi;
+
+            if (!isset($veri['tutar']) || (float)$veri['tutar'] <= 0) {
+                Response::dogrulama_hatasi(array('tutar' => 'Tutar sıfırdan büyük olmalıdır'));
+                return;
+            }
+
+            $gecerli_hedefler = array('merkez_kasa', 'banka', 'patron_aldi', 'kasada_kaldi');
+            if (empty($veri['hedef']) || !in_array($veri['hedef'], $gecerli_hedefler)) {
+                Response::dogrulama_hatasi(array('hedef' => 'Geçerli hedef seçiniz'));
+                return;
+            }
+
+            $kasa = new Kasa($this->db);
+            $sonuc = $kasa->cekmece_kapanis(
+                $payload['sirket_id'],
+                (float)$veri['tutar'],
+                $veri['hedef'],
+                isset($veri['aciklama']) ? $veri['aciklama'] : '',
+                $payload['sub']
+            );
+
+            Response::basarili($sonuc, 'Çekmece kapanışı tamamlandı');
+        } catch (Exception $e) {
+            $mesaj = $e->getMessage();
+            if (strpos($mesaj, 'Çekmece bakiyesi yetersiz') !== false) {
+                Response::hata($mesaj, 400);
+            } else {
+                error_log('Kasa cekmece_kapanis hatasi: ' . $mesaj);
+                Response::sunucu_hatasi('Çekmece kapanışı yapılamadı');
+            }
+        }
+    }
+
     // ─── GET /api/kasa/yatirimlar ───
     public function yatirimlar_listele($payload) {
         try {

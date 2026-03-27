@@ -17,11 +17,11 @@ const RAPOR_IKON = {
 }
 
 const RAPOR_BADGE = {
-  cari_yaslandirma: 'rpr-badge-emerald',
-  nakit_akis: 'rpr-badge-blue',
-  cek_portfoy: 'rpr-badge-purple',
-  odeme_ozet: 'rpr-badge-amber',
-  genel_ozet: 'rpr-badge-emerald',
+  cari_yaslandirma: 'p-rpr-badge-emerald',
+  nakit_akis: 'p-rpr-badge-blue',
+  cek_portfoy: 'p-rpr-badge-purple',
+  odeme_ozet: 'p-rpr-badge-amber',
+  genel_ozet: 'p-rpr-badge-emerald',
 }
 
 const FORMAT_ETIKET = {
@@ -61,27 +61,27 @@ export default function RaporGecmisi() {
   }
 
   if (yukleniyor) {
-    return <div className="rpr-loading"><div className="rpr-spinner" /> Yükleniyor…</div>
+    return <div className="p-rpr-loading"><div className="p-rpr-spinner" /> Yükleniyor…</div>
   }
 
   if (!gecmis.length) {
     return (
-      <div className="rpr-empty">
-        <div className="rpr-empty-icon"><i className="bi bi-clock-history" /></div>
-        <div className="rpr-empty-text">Henüz rapor geçmişi yok</div>
-        <div className="rpr-empty-sub">Rapor görüntülediğinizde burada listelenecek</div>
+      <div className="p-rpr-empty">
+        <div className="p-rpr-empty-icon"><i className="bi bi-clock-history" /></div>
+        <div className="p-rpr-empty-text">Henüz rapor geçmişi yok</div>
+        <div className="p-rpr-empty-sub">Rapor görüntülediğinizde burada listelenecek</div>
       </div>
     )
   }
 
   return (
-    <div className="rpr-card">
-      <div className="rpr-card-header">
-        <h3 className="rpr-card-title"><i className="bi bi-clock-history" /> Son Raporlar</h3>
+    <div className="p-rpr-card">
+      <div className="p-rpr-card-header">
+        <h3 className="p-rpr-card-title"><i className="bi bi-clock-history" /> Son Raporlar</h3>
         <span style={{ fontSize: 12, color: 'var(--p-text-muted)' }}>{gecmis.length} kayıt</span>
       </div>
       <div className="table-responsive">
-        <table className="table table-hover align-middle rpr-table mb-0">
+        <table className="table table-hover align-middle p-rpr-table mb-0">
           <thead>
             <tr>
               <th>Rapor</th>
@@ -101,12 +101,12 @@ export default function RaporGecmisi() {
                   </div>
                 </td>
                 <td>
-                  <span className={`rpr-badge ${RAPOR_BADGE[g.rapor_turu] || 'rpr-badge-gray'}`}>
+                  <span className={`p-rpr-badge ${RAPOR_BADGE[g.rapor_turu] || 'p-rpr-badge-gray'}`}>
                     {g.rapor_turu?.replace(/_/g, ' ') || '—'}
                   </span>
                 </td>
                 <td>
-                  <span className="rpr-badge rpr-badge-gray">
+                  <span className="p-rpr-badge p-rpr-badge-gray">
                     {FORMAT_ETIKET[g.format] || g.format}
                   </span>
                 </td>

@@ -251,6 +251,9 @@ CREATE TABLE IF NOT EXISTS `kasa_hareketler` (
     `tarih` DATE NOT NULL,
     `baglanti_turu` VARCHAR(50) DEFAULT NULL,
     `ekleyen_id` INT UNSIGNED NOT NULL,
+    `kaynak_modul` VARCHAR(30) DEFAULT NULL COMMENT 'cek_senet, tekrarlayan, manuel',
+    `kaynak_id` INT DEFAULT NULL COMMENT 'kaynak tablodaki kayıt ID',
+    `odeme_kaynagi` VARCHAR(30) DEFAULT NULL COMMENT 'banka, cekmece, merkez_kasa',
     `silindi_mi` TINYINT(1) NOT NULL DEFAULT 0,
     `silinme_tarihi` DATETIME DEFAULT NULL,
     `olusturma_tarihi` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
@@ -258,6 +261,7 @@ CREATE TABLE IF NOT EXISTS `kasa_hareketler` (
     KEY `idx_kasa_sirket` (`sirket_id`),
     KEY `idx_kasa_tarih` (`sirket_id`, `tarih`),
     KEY `idx_kasa_tip` (`sirket_id`, `islem_tipi`),
+    KEY `idx_kasa_kaynak` (`sirket_id`, `kaynak_modul`),
     KEY `idx_kasa_silindi` (`sirket_id`, `silindi_mi`),
     CONSTRAINT `fk_kasa_sirket` FOREIGN KEY (`sirket_id`)
         REFERENCES `sirketler` (`id`) ON DELETE CASCADE ON UPDATE CASCADE,
@@ -271,7 +275,10 @@ CREATE TABLE IF NOT EXISTS `kasa_hareketler` (
 CREATE TABLE IF NOT EXISTS `fiziki_kasa` (
     `id` INT UNSIGNED NOT NULL AUTO_INCREMENT,
     `sirket_id` INT UNSIGNED NOT NULL,
-    `bakiye_sifreli` TEXT NOT NULL COMMENT 'AES-256-GCM',
+    `bakiye_sifreli` TEXT NOT NULL COMMENT 'AES-256-GCM — Toplam bakiye',
+    `banka_bakiye_sifreli` TEXT DEFAULT NULL COMMENT 'AES-256-GCM — Banka hesabı bakiyesi',
+    `cekmece_bakiye_sifreli` TEXT DEFAULT NULL COMMENT 'AES-256-GCM — Çekmece (nakit) bakiyesi',
+    `merkez_bakiye_sifreli` TEXT DEFAULT NULL COMMENT 'AES-256-GCM — Merkez kasa bakiyesi',
     `guncelleme_tarihi` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     `olusturma_tarihi` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
     PRIMARY KEY (`id`),
@@ -539,13 +546,66 @@ CREATE TABLE IF NOT EXISTS `guvenlik_ayarlari` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- =====================================================
+-- 21. TEKRARLAYAN İŞLEMLER (Otomatik gelir/gider tanımları)
+-- =====================================================
+CREATE TABLE IF NOT EXISTS `tekrarlayan_islemler` (
+    `id` INT UNSIGNED NOT NULL AUTO_INCREMENT,
+    `sirket_id` INT UNSIGNED NOT NULL,
+    `baslik` VARCHAR(255) NOT NULL,
+    `islem_tipi` VARCHAR(20) NOT NULL COMMENT 'giris veya cikis',
+    `kategori` VARCHAR(100) DEFAULT NULL,
+    `tutar` DECIMAL(12,2) NOT NULL,
+    `doviz_kodu` VARCHAR(10) NOT NULL DEFAULT 'TRY',
+    `periyot` VARCHAR(20) NOT NULL DEFAULT 'aylik' COMMENT 'gunluk, haftalik, aylik, yillik',
+    `tekrar_gunu` TINYINT UNSIGNED DEFAULT NULL COMMENT 'Ayın günü (1-31)',
+    `baslangic_tarihi` DATE NOT NULL,
+    `bitis_tarihi` DATE DEFAULT NULL,
+    `son_calistirma` DATE DEFAULT NULL,
+    `sonraki_calistirma` DATE NOT NULL,
+    `toplam_calistirma` INT UNSIGNED NOT NULL DEFAULT 0,
+    `aktif_mi` TINYINT(1) NOT NULL DEFAULT 1,
+    `aciklama` TEXT DEFAULT NULL,
+    `odeme_kaynagi` VARCHAR(30) DEFAULT 'banka' COMMENT 'banka, cekmece, merkez_kasa',
+    `ekleyen_id` INT UNSIGNED NOT NULL,
+    `silindi_mi` TINYINT(1) NOT NULL DEFAULT 0,
+    `silinme_tarihi` DATETIME DEFAULT NULL,
+    `olusturma_tarihi` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    `guncelleme_tarihi` DATETIME DEFAULT NULL ON UPDATE CURRENT_TIMESTAMP,
+    PRIMARY KEY (`id`),
+    KEY `idx_tekrar_sirket` (`sirket_id`),
+    KEY `idx_tekrar_sonraki` (`sirket_id`, `aktif_mi`, `sonraki_calistirma`),
+    CONSTRAINT `fk_tekrar_sirket` FOREIGN KEY (`sirket_id`)
+        REFERENCES `sirketler` (`id`) ON DELETE CASCADE ON UPDATE CASCADE,
+    CONSTRAINT `fk_tekrar_ekleyen` FOREIGN KEY (`ekleyen_id`)
+        REFERENCES `kullanicilar` (`id`) ON DELETE CASCADE ON UPDATE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- =====================================================
+-- 22. KATEGORİLER (Merkezi gelir/gider kategori yönetimi)
+-- =====================================================
+CREATE TABLE IF NOT EXISTS `kategoriler` (
+    `id` INT UNSIGNED NOT NULL AUTO_INCREMENT,
+    `sirket_id` INT UNSIGNED DEFAULT NULL COMMENT 'NULL = sistem varsayılanı',
+    `islem_tipi` VARCHAR(10) NOT NULL COMMENT 'giris veya cikis',
+    `ad` VARCHAR(100) NOT NULL,
+    `ikon` VARCHAR(50) DEFAULT NULL COMMENT 'Bootstrap icon sınıfı',
+    `sira` TINYINT UNSIGNED NOT NULL DEFAULT 0,
+    `aktif_mi` TINYINT(1) NOT NULL DEFAULT 1,
+    `silindi_mi` TINYINT(1) NOT NULL DEFAULT 0,
+    `olusturma_tarihi` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    PRIMARY KEY (`id`),
+    KEY `idx_kat_sirket` (`sirket_id`, `islem_tipi`),
+    KEY `idx_kat_aktif` (`sirket_id`, `aktif_mi`, `islem_tipi`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- =====================================================
 -- FOREIGN KEY KONTROL AÇ
 -- =====================================================
 SET FOREIGN_KEY_CHECKS = 1;
 
 -- =====================================================
 -- TAMAMLANDI!
--- 17 tablo başarıyla oluşturuldu:
+-- 22 tablo başarıyla oluşturuldu:
 -- 1.  sirketler          — Şirket/firma bilgileri
 -- 2.  kullanicilar       — Kullanıcı hesapları
 -- 3.  refresh_tokens     — JWT yenileme token'ları
@@ -563,4 +623,9 @@ SET FOREIGN_KEY_CHECKS = 1;
 -- 15. abonelikler        — Abonelik plan geçmişi
 -- 16. odeme_gecmisi      — Abonelik ödeme kayıtları
 -- 17. mail_log           — E-posta gönderim logları
+-- 18. veresiye_islemler  — Faturasız satış / açık hesap
+-- 19. giris_gecmisi      — Login history
+-- 20. guvenlik_ayarlari  — Şirket bazlı güvenlik politikaları
+-- 21. tekrarlayan_islemler — Otomatik gelir/gider tanımları
+-- 22. kategoriler         — Merkezi gelir/gider kategori yönetimi
 -- =====================================================

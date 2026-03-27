@@ -7,6 +7,8 @@
 import { useState, useEffect } from 'react'
 import { raporlarApi } from '../../api/raporlar'
 import { toast } from 'sonner'
+import { usePlanKontrol } from '../../hooks/usePlanKontrol'
+import PlanYukseltModal from '../../components/PlanYukseltModal'
 import {
   Chart as ChartJS, CategoryScale, LinearScale, PointElement, LineElement,
   Title, Tooltip, Legend, Filler,
@@ -29,6 +31,8 @@ function ayEtiket(ayStr) {
 }
 
 export default function NakitAkis() {
+  const { izinVarMi, plan } = usePlanKontrol()
+  const [modalGoster, setModalGoster] = useState(false)
   const [veri, setVeri] = useState(null)
   const [yukleniyor, setYukleniyor] = useState(true)
   const yil = new Date().getFullYear()
@@ -174,78 +178,82 @@ export default function NakitAkis() {
   }
 
   if (yukleniyor) {
-    return <div className="rpr-loading"><div className="rpr-spinner" /> Yükleniyor…</div>
+    return <div className="p-rpr-loading"><div className="p-rpr-spinner" /> Yükleniyor…</div>
   }
 
   return (
     <div>
       {/* Filtre */}
-      <div className="rpr-filter-bar">
-        <div className="rpr-filter-group">
-          <span className="rpr-filter-label">Başlangıç</span>
+      <div className="p-rpr-filter-bar">
+        <div className="p-rpr-filter-group">
+          <span className="p-rpr-filter-label">Başlangıç</span>
           <input
             type="date"
-            className="rpr-filter-input"
+            className="p-rpr-filter-input"
             value={filtre.baslangic_tarihi}
             onChange={(e) => setFiltre({ ...filtre, baslangic_tarihi: e.target.value })}
           />
         </div>
-        <div className="rpr-filter-group">
-          <span className="rpr-filter-label">Bitiş</span>
+        <div className="p-rpr-filter-group">
+          <span className="p-rpr-filter-label">Bitiş</span>
           <input
             type="date"
-            className="rpr-filter-input"
+            className="p-rpr-filter-input"
             value={filtre.bitis_tarihi}
             onChange={(e) => setFiltre({ ...filtre, bitis_tarihi: e.target.value })}
           />
         </div>
-        <button className="rpr-filter-btn rpr-filter-btn-primary" onClick={uygula}>
+        <button className="p-rpr-filter-btn p-rpr-filter-btn-primary" onClick={uygula}>
           <i className="bi bi-funnel-fill" /> Filtrele
         </button>
-        <div className="rpr-export-bar">
-          <button className="rpr-export-btn" onClick={pdfIndir}>
+        <div className="p-rpr-export-bar">
+          <button className="p-rpr-export-btn" onClick={() => izinVarMi('pdf_rapor') ? pdfIndir() : setModalGoster(true)}>
             <i className="bi bi-file-earmark-pdf-fill" /> PDF
+            {!izinVarMi('pdf_rapor') && <i className="bi bi-lock-fill" style={{ fontSize: 10, opacity: 0.5 }} />}
           </button>
-          <button className="rpr-export-btn" onClick={excelIndir}>
+          <button className="p-rpr-export-btn" onClick={() => izinVarMi('excel_rapor') ? excelIndir() : setModalGoster(true)}>
             <i className="bi bi-file-earmark-excel-fill" /> Excel
+            {!izinVarMi('excel_rapor') && <i className="bi bi-lock-fill" style={{ fontSize: 10, opacity: 0.5 }} />}
           </button>
         </div>
       </div>
 
+      <PlanYukseltModal goster={modalGoster} kapat={() => setModalGoster(false)} ozellikAdi="PDF & Excel Rapor" mevcutPlan={plan} />
+
       {/* KPI */}
       {veri?.ozet && (
-        <div className="rpr-kpi-row" style={{ gridTemplateColumns: 'repeat(3, 1fr)' }}>
-          <div className="rpr-kpi">
-            <div className="rpr-kpi-accent" style={{ background: '#10B981' }} />
-            <div className="rpr-kpi-label">Toplam Giriş</div>
-            <div className="rpr-kpi-value financial-num">{TL(veri.ozet.toplam_giris)}</div>
-            <i className="bi bi-arrow-down-circle rpr-kpi-icon" />
+        <div className="p-rpr-kpi-row" style={{ gridTemplateColumns: 'repeat(3, 1fr)' }}>
+          <div className="p-rpr-kpi">
+            <div className="p-rpr-kpi-accent" style={{ background: '#10B981' }} />
+            <div className="p-rpr-kpi-label">Toplam Giriş</div>
+            <div className="p-rpr-kpi-value financial-num">{TL(veri.ozet.toplam_giris)}</div>
+            <i className="bi bi-arrow-down-circle p-rpr-kpi-icon" />
           </div>
-          <div className="rpr-kpi">
-            <div className="rpr-kpi-accent" style={{ background: '#F59E0B' }} />
-            <div className="rpr-kpi-label">Toplam Çıkış</div>
-            <div className="rpr-kpi-value financial-num">{TL(veri.ozet.toplam_cikis)}</div>
-            <i className="bi bi-arrow-up-circle rpr-kpi-icon" />
+          <div className="p-rpr-kpi">
+            <div className="p-rpr-kpi-accent" style={{ background: '#F59E0B' }} />
+            <div className="p-rpr-kpi-label">Toplam Çıkış</div>
+            <div className="p-rpr-kpi-value financial-num">{TL(veri.ozet.toplam_cikis)}</div>
+            <i className="bi bi-arrow-up-circle p-rpr-kpi-icon" />
           </div>
-          <div className="rpr-kpi">
-            <div className="rpr-kpi-accent" style={{ background: veri.ozet.net >= 0 ? '#10B981' : '#DC2626' }} />
-            <div className="rpr-kpi-label">Net Akış</div>
-            <div className="rpr-kpi-value financial-num" style={{ color: veri.ozet.net >= 0 ? '#10B981' : '#DC2626' }}>
+          <div className="p-rpr-kpi">
+            <div className="p-rpr-kpi-accent" style={{ background: veri.ozet.net >= 0 ? '#10B981' : '#DC2626' }} />
+            <div className="p-rpr-kpi-label">Net Akış</div>
+            <div className="p-rpr-kpi-value financial-num" style={{ color: veri.ozet.net >= 0 ? '#10B981' : '#DC2626' }}>
               {TL(veri.ozet.net)}
             </div>
-            <i className="bi bi-graph-up-arrow rpr-kpi-icon" />
+            <i className="bi bi-graph-up-arrow p-rpr-kpi-icon" />
           </div>
         </div>
       )}
 
       {/* Grafik */}
       {chartData && (
-        <div className="rpr-card">
-          <div className="rpr-card-header">
-            <h3 className="rpr-card-title"><i className="bi bi-graph-up" /> Aylık Nakit Akış</h3>
+        <div className="p-rpr-card">
+          <div className="p-rpr-card-header">
+            <h3 className="p-rpr-card-title"><i className="bi bi-graph-up" /> Aylık Nakit Akış</h3>
           </div>
-          <div className="rpr-card-body">
-            <div className="rpr-chart-wrap">
+          <div className="p-rpr-card-body">
+            <div className="p-rpr-chart-wrap">
               <Line data={chartData} options={chartOptions} />
             </div>
           </div>
@@ -253,12 +261,12 @@ export default function NakitAkis() {
       )}
 
       {/* Tablo */}
-      <div className="rpr-card">
-        <div className="rpr-card-header">
-          <h3 className="rpr-card-title"><i className="bi bi-table" /> Aylık Detay</h3>
+      <div className="p-rpr-card">
+        <div className="p-rpr-card-header">
+          <h3 className="p-rpr-card-title"><i className="bi bi-table" /> Aylık Detay</h3>
         </div>
         <div className="table-responsive" id="rpr-nakit-tablo">
-          <table className="table table-hover align-middle rpr-table mb-0">
+          <table className="table table-hover align-middle p-rpr-table mb-0">
             <thead>
               <tr>
                 <th>Dönem</th>

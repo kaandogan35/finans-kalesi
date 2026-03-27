@@ -228,6 +228,16 @@ try {
             require_once BASE_PATH . '/routes/raporlar.php';
             break;
 
+        // ─── Tekrarlayan İşlemler ───
+        case 'tekrarlayan-islemler':
+            require_once BASE_PATH . '/routes/tekrarlayan_islem.php';
+            break;
+
+        // ─── Kategoriler ───
+        case 'kategoriler':
+            require_once BASE_PATH . '/routes/kategoriler.php';
+            break;
+
         // ─── API Ana Sayfa ───
         case '':
             Response::basarili([

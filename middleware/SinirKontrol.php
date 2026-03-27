@@ -15,15 +15,15 @@ class SinirKontrol {
     // -1 = sınırsız
     const SINIRLAR = [
         'ucretsiz' => [
-            'cari_toplam'     => 25,   // Toplam cari kart
+            'cari_toplam'     => 30,   // Toplam cari kart
             'cek_aylik'       => 10,   // Aylık çek/senet ekleme
             'kasa_gecmis_ay'  => 2,    // Kasa geçmişi (ay)
             'kullanici_sayisi'=> 1,    // Toplam kullanıcı
         ],
         'standart' => [
-            'cari_toplam'     => 500,
-            'cek_aylik'       => 200,
-            'kasa_gecmis_ay'  => 24,
+            'cari_toplam'     => -1,   // Sınırsız
+            'cek_aylik'       => 50,
+            'kasa_gecmis_ay'  => -1,   // Sınırsız
             'kullanici_sayisi'=> 2,
         ],
         'kurumsal' => [

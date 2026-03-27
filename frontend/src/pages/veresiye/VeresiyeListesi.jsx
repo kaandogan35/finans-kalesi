@@ -80,29 +80,29 @@ export default function VeresiyeListesi() {
       {/* ─── KPI Kartları ─────────────────────────────────────────────── */}
       <div className="row g-3 mb-3">
         <div className="col-12 col-md-4">
-          <div className={`${p}-kpi-card p-vry-kpi`}>
-            <i className="bi bi-wallet2 p-vry-kpi-deco" style={{ opacity: 0.35 }} />
-            <div className="p-vry-kpi-label">TOPLAM AÇIK ALACAK</div>
-            <div className={`p-vry-kpi-value financial-num ${(ozet.toplam_acik_bakiye ?? 0) > 0 ? 'text-danger' : 'text-success'}`}>
+          <div className={`${p}-kpi-card ${p}-vry-kpi`}>
+            <i className={`bi bi-wallet2 ${p}-vry-kpi-deco`} style={{ opacity: 0.35 }} />
+            <div className={`${p}-vry-kpi-label`}>TOPLAM AÇIK ALACAK</div>
+            <div className={`${p}-vry-kpi-value financial-num ${(ozet.toplam_acik_bakiye ?? 0) > 0 ? 'text-danger' : 'text-success'}`}>
               {TL(ozet.toplam_acik_bakiye ?? 0)}
             </div>
-            <div className="p-vry-kpi-desc">{ozet.borclu_musteri ?? 0} borçlu müşteri</div>
+            <div className={`${p}-vry-kpi-desc`}>{ozet.borclu_musteri ?? 0} borçlu müşteri</div>
           </div>
         </div>
         <div className="col-12 col-md-4">
-          <div className={`${p}-kpi-card p-vry-kpi`}>
-            <i className="bi bi-people p-vry-kpi-deco" style={{ opacity: 0.35 }} />
-            <div className="p-vry-kpi-label">KAYITLI MÜŞTERİ</div>
-            <div className="p-vry-kpi-value">{ozet.toplam_musteri ?? 0}</div>
-            <div className="p-vry-kpi-desc">veresiye hesabı olan</div>
+          <div className={`${p}-kpi-card ${p}-vry-kpi`}>
+            <i className={`bi bi-people ${p}-vry-kpi-deco`} style={{ opacity: 0.35 }} />
+            <div className={`${p}-vry-kpi-label`}>KAYITLI MÜŞTERİ</div>
+            <div className={`${p}-vry-kpi-value`}>{ozet.toplam_musteri ?? 0}</div>
+            <div className={`${p}-vry-kpi-desc`}>veresiye hesabı olan</div>
           </div>
         </div>
         <div className="col-12 col-md-4">
-          <div className={`${p}-kpi-card p-vry-kpi`}>
-            <i className="bi bi-bag-check p-vry-kpi-deco" style={{ opacity: 0.35 }} />
-            <div className="p-vry-kpi-label">BUGÜN SATIŞ</div>
-            <div className="p-vry-kpi-value financial-num">{TL(ozet.bugun_satis ?? 0)}</div>
-            <div className="p-vry-kpi-desc">{ozet.bugun_islem_sayisi ?? 0} işlem kaydedildi</div>
+          <div className={`${p}-kpi-card ${p}-vry-kpi`}>
+            <i className={`bi bi-bag-check ${p}-vry-kpi-deco`} style={{ opacity: 0.35 }} />
+            <div className={`${p}-vry-kpi-label`}>BUGÜN SATIŞ</div>
+            <div className={`${p}-vry-kpi-value financial-num`}>{TL(ozet.bugun_satis ?? 0)}</div>
+            <div className={`${p}-vry-kpi-desc`}>{ozet.bugun_islem_sayisi ?? 0} işlem kaydedildi</div>
           </div>
         </div>
       </div>
@@ -152,7 +152,7 @@ export default function VeresiyeListesi() {
         <div className="table-responsive d-none d-md-block">
           <table className="table table-hover align-middle mb-0">
             <thead>
-              <tr className="p-vry-thead-row">
+              <tr className={`${p}-vry-thead-row`}>
                 <th>MÜŞTERİ</th>
                 <th>TÜR</th>
                 <th className="text-end">TOPLAM SATIŞ</th>
@@ -180,17 +180,17 @@ export default function VeresiyeListesi() {
                   </td>
                 </tr>
               ) : cariler.map((c) => (
-                <tr key={c.cari_id} className="p-vry-tablo-satir">
+                <tr key={c.cari_id} className={`${p}-vry-tablo-satir`}>
                   <td>
                     <div className="d-flex align-items-center gap-2">
-                      <div className="p-vry-avatar">
+                      <div className={`${p}-vry-avatar`}>
                         {(c.cari_adi || '?').charAt(0).toUpperCase()}
                       </div>
                       <span className="fw-600" style={{ fontSize: 14 }}>{c.cari_adi}</span>
                     </div>
                   </td>
                   <td>
-                    <span className="p-vry-tur-badge">{cariTurEtiketi(c.cari_turu)}</span>
+                    <span className={`${p}-vry-tur-badge`}>{cariTurEtiketi(c.cari_turu)}</span>
                   </td>
                   <td className="text-end financial-num" style={{ fontSize: 13, color: 'var(--p-color-danger)' }}>
                     {TL(c.toplam_satis)}
@@ -239,41 +239,41 @@ export default function VeresiyeListesi() {
               </span>
             </div>
           ) : (
-            <div className="p-vry-mobil-liste">
+            <div className={`${p}-vry-mobil-liste`}>
               {cariler.map((c) => (
                 <button
                   key={c.cari_id}
                   type="button"
-                  className="p-vry-mobil-kart"
+                  className={`${p}-vry-mobil-kart`}
                   onClick={() => navigate(`/veresiye/${c.cari_id}`)}
                 >
                   {/* Üst Satır: Avatar + İsim + Tür + Chevron */}
-                  <div className="p-vry-mk-ust">
-                    <div className="p-vry-avatar p-vry-avatar-md">
+                  <div className={`${p}-vry-mk-ust`}>
+                    <div className={`${p}-vry-avatar ${p}-vry-avatar-md`}>
                       {(c.cari_adi || '?').charAt(0).toUpperCase()}
                     </div>
-                    <div className="p-vry-mk-isim-grup">
-                      <span className="p-vry-mk-isim">{c.cari_adi}</span>
-                      <span className="p-vry-tur-badge">{cariTurEtiketi(c.cari_turu)}</span>
+                    <div className={`${p}-vry-mk-isim-grup`}>
+                      <span className={`${p}-vry-mk-isim`}>{c.cari_adi}</span>
+                      <span className={`${p}-vry-tur-badge`}>{cariTurEtiketi(c.cari_turu)}</span>
                     </div>
-                    <i className="bi bi-chevron-right p-vry-mk-chevron" />
+                    <i className={`bi bi-chevron-right ${p}-vry-mk-chevron`} />
                   </div>
 
                   {/* Orta Satır: Satış + Ödeme */}
-                  <div className="p-vry-mk-orta">
-                    <div className="p-vry-mk-kalem">
-                      <span className="p-vry-mk-kalem-etiket">Satış</span>
-                      <span className="p-vry-mk-kalem-deger financial-num p-vry-mk-satis">{TL(c.toplam_satis)}</span>
+                  <div className={`${p}-vry-mk-orta`}>
+                    <div className={`${p}-vry-mk-kalem`}>
+                      <span className={`${p}-vry-mk-kalem-etiket`}>Satış</span>
+                      <span className={`${p}-vry-mk-kalem-deger financial-num ${p}-vry-mk-satis`}>{TL(c.toplam_satis)}</span>
                     </div>
-                    <div className="p-vry-mk-ayrac" />
-                    <div className="p-vry-mk-kalem">
-                      <span className="p-vry-mk-kalem-etiket">Ödeme</span>
-                      <span className="p-vry-mk-kalem-deger financial-num p-vry-mk-odeme">{TL(c.toplam_odeme)}</span>
+                    <div className={`${p}-vry-mk-ayrac`} />
+                    <div className={`${p}-vry-mk-kalem`}>
+                      <span className={`${p}-vry-mk-kalem-etiket`}>Ödeme</span>
+                      <span className={`${p}-vry-mk-kalem-deger financial-num ${p}-vry-mk-odeme`}>{TL(c.toplam_odeme)}</span>
                     </div>
-                    <div className="p-vry-mk-ayrac" />
-                    <div className="p-vry-mk-kalem p-vry-mk-kalem-bakiye">
-                      <span className="p-vry-mk-kalem-etiket">Bakiye</span>
-                      <span className={`p-vry-mk-kalem-deger p-vry-mk-bakiye-deger financial-num ${c.bakiye > 0 ? 'p-vry-mk-borclu' : c.bakiye < 0 ? 'p-vry-mk-alacakli' : ''}`}>
+                    <div className={`${p}-vry-mk-ayrac`} />
+                    <div className={`${p}-vry-mk-kalem ${p}-vry-mk-kalem-bakiye`}>
+                      <span className={`${p}-vry-mk-kalem-etiket`}>Bakiye</span>
+                      <span className={`${p}-vry-mk-kalem-deger ${p}-vry-mk-bakiye-deger financial-num ${c.bakiye > 0 ? `${p}-vry-mk-borclu` : c.bakiye < 0 ? `${p}-vry-mk-alacakli` : ''}`}>
                         {TL(c.bakiye)}
                       </span>
                     </div>
@@ -281,7 +281,7 @@ export default function VeresiyeListesi() {
 
                   {/* Alt Satır: Son işlem tarihi */}
                   {c.son_islem_tarihi && (
-                    <div className="p-vry-mk-alt">
+                    <div className={`${p}-vry-mk-alt`}>
                       <i className="bi bi-clock me-1" />
                       Son işlem: {tarihFmt(c.son_islem_tarihi)}
                     </div>

@@ -7,6 +7,8 @@
 import { useState, useEffect } from 'react'
 import { raporlarApi } from '../../api/raporlar'
 import { toast } from 'sonner'
+import { usePlanKontrol } from '../../hooks/usePlanKontrol'
+import PlanYukseltModal from '../../components/PlanYukseltModal'
 import {
   Chart as ChartJS, CategoryScale, LinearScale, BarElement,
   ArcElement, Title, Tooltip, Legend,
@@ -51,6 +53,8 @@ const AY_ADLARI = {
 }
 
 export default function CekPortfoy() {
+  const { izinVarMi, plan } = usePlanKontrol()
+  const [modalGoster, setModalGoster] = useState(false)
   const [veri, setVeri] = useState(null)
   const [yukleniyor, setYukleniyor] = useState(true)
   const [filtre, setFiltre] = useState({ tur: '', durum: '' })
@@ -209,7 +213,7 @@ export default function CekPortfoy() {
   }
 
   if (yukleniyor) {
-    return <div className="rpr-loading"><div className="rpr-spinner" /> Yükleniyor…</div>
+    return <div className="p-rpr-loading"><div className="p-rpr-spinner" /> Yükleniyor…</div>
   }
 
   const ozet = veri?.ozet || {}
@@ -217,85 +221,89 @@ export default function CekPortfoy() {
   return (
     <div>
       {/* Filtre */}
-      <div className="rpr-filter-bar">
-        <div className="rpr-filter-group">
-          <span className="rpr-filter-label">Tür</span>
-          <select className="rpr-filter-input" value={filtre.tur}
+      <div className="p-rpr-filter-bar">
+        <div className="p-rpr-filter-group">
+          <span className="p-rpr-filter-label">Tür</span>
+          <select className="p-rpr-filter-input" value={filtre.tur}
             onChange={(e) => setFiltre({ ...filtre, tur: e.target.value })}>
             <option value="">Tümü</option>
             {Object.entries(TUR_ETIKET).map(([k, v]) => <option key={k} value={k}>{v}</option>)}
           </select>
         </div>
-        <div className="rpr-filter-group">
-          <span className="rpr-filter-label">Durum</span>
-          <select className="rpr-filter-input" value={filtre.durum}
+        <div className="p-rpr-filter-group">
+          <span className="p-rpr-filter-label">Durum</span>
+          <select className="p-rpr-filter-input" value={filtre.durum}
             onChange={(e) => setFiltre({ ...filtre, durum: e.target.value })}>
             <option value="">Tümü</option>
             {Object.entries(DURUM_ETIKET).map(([k, v]) => <option key={k} value={k}>{v}</option>)}
           </select>
         </div>
-        <button className="rpr-filter-btn rpr-filter-btn-primary" onClick={uygula}>
+        <button className="p-rpr-filter-btn p-rpr-filter-btn-primary" onClick={uygula}>
           <i className="bi bi-funnel-fill" /> Filtrele
         </button>
-        <div className="rpr-export-bar">
-          <button className="rpr-export-btn" onClick={pdfIndir}>
+        <div className="p-rpr-export-bar">
+          <button className="p-rpr-export-btn" onClick={() => izinVarMi('pdf_rapor') ? pdfIndir() : setModalGoster(true)}>
             <i className="bi bi-file-earmark-pdf-fill" /> PDF
+            {!izinVarMi('pdf_rapor') && <i className="bi bi-lock-fill" style={{ fontSize: 10, opacity: 0.5 }} />}
           </button>
-          <button className="rpr-export-btn" onClick={excelIndir}>
+          <button className="p-rpr-export-btn" onClick={() => izinVarMi('excel_rapor') ? excelIndir() : setModalGoster(true)}>
             <i className="bi bi-file-earmark-excel-fill" /> Excel
+            {!izinVarMi('excel_rapor') && <i className="bi bi-lock-fill" style={{ fontSize: 10, opacity: 0.5 }} />}
           </button>
         </div>
       </div>
 
+      <PlanYukseltModal goster={modalGoster} kapat={() => setModalGoster(false)} ozellikAdi="PDF & Excel Rapor" mevcutPlan={plan} />
+
       {/* KPI */}
-      <div className="rpr-kpi-row">
-        <div className="rpr-kpi">
-          <div className="rpr-kpi-accent" style={{ background: '#6366F1' }} />
-          <div className="rpr-kpi-label">Toplam Adet</div>
-          <div className="rpr-kpi-value">{ozet.toplam_adet ?? 0}</div>
-          <i className="bi bi-file-earmark-text rpr-kpi-icon" />
+      <div className="p-rpr-kpi-row">
+        <div className="p-rpr-kpi">
+          <div className="p-rpr-kpi-accent" style={{ background: '#6366F1' }} />
+          <div className="p-rpr-kpi-label">Toplam Adet</div>
+          <div className="p-rpr-kpi-value">{ozet.toplam_adet ?? 0}</div>
+          <i className="bi bi-file-earmark-text p-rpr-kpi-icon" />
         </div>
-        <div className="rpr-kpi">
-          <div className="rpr-kpi-accent" style={{ background: '#10B981' }} />
-          <div className="rpr-kpi-label">Alacak Toplam</div>
-          <div className="rpr-kpi-value financial-num">{TL(ozet.alacak_toplam)}</div>
-          <i className="bi bi-arrow-down-circle rpr-kpi-icon" />
+        <div className="p-rpr-kpi">
+          <div className="p-rpr-kpi-accent" style={{ background: '#10B981' }} />
+          <div className="p-rpr-kpi-label">Alacak Toplam</div>
+          <div className="p-rpr-kpi-value financial-num">{TL(ozet.alacak_toplam)}</div>
+          <i className="bi bi-arrow-down-circle p-rpr-kpi-icon" />
         </div>
-        <div className="rpr-kpi">
-          <div className="rpr-kpi-accent" style={{ background: '#F59E0B' }} />
-          <div className="rpr-kpi-label">Borç Toplam</div>
-          <div className="rpr-kpi-value financial-num">{TL(ozet.borc_toplam)}</div>
-          <i className="bi bi-arrow-up-circle rpr-kpi-icon" />
+        <div className="p-rpr-kpi">
+          <div className="p-rpr-kpi-accent" style={{ background: '#F59E0B' }} />
+          <div className="p-rpr-kpi-label">Borç Toplam</div>
+          <div className="p-rpr-kpi-value financial-num">{TL(ozet.borc_toplam)}</div>
+          <i className="bi bi-arrow-up-circle p-rpr-kpi-icon" />
         </div>
-        <div className="rpr-kpi">
-          <div className="rpr-kpi-accent" style={{ background: '#DC2626' }} />
-          <div className="rpr-kpi-label">Karşılıksız</div>
-          <div className="rpr-kpi-value financial-num" style={{ color: '#DC2626' }}>{TL(ozet.karsiliksiz_toplam)}</div>
-          <i className="bi bi-exclamation-octagon rpr-kpi-icon" />
+        <div className="p-rpr-kpi">
+          <div className="p-rpr-kpi-accent" style={{ background: '#DC2626' }} />
+          <div className="p-rpr-kpi-label">Karşılıksız</div>
+          <div className="p-rpr-kpi-value financial-num" style={{ color: '#DC2626' }}>{TL(ozet.karsiliksiz_toplam)}</div>
+          <i className="bi bi-exclamation-octagon p-rpr-kpi-icon" />
         </div>
       </div>
 
       {/* Grafikler */}
       <div style={{ display: 'grid', gridTemplateColumns: pieData && barData ? '1fr 1fr' : '1fr', gap: 20, marginBottom: 20 }}>
         {pieData && (
-          <div className="rpr-card">
-            <div className="rpr-card-header">
-              <h3 className="rpr-card-title"><i className="bi bi-pie-chart-fill" /> Durum Dağılımı</h3>
+          <div className="p-rpr-card">
+            <div className="p-rpr-card-header">
+              <h3 className="p-rpr-card-title"><i className="bi bi-pie-chart-fill" /> Durum Dağılımı</h3>
             </div>
-            <div className="rpr-card-body">
-              <div className="rpr-chart-wrap" style={{ height: 260 }}>
+            <div className="p-rpr-card-body">
+              <div className="p-rpr-chart-wrap" style={{ height: 260 }}>
                 <Pie data={pieData} options={pieOptions} />
               </div>
             </div>
           </div>
         )}
         {barData && (
-          <div className="rpr-card">
-            <div className="rpr-card-header">
-              <h3 className="rpr-card-title"><i className="bi bi-calendar3" /> Vade Takvimi</h3>
+          <div className="p-rpr-card">
+            <div className="p-rpr-card-header">
+              <h3 className="p-rpr-card-title"><i className="bi bi-calendar3" /> Vade Takvimi</h3>
             </div>
-            <div className="rpr-card-body">
-              <div className="rpr-chart-wrap" style={{ height: 260 }}>
+            <div className="p-rpr-card-body">
+              <div className="p-rpr-chart-wrap" style={{ height: 260 }}>
                 <Bar data={barData} options={barOptions} />
               </div>
             </div>
@@ -304,12 +312,12 @@ export default function CekPortfoy() {
       </div>
 
       {/* Tablo */}
-      <div className="rpr-card">
-        <div className="rpr-card-header">
-          <h3 className="rpr-card-title"><i className="bi bi-table" /> Durum Detay</h3>
+      <div className="p-rpr-card">
+        <div className="p-rpr-card-header">
+          <h3 className="p-rpr-card-title"><i className="bi bi-table" /> Durum Detay</h3>
         </div>
         <div className="table-responsive" id="rpr-cek-tablo">
-          <table className="table table-hover align-middle rpr-table mb-0">
+          <table className="table table-hover align-middle p-rpr-table mb-0">
             <thead>
               <tr>
                 <th>Durum</th>
@@ -340,12 +348,6 @@ export default function CekPortfoy() {
         </div>
       </div>
 
-      <style>{`
-        @media (max-width: 767px) {
-          .rpr-card-body .rpr-chart-wrap { height: 200px !important; }
-          div[style*="grid-template-columns: 1fr 1fr"] { grid-template-columns: 1fr !important; }
-        }
-      `}</style>
     </div>
   )
 }

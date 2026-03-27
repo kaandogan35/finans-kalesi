@@ -7,71 +7,6 @@ import { createPortal } from 'react-dom'
 import { toast } from 'sonner'
 import { kullanicilarApi } from '../../api/kullanicilar'
 
-const CSS = `
-  @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800&display=swap');
-
-  .sgm-overlay {
-    position: fixed; inset: 0;
-    background: rgba(0,0,0,0.45);
-    backdrop-filter: blur(5px);
-    -webkit-backdrop-filter: blur(5px);
-    z-index: 1060;
-    display: flex; align-items: center; justify-content: center;
-    padding: 16px;
-  }
-
-  .sgm-box {
-    background: #ffffff;
-    border-radius: 18px;
-    box-shadow: 0 24px 60px rgba(0,0,0,0.15);
-    max-width: 400px; width: 100%;
-    font-family: 'Outfit', sans-serif;
-    overflow: hidden;
-  }
-
-  .sgm-header.mh-default {
-    background: #ffffff;
-    border-bottom: 1px solid #F3F4F6;
-    padding: 20px 22px 16px;
-  }
-
-  .sgm-body { padding: 20px 22px; }
-  .sgm-footer {
-    padding: 14px 22px;
-    border-top: 1px solid #F3F4F6;
-    background: #F9FAFB;
-  }
-
-  .sgm-label {
-    font-size: 12px; font-weight: 700; color: #374151;
-    margin-bottom: 5px; display: block;
-  }
-  .sgm-input {
-    width: 100%; padding: 9px 12px;
-    border: 1.5px solid #E5E7EB;
-    border-radius: 10px;
-    font-size: 13px; color: #111827;
-    font-family: 'Outfit', sans-serif;
-    outline: none;
-    transition: border-color 0.15s ease;
-    background: #ffffff;
-  }
-  .sgm-input:focus { border-color: #f59e0b; box-shadow: 0 0 0 3px rgba(245,158,11,0.08); }
-
-  .sgm-kaydet-btn {
-    padding: 9px 20px;
-    border-radius: 10px; border: none;
-    background: linear-gradient(135deg, #f59e0b, #d97706);
-    color: #fff; font-weight: 700; font-size: 13px;
-    font-family: 'Outfit', sans-serif;
-    cursor: pointer;
-    transition: opacity 0.15s ease;
-    box-shadow: 0 2px 10px rgba(245,158,11,0.25);
-    display: flex; align-items: center; gap: 7px;
-  }
-  .sgm-kaydet-btn:hover { opacity: 0.9; }
-  .sgm-kaydet-btn:disabled { opacity: 0.5; cursor: default; }
-`
 
 export default function SifreGuncelleModal({ hedef, onKapat }) {
   const [yeniSifre, setYeniSifre]     = useState('')
@@ -98,7 +33,6 @@ export default function SifreGuncelleModal({ hedef, onKapat }) {
 
   const modal = (
     <div className="sgm-overlay" onClick={onKapat}>
-      <style>{CSS}</style>
       <div className="sgm-box" onClick={e => e.stopPropagation()}>
 
         {/* Başlık (mh-default) */}

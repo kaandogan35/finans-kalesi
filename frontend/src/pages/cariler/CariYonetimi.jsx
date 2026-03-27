@@ -15,6 +15,8 @@ import { odemeApi } from '../../api/odeme'
 import useTemaStore from '../../stores/temaStore'
 import { temaRenkleri, hexRgba } from '../../lib/temaRenkleri'
 import { useSinirler } from '../../hooks/useSinirler'
+import { usePlanKontrol } from '../../hooks/usePlanKontrol'
+import PlanYukseltModal from '../../components/PlanYukseltModal'
 import useAuthStore from '../../stores/authStore'
 
 const prefixMap = { paramgo: 'p' }
@@ -197,6 +199,8 @@ export default function CariYonetimi() {
 
   const { kullanici } = useAuthStore()
   const { sinirler, uyariDurum } = useSinirler()
+  const { izinVarMi, plan } = usePlanKontrol()
+  const [planModalGoster, setPlanModalGoster] = useState(false)
   const cariDurum = uyariDurum('cari')
   const cariBilgi = sinirler?.cari
   const limitDolu = cariDurum === 'dolu'
@@ -714,11 +718,12 @@ export default function CariYonetimi() {
             </div>
           )}
           <button
-            onClick={() => { setTopluModalAcik(true); setTopluDosya(null); setTopluOnizleme(null); setTopluSonuc(null) }}
+            onClick={() => izinVarMi('veri_aktarma') ? (setTopluModalAcik(true), setTopluDosya(null), setTopluOnizleme(null), setTopluSonuc(null)) : setPlanModalGoster(true)}
             className={`${p}-cym-btn-outline d-none d-md-flex align-items-center gap-2`}
-            title="CSV ile toplu cari yükle"
+            title={izinVarMi('veri_aktarma') ? 'Excel ile toplu cari yükle' : 'Veri aktarma — Standart plandan itibaren'}
           >
             <i className="bi bi-upload" /> Toplu Yükle
+            {!izinVarMi('veri_aktarma') && <i className="bi bi-lock-fill" style={{ fontSize: 10, opacity: 0.5 }} />}
           </button>
           <button
             data-tur="yeni-cari-btn"
@@ -1234,8 +1239,9 @@ export default function CariYonetimi() {
                       <button onClick={() => { islemAc(kartCari) }} className={`${p}-cym-kart-header-btn`}>
                         <i className="bi bi-currency-exchange" /> Finansal İşlem
                       </button>
-                      <button onClick={() => ekstrePdfIndir(kartCari, kartHareketler)} className={`${p}-cym-kart-header-btn`}>
+                      <button onClick={() => izinVarMi('pdf_rapor') ? ekstrePdfIndir(kartCari, kartHareketler) : setPlanModalGoster(true)} className={`${p}-cym-kart-header-btn`}>
                         <i className="bi bi-file-earmark-pdf" /> PDF İndir
+                        {!izinVarMi('pdf_rapor') && <i className="bi bi-lock-fill" style={{ fontSize: 10, opacity: 0.5, marginLeft: 4 }} />}
                       </button>
                       <button onClick={() => setKartModalAcik(false)} className={`${p}-cym-kart-header-close`}>
                         <i className="bi bi-x-lg" />
@@ -1953,6 +1959,7 @@ export default function CariYonetimi() {
         </button>
       </div>
 
+      <PlanYukseltModal goster={planModalGoster} kapat={() => setPlanModalGoster(false)} ozellikAdi="PDF Ekstre İndirme" mevcutPlan={plan} />
     </div>
   )
 }

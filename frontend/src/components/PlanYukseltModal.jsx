@@ -53,8 +53,8 @@ export default function PlanYukseltModal({ goster, kapat, ozellikAdi = 'Bu özel
       ikon: 'bi-gift',
       fiyat: 0,
       birim: 'sonsuza kadar',
-      ozellikler: ['Cari yönetimi', 'Çek/Senet takibi', 'Kasa yönetimi', 'Ödeme takibi', 'Vade hesaplayıcı'],
-      kisit: ['PDF/Excel rapor yok', 'Tek kullanıcı'],
+      ozellikler: ['30 cari hesap', 'Çek/Senet takibi', 'Kasa yönetimi', 'Ödeme takibi', 'Vade hesaplayıcı'],
+      kisit: ['PDF/Excel rapor yok', 'Tek kullanıcı', 'Veri dışa aktarma yok'],
       renk: '#9CA3AF',
     },
     {
@@ -64,7 +64,7 @@ export default function PlanYukseltModal({ goster, kapat, ozellikAdi = 'Bu özel
       fiyat: standartFiyat,
       fiyatYillik: FIYATLAR.standart.yillik,
       birim: '/ay',
-      ozellikler: ['Her şey ücretsizde', 'PDF ve Excel raporlar', 'Veri dışa aktarma', '3 kullanıcıya kadar'],
+      ozellikler: ['Her şey ücretsizde', 'Sınırsız cari hesap', 'PDF ve Excel raporlar', 'Veri dışa aktarma', '2 kullanıcıya kadar', 'WhatsApp desteği'],
       renk: '#10B981',
       kampanya: kampanyaAktif,
       tasarruf: standartTasarruf,
@@ -77,167 +77,14 @@ export default function PlanYukseltModal({ goster, kapat, ozellikAdi = 'Bu özel
       fiyat: kurumFiyat,
       fiyatYillik: FIYATLAR.kurumsal.yillik,
       birim: '/ay',
-      ozellikler: ['Her şey standartta', 'Sınırsız kullanıcı', 'Yapay zeka asistanı', 'API erişimi', 'Öncelikli destek'],
+      ozellikler: ['Her şey standartta', '10 kullanıcıya kadar', 'Gelişmiş raporlama & analiz', 'Özel entegrasyon desteği', 'Şirket bazlı yetkilendirme', 'Öncelikli 7/24 destek'],
       renk: '#3b82f6',
       tasarruf: kurumTasarruf,
     },
   ]
 
   return (
-    <>
-      <style>{`
-        .abn-modal-backdrop {
-          position: fixed; inset: 0;
-          background: rgba(0,0,0,0.75);
-          backdrop-filter: blur(8px);
-          -webkit-backdrop-filter: blur(8px);
-          z-index: 1050;
-          display: flex; align-items: center; justify-content: center;
-          padding: 16px;
-          animation: abnFadeIn 0.15s ease;
-        }
-        .abn-modal-box {
-          width: 100%; max-width: 780px; max-height: 90vh;
-          display: flex; flex-direction: column;
-          border-radius: 20px; overflow: hidden;
-          background: #FFFFFF;
-          border: 1px solid #E5E7EB;
-          box-shadow: 0 32px 80px rgba(0,0,0,0.12), 0 0 0 1px rgba(16,185,129,0.08);
-          animation: abnSlideUp 0.25s ease;
-        }
-        .abn-modal-header {
-          padding: 20px 24px;
-          background: linear-gradient(135deg, rgba(16,185,129,0.08), rgba(5,150,105,0.04));
-          border-bottom: 1px solid rgba(16,185,129,0.2);
-          display: flex; align-items: center; justify-content: space-between;
-          flex-shrink: 0;
-        }
-        .abn-modal-body {
-          padding: 24px; overflow-y: auto; flex: 1;
-        }
-        .abn-modal-footer {
-          padding: 14px 24px;
-          border-top: 1px solid #E5E7EB;
-          background: #F9FAFB;
-          flex-shrink: 0;
-          display: flex; align-items: center; justify-content: center;
-        }
-        .abn-close-btn {
-          background: #F3F4F6;
-          border: 1px solid #E5E7EB;
-          width: 36px; height: 36px; border-radius: 10px;
-          color: #6B7280; cursor: pointer;
-          display: flex; align-items: center; justify-content: center;
-          transition: all 0.15s; flex-shrink: 0;
-        }
-        .abn-close-btn:hover { background: #E5E7EB; color: #111827; }
-        .abn-toggle-row {
-          display: flex; align-items: center; justify-content: center; gap: 12px;
-          margin-bottom: 20px;
-        }
-        .abn-toggle-label {
-          font-size: 13px; font-weight: 600;
-          color: #9CA3AF; cursor: pointer; transition: color 0.15s;
-        }
-        .abn-toggle-label.aktif { color: #111827; }
-        .abn-toggle-switch {
-          position: relative; width: 44px; height: 24px;
-          background: #E5E7EB;
-          border-radius: 50px; cursor: pointer;
-          border: 1px solid #D1D5DB;
-          transition: background 0.2s;
-        }
-        .abn-toggle-switch.on { background: #10B981; }
-        .abn-toggle-knob {
-          position: absolute; top: 3px; left: 3px;
-          width: 16px; height: 16px; border-radius: 50%;
-          background: #fff; transition: transform 0.2s;
-        }
-        .abn-toggle-switch.on .abn-toggle-knob { transform: translateX(20px); }
-        .abn-plan-card {
-          border-radius: 16px; padding: 20px;
-          border: 1px solid #E5E7EB;
-          background: #FFFFFF;
-          transition: all 0.2s;
-          position: relative; overflow: hidden;
-          height: 100%;
-        }
-        .abn-plan-card:hover {
-          border-color: #D1D5DB;
-          background: #F9FAFB;
-        }
-        .abn-plan-card.aktif-plan {
-          border-color: #10B981;
-          background: rgba(16,185,129,0.03);
-        }
-        .abn-plan-card.onerilen {
-          border-color: rgba(16,185,129,0.4);
-          background: rgba(16,185,129,0.03);
-        }
-        .abn-plan-badge {
-          font-size: 10px; font-weight: 700; padding: 3px 8px;
-          border-radius: 20px; text-transform: uppercase; letter-spacing: 0.06em;
-        }
-        .abn-plan-price-val {
-          font-family: 'Inter', sans-serif;
-          font-size: 28px; font-weight: 800; color: #111827; line-height: 1;
-        }
-        .abn-plan-feature {
-          font-size: 12px; color: #374151;
-          display: flex; align-items: flex-start; gap: 7px;
-          margin-bottom: 7px; line-height: 1.4;
-        }
-        .abn-plan-feature i { color: #10b981; font-size: 12px; margin-top: 1px; flex-shrink: 0; }
-        .abn-plan-feature.kisit i { color: #D1D5DB; }
-        .abn-plan-feature.kisit { color: #9CA3AF; }
-        .abn-btn-abone {
-          display: block; width: 100%; min-height: 44px;
-          border-radius: 10px; border: none; cursor: pointer;
-          font-size: 13px; font-weight: 700;
-          transition: all 0.15s; margin-top: 16px;
-        }
-        .abn-btn-abone.primary {
-          background: linear-gradient(135deg, #10B981, #059669);
-          color: #fff;
-          box-shadow: 0 4px 14px rgba(16,185,129,0.3);
-        }
-        .abn-btn-abone.primary:hover { transform: translateY(-1px); box-shadow: 0 6px 18px rgba(16,185,129,0.4); }
-        .abn-btn-abone.mavi {
-          background: linear-gradient(135deg, #3b82f6, #2563eb);
-          color: #fff;
-          box-shadow: 0 4px 14px rgba(59,130,246,0.3);
-        }
-        .abn-btn-abone.mavi:hover { transform: translateY(-1px); box-shadow: 0 6px 18px rgba(59,130,246,0.4); }
-        .abn-btn-abone.pasif {
-          background: #F3F4F6;
-          border: 1px solid #E5E7EB;
-          color: #9CA3AF; cursor: default;
-        }
-        .abn-kampanya-rozet {
-          background: linear-gradient(135deg, #10B981, #059669);
-          color: #fff; font-size: 10px; font-weight: 800;
-          padding: 4px 10px; border-radius: 20px;
-          text-transform: uppercase; letter-spacing: 0.04em;
-        }
-        .abn-tasarruf-chip {
-          background: rgba(16,185,129,0.12);
-          color: #10b981; font-size: 10px; font-weight: 700;
-          padding: 3px 8px; border-radius: 20px;
-          border: 1px solid rgba(16,185,129,0.2);
-        }
-        @keyframes abnFadeIn { from { opacity: 0; } to { opacity: 1; } }
-        @keyframes abnSlideUp {
-          from { transform: translateY(24px); opacity: 0; }
-          to { transform: translateY(0); opacity: 1; }
-        }
-        @media (max-width: 767px) {
-          .abn-modal-box { border-radius: 20px 20px 0 0; max-height: 90vh; }
-          .abn-modal-backdrop { align-items: flex-end; padding: 0; }
-          .abn-modal-body { padding: 16px; }
-        }
-      `}</style>
-
-      <div className="abn-modal-backdrop" onClick={kapat}>
+    <div className="abn-modal-backdrop" onClick={kapat}>
         <div className="abn-modal-box" onClick={(e) => e.stopPropagation()}>
 
           {/* HEADER */}
@@ -409,6 +256,7 @@ export default function PlanYukseltModal({ goster, kapat, ozellikAdi = 'Bu özel
 
         </div>
       </div>
-    </>
   )
 }
+
+

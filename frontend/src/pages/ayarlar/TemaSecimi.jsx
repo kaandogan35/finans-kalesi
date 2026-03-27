@@ -178,6 +178,7 @@ function RenkPaleti({ renkler }) {
 // ─── Ana Bileşen ──────────────────────────────────────────────────────────────
 export default function TemaSecimi() {
   const { aktifTema, temaAyarla } = useTemaStore()
+  const p = { paramgo: 'p' }[aktifTema] || 'p'
   const kullanici = useAuthStore((s) => s.kullanici)
 
   const [yukleniyor, setYukleniyor] = useState(false)
@@ -209,28 +210,36 @@ export default function TemaSecimi() {
   }
 
   return (
-    <div style={{
-      maxWidth: 960,
-      margin: '0 auto',
-      padding: 28,
-      background: 'var(--p-bg-page)',
-      minHeight: '100%',
-      borderRadius: 0,
-    }}>
+    <div className={`${p}-page-root`} style={{ maxWidth: 960, margin: '0 auto' }}>
 
-      {/* ── Başlık Paneli ──────────────────────────────────────────────────── */}
-      <div className="p-panel" style={{ marginBottom: 24 }}>
-        <div className="p-panel-header">
-          <h2 className="p-panel-title">
-            <i className="bi bi-palette" />
-            Tema Seçimi
-          </h2>
-          <span className="p-badge p-badge-success">
+      {/* ── Sayfa Başlığı ──────────────────────────────────────────────────── */}
+      <div className={`${p}-page-header`}>
+        <div className={`${p}-page-header-left`}>
+          <div className={`${p}-page-header-icon`}>
+            <i className="bi bi-palette-fill" />
+          </div>
+          <div>
+            <h1 className={`${p}-page-title`}>Tema Seçimi</h1>
+            <p className={`${p}-page-sub`}>Şirketiniz için arayüz temasını seçin</p>
+          </div>
+        </div>
+        <div className={`${p}-page-header-right`}>
+          <span className={`${p}-badge ${p}-badge-success`}>
             <i className="bi bi-circle-fill" style={{ fontSize: 7 }} />
             {temalar.find(t => t.id === aktifTema)?.ad || 'ParamGo'} Aktif
           </span>
         </div>
-        <div className="p-panel-body-padded" style={{ borderBottom: '1px solid var(--p-border)' }}>
+      </div>
+
+      {/* ── Bilgi Paneli ──────────────────────────────────────────────────── */}
+      <div className={`${p}-panel`} style={{ marginBottom: 24 }}>
+        <div className={`${p}-panel-header`}>
+          <h2 className={`${p}-panel-title`}>
+            <i className="bi bi-info-circle" />
+            Tema Bilgileri
+          </h2>
+        </div>
+        <div className={`${p}-panel-body-padded`} style={{ borderBottom: '1px solid var(--p-border)' }}>
           <p style={{
             margin: 0,
             fontSize: 13.5,
@@ -245,7 +254,7 @@ export default function TemaSecimi() {
 
         {/* Yetkisiz uyarı */}
         {!yetkiVar && (
-          <div className="p-panel-body-padded">
+          <div className={`${p}-panel-body-padded`}>
             <div style={{
               display: 'flex', alignItems: 'flex-start', gap: 10,
               padding: '12px 14px',
@@ -489,20 +498,6 @@ export default function TemaSecimi() {
           )
         })}
       </div>
-
-      {/* ── Responsive CSS ──────────────────────────────────────────────────── */}
-      <style>{`
-        @media (max-width: 860px) {
-          .tema-grid {
-            grid-template-columns: 1fr !important;
-          }
-        }
-        @media (max-width: 560px) {
-          .tema-grid {
-            grid-template-columns: 1fr !important;
-          }
-        }
-      `}</style>
 
     </div>
   )

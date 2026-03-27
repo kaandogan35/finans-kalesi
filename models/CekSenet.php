@@ -265,34 +265,83 @@ class CekSenet {
             return false;
         }
 
-        $setler  = ["durum = ?"];
-        $params  = [$yeni_durum];
-
-        if ($yeni_durum === 'tahsil_edildi' || $yeni_durum === 'odendi') {
-            $setler[] = "tahsil_tarihi = ?";
-            $params[] = $ekstra['tahsil_tarihi'] ?? date('Y-m-d');
+        // Kasa entegrasyonu gerektiren durumlar için transaction
+        $kasa_entegre = in_array($yeni_durum, ['tahsil_edildi', 'odendi']);
+        if ($kasa_entegre) {
+            $this->db->beginTransaction();
         }
 
-        if ($yeni_durum === 'cirolandi') {
-            $setler[] = "ciro_edilen_cari_id = ?";
-            $setler[] = "ciro_tarihi = ?";
-            $params[] = isset($ekstra['ciro_edilen_cari_id']) ? (int)$ekstra['ciro_edilen_cari_id'] : null;
-            $params[] = $ekstra['ciro_tarihi'] ?? date('Y-m-d');
+        try {
+            $setler  = ["durum = ?"];
+            $params  = [$yeni_durum];
+
+            if ($yeni_durum === 'tahsil_edildi' || $yeni_durum === 'odendi') {
+                $setler[] = "tahsil_tarihi = ?";
+                $params[] = $ekstra['tahsil_tarihi'] ?? date('Y-m-d');
+            }
+
+            if ($yeni_durum === 'cirolandi') {
+                $setler[] = "ciro_edilen_cari_id = ?";
+                $setler[] = "ciro_tarihi = ?";
+                $params[] = isset($ekstra['ciro_edilen_cari_id']) ? (int)$ekstra['ciro_edilen_cari_id'] : null;
+                $params[] = $ekstra['ciro_tarihi'] ?? date('Y-m-d');
+            }
+
+            $params[] = $cek_id;
+            $params[] = $sirket_id;
+
+            $sql  = "UPDATE cek_senetler SET " . implode(', ', $setler) .
+                    " WHERE id = ? AND sirket_id = ? AND silindi_mi = 0";
+            $stmt = $this->db->prepare($sql);
+            $stmt->execute($params);
+
+            if ($stmt->rowCount() === 0) {
+                if ($kasa_entegre) $this->db->rollBack();
+                return false;
+            }
+
+            // ── Kasa otomatik kayıt: tahsil_edildi → gelir, odendi → gider ──
+            if ($kasa_entegre) {
+                $kasa = new Kasa($this->db);
+                $tutar = (float)($mevcut['tutar_tl'] ?? $mevcut['tutar'] ?? 0);
+                $seri = $mevcut['seri_no'] ?? '';
+                $tarih = $ekstra['tahsil_tarihi'] ?? date('Y-m-d');
+
+                $cari_adi = $mevcut['cari_adi'] ?? '';
+
+                if ($yeni_durum === 'tahsil_edildi') {
+                    $islem_tipi = 'giris';
+                    $kategori   = 'Çek/Senet Tahsilatı';
+                    $aciklama   = '[Otomatik] Çek/Senet tahsil: ' . $seri
+                                . ($cari_adi ? ' — ' . $cari_adi : '');
+                } else {
+                    $islem_tipi = 'cikis';
+                    $kategori   = 'Çek/Senet Ödemesi';
+                    $aciklama   = '[Otomatik] Çek/Senet ödeme: ' . $seri
+                                . ($cari_adi ? ' — ' . $cari_adi : '');
+                }
+
+                $kasa->hareket_ekle($sirket_id, [
+                    'islem_tipi'    => $islem_tipi,
+                    'kategori'      => $kategori,
+                    'tutar'         => $tutar,
+                    'aciklama'      => $aciklama,
+                    'tarih'         => $tarih,
+                    'baglanti_turu' => 'Banka / Havale',
+                    'kaynak_modul'  => 'cek_senet',
+                    'kaynak_id'     => (int)$cek_id,
+                    'odeme_kaynagi' => 'banka',
+                ], $ekstra['ekleyen_id'] ?? 0);
+
+                $this->db->commit();
+            }
+
+            return $this->getir($sirket_id, $cek_id);
+
+        } catch (Exception $e) {
+            if ($kasa_entegre) $this->db->rollBack();
+            throw $e;
         }
-
-        $params[] = $cek_id;
-        $params[] = $sirket_id;
-
-        $sql  = "UPDATE cek_senetler SET " . implode(', ', $setler) .
-                " WHERE id = ? AND sirket_id = ? AND silindi_mi = 0";
-        $stmt = $this->db->prepare($sql);
-        $stmt->execute($params);
-
-        if ($stmt->rowCount() === 0) {
-            return false;
-        }
-
-        return $this->getir($sirket_id, $cek_id);
     }
 
     // Çek/senet sil — SOFT DELETE (silindi_mi = 1)

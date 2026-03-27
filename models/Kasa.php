@@ -79,12 +79,15 @@ class Kasa {
         }
 
         $sifrelenmis_sifir = $this->sifrele('0');
-        $sql = "INSERT INTO fiziki_kasa (sirket_id, bakiye_sifreli) VALUES (?, ?)";
+        $sql = "INSERT INTO fiziki_kasa
+                (sirket_id, bakiye_sifreli, banka_bakiye_sifreli, cekmece_bakiye_sifreli, merkez_bakiye_sifreli)
+                VALUES (?, ?, ?, ?, ?)";
         $stmt = $this->db->prepare($sql);
-        $stmt->execute([$sirket_id, $sifrelenmis_sifir]);
+        $stmt->execute([$sirket_id, $sifrelenmis_sifir, $sifrelenmis_sifir, $sifrelenmis_sifir, $sifrelenmis_sifir]);
     }
 
     // Fiziki kasa bakiyesini getir (çözülmüş)
+    // Toplam bakiye döndürür (geriye uyumlu)
     public function fiziki_bakiye_getir($sirket_id) {
         $sql = "SELECT bakiye_sifreli FROM fiziki_kasa WHERE sirket_id = ?";
         $stmt = $this->db->prepare($sql);
@@ -97,12 +100,70 @@ class Kasa {
         return ($cozulmus !== null) ? (float)$cozulmus : 0;
     }
 
-    // Fiziki kasa bakiyesini güncelle
-    private function fiziki_bakiye_guncelle($sirket_id, $yeni_bakiye) {
+    // Tüm kasaların bakiyesini ayrı ayrı getir
+    public function fiziki_bakiye_detay_getir($sirket_id) {
+        $sql = "SELECT bakiye_sifreli, banka_bakiye_sifreli, cekmece_bakiye_sifreli, merkez_bakiye_sifreli
+                FROM fiziki_kasa WHERE sirket_id = ?";
+        $stmt = $this->db->prepare($sql);
+        $stmt->execute([$sirket_id]);
+        $row = $stmt->fetch(PDO::FETCH_ASSOC);
+
+        if (!$row) {
+            return array('toplam' => 0, 'banka' => 0, 'cekmece' => 0, 'merkez_kasa' => 0);
+        }
+
+        $toplam     = (float)($this->coz($row['bakiye_sifreli']) ?? 0);
+        $banka      = (float)($this->coz($row['banka_bakiye_sifreli']) ?? 0);
+        $cekmece    = (float)($this->coz($row['cekmece_bakiye_sifreli']) ?? 0);
+        $merkez     = (float)($this->coz($row['merkez_bakiye_sifreli']) ?? 0);
+
+        return array(
+            'toplam'     => $toplam,
+            'banka'      => $banka,
+            'cekmece'    => $cekmece,
+            'merkez_kasa'=> $merkez,
+        );
+    }
+
+    // Fiziki kasa bakiyesini güncelle (toplam + ilgili alt kasa)
+    private function fiziki_bakiye_guncelle($sirket_id, $yeni_bakiye, $odeme_kaynagi = null, $tutar_fark = 0) {
         $sifrelenmis = $this->sifrele((string)$yeni_bakiye);
+
+        // Alt kasa bakiyesini de güncelle (varsa)
+        if ($odeme_kaynagi && $tutar_fark != 0) {
+            $sutun = $this->odeme_kaynagi_sutun($odeme_kaynagi);
+            if ($sutun) {
+                // Mevcut alt bakiyeyi al
+                $alt_sql = "SELECT $sutun FROM fiziki_kasa WHERE sirket_id = ?";
+                $alt_stmt = $this->db->prepare($alt_sql);
+                $alt_stmt->execute([$sirket_id]);
+                $alt_row = $alt_stmt->fetch(PDO::FETCH_ASSOC);
+
+                $mevcut_alt = ($alt_row && $alt_row[$sutun]) ? (float)($this->coz($alt_row[$sutun]) ?? 0) : 0;
+                $yeni_alt = $mevcut_alt + $tutar_fark;
+                $alt_sifreli = $this->sifrele((string)$yeni_alt);
+
+                $sql = "UPDATE fiziki_kasa SET bakiye_sifreli = ?, $sutun = ?, guncelleme_tarihi = NOW() WHERE sirket_id = ?";
+                $stmt = $this->db->prepare($sql);
+                $stmt->execute([$sifrelenmis, $alt_sifreli, $sirket_id]);
+                return;
+            }
+        }
+
+        // Alt kasa belirtilmemişse sadece toplam güncelle
         $sql = "UPDATE fiziki_kasa SET bakiye_sifreli = ?, guncelleme_tarihi = NOW() WHERE sirket_id = ?";
         $stmt = $this->db->prepare($sql);
         $stmt->execute([$sifrelenmis, $sirket_id]);
+    }
+
+    // Ödeme kaynağından DB sütun adına dönüştür
+    private function odeme_kaynagi_sutun($odeme_kaynagi) {
+        $harita = array(
+            'banka'      => 'banka_bakiye_sifreli',
+            'cekmece'    => 'cekmece_bakiye_sifreli',
+            'merkez_kasa'=> 'merkez_bakiye_sifreli',
+        );
+        return isset($harita[$odeme_kaynagi]) ? $harita[$odeme_kaynagi] : null;
     }
 
     // ─────────────────────────────────────────────────
@@ -147,6 +208,7 @@ class Kasa {
 
         $sql = "SELECT kh.id, kh.islem_tipi, kh.kategori, kh.tarih, kh.baglanti_turu,
                        kh.tutar_sifreli, kh.aciklama_sifreli,
+                       kh.kaynak_modul, kh.kaynak_id, kh.odeme_kaynagi,
                        k.ad_soyad as ekleyen_adi, kh.olusturma_tarihi
                 FROM kasa_hareketler kh
                 LEFT JOIN kullanicilar k ON kh.ekleyen_id = k.id
@@ -171,6 +233,9 @@ class Kasa {
                 'aciklama'     => $aciklama,
                 'tarih'        => $satir['tarih'],
                 'baglanti_turu'=> $satir['baglanti_turu'],
+                'kaynak_modul' => $satir['kaynak_modul'],
+                'kaynak_id'    => $satir['kaynak_id'],
+                'odeme_kaynagi'=> $satir['odeme_kaynagi'],
                 'ekleyen_adi'  => $satir['ekleyen_adi'],
                 'olusturma_tarihi' => $satir['olusturma_tarihi'],
             );
@@ -192,8 +257,8 @@ class Kasa {
 
         $sql = "INSERT INTO kasa_hareketler
                 (sirket_id, islem_tipi, kategori, tutar_sifreli, aciklama_sifreli,
-                 tarih, baglanti_turu, ekleyen_id)
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?)";
+                 tarih, baglanti_turu, ekleyen_id, kaynak_modul, kaynak_id, odeme_kaynagi)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
 
         $stmt = $this->db->prepare($sql);
         $stmt->execute([
@@ -204,17 +269,21 @@ class Kasa {
             $aciklama_sifreli,
             isset($veri['tarih']) ? $veri['tarih'] : date('Y-m-d'),
             isset($veri['baglanti_turu']) ? $veri['baglanti_turu'] : null,
-            $ekleyen_id
+            $ekleyen_id,
+            isset($veri['kaynak_modul']) ? $veri['kaynak_modul'] : 'manuel',
+            isset($veri['kaynak_id']) ? $veri['kaynak_id'] : null,
+            isset($veri['odeme_kaynagi']) ? $veri['odeme_kaynagi'] : null,
         ]);
 
-        // Bakiyeyi güncelle
+        // Bakiyeyi güncelle (toplam + alt kasa)
+        $this->fiziki_kasa_baslat($sirket_id);
         $mevcut_bakiye = $this->fiziki_bakiye_getir($sirket_id);
         $tutar = (float)$veri['tutar'];
-        $yeni_bakiye = ($veri['islem_tipi'] === 'giris')
-            ? $mevcut_bakiye + $tutar
-            : $mevcut_bakiye - $tutar;
+        $tutar_fark = ($veri['islem_tipi'] === 'giris') ? $tutar : -$tutar;
+        $yeni_bakiye = $mevcut_bakiye + $tutar_fark;
 
-        $this->fiziki_bakiye_guncelle($sirket_id, $yeni_bakiye);
+        $odeme_kaynagi = isset($veri['odeme_kaynagi']) ? $veri['odeme_kaynagi'] : null;
+        $this->fiziki_bakiye_guncelle($sirket_id, $yeni_bakiye, $odeme_kaynagi, $tutar_fark);
 
         return array(
             'hareket_id'   => (int)$this->db->lastInsertId(),
@@ -225,7 +294,7 @@ class Kasa {
     // Kasa hareketi sil (yumuşak)
     public function hareket_sil($sirket_id, $hareket_id) {
         // Önce tutarı al — bakiyeyi geri almak için
-        $sql = "SELECT islem_tipi, tutar_sifreli FROM kasa_hareketler
+        $sql = "SELECT islem_tipi, tutar_sifreli, kaynak_modul, odeme_kaynagi FROM kasa_hareketler
                 WHERE id = ? AND sirket_id = ? AND silindi_mi = 0";
         $stmt = $this->db->prepare($sql);
         $stmt->execute([$hareket_id, $sirket_id]);
@@ -233,6 +302,11 @@ class Kasa {
 
         if (!$hareket) {
             return false;
+        }
+
+        // Otomatik oluşturulan kayıtlar buradan silinemez
+        if ($hareket['kaynak_modul'] && !in_array($hareket['kaynak_modul'], ['manuel', ''])) {
+            throw new Exception('Otomatik oluşturulan kayıtlar buradan silinemez. İlgili modülden işlem yapın.');
         }
 
         $cozulmus = $this->coz($hareket['tutar_sifreli']);
@@ -245,15 +319,120 @@ class Kasa {
         $sil_stmt = $this->db->prepare($sil_sql);
         $sil_stmt->execute([$hareket_id, $sirket_id]);
 
-        // Bakiyeyi geri al
+        // Bakiyeyi geri al (toplam + alt kasa)
         $mevcut_bakiye = $this->fiziki_bakiye_getir($sirket_id);
-        $yeni_bakiye = ($hareket['islem_tipi'] === 'giris')
-            ? $mevcut_bakiye - $tutar
-            : $mevcut_bakiye + $tutar;
+        $tutar_fark = ($hareket['islem_tipi'] === 'giris') ? -$tutar : $tutar;
+        $yeni_bakiye = $mevcut_bakiye + $tutar_fark;
 
-        $this->fiziki_bakiye_guncelle($sirket_id, $yeni_bakiye);
+        $this->fiziki_bakiye_guncelle($sirket_id, $yeni_bakiye, $hareket['odeme_kaynagi'], $tutar_fark);
 
         return $yeni_bakiye;
+    }
+
+    // ─────────────────────────────────────────────────
+    // ÇEKMECE KAPANIŞ (Günlük Nakit Transfer)
+    // ─────────────────────────────────────────────────
+
+    /**
+     * Günlük çekmece kapanışı — çekmecedeki nakit bir hedefe aktarılır.
+     * Genel bakiye DEĞİŞMEZ (iç transfer). Alt bakiyeler güncellenir.
+     *
+     * @param int    $sirket_id
+     * @param float  $tutar         Aktarılacak tutar
+     * @param string $hedef         Hedef kasa: merkez_kasa, banka, patron_aldi, kasada_kaldi
+     * @param string $aciklama      Opsiyonel açıklama
+     * @param int    $ekleyen_id
+     * @return array
+     */
+    public function cekmece_kapanis($sirket_id, $tutar, $hedef, $aciklama, $ekleyen_id) {
+        // Çekmece bakiyesi yeterli mi?
+        $detay = $this->fiziki_bakiye_detay_getir($sirket_id);
+        if ($detay['cekmece'] < $tutar) {
+            throw new Exception('Çekmece bakiyesi yetersiz. Mevcut: ' . number_format($detay['cekmece'], 2, ',', '.') . ' ₺');
+        }
+
+        $this->db->beginTransaction();
+        try {
+            $tarih = date('Y-m-d');
+            $tutar_sifreli    = $this->sifrele((string)$tutar);
+            $aciklama_metin   = 'Günlük çekmece kapanışı';
+
+            // Hedef etiketleri
+            $hedef_etiketler = array(
+                'merkez_kasa'  => 'Merkez Kasa',
+                'banka'        => 'Banka',
+                'patron_aldi'  => 'Patron/Ortak Aldı',
+                'kasada_kaldi' => 'Kasada Kaldı',
+            );
+            $hedef_adi = isset($hedef_etiketler[$hedef]) ? $hedef_etiketler[$hedef] : $hedef;
+
+            if (!empty($aciklama)) {
+                $aciklama_metin .= ' — ' . $aciklama;
+            }
+            $aciklama_metin .= ' → ' . $hedef_adi;
+            $aciklama_sifreli = $this->sifrele($aciklama_metin);
+
+            // 1) Çekmeceden çıkış kaydı
+            $sql = "INSERT INTO kasa_hareketler
+                    (sirket_id, islem_tipi, kategori, tutar_sifreli, aciklama_sifreli,
+                     tarih, baglanti_turu, ekleyen_id, kaynak_modul, odeme_kaynagi)
+                    VALUES (?, 'cikis', 'Çekmece Kapanış', ?, ?, ?, 'İç Transfer', ?, 'cekmece_kapanis', 'cekmece')";
+            $stmt = $this->db->prepare($sql);
+            $stmt->execute([$sirket_id, $tutar_sifreli, $aciklama_sifreli, $tarih, $ekleyen_id]);
+
+            // 1b) Hedef kasaya giriş kaydı (iç transfer — merkez_kasa veya banka)
+            if ($hedef === 'merkez_kasa' || $hedef === 'banka') {
+                $giris_aciklama = $this->sifrele('Çekmece kapanışından gelen transfer → ' . $hedef_adi);
+                $giris_sql = "INSERT INTO kasa_hareketler
+                        (sirket_id, islem_tipi, kategori, tutar_sifreli, aciklama_sifreli,
+                         tarih, baglanti_turu, ekleyen_id, kaynak_modul, odeme_kaynagi)
+                        VALUES (?, 'giris', 'Çekmece Kapanış', ?, ?, ?, 'İç Transfer', ?, 'cekmece_kapanis', ?)";
+                $giris_stmt = $this->db->prepare($giris_sql);
+                $giris_stmt->execute([$sirket_id, $tutar_sifreli, $giris_aciklama, $tarih, $ekleyen_id, $hedef]);
+            }
+
+            // 2) Alt bakiyeleri güncelle — çekmece düşür
+            $yeni_cekmece = $detay['cekmece'] - $tutar;
+            $cekmece_sifreli = $this->sifrele((string)$yeni_cekmece);
+
+            // Hedef bakiyeyi artır (kasada_kaldi ve patron_aldi hariç — onlar dışarı çıkış)
+            if ($hedef === 'merkez_kasa' || $hedef === 'banka') {
+                $hedef_sutun = $this->odeme_kaynagi_sutun($hedef);
+                $hedef_anahtar = ($hedef === 'merkez_kasa') ? 'merkez_kasa' : 'banka';
+                $yeni_hedef = $detay[$hedef_anahtar] + $tutar;
+                $hedef_sifreli = $this->sifrele((string)$yeni_hedef);
+
+                $sql = "UPDATE fiziki_kasa
+                        SET cekmece_bakiye_sifreli = ?, $hedef_sutun = ?, guncelleme_tarihi = NOW()
+                        WHERE sirket_id = ?";
+                $stmt = $this->db->prepare($sql);
+                $stmt->execute([$cekmece_sifreli, $hedef_sifreli, $sirket_id]);
+            } elseif ($hedef === 'kasada_kaldi') {
+                // Çekmecede kaldı — bakiye değişmez, sadece kapanış kaydı düşer
+                // Çekmece bakiyesini de değiştirmiyoruz çünkü para hâlâ orada
+            } elseif ($hedef === 'patron_aldi') {
+                // Para dışarı çıktı — çekmece düşer, genel toplam da düşer
+                $yeni_toplam = $detay['toplam'] - $tutar;
+                $toplam_sifreli = $this->sifrele((string)$yeni_toplam);
+
+                $sql = "UPDATE fiziki_kasa
+                        SET cekmece_bakiye_sifreli = ?, bakiye_sifreli = ?, guncelleme_tarihi = NOW()
+                        WHERE sirket_id = ?";
+                $stmt = $this->db->prepare($sql);
+                $stmt->execute([$cekmece_sifreli, $toplam_sifreli, $sirket_id]);
+            }
+
+            $this->db->commit();
+
+            return array(
+                'basarili' => true,
+                'hedef'    => $hedef_adi,
+                'tutar'    => $tutar,
+            );
+        } catch (Exception $e) {
+            $this->db->rollBack();
+            throw $e;
+        }
     }
 
     // ─────────────────────────────────────────────────
@@ -643,8 +822,9 @@ class Kasa {
 
     // Varlık & Kasa genel özeti
     public function ozet($sirket_id) {
-        // Fiziki kasa bakiyesi
+        // Fiziki kasa bakiyesi (toplam + ayrı ayrı)
         $fiziki_bakiye = $this->fiziki_bakiye_getir($sirket_id);
+        $bakiye_detay  = $this->fiziki_bakiye_detay_getir($sirket_id);
 
         // Kasa hareket sayıları (şifreli alanlar dahil değil — sadece meta)
         $hareket_sql = "SELECT
@@ -669,7 +849,79 @@ class Kasa {
         $o_stmt->execute([$sirket_id]);
         $ortak_meta = $o_stmt->fetch(PDO::FETCH_ASSOC);
 
-        // Bu ay giriş/çıkış toplamları — şifreli olduğu için PHP'de çözülür
+        // Kalibrasyon: Son GEÇEN AY bilanço kapanışının banka_nakdi değerini başlangıç noktası olarak kullan
+        // Kullanıcı kapanışta banka bakiyesini elle düzeltebilir — bu "kalibrasyon noktası" olur
+        // Mevcut ay kapanışı varsa kalibrasyon için kullanılmaz (ay henüz bitmedi, hareketler devam ediyor)
+        $su_an_donem = date('Y-m'); // Mevcut ay (ör: 2026-03)
+        $kalib_sql = "SELECT donem, banka_nakdi_sifreli
+                      FROM ay_kapanislar
+                      WHERE sirket_id = ? AND silindi_mi = 0 AND donem < ?
+                      ORDER BY donem DESC LIMIT 1";
+        $kalib_stmt = $this->db->prepare($kalib_sql);
+        $kalib_stmt->execute([$sirket_id, $su_an_donem]);
+        $son_kapanis_row = $kalib_stmt->fetch(PDO::FETCH_ASSOC);
+
+        $kalib_banka = null;
+        $kalib_tarih = null;
+        if ($son_kapanis_row) {
+            $kalib_banka = (float)($this->coz($son_kapanis_row['banka_nakdi_sifreli']) ?? 0);
+            // Kapanış döneminin son günü (ör: 2026-02 → 2026-02-28)
+            $kalib_tarih = date('Y-m-t', strtotime($son_kapanis_row['donem'] . '-01'));
+        }
+
+        // Kümülatif kasa bakiyeleri — tüm hareketlerden ödeme kaynağına göre hesapla
+        // tarih de çekiliyor: kalibrasyon noktasından sonraki banka hareketleri için
+        // baglanti_turu de çekiliyor: eski kayıtlarda odeme_kaynagi NULL ise fallback olarak kullanılır
+        $kum_sql = "SELECT islem_tipi, odeme_kaynagi, tutar_sifreli, kaynak_modul, aciklama_sifreli, baglanti_turu, tarih
+                    FROM kasa_hareketler
+                    WHERE sirket_id = ? AND silindi_mi = 0";
+        $kum_stmt = $this->db->prepare($kum_sql);
+        $kum_stmt->execute([$sirket_id]);
+        $tum_hareketler = $kum_stmt->fetchAll(PDO::FETCH_ASSOC);
+
+        $kumulatif = array('banka' => 0.0, 'merkez_kasa' => 0.0);
+        foreach ($tum_hareketler as $h) {
+            $tutar = $this->coz($h['tutar_sifreli']);
+            $tutar_f = ($tutar !== null) ? (float)$tutar : 0.0;
+
+            // Eski cekmece_kapanis kayıtları varsa atla (artık kullanılmıyor)
+            if ($h['kaynak_modul'] === 'cekmece_kapanis') {
+                continue;
+            }
+
+            // odeme_kaynagi belirle — NULL ise baglanti_turu'ndan tahmin et (eski kayıtlar)
+            $kaynak = $h['odeme_kaynagi'];
+            if (!$kaynak || $kaynak === '') {
+                $bt = isset($h['baglanti_turu']) ? $h['baglanti_turu'] : '';
+                if ($bt === 'Merkez Kasa' || stripos($bt, 'Nakit') !== false || stripos($bt, 'ekmece') !== false) {
+                    $kaynak = 'merkez_kasa';
+                } else {
+                    $kaynak = 'banka';
+                }
+            }
+
+            // Eski 'cekmece' kaynaklı işlemler artık merkez_kasa'ya yönlendirilir
+            if ($kaynak === 'cekmece') {
+                $kaynak = 'merkez_kasa';
+            }
+
+            // Banka kalibrasyon: kapanış varsa, kapanış öncesi banka hareketlerini atla
+            if ($kaynak === 'banka' && $kalib_tarih !== null && $h['tarih'] <= $kalib_tarih) {
+                continue;
+            }
+
+            if (isset($kumulatif[$kaynak])) {
+                $kumulatif[$kaynak] += ($h['islem_tipi'] === 'giris') ? $tutar_f : -$tutar_f;
+            }
+        }
+
+        // Alt kasa bakiyeleri kümülatiften hesaplanır
+        $merkez_kasa_bakiye = round($kumulatif['merkez_kasa'], 2);
+        $banka_bakiye       = ($kalib_banka !== null)
+            ? round($kalib_banka + $kumulatif['banka'], 2)
+            : round($kumulatif['banka'], 2);
+
+        // Bu ay giriş/çıkış toplamları
         $ay_bas = date('Y-m-01');
         $ay_son = date('Y-m-t');
         $ay_sql = "SELECT islem_tipi, tutar_sifreli
@@ -692,11 +944,63 @@ class Kasa {
             }
         }
 
+        // Geçen ay giriş/çıkış toplamları (trend karşılaştırma için)
+        $gecen_ay_bas = date('Y-m-01', strtotime('-1 month'));
+        $gecen_ay_son = date('Y-m-t', strtotime('-1 month'));
+        $gecen_sql = "SELECT islem_tipi, tutar_sifreli
+                      FROM kasa_hareketler
+                      WHERE sirket_id = ? AND silindi_mi = 0
+                        AND tarih BETWEEN ? AND ?";
+        $gecen_stmt = $this->db->prepare($gecen_sql);
+        $gecen_stmt->execute([$sirket_id, $gecen_ay_bas, $gecen_ay_son]);
+        $gecen_hareketler = $gecen_stmt->fetchAll(PDO::FETCH_ASSOC);
+
+        $gecen_ay_giris = 0.0;
+        $gecen_ay_cikis = 0.0;
+        foreach ($gecen_hareketler as $h) {
+            $tutar = $this->coz($h['tutar_sifreli']);
+            $tutar_f = ($tutar !== null) ? (float)$tutar : 0.0;
+            if ($h['islem_tipi'] === 'giris') {
+                $gecen_ay_giris += $tutar_f;
+            } else {
+                $gecen_ay_cikis += $tutar_f;
+            }
+        }
+
+        // Bu ay ödenecek borç çekler (borç çek/senet, portföyde, bu ay vadeli)
+        $borc_cek_sql = "SELECT COALESCE(SUM(tutar_tl), 0) as toplam
+                    FROM cek_senetler
+                    WHERE sirket_id = ? AND silindi_mi = 0
+                      AND tur IN ('borc_ceki', 'borc_senedi')
+                      AND durum = 'portfoyde'
+                      AND vade_tarihi BETWEEN ? AND ?";
+        $borc_cek_stmt = $this->db->prepare($borc_cek_sql);
+        $borc_cek_stmt->execute([$sirket_id, $ay_bas, $ay_son]);
+        $bu_ay_odenecek_cekler = (float)$borc_cek_stmt->fetchColumn();
+
+        // Bu ay tahsildeki alacak çekler (alacak çek/senet, portföyde, bu ay vadeli)
+        $tahsil_cek_sql = "SELECT COALESCE(SUM(tutar_tl), 0) as toplam
+                    FROM cek_senetler
+                    WHERE sirket_id = ? AND silindi_mi = 0
+                      AND tur IN ('alacak_ceki', 'alacak_senedi')
+                      AND durum = 'portfoyde'
+                      AND vade_tarihi BETWEEN ? AND ?";
+        $tahsil_cek_stmt = $this->db->prepare($tahsil_cek_sql);
+        $tahsil_cek_stmt->execute([$sirket_id, $ay_bas, $ay_son]);
+        $bu_ay_tahsil_cekler = (float)$tahsil_cek_stmt->fetchColumn();
+
         return array(
             'fiziki_kasa_bakiye'   => $fiziki_bakiye,
             'bakiye'               => $fiziki_bakiye,
+            'banka_bakiye'         => $banka_bakiye,
+            'cekmece_bakiye'       => 0,
+            'merkez_kasa_bakiye'   => $merkez_kasa_bakiye,
             'aylik_giris'          => round($aylik_giris, 2),
             'aylik_cikis'          => round($aylik_cikis, 2),
+            'gecen_ay_giris'       => round($gecen_ay_giris, 2),
+            'gecen_ay_cikis'       => round($gecen_ay_cikis, 2),
+            'bu_ay_odenecek_cekler'=> round($bu_ay_odenecek_cekler, 2),
+            'bu_ay_tahsil_cekler' => round($bu_ay_tahsil_cekler, 2),
             'toplam_hareket'       => (int)$hareket_meta['toplam_hareket'],
             'giris_adet'           => (int)$hareket_meta['giris_adet'],
             'cikis_adet'           => (int)$hareket_meta['cikis_adet'],

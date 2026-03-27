@@ -26,7 +26,20 @@ RewriteRule ^ - [L]
 # /assets/ isteklerini frontend-build/assets/ klasörüne yönlendir
 RewriteRule ^assets/(.*)$ frontend-build/assets/$1 [L]
 
-# ─── 4. DİĞER HER ŞEY → React SPA ──────────────────────────
+# ─── 4. LANDING PAGE — Clean URL'ler (.html uzantısız) ───────
+# /ozellikler → ozellikler.html, /fiyatlar → fiyatlar.html vb.
+RewriteCond %{REQUEST_FILENAME} !-f
+RewriteCond %{REQUEST_FILENAME} !-d
+RewriteCond %{REQUEST_FILENAME}.html -f
+RewriteRule ^(.*)$ $1.html [L]
+
+# ─── 5. Blog dizini ve yazıları ──────────────────────────────
+RewriteRule ^blog/?$ blog/index.html [L]
+RewriteCond %{REQUEST_FILENAME} !-f
+RewriteCond %{REQUEST_FILENAME} !-d
+RewriteRule ^blog/([^/]+)/?$ blog/$1.html [L]
+
+# ─── 6. DİĞER HER ŞEY → React SPA ──────────────────────────
 # React Router'ın çalışması için tüm sayfaları index.html'e yönlendir
 RewriteCond %{REQUEST_FILENAME} !-f
 RewriteCond %{REQUEST_FILENAME} !-d

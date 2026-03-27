@@ -12,7 +12,17 @@ const TUM_MENU_ITEMS = [
   { path: '/cariler',          icon: 'bi-people',             label: 'Cari Hesaplar',     breadcrumb: 'Cari Hesaplar',    modul: 'cari'             },
   { path: '/cek-senet',        icon: 'bi-file-earmark-text',  label: 'Çek / Senet',       breadcrumb: 'Çek / Senet',      modul: 'cek_senet'        },
   { path: '/odemeler',         icon: 'bi-calendar-check',     label: 'Ödeme Takip',       breadcrumb: 'Ödeme Takip',      modul: 'odemeler'         },
-  { path: '/kasa',             icon: 'bi-safe',               label: 'Kasa',              breadcrumb: 'Varlık & Kasa',    modul: 'kasa'             },
+  { path: '/gelirler',         icon: 'bi-arrow-down-circle',  label: 'Gelirler',          breadcrumb: 'Gelirler',         modul: 'kasa'             },
+  { path: '/giderler',         icon: 'bi-arrow-up-circle',    label: 'Giderler',          breadcrumb: 'Giderler',         modul: 'kasa'             },
+  {
+    icon: 'bi-safe', label: 'Kasa & Varlık', modul: 'kasa',
+    children: [
+      { path: '/kasa',             icon: 'bi-graph-up',      label: 'Gösterge Paneli', breadcrumb: 'Gösterge Paneli' },
+      { path: '/kasa/bilanco',     icon: 'bi-journal-text',  label: 'Aylık Bilanço',   breadcrumb: 'Aylık Bilanço'   },
+      { path: '/kasa/ortaklar',    icon: 'bi-people-fill',   label: 'Ortak Carisi',    breadcrumb: 'Ortak Carisi'    },
+      { path: '/kasa/yatirimlar',  icon: 'bi-gem',           label: 'Yatırım Kalesi',  breadcrumb: 'Yatırım Kalesi'  },
+    ]
+  },
   { path: '/vade-hesaplayici', icon: 'bi-calculator',         label: 'Vade Hesaplayıcı',  breadcrumb: 'Vade Hesaplayıcı', modul: 'vade_hesaplayici' },
   { path: '/veresiye',         icon: 'bi-journal-bookmark',   label: 'Veresiye Defteri',  breadcrumb: 'Veresiye Defteri', modul: 'veresiye'         },
 ]
@@ -29,6 +39,19 @@ function gorunurMenuHesapla(kullanici) {
   return TUM_MENU_ITEMS.filter(item => izinliModuller.includes(item.modul))
 }
 
+// Tüm menü öğelerinden (accordion children dahil) aktif olanı bul
+function aktifMenuBul(menuItems, pathname) {
+  for (const item of menuItems) {
+    if (item.children) {
+      const child = item.children.find(c => pathname === c.path || pathname.startsWith(c.path + '/'))
+      if (child) return child
+    } else if (pathname === item.path || pathname.startsWith(item.path + '/')) {
+      return item
+    }
+  }
+  return menuItems[0]
+}
+
 // ─── İsim kısaltması ──────────────────────────────────────────────────────────
 function kisalt(adSoyad) {
   if (!adSoyad) return '?'
@@ -42,6 +65,7 @@ const rolEtiket = { sahip: 'Şirket Sahibi', admin: 'Yönetici', muhasebeci: 'Mu
 
 export default function AppLayoutParamGo() {
   const [sidebarOpen, setSidebarOpen] = useState(false)
+  const [kasaAccOpen, setKasaAccOpen] = useState(false)
 
   const kullanici = useAuthStore((s) => s.kullanici)
   const cikisYap  = useAuthStore((s) => s.cikisYap)
@@ -50,8 +74,14 @@ export default function AppLayoutParamGo() {
 
   const menuItems = useMemo(() => gorunurMenuHesapla(kullanici), [kullanici])
 
-  // Aktif sayfa bilgisi
-  const aktifMenu = menuItems.find((m) => location.pathname.startsWith(m.path)) || menuItems[0]
+  // Aktif sayfa bilgisi (accordion children dahil)
+  const aktifMenu = useMemo(() => aktifMenuBul(menuItems, location.pathname), [menuItems, location.pathname])
+
+  // Kasa alt sayfasındaysa accordion otomatik açık
+  const kasaAktif = location.pathname.startsWith('/kasa')
+  useEffect(() => {
+    setKasaAccOpen(kasaAktif)
+  }, [kasaAktif])
 
   // Sayfa başlığını ParamGo olarak ayarla
   useEffect(() => {
@@ -108,17 +138,45 @@ export default function AppLayoutParamGo() {
 
         {/* Navigasyon */}
         <nav className="p-nav">
-          {menuItems.filter(m => m.path !== '/ayarlar/tema').map((item) => (
-            <NavLink
-              key={item.path}
-              to={item.path}
-              className={({ isActive }) => `p-nav-btn${isActive ? ' p-nav-active' : ''}`}
-              onClick={() => setSidebarOpen(false)}
-            >
-              <i className={`bi ${item.icon} p-nav-icon`} aria-hidden="true" />
-              <span>{item.label}</span>
-            </NavLink>
-          ))}
+          {menuItems.filter(m => m.path !== '/ayarlar/tema').map((item, idx) =>
+            item.children ? (
+              <div key={`acc-${idx}`} className="p-nav-accordion">
+                <button
+                  type="button"
+                  className={`p-nav-btn p-nav-acc-toggle${kasaAktif ? ' p-nav-acc-active' : ''}`}
+                  onClick={() => setKasaAccOpen(o => !o)}
+                >
+                  <i className={`bi ${item.icon} p-nav-icon`} aria-hidden="true" />
+                  <span style={{ flex: 1 }}>{item.label}</span>
+                  <i className={`bi bi-chevron-down p-nav-acc-arrow${kasaAccOpen ? ' open' : ''}`} aria-hidden="true" />
+                </button>
+                <div className={`p-nav-acc-body${kasaAccOpen ? ' open' : ''}`}>
+                  {item.children.map(child => (
+                    <NavLink
+                      key={child.path}
+                      to={child.path}
+                      end={child.path === '/kasa'}
+                      className={({ isActive }) => `p-nav-btn p-nav-child${isActive ? ' p-nav-active' : ''}`}
+                      onClick={() => setSidebarOpen(false)}
+                    >
+                      <i className={`bi ${child.icon} p-nav-icon`} aria-hidden="true" />
+                      <span>{child.label}</span>
+                    </NavLink>
+                  ))}
+                </div>
+              </div>
+            ) : (
+              <NavLink
+                key={item.path}
+                to={item.path}
+                className={({ isActive }) => `p-nav-btn${isActive ? ' p-nav-active' : ''}`}
+                onClick={() => setSidebarOpen(false)}
+              >
+                <i className={`bi ${item.icon} p-nav-icon`} aria-hidden="true" />
+                <span>{item.label}</span>
+              </NavLink>
+            )
+          )}
 
           {/* Sistem bölümü */}
           <div className="p-nav-section" style={{ marginTop: 8 }}>

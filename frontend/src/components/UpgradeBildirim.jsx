@@ -135,50 +135,6 @@ export default function UpgradeBildirim() {
 
   return (
     <>
-      <style>{`
-        .fk-upgrade-banner {
-          display: flex;
-          align-items: center;
-          gap: 10px;
-          padding: 9px 20px;
-          font-size: 12.5px;
-          font-weight: 500;
-          line-height: 1.4;
-          flex-shrink: 0;
-          border-bottom: 1px solid;
-          animation: fkBannerIn 0.3s ease;
-        }
-        @keyframes fkBannerIn {
-          from { opacity: 0; transform: translateY(-8px); }
-          to   { opacity: 1; transform: translateY(0); }
-        }
-        .fk-upgrade-banner-btn {
-          white-space: nowrap;
-          padding: 5px 12px;
-          border-radius: 7px;
-          border: 1px solid;
-          font-size: 11.5px;
-          font-weight: 700;
-          cursor: pointer;
-          transition: opacity 0.15s;
-          flex-shrink: 0;
-        }
-        .fk-upgrade-banner-btn:hover { opacity: 0.8; }
-        .fk-upgrade-banner-close {
-          background: none;
-          border: none;
-          cursor: pointer;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          width: 24px; height: 24px;
-          border-radius: 6px;
-          flex-shrink: 0;
-          transition: background 0.15s;
-          padding: 0;
-        }
-      `}</style>
-
       <div
         className="fk-upgrade-banner"
         style={{ background: bg, borderColor: border }}

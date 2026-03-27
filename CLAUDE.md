@@ -71,6 +71,36 @@ $stmt = $pdo->prepare("SELECT * FROM tablo WHERE id = :id");
 - Token yönetimi: Zustand store (`authStore.js`) — `localStorage` yasak
 - Sayfa yönlendirme: React Router — `window.location` yasak
 
+### 3b. CSS SINIF TUTARLILIĞI — KRİTİK KURAL
+**Yeni CSS sınıfı icat etmek YASAKTIR.** Tüm bileşenler `paramgo.css`'te tanımlı sınıfları kullanmalıdır.
+
+**Yeni bir bileşen yazarken şu adımları izle:**
+1. Önce `paramgo.css`'i oku ve mevcut sınıfları bul
+2. Benzer bir bileşen daha önce yazılmışsa, AYNI CSS sınıflarını kullan
+3. Yeni bir sınıfa ihtiyaç varsa, ÖNCE `paramgo.css`'e tanımla, SONRA JSX'te kullan
+4. Asla tanımsız sınıf kullanma — tarayıcı görmezden gelir ve görsel bozulur
+
+**Modül bazlı CSS sınıf haritası (her modül kendi prefix'ini kullanır):**
+
+| Bileşen Tipi | Sınıf Prefix'i | Örnek |
+|-------------|----------------|-------|
+| Sayfa yapısı | `p-page-*` | `p-page-root`, `p-page-header`, `p-page-title` |
+| KPI kartları | `p-kpi-*` | `p-kpi-card`, `p-kpi-label`, `p-kpi-value`, `p-kpi-deco` |
+| KPI hero/stat | `p-kpi-hero-*`, `p-kpi-stat-*` | `p-kpi-hero-body`, `p-kpi-stat-top` |
+| Paneller | `p-panel-*` | `p-panel`, `p-panel-header`, `p-panel-title` |
+| Modallar | `p-modal-*` | `p-modal-overlay`, `p-modal-box`, `p-mh-default` |
+| Tablolar | `p-table` veya `p-cym-table` | `p-cym-th`, `p-cym-td`, `p-cym-tr` |
+| Butonlar | `p-btn-*`, `p-cym-btn-*`, `p-cari-btn-*` | `p-btn-save`, `p-cym-btn-new` |
+| Badge'ler | `p-badge-*`, `p-kasa-badge-*` | `p-badge-success`, `p-badge-vade` |
+| Formlar | `p-kasa-input-*` | `p-kasa-input`, `p-kasa-input-label` |
+| Cari modülü | `p-cari-*` | `p-cari-search-input`, `p-cari-menu-dropdown` |
+| Çek/Senet | `p-cek-*`, `p-cym-*` | `p-cym-glass-card`, `p-cym-toolbar` |
+| Kasa modülü | `p-kasa-*` | `p-kasa-glass-card`, `p-kasa-spinner` |
+| Veresiye | `p-vry-*` | `p-vry-kpi`, `p-vry-kpi-value` |
+| Layout | `p-sidebar`, `p-topbar`, `p-main` | `p-nav-btn`, `p-nav-active` |
+
+**YASAK:** className'de `${p}-yeni-bir-sey` yazıp paramgo.css'te tanımlamamak.
+
 ### 4. Mobil Uyumluluk (Capacitor Hazırlığı)
 - Sabit `px` yerine Bootstrap responsive sınıfları
 - Tıklanabilir alanlar minimum 44x44px

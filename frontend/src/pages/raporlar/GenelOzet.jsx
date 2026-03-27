@@ -30,15 +30,15 @@ export default function GenelOzet() {
   }
 
   if (yukleniyor) {
-    return <div className="rpr-loading"><div className="rpr-spinner" /> Yükleniyor…</div>
+    return <div className="p-rpr-loading"><div className="p-rpr-spinner" /> Yükleniyor…</div>
   }
 
   if (!veri) {
     return (
-      <div className="rpr-empty">
-        <div className="rpr-empty-icon"><i className="bi bi-bar-chart-line" /></div>
-        <div className="rpr-empty-text">Veri yüklenemedi</div>
-        <div className="rpr-empty-sub">Lütfen sayfayı yenileyin</div>
+      <div className="p-rpr-empty">
+        <div className="p-rpr-empty-icon"><i className="bi bi-bar-chart-line" /></div>
+        <div className="p-rpr-empty-text">Veri yüklenemedi</div>
+        <div className="p-rpr-empty-sub">Lütfen sayfayı yenileyin</div>
       </div>
     )
   }
@@ -94,22 +94,22 @@ export default function GenelOzet() {
     <div>
       {kpiGruplari.map((grup, gi) => (
         <div key={gi} style={{ marginBottom: 24 }}>
-          <div className="rpr-card">
-            <div className="rpr-card-header">
-              <h3 className="rpr-card-title">
+          <div className="p-rpr-card">
+            <div className="p-rpr-card-header">
+              <h3 className="p-rpr-card-title">
                 <i className={`bi ${grup.ikon}`} />
                 {grup.baslik}
               </h3>
             </div>
-            <div className="rpr-card-body">
-              <div className="rpr-kpi-row" style={{
+            <div className="p-rpr-card-body">
+              <div className="p-rpr-kpi-row" style={{
                 gridTemplateColumns: `repeat(${Math.min(grup.kartlar.length, 4)}, 1fr)`,
               }}>
                 {grup.kartlar.map((k, ki) => (
-                  <div className="rpr-kpi" key={ki}>
-                    <div className="rpr-kpi-accent" style={{ background: k.renk }} />
-                    <div className="rpr-kpi-label">{k.etiket}</div>
-                    <div className="rpr-kpi-value financial-num" style={{ color: k.renk }}>{k.deger}</div>
+                  <div className="p-rpr-kpi" key={ki}>
+                    <div className="p-rpr-kpi-accent" style={{ background: k.renk }} />
+                    <div className="p-rpr-kpi-label">{k.etiket}</div>
+                    <div className="p-rpr-kpi-value financial-num" style={{ color: k.renk }}>{k.deger}</div>
                   </div>
                 ))}
               </div>

@@ -29,7 +29,7 @@ const KANAL_MAP = { web: 'Web', apple: 'App Store', google: 'Google Play' }
 
 export default function PlanSecim() {
   const p = 'p'
-  const { plan } = usePlanKontrol()
+  const { plan: jwtPlan } = usePlanKontrol()
 
   const [yukleniyor, setYukleniyor] = useState(true)
   const [gecmisYukleniyor, setGecmisYukleniyor] = useState(true)
@@ -60,6 +60,8 @@ export default function PlanSecim() {
     gecmisAl()
   }, [])
 
+  // API'den gelen plan yetkili kaynak; yüklenene kadar JWT'deki plan kullanılır
+  const plan = durum?.plan || jwtPlan
   const kampanyaAktif = durum?.kampanya_kullanici || false
   const standartGosterilen = yillik
     ? Math.round(FIYATLAR.standart.yillik / 12 * 100) / 100
@@ -100,6 +102,7 @@ export default function PlanSecim() {
         'Vade hesaplayıcı',
         'PDF & Excel rapor',
         'Veri dışa aktarma',
+        'WhatsApp desteği',
       ],
     },
     {
@@ -111,128 +114,16 @@ export default function PlanSecim() {
         '10 kullanıcıya kadar',
         'Sınırsız her şey',
         'Tüm Standart özellikler',
-        'Öncelikli destek',
+        'Gelişmiş raporlama & analiz',
+        'Özel entegrasyon desteği',
+        'Şirket bazlı yetkilendirme',
+        'Öncelikli 7/24 destek',
       ],
     },
   ]
 
   return (
-    <>
-      <style>{`
-        /* ── SHARED ─────────────────────────────────────────────── */
-        .abn-page { padding: 28px 24px; max-width: 1100px; }
-        .abn-btn {
-          display: block; width: 100%; min-height: 44px; border-radius: 10px;
-          border: none; cursor: pointer; font-size: 13px; font-weight: 700;
-          margin-top: 16px; transition: all 0.15s;
-        }
-        .abn-btn.primary { background: linear-gradient(135deg,#10B981,#059669); color:#fff; box-shadow:0 4px 14px rgba(16,185,129,0.3); }
-        .abn-btn.primary:hover { transform:translateY(-1px); box-shadow:0 6px 18px rgba(16,185,129,0.4); }
-        .abn-btn.mavi  { background: linear-gradient(135deg,#3b82f6,#2563eb); color:#fff; box-shadow:0 4px 14px rgba(59,130,246,0.3); }
-        .abn-btn.mavi:hover  { transform:translateY(-1px); box-shadow:0 6px 18px rgba(59,130,246,0.4); }
-        /* ParamGo tema butonları — yeşil tonları */
-        .abn-btn.yesil-standart { background: linear-gradient(135deg, var(--p-color-primary), var(--p-color-primary-dark)); color:var(--p-text-on-primary); box-shadow:0 4px 14px rgba(16,185,129,0.3); }
-        .abn-btn.yesil-standart:hover { transform:translateY(-1px); box-shadow:0 6px 18px rgba(16,185,129,0.4); }
-        .abn-btn.yesil-kurumsal { background: linear-gradient(135deg, var(--p-color-primary-dark), var(--p-color-accent)); color:var(--p-text-on-primary); box-shadow:0 4px 14px rgba(5,150,105,0.3); }
-        .abn-btn.yesil-kurumsal:hover { transform:translateY(-1px); box-shadow:0 6px 18px rgba(5,150,105,0.4); }
-        .abn-toggle-switch {
-          position:relative; width:44px; height:24px;
-          border-radius:50px; cursor:pointer; transition:background 0.2s;
-        }
-        .abn-toggle-knob {
-          position:absolute; top:3px; left:3px; width:16px; height:16px;
-          border-radius:50%; background:#fff; transition:transform 0.2s;
-          box-shadow:0 1px 3px rgba(0,0,0,0.2);
-        }
-        .abn-toggle-switch.on .abn-toggle-knob { transform:translateX(20px); }
-        .abn-kampanya-chip {
-          background:linear-gradient(135deg,#10B981,#059669);
-          color:#fff; font-size:10px; font-weight:800; padding:3px 10px;
-          border-radius:20px; white-space:nowrap;
-        }
-        .abn-tasarruf-chip {
-          font-size:10px; font-weight:700; padding:3px 8px; border-radius:20px;
-          background:rgba(16,185,129,0.12); color:#10b981; border:1px solid rgba(16,185,129,0.2);
-        }
-        /* Semantic status badges */
-        .abn-badge-success { background:rgba(5,150,105,0.1);  color:#059669; font-size:11px; font-weight:700; padding:3px 8px; border-radius:6px; }
-        .abn-badge-warning { background:rgba(217,119,6,0.1);  color:#d97706; font-size:11px; font-weight:700; padding:3px 8px; border-radius:6px; }
-        .abn-badge-danger  { background:rgba(220,38,38,0.1);  color:#dc2626; font-size:11px; font-weight:700; padding:3px 8px; border-radius:6px; }
-        .abn-badge-info    { background:rgba(99,102,241,0.1); color:#6366f1; font-size:11px; font-weight:700; padding:3px 8px; border-radius:6px; }
-        /* Plan icon boxes */
-        .abn-icon-standart { background:rgba(16,185,129,0.1); border:1px solid rgba(16,185,129,0.2); }
-        .abn-icon-kurumsal { background:rgba(59,130,246,0.1);  border:1px solid rgba(59,130,246,0.22); }
-        /* ParamGo: ikon kutuları primary renk tonlarında */
-        .p-abn-icon-standart { background:rgba(16,185,129,0.1); border:1px solid rgba(16,185,129,0.2); }
-        .p-abn-icon-kurumsal { background:rgba(5,150,105,0.1); border:1px solid rgba(5,150,105,0.2); }
-        @keyframes abnSkel { from{opacity:.45} to{opacity:1} }
-
-        /* ── PARAMGO (p) ─────────────────────────────────────────── */
-        .p-abn-page-title { font-size:20px; font-weight:700; color:var(--p-text-primary); font-family:var(--p-font-display); margin-bottom:4px; }
-        .p-abn-page-sub   { font-size:13px; color:var(--p-text-muted); }
-        .p-abn-hero {
-          background:linear-gradient(135deg, var(--p-color-primary) 0%, var(--p-color-primary-dark) 100%);
-          border-radius:16px; padding:28px 32px; margin-bottom:28px; color:var(--p-text-on-primary);
-        }
-        .p-abn-current-card {
-          background:var(--p-bg-card); border:1px solid var(--p-border);
-          border-left:4px solid var(--p-color-primary);
-          border-radius:var(--p-radius-card); padding:20px 24px;
-          margin-bottom:28px; box-shadow:var(--p-shadow-card);
-        }
-        .p-abn-current-label { font-size:11px; font-weight:600; color:var(--p-text-label); text-transform:uppercase; letter-spacing:.08em; }
-        .p-abn-current-name  { font-size:18px; font-weight:800; color:var(--p-text-primary); font-family:var(--p-font-display); }
-        .p-abn-meta-label    { font-size:11px; font-weight:600; color:var(--p-text-label); text-transform:uppercase; letter-spacing:.06em; }
-        .p-abn-meta-value    { font-size:14px; font-weight:700; color:var(--p-text-primary); }
-        .p-abn-section-title {
-          font-size:13px; font-weight:700; color:var(--p-text-primary); text-transform:uppercase;
-          letter-spacing:.06em; margin-bottom:16px; display:flex; align-items:center; gap:8px;
-        }
-        .p-abn-section-title::before { content:''; display:block; width:4px; height:16px; border-radius:2px; background:var(--p-color-primary); }
-        .p-abn-toggle-label { font-size:13px; font-weight:600; color:var(--p-text-muted); cursor:pointer; transition:color .15s; }
-        .p-abn-toggle-label.aktif { color:var(--p-text-primary); }
-        .p-abn-toggle-sw { background:var(--p-border); border:1px solid var(--p-border-strong); }
-        .p-abn-toggle-sw.on { background:var(--p-color-primary); }
-        .p-abn-plan-card {
-          background:var(--p-bg-card); border:1px solid var(--p-border);
-          box-shadow:var(--p-shadow-card); border-radius:16px; padding:22px;
-          transition:all .2s; position:relative; overflow:hidden; height:100%;
-        }
-        .p-abn-plan-card:hover { box-shadow:var(--p-shadow-card-hover); transform:translateY(-2px); background:var(--p-bg-card-hover); }
-        .p-abn-plan-card.aktif-plan  { border:2px solid var(--p-color-primary); }
-        .p-abn-plan-card.onerilen    { border:2px solid var(--p-color-primary-dark); box-shadow:var(--p-shadow-card-hover); }
-        .p-abn-plan-price  { font-size:30px; font-weight:800; color:var(--p-text-primary); font-family:var(--p-font-display); line-height:1; }
-        .p-abn-price-unit  { font-size:13px; font-weight:600; color:var(--p-text-muted); }
-        .p-abn-plan-name   { font-size:16px; font-weight:800; color:var(--p-text-primary); }
-        .p-abn-feature     { font-size:12px; color:var(--p-text-secondary); display:flex; align-items:flex-start; gap:7px; margin-bottom:8px; line-height:1.4; }
-        .p-abn-feature i   { color:var(--p-color-success); font-size:12px; flex-shrink:0; margin-top:1px; }
-        .p-abn-feature.kisit     { color:var(--p-text-muted); }
-        .p-abn-feature.kisit i   { color:var(--p-color-danger); }
-        .p-abn-sep         { height:1px; background:var(--p-border); margin:14px 0; }
-        .p-abn-btn-pasif   { display:block; width:100%; min-height:44px; border-radius:10px; border:1px solid var(--p-border); background:var(--p-border); color:var(--p-text-muted); font-size:13px; font-weight:600; margin-top:16px; cursor:default; }
-        .p-abn-card        { background:var(--p-bg-card); border:1px solid var(--p-border); box-shadow:var(--p-shadow-card); border-radius:var(--p-radius-card); overflow:hidden; }
-        .p-abn-th          { font-size:11px; font-weight:700; color:var(--p-text-label); text-transform:uppercase; letter-spacing:.05em; padding:12px 16px; background:var(--p-bg-card-hover); border:none !important; border-bottom:1px solid var(--p-border) !important; }
-        .p-abn-td          { padding:11px 16px; font-size:13px; color:var(--p-text-secondary); border:none !important; border-bottom:1px solid var(--p-border) !important; }
-        .p-abn-td-bold     { padding:11px 16px; font-size:13px; font-weight:700; color:var(--p-text-primary); border:none !important; border-bottom:1px solid var(--p-border) !important; }
-        .p-abn-empty       { color:var(--p-text-muted); }
-        .p-abn-savings     { font-size:11px; color:var(--p-color-success); font-weight:700; }
-        .p-abn-yearly-note { font-size:11px; color:var(--p-text-muted); margin-top:3px; }
-        .p-abn-strike      { font-size:11px; color:var(--p-text-muted); text-decoration:line-through; }
-        .p-abn-icon-box    { width:44px; height:44px; border-radius:12px; background:linear-gradient(135deg, var(--p-color-primary), var(--p-color-primary-dark)); display:flex; align-items:center; justify-content:center; }
-        .p-abn-icon-ucretsiz { background:rgba(16,185,129,0.07); border:1px solid rgba(16,185,129,0.14); }
-        .p-abn-badge-active { font-size:10px; font-weight:700; padding:3px 8px; border-radius:20px; text-transform:uppercase; letter-spacing:.06em; background:rgba(16,185,129,0.1); color:var(--p-color-primary); }
-        .p-abn-badge-rec    { font-size:10px; font-weight:700; padding:3px 8px; border-radius:20px; text-transform:uppercase; letter-spacing:.06em; background:rgba(5,150,105,0.12); color:var(--p-color-primary-dark); }
-        .p-abn-skel        { background:var(--p-border); border-radius:6px; animation:abnSkel 1.4s ease infinite alternate; }
-        .p-abn-hero-stat   { color:var(--p-text-on-primary); opacity:.9; }
-
-        @media (max-width: 767px) {
-          .abn-page { padding: 16px; }
-          .p-abn-plan-price { font-size: 24px; }
-          .p-abn-hero { padding: 20px 18px; }
-        }
-      `}</style>
-
-      <div className="abn-page">
+    <div className="abn-page">
 
         {/* SAYFA BAŞLIĞI */}
         <div className="mb-4">
@@ -287,33 +178,35 @@ export default function PlanSecim() {
               </div>
             </div>
           ) : (
-            <div className="d-flex align-items-center justify-content-between flex-wrap gap-3">
-              <div className="d-flex align-items-center gap-3">
-                <div className={`${p}-abn-icon-box`}>
-                  <i className="bi bi-award-fill" style={{ color: '#fff', fontSize: 20 }} />
-                </div>
-                <div>
-                  <div className={`${p}-abn-current-label`}>Mevcut Plan</div>
-                  <div className={`${p}-abn-current-name`}>{durum?.plan_adi || 'Ücretsiz'}</div>
-                </div>
-                {durum?.kampanya_kullanici && (
-                  <span className="abn-kampanya-chip">🎉 Kampanya Fiyatı — 99,90₺/ay</span>
-                )}
+            <div className="d-flex align-items-center gap-3 flex-wrap">
+              <div className={`${p}-abn-icon-box`} style={{ flexShrink: 0 }}>
+                <i className="bi bi-award-fill" style={{ color: '#fff', fontSize: 20 }} />
               </div>
-              <div className="d-flex gap-4 flex-wrap">
-                {durum?.bitis_tarihi && (
-                  <div>
-                    <div className={`${p}-abn-meta-label`}>BİTİŞ TARİHİ</div>
-                    <div className={`${p}-abn-meta-value`}>{tarihFmt(durum.bitis_tarihi)}</div>
-                  </div>
-                )}
-                {durum?.odeme_kanali && (
-                  <div>
-                    <div className={`${p}-abn-meta-label`}>ÖDEME KANALI</div>
-                    <div className={`${p}-abn-meta-value`}>{KANAL_MAP[durum.odeme_kanali] || durum.odeme_kanali}</div>
-                  </div>
-                )}
+              <div style={{ minWidth: 0 }}>
+                <div className={`${p}-abn-current-label`}>Mevcut Plan</div>
+                <div className="d-flex align-items-center gap-2 flex-wrap">
+                  <span className={`${p}-abn-current-name`}>{durum?.plan_adi || 'Ücretsiz'}</span>
+                  {durum?.kampanya_kullanici && (
+                    <span className="abn-kampanya-chip" style={{ fontSize: 9 }}>🎉 Kampanya — {fmt(KAMPANYA_FIYAT)}₺/ay</span>
+                  )}
+                </div>
               </div>
+              {(durum?.bitis_tarihi || durum?.odeme_kanali) && (
+                <div className="d-flex gap-4 flex-wrap ms-auto">
+                  {durum?.bitis_tarihi && (
+                    <div>
+                      <div className={`${p}-abn-meta-label`}>BİTİŞ TARİHİ</div>
+                      <div className={`${p}-abn-meta-value`}>{tarihFmt(durum.bitis_tarihi)}</div>
+                    </div>
+                  )}
+                  {durum?.odeme_kanali && (
+                    <div>
+                      <div className={`${p}-abn-meta-label`}>ÖDEME KANALI</div>
+                      <div className={`${p}-abn-meta-value`}>{KANAL_MAP[durum.odeme_kanali] || durum.odeme_kanali}</div>
+                    </div>
+                  )}
+                </div>
+              )}
             </div>
           )}
         </div>
@@ -498,6 +391,5 @@ export default function PlanSecim() {
         </div>
 
       </div>
-    </>
   )
 }

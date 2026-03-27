@@ -69,6 +69,15 @@ elseif ($parca_sayisi === 3 && $yol_parcalari[1] === 'hareketler') {
     }
 }
 
+// ─── /api/kasa/cekmece-kapanis ───
+elseif ($parca_sayisi === 2 && $yol_parcalari[1] === 'cekmece-kapanis') {
+    if ($metod === 'POST') {
+        $kasa->cekmece_kapanis($payload, $girdi);
+    } else {
+        Response::hata('Bu HTTP metodu desteklenmiyor', 405);
+    }
+}
+
 // ─── /api/kasa/yatirimlar ───
 elseif ($parca_sayisi === 2 && $yol_parcalari[1] === 'yatirimlar') {
     switch ($metod) {

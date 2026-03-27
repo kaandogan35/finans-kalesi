@@ -108,9 +108,9 @@ export default function KayitOl() {
 
         {/* Marka */}
         <div className={`${p}-giris-sol-anim-1`}>
-          <div className={`${p}-giris-marka-wrap`}>
+          <a href="https://paramgo.com" className={`${p}-giris-marka-wrap`}>
             <ParamGoLogo size="md" variant="white" />
-          </div>
+          </a>
         </div>
 
         {/* Vizyon */}
@@ -159,9 +159,17 @@ export default function KayitOl() {
             <div className={`${p}-giris-kart-serit`} />
             <div className={`${p}-giris-kart-ic`}>
 
+              {/* Ana sayfaya dönüş */}
+              <a href="https://paramgo.com" className={`${p}-giris-anasayfa-link`}>
+                <i className="bi bi-arrow-left me-1" />
+                Ana Sayfa
+              </a>
+
               {/* Mobil logo */}
               <div className="d-flex d-lg-none align-items-center justify-content-center mb-4">
-                <ParamGoLogo size="sm" />
+                <a href="https://paramgo.com">
+                  <ParamGoLogo size="sm" />
+                </a>
               </div>
 
               {/* Form başlığı */}

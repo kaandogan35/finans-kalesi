@@ -11,12 +11,15 @@
 import useAuthStore from '../stores/authStore'
 
 const IZINLER = {
-  pdf_rapor:     ['standart', 'kurumsal'],
-  excel_rapor:   ['standart', 'kurumsal'],
-  veri_aktarma:  ['standart', 'kurumsal'],
-  cok_kullanici: ['standart', 'kurumsal'],
-  yapay_zeka:    ['kurumsal'],
-  api_erisim:    ['kurumsal'],
+  pdf_rapor:          ['standart', 'kurumsal'],
+  excel_rapor:        ['standart', 'kurumsal'],
+  veri_aktarma:       ['standart', 'kurumsal'],
+  cok_kullanici:      ['standart', 'kurumsal'],
+  whatsapp_destek:    ['standart', 'kurumsal'],
+  gelismis_raporlama: ['kurumsal'],
+  ozel_entegrasyon:   ['kurumsal'],
+  sirket_yetkilendirme: ['kurumsal'],
+  oncelikli_destek:   ['kurumsal'],
 }
 
 const PLAN_ADLARI = {

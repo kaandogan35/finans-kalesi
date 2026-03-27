@@ -42,7 +42,9 @@ import BildirimlerEkrani  from './pages/bildirimler/BildirimlerEkrani'
 import VeresiyeListesi   from './pages/veresiye/VeresiyeListesi'
 import VeresiyeDetay     from './pages/veresiye/VeresiyeDetay'
 import RaporlarEkrani    from './pages/raporlar/RaporlarEkrani'
-
+import Gelirler          from './pages/gelirler/Gelirler'
+import Giderler          from './pages/giderler/Giderler'
+import TekrarlayanIslemler from './pages/tekrarlayan-islemler/TekrarlayanIslemler'
 // Yalnızca sahip rolü erişebilir — /kullanicilar gibi sayfalar için
 function SahipKoruma() {
   const { kullanici } = useAuthStore()
@@ -123,9 +125,23 @@ export default function App() {
               <Route path="/odemeler"              element={<OdemeTakip />} />
             </Route>
 
-            {/* Modül koruma — kasa */}
+            {/* Modül koruma — gelirler/giderler (kasa modülü) */}
+            <Route element={<ModulKoruma modul="kasa" />}>
+              <Route path="/gelirler"              element={<Gelirler />} />
+              <Route path="/giderler"              element={<Giderler />} />
+            </Route>
+
+            {/* Modül koruma — kasa & varlık alt sayfaları */}
             <Route element={<ModulKoruma modul="kasa" />}>
               <Route path="/kasa"                  element={<VarlikKasa />} />
+              <Route path="/kasa/bilanco"          element={<VarlikKasa />} />
+              <Route path="/kasa/ortaklar"         element={<VarlikKasa />} />
+              <Route path="/kasa/yatirimlar"       element={<VarlikKasa />} />
+            </Route>
+
+            {/* Modül koruma — tekrarlayan islemler (kasa modülü) */}
+            <Route element={<ModulKoruma modul="kasa" />}>
+              <Route path="/tekrarlayan-islemler"    element={<TekrarlayanIslemler />} />
             </Route>
 
             {/* Modül koruma — vade_hesaplayici */}

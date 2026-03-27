@@ -1,295 +1,331 @@
-# PROJE.md — Finans Kalesi Canlı Durum ve Yol Haritası
-# Son Güncelleme: 16 Mart 2026 — Oturum #20
+# PROJE.md — ParamGo (Finans Kalesi) Durum ve Yol Haritasi
+# Son Guncelleme: 25 Mart 2026
 
 ---
 
-## GÜNCEL DURUM: 🔄 Aşama 4 DEVAM EDİYOR — Abonelik Sistemi
-Kayıt + giriş sistemi çalışıyor. Ücretsiz plan kullanım sınırları (4D) tamamlandı.
-Sıradaki: Ödeme entegrasyonu (4E — İyzico/Stripe) — sağlayıcı seçimi bekleniyor.
+## GUNCEL DURUM: Asama 5 — Mobil Uygulama Hazirlik
+
+Web MVP tamamlandi. Store'lara cikmadan once eksik moduller, guvenlik ve UX iyilestirmeleri yapilacak.
+
+**Canli site:** https://paramgo.com/
+**Aktif tema:** ParamGo (tek tema — banking/earthy/dark silindi)
 
 ---
 
-## ⚠️ SQL KURALI
-Veritabanı değişikliği gerektiren her işlemde SQL kodu mesajda verilir.
-Kaan bunu cPanel phpMyAdmin (hosting) ve Laragon (local) üzerinden kendisi çalıştırır.
+## SQL KURALI
+Veritabani degisikligi gerektiren her islemde SQL kodu mesajda verilir.
+Kaan bunu cPanel phpMyAdmin (hosting) ve Laragon (local) uzerinden kendisi calistirir.
 
 ---
 
-## STRATEJİK KARARLAR (Değişmez)
+## STRATEJIK KARARLAR (Degismez)
 
-| Karar | Açıklama |
+| Karar | Aciklama |
 |-------|----------|
-| Mobil Strateji | Capacitor.js — Web bittikten sonra mevcut React kodu iOS/Android'e dönüştürülür |
-| Dashboard | En sona bırakıldı — tüm modüller tamamlandıktan sonra gerçek veriyle tasarlanacak |
-| Modül Sırası | Kasa API → Çek/Senet → Ödemeler → Vade Hesaplayıcı → Tasarım → Dashboard |
+| Mobil Strateji | Capacitor.js — mevcut React kodu iOS/Android'e donusturulur |
+| Tek Tema | ParamGo (.p- prefix) — diger temalar silindi |
+| Odeme | Saglayici secimi beklemede (Iyzico / Param / Stripe) |
+| Hedef | App Store + Google Play'e hazir rekabetci finans uygulamasi |
 
 ---
 
-## AŞAMA DURUMU
+## TAMAMLANAN ASAMALAR
 
-### Aşama 1 — PHP REST API ✅ TAMAMLANDI & KİLİTLENDİ
-48 endpoint, 7 modül. Değiştirilmeden önce onay istenir.
+### Asama 1 — PHP REST API ✅ KILITLENDI
+48+ endpoint, 15 controller, 12 model, 16 route dosyasi. Degistirilmeden once onay istenir.
 
-| Modül | Controller | Route | Endpoint |
+| Modul | Controller | Route | Endpoint |
 |-------|-----------|-------|----------|
-| Auth | AuthController.php | routes/auth.php | 5 |
-| Cari Hesaplar | CariController.php | routes/cari.php | 10 |
-| Çek / Senet | CekSenetController.php | routes/cek_senet.php | 7 |
-| Ödeme Takip | OdemeTakipController.php | routes/odeme.php | 7 |
+| Auth | AuthController.php | routes/auth.php | 7 |
+| Cari Hesaplar | CariController.php | routes/cari.php | 12 |
+| Cek / Senet | CekSenetController.php | routes/cek_senet.php | 7 |
+| Odeme Takip | OdemeTakipController.php | routes/odeme.php | 6 |
 | Kasa | KasaController.php | routes/kasa.php | 16 |
 | Dashboard | DashboardController.php | routes/dashboard.php | 1 |
-| Ayarlar | AyarlarController.php | routes/ayarlar.php | 1 |
+| Abonelik | AbonelikController.php | routes/abonelik.php | 5 |
+| Sinir | SinirController.php | routes/sinir.php | 1 |
+| Raporlar | RaporController.php | routes/raporlar.php | 7 |
+| Kullanicilar | — | routes/kullanicilar.php | 6 |
+| Bildirimler | BildirimController.php | routes/bildirimler.php | 2 |
+| Guvenlik | GuvenlikController.php | routes/guvenlik.php | 4 |
+| Veresiye | VeresiyeController.php | routes/veresiye.php | 2 |
+| Cron | — | routes/cron.php | 4 |
+| Webhook | WebhookController.php | routes/abonelik.php | 3 |
+
+### Asama 2 — React Frontend ✅ TAMAMLANDI
+26 sayfa bileseni, 14 API dosyasi, 3 store, 2 hook. Tum moduller API'ye bagli.
+
+### Asama 3 — Canliya Cikis ✅ TAMAMLANDI
+Domain: paramgo.com | SSL aktif | PHP 8.4 | MariaDB canli
+
+### Asama 4 — Abonelik & SaaS Altyapisi ✅ TAMAMLANDI (odeme haric)
+- 4A: DB + Plan Sistemi ✅
+- 4B: Backend API (PlanKontrol, SinirKontrol, Abonelik) ✅
+- 4C: Frontend (KayitOl, PlanSecim, PlanYukseltModal, hook'lar) ✅
+- 4D: Kullanim Sinirlari (25 cari, 10 cek/ay, 2 ay gecmis) ✅
+- 4E: Odeme Entegrasyonu ⬜ → Asama 6'ya tasindi
+- 4F: Upgrade Bildirimleri ✅
 
 ---
 
-### Aşama 2 — React Frontend ✅ TAMAMLANDI
+## YENI YOL HARITASI — Mobil Store Hazirlik
 
-#### Sprint 2A — Temizlik ✅ TAMAMLANDI
-#### Sprint 2B — UI Standardizasyonu ✅ TAMAMLANDI
-#### Sprint 2C — API Entegrasyonu ✅ TAMAMLANDI
+### Asama 5: Web Eksikleri & Guvenlik ← SIMDIKI ASAMA
 
-| Durum | Görev | Notlar |
-|-------|-------|--------|
-| ✅ | 2C-1: Axios Interceptor | localStorage → Zustand. lucide-react kaldırıldı. |
-| ✅ | 2C-2: Cari API + Düzeltmeler | API bağlı. 4 hata düzeltildi (stat kartları, tarih parse, vergi_dairesi, her_ikisi türü) |
-| ✅ | 2C-4: Kasa UI | VarlikKasa.jsx yazıldı. Mock veri ile çalışıyor. api/kasa.js oluşturuldu. |
-| ✅ | **2C-4b: Kasa API Bağlantısı** | API bağlandı. Yatırım güncelle hatası düzeltildi. Aylık hareket filtresi eklendi. Kayıt testleri geçti. |
-| ✅ | **2C-3: Çek/Senet API Bağlantısı** | API bağlandı. Tüm tab'lar gerçek veri. Durum değişimleri (tahsil/ciro/iade/ödendi) API'ye bağlı. Cari seçimi entegre edildi. |
-| ✅ | **2C-5: Ödemeler UI + API** | Bağlantı yapıldı. |
-| ✅ | **2C-6: Aylık Bilanço API Bağlantısı** | `ay_kapanislar` tablosu oluşturuldu. Backend (Kasa.php + KasaController + routes/kasa.php) + Frontend (api/kasa.js + VarlikKasa.jsx) tam bağlı. AES şifreli saklanıyor. |
-| ✅ | **2C-7: Dashboard Veri Düzeltmeleri** | 3 uyuşmazlık giderildi: kasa bakiye alias (`bakiye`), aylık giriş/çıkış toplamları, çek/senet hiyerarşik yapı (portföyde/tahsilde/ödendi/karşılıksız). |
+#### 5A — Landing Page Guvenlik Duzeltmeleri
+> Kaynak: `paramgo-landing/`
 
----
+| # | Is | Oncelik | Durum |
+|---|-----|---------|-------|
+| 1 | Form backend entegrasyonu (FormSubmit.co) | YUKSEK | ⬜ |
+| 2 | CDN SRI (integrity) attribute'lari | YUKSEK | ⬜ |
+| 3 | Confetti versiyon standardizasyonu (v1.9.3) | YUKSEK | ⬜ |
+| 4 | `target="_blank"` → `rel="noopener noreferrer"` (8 link) | ORTA | ⬜ |
+| 5 | Schema.org logo yolu duzeltme | ORTA | ⬜ |
+| 6 | Sitemap'e fiyatlar + destek ekleme | ORTA | ⬜ |
+| 7 | Guvenlik basliklari (CSP, HSTS, Permissions-Policy) | ORTA | ⬜ |
+| 8 | robots.txt guncelleme | ORTA | ⬜ |
+| 9 | PNG → WebP optimizasyon (~37MB → ~5MB) | DUSUK | ⬜ |
 
-### Kasa Modülü Detay Durumu
+#### 5B — Uygulama Guvenlik Tamamlama
+> Kaynak: `finans-kalesi/`
 
-| Sekme | UI | API |
-|-------|-----|-----|
-| Gösterge Paneli | ✅ | ✅ Hareketlerden hesaplanıyor |
-| Nakit Akışı | ✅ | ✅ Aylık filtreli, ekle/sil çalışıyor |
-| Aylık Bilanço | ✅ | ✅ `ay_kapanislar` tablosuna AES şifreli kaydediliyor |
-| Ortak Carisi | ✅ | ✅ Ekle/sil çalışıyor |
-| Yatırım Kalesi | ✅ | ✅ Ekle/güncelle/sil çalışıyor |
-
-**Kasa Özel Notlar:**
-- X-Kasa-Sifre header'ı KULLANILMIYOR — şifre ekranı kaldırıldı
-- Yatırım Kalesi'nde canlı kur API'si YOK — manuel birim_fiyat kullanılıyor
-
----
-
-### Aşama 2D — Vade Hesaplayıcı ✅ TAMAMLANDI
-> Tamamen frontend-only hesap aracı. Veritabanı gerektirmez.
-
-| Durum | Adım |
-|-------|------|
-| ✅ | Frontend — VadeHesaplayici.jsx (4 sekme, useMemo hesaplamalar) |
-| ✅ | /vade-hesaplayici route — App.jsx |
-| ✅ | Sidebar linki — AppLayout.jsx |
-
----
-
-### Aşama 2E — Dashboard ✅ Obsidian Vault stiliyle tamamlandı
-
-### Aşama 2F — Obsidian Vault Tasarım Dönüşümü ✅ TAMAMLANDI
-> Tasarım kuralları: `.claude/skills/koyu-tema.md`
-> Bootstrap 5.3 korunuyor, Tailwind/Shadcn YASAK — CSS manuel.
-
-| Aşama | Dosyalar | Durum |
-|-------|----------|-------|
-| 1: Global CSS + Sidebar + Giriş | index.css, App.css, AppLayout.jsx, GirisYap.jsx | ✅ Tamamlandı |
-| 2: Dashboard | Dashboard.jsx | ✅ Tamamlandı |
-| 3: Cari Hesaplar | CariYonetimi.jsx | ✅ Tamamlandı |
-| 4: Çek/Senet | CekSenet.jsx | ✅ Tamamlandı |
-| 5: Varlık & Kasa | VarlikKasa.jsx | ✅ Tamamlandı |
-| Temizlik | Tema CSS'leri `temalar/` klasörüne taşındı | ✅ Tamamlandı |
-| Demo Temizliği | `tasarim-demo/`, `tasarim-demo-v2/`, `tasarim-demo-v3/` silindi (15 dosya) | ✅ Tamamlandı |
-
-**Tema sistemi:** 3 tema (banking, earthy, dark) — CSS dosyaları `frontend/src/temalar/` altında.
-
----
-
-### Aşama 3 — Canlıya Çıkış ✅ TAMAMLANDI
-**Hedef domain:** kaandogan.com.tr
-
-| # | Kontrol | Durum |
-|---|---------|-------|
-| 1 | Demo klasörleri silindi (tasarim-demo, v2, v3) | ✅ Yapıldı |
-| 2 | Frontend rebuild (demo silindikten sonra) | ✅ Yapıldı |
-| 3 | .env production ayarları | ✅ Canlıda ayrı .env düzenlendi |
-| 4 | Veritabanı oluşturma + schema import | ✅ Yapıldı |
-| 5 | SSL sertifikası | ✅ Aktif |
-| 6 | PHP 8.4 + mod_rewrite | ✅ Doğrulandı |
-
----
-
-### Aşama 4 — Abonelik & SaaS Altyapısı 🔄 DEVAM EDİYOR
-
-#### 4A — Veritabanı + Plan Sistemi ✅ TAMAMLANDI
-DB migration çalıştırıldı (hosting + local). Mevcut kullanıcılar `ucretsiz` plana geçirildi.
-
-| # | İş | Durum |
+| # | Is | Durum |
 |---|-----|-------|
-| 1 | `abonelikler` ve `odeme_gecmisi` tabloları oluşturuldu | ✅ |
-| 2 | `sirketler.abonelik_plani` ENUM güncellendi (ucretsiz/standart/kurumsal) | ✅ |
-| 3 | `sirketler.kampanya_kullanici` kolonu eklendi | ✅ |
-| 4 | Mevcut tüm kullanıcılar ucretsiz plana geçirildi | ✅ |
-| 5 | `.env` → `LANSMAN_BITIS_TARIHI=2026-06-14 23:59:59` eklendi | ✅ |
+| 1 | 2FA (TOTP) implementasyonu | ⬜ |
+| 2 | Biometric login hazirligi (Capacitor sonrasi) | ⬜ |
+| 3 | Session timeout UI bildirimi | ⬜ |
 
-#### 4B — Backend API ✅ TAMAMLANDI
+#### 5C — Eksik Moduller (Rakip Analizi Sonucu)
 
-| Dosya | İş | Durum |
-|-------|-----|-------|
-| `middleware/PlanKontrol.php` | Özellik bazlı izin kontrolü (pdf, excel, api vb.) | ✅ |
-| `middleware/SinirKontrol.php` | Kullanım sınırı kontrolü + sayım + durum özeti | ✅ |
-| `models/Abonelik.php` | Plan güncelleme, ödeme geçmişi, kampanya kontrolü | ✅ |
-| `controllers/AbonelikController.php` | Plan listesi, durum, geçmiş, yükseltme (placeholder) | ✅ |
-| `controllers/WebhookController.php` | Web/Apple/Google webhook placeholder'ları | ✅ |
-| `controllers/SinirController.php` | `GET /api/sinir/durum` — kullanım özeti | ✅ |
-| `routes/abonelik.php` | `/api/abonelik/*` ve `/api/webhook/*` | ✅ |
-| `routes/sinir.php` | `/api/sinir/durum` | ✅ |
-| `models/Sirket.php` | Yeni kayıtta `abonelik_plani='ucretsiz'` düzeltmesi | ✅ |
-| `controllers/CariController.php` | `olustur()` içinde cari sınırı kontrolü (25) | ✅ |
-| `controllers/CekSenetController.php` | `olustur()` içinde aylık çek sınırı kontrolü (10) | ✅ |
-| `controllers/AuthController.php` | Kayıtta abonelik + kampanya oluşturma, JWT'ye plan eklendi | ✅ |
+Papara, YNAB, PocketGuard, Spendee, Wallet analiz edildi. Store rekabeti icin:
 
-#### 4C — Frontend ✅ TAMAMLANDI
+| # | Modul | Aciklama | Durum |
+|---|-------|----------|-------|
+| 1 | Tekrarlayan Islemler | Kira, maas, abonelik otomatik kayit | ⬜ |
+| 2 | Kategori Yonetimi | Gelir/gider kategorileri (ozellestirilebilir) | ⬜ |
+| 3 | Butce Planlama | Aylik kategori bazli butce + takip | ⬜ |
+| 4 | Gelir/Gider Grafikler | Trend grafikleri, pasta grafik, karsilastirma | ⬜ |
+| 5 | Disa Aktarma Gelistirme | Tum modullerden CSV/Excel/PDF | ⬜ |
+| 6 | Arama & Filtreleme | Global arama, gelismis filtreler | ⬜ |
+| 7 | Veri Ice Aktarma | Excel/CSV'den toplu veri yukleme | ⬜ |
 
-| Dosya | İş | Durum |
-|-------|-----|-------|
-| `pages/auth/KayitOl.jsx` | 2 adımlı kayıt formu (GirisYap tasarımıyla aynı) | ✅ |
-| `pages/abonelik/PlanSecim.jsx` | Plan karşılaştırma + mevcut plan + ödeme geçmişi | ✅ |
-| `components/PlanYukseltModal.jsx` | Kısıtlı özelliğe tıklanınca çıkan yükseltme modalı | ✅ |
-| `hooks/usePlanKontrol.js` | Özellik bazlı izin hook'u (`izinVarMi('pdf_rapor')`) | ✅ |
-| `hooks/useSinirler.js` | Kullanım sınırı durum hook'u (`uyariDurum('cari')`) | ✅ |
-| `api/abonelik.js` | Abonelik API çağrıları | ✅ |
-| `api/sinir.js` | Sinir durum API çağrısı | ✅ |
-| `App.jsx` | `/kayit` route → KayitOl, `/abonelik` route → PlanSecim | ✅ |
-| AppLayout (3 tema) | Sidebar'a "Aboneliğim" linki eklendi | ✅ |
+#### 5D — UX Iyilestirmeleri (Store Kalitesi)
 
-#### 4D — Kullanım Sınırları (Ücretsiz Plan) ✅ TAMAMLANDI
-
-| Sınır | Değer | Backend | Frontend |
-|-------|-------|---------|---------|
-| Toplam cari | 25 | ✅ 403 döner | ✅ Buton disable + ilerleme çubuğu (CariYonetimi) |
-| Aylık çek/senet | 10 | ✅ 403 döner | ✅ Buton disable + ilerleme çubuğu (CekSenet, 2 tab) |
-| Kasa geçmişi | 2 ay görüntüleme | ✅ KasaController'a filtre + gecmis_kisitli flag | ✅ Nakit Akışı'nda uyarı banner'ı |
-| PDF/Excel rapor | Yok | ✅ PlanKontrol.php hazır | ⬜ usePlanKontrol hook hazır |
-| Çok kullanıcı | Yok | ✅ PlanKontrol.php hazır | ⬜ |
-
-#### 4E — Ödeme Entegrasyonu ⬜ SIRADA
-
-| # | İş | Durum |
+| # | Is | Durum |
 |---|-----|-------|
-| 1 | Ödeme sağlayıcısı seç (İyzico / Param / Stripe) | ⬜ Karar verilecek |
-| 2 | `WebhookController.php` → gerçek ödeme işleme | ⬜ Placeholder hazır |
-| 3 | Başarılı ödemede `planGuncelle()` çağır + JWT yenile | ⬜ |
-| 4 | Frontend "Abone Ol" butonu → ödeme sayfasına yönlendir | ⬜ |
-| 5 | Apple IAP entegrasyonu (Capacitor sonrası) | ⬜ Uzak dönem |
-| 6 | Google Play entegrasyonu (Capacitor sonrası) | ⬜ Uzak dönem |
-
-#### 4F — Upgrade Bildirimleri ✅ TAMAMLANDI
-
-| # | İş | Durum |
-|---|-----|-------|
-| 1 | Login sonrası upgrade banner (ücretsiz plan, oturum başına 1 kez) | ✅ |
-| 2 | Sınıra yaklaşınca uyarı (%80 — mevcut/limit + ilerleme çubuğu) | ✅ |
-| 3 | Sınır dolunca `PlanYukseltModal` otomatik açılması (oturum başına 1 kez) | ✅ |
-| 4 | Dashboard'da plan durumu widget'ı | ⬜ Opsiyonel — sonraya bırakıldı |
-
-**Dosya:** `components/UpgradeBildirim.jsx` — 4 layout'a eklendi (AppLayout, Banking, Earthy, Dark)
+| 1 | Bos durum (empty state) ekranlari | ⬜ |
+| 2 | Skeleton loading animasyonlari | ⬜ |
+| 3 | Pull-to-refresh (mobil) | ⬜ |
+| 4 | Swipe gesture (silme, durum degistirme) | ⬜ |
+| 5 | Onboarding wizard (ilk giris rehberi) | ⬜ |
+| 6 | Offline banner ("Baglanti yok") | ⬜ |
 
 ---
 
-### Aşama 5 — Mobil (Capacitor.js) ⬜ Web kararlı olduktan sonra
-### Aşama 6 — Büyüme Modülleri ⬜ UZAK DÖNEM
+### Asama 6: Odeme Entegrasyonu
+
+| # | Is | Durum |
+|---|-----|-------|
+| 1 | Odeme saglayici secimi (Iyzico / Param / Stripe) | ⬜ |
+| 2 | Web odeme akisi (checkout → webhook → plan guncelle) | ⬜ |
+| 3 | Apple IAP entegrasyonu | ⬜ |
+| 4 | Google Play Billing entegrasyonu | ⬜ |
+| 5 | Fatura/makbuz olusturma | ⬜ |
 
 ---
 
-## 📂 GÜNCEL DOSYA YAPISI
+### Asama 7: Capacitor.js Entegrasyonu
+
+| # | Is | Durum |
+|---|-----|-------|
+| 1 | Capacitor CLI + proje init | ⬜ |
+| 2 | iOS + Android platform ekleme | ⬜ |
+| 3 | capacitor.config.ts yapilandirma | ⬜ |
+| 4 | Native plugin entegrasyonu (Camera, Haptics, Push, StatusBar) | ⬜ |
+| 5 | Deep link yapilandirma | ⬜ |
+| 6 | Splash screen + app icon tasarimi | ⬜ |
+| 7 | iOS build + test | ⬜ |
+| 8 | Android build + test | ⬜ |
+| 9 | Push notification altyapisi (FCM + APNs) | ⬜ |
+
+---
+
+### Asama 8: Offline & Performans
+
+| # | Is | Durum |
+|---|-----|-------|
+| 1 | Service Worker + PWA manifest | ⬜ |
+| 2 | IndexedDB ile offline islem kuyruklama | ⬜ |
+| 3 | Lazy loading (code splitting) | ⬜ |
+| 4 | Image/asset optimizasyonu | ⬜ |
+| 5 | API response caching | ⬜ |
+
+---
+
+### Asama 9: Store Hazirlik & Yayinlama
+
+#### 9A — App Store (iOS)
+| # | Is | Durum |
+|---|-----|-------|
+| 1 | Apple Developer hesabi (Organization — $99/yil) | ⬜ |
+| 2 | App Store Connect'te uygulama olusturma | ⬜ |
+| 3 | Gizlilik politikasi sayfasi (paramgo.com/gizlilik) | ⬜ |
+| 4 | Kullanim kosullari sayfasi | ⬜ |
+| 5 | App Store ekran goruntuleri (6.7", 6.5", 5.5", iPad) | ⬜ |
+| 6 | App Store aciklamasi + anahtar kelimeler (TR + EN) | ⬜ |
+| 7 | TestFlight beta testi | ⬜ |
+
+#### 9B — Google Play Store
+| # | Is | Durum |
+|---|-----|-------|
+| 1 | Google Play Developer hesabi ($25) | ⬜ |
+| 2 | Financial Features Declaration formu | ⬜ |
+| 3 | Data Safety bolumu | ⬜ |
+| 4 | Play Store ekran goruntuleri + feature graphic | ⬜ |
+| 5 | Closed/Open beta test | ⬜ |
+
+#### 9C — Hukuki & Uyumluluk
+| # | Is | Durum |
+|---|-----|-------|
+| 1 | KVKK uyumluluk metni | ⬜ |
+| 2 | Aydinlatma metni | ⬜ |
+| 3 | Acik riza formu | ⬜ |
+| 4 | Cerez politikasi | ⬜ |
+
+---
+
+### Asama 10: Landing Page Guncellemeleri
+
+| # | Is | Durum |
+|---|-----|-------|
+| 1 | Gercek store linkleri (APP_STORE_LINK, PLAY_STORE_LINK) | ⬜ |
+| 2 | Gercek WhatsApp numarasi | ⬜ |
+| 3 | App download bolumu + QR kod | ⬜ |
+| 4 | Gizlilik politikasi sayfasi (gizlilik.html) | ⬜ |
+| 5 | Kullanim kosullari sayfasi | ⬜ |
+| 6 | KVKK aydinlatma metni sayfasi | ⬜ |
+
+---
+
+### Asama 11: Buyume & Gelismis Ozellikler (Post-Launch)
+
+| # | Ozellik | Aciklama |
+|---|---------|----------|
+| 1 | Canli doviz/altin kurlari | TCMB veya ucuncu parti API |
+| 2 | Banka entegrasyonu | Open Banking API |
+| 3 | OCR ile cek/senet tarama | Kamera ile otomatik veri okuma |
+| 4 | e-Fatura yonetimi | GIB entegrasyonu |
+| 5 | Cok dilli destek | Ingilizce + Arapca |
+| 6 | Yapay zeka onerileri | Harcama analizi, nakit akis tahmini |
+| 7 | WhatsApp bildirim | Otomatik hatirlatmalar |
+| 8 | Widget destegi | iOS/Android ana ekran widget'lari |
+
+---
+
+## GUNCEL DOSYA YAPISI
+
 ```
 finans-kalesi/
 ├── config/
-│   ├── app.php                    ✅
-│   └── database.php               ✅
+│   ├── app.php
+│   └── database.php
 ├── controllers/
-│   ├── AuthController.php         ✅
-│   ├── AyarlarController.php      ✅
-│   ├── CariController.php         ✅
-│   ├── CekSenetController.php     ✅
-│   ├── DashboardController.php    ✅
-│   ├── KasaController.php         ✅
-│   └── OdemeTakipController.php   ✅
+│   ├── AuthController.php
+│   ├── AyarlarController.php
+│   ├── AbonelikController.php
+│   ├── BildirimController.php
+│   ├── CariController.php
+│   ├── CekSenetController.php
+│   ├── DashboardController.php
+│   ├── GuvenlikController.php
+│   ├── KasaController.php
+│   ├── OdemeTakipController.php
+│   ├── RaporController.php
+│   ├── SinirController.php
+│   ├── VeresiyeController.php
+│   └── WebhookController.php
 ├── middleware/
-│   ├── AuthMiddleware.php         ✅
-│   └── CorsMiddleware.php         ✅
+│   ├── AuthMiddleware.php
+│   ├── CorsMiddleware.php
+│   ├── PlanKontrol.php
+│   └── SinirKontrol.php
 ├── models/
-│   ├── CariHareket.php            ✅
-│   ├── CariKart.php               ✅
-│   ├── CekSenet.php               ✅
-│   ├── Kasa.php                   ✅
-│   ├── Kullanici.php              ✅
-│   ├── OdemeTakip.php             ✅
-│   └── Sirket.php                 ✅
+│   ├── Abonelik.php
+│   ├── Bildirim.php
+│   ├── CariHareket.php
+│   ├── CariKart.php
+│   ├── CekSenet.php
+│   ├── Guvenlik.php
+│   ├── Kasa.php
+│   ├── Kullanici.php
+│   ├── OdemeTakip.php
+│   ├── Rapor.php
+│   ├── Sirket.php
+│   └── Veresiye.php
 ├── routes/
-│   ├── auth.php                   ✅
-│   ├── ayarlar.php                ✅
-│   ├── cari.php                   ✅
-│   ├── cek_senet.php              ✅
-│   ├── dashboard.php              ✅
-│   ├── kasa.php                   ✅
-│   └── odeme.php                  ✅
+│   ├── auth.php
+│   ├── ayarlar.php
+│   ├── abonelik.php
+│   ├── bildirimler.php
+│   ├── cari.php
+│   ├── cek_senet.php
+│   ├── cron.php
+│   ├── dashboard.php
+│   ├── guvenlik.php
+│   ├── kasa.php
+│   ├── kullanicilar.php
+│   ├── odeme.php
+│   ├── raporlar.php
+│   ├── sinir.php
+│   └── veresiye.php
 ├── utils/
-│   ├── JWTHelper.php              ✅
-│   ├── KriptoHelper.php           ✅
-│   ├── RateLimiter.php            ✅
-│   ├── Response.php               ✅
-│   ├── SistemKripto.php           ✅
-│   └── SistemLog.php              ✅
+│   ├── JWTHelper.php
+│   ├── KriptoHelper.php
+│   ├── RateLimiter.php
+│   ├── Response.php
+│   ├── SistemKripto.php
+│   └── SistemLog.php
 ├── database/
-│   └── finans_kalesi_schema.sql   ✅
+│   └── finans_kalesi_schema.sql (20 tablo)
 ├── frontend/src/
-│   ├── api/
-│   │   ├── auth.js                ✅
-│   │   ├── axios.js               ✅
-│   │   ├── ayarlar.js             ✅
-│   │   ├── cariler.js             ✅
-│   │   ├── cekSenet.js            ✅
-│   │   ├── dashboard.js           ✅
-│   │   ├── kasa.js                ✅
-│   │   └── odeme.js               ✅
-│   ├── components/layout/
-│   │   ├── AppLayout.jsx          ✅
-│   │   ├── AppLayoutBanking.jsx   ✅
-│   │   ├── AppLayoutDark.jsx      ✅
-│   │   ├── AppLayoutEarthy.jsx    ✅
-│   │   ├── KorunanSayfa.jsx       ✅
-│   │   └── TemaLayout.jsx         ✅
-│   ├── temalar/
-│   │   ├── banking.css            ✅ Tema CSS (önceden tasarim-demo/ içindeydi)
-│   │   ├── earthy.css             ✅
-│   │   └── dark.css               ✅
-│   ├── lib/
-│   │   ├── temaRenkleri.js        ✅
-│   │   └── temaPrefix.js          ✅
-│   ├── stores/
-│   │   ├── authStore.js           ✅
-│   │   └── temaStore.js           ✅
+│   ├── api/ (14 dosya — auth, axios, abonelik, bildirimler, cariler, cekSenet, dashboard, guvenlik, kasa, kullanicilar, odeme, raporlar, sinir, veresiye)
+│   ├── components/
+│   │   ├── layout/
+│   │   │   ├── AppLayout.jsx (ParamGo — tek aktif layout)
+│   │   │   ├── KorunanSayfa.jsx
+│   │   │   ├── ModulKoruma.jsx
+│   │   │   └── TemaLayout.jsx
+│   │   ├── PlanYukseltModal.jsx
+│   │   ├── UpgradeBildirim.jsx
+│   │   ├── BildirimZili.jsx
+│   │   └── ErrorBoundary.jsx
 │   ├── pages/
-│   │   ├── auth/GirisYap.jsx            ✅
-│   │   ├── ayarlar/TemaSecimi.jsx       ✅
-│   │   ├── cariler/CariYonetimi.jsx     ✅
-│   │   ├── cariler/CarilerListesi.jsx   ✅
-│   │   ├── cek-senet/CekSenet.jsx       ✅
-│   │   ├── dashboard/Dashboard.jsx      ✅
-│   │   ├── kasa/VarlikKasa.jsx          ✅
-│   │   ├── odeme-takip/OdemeTakip.jsx   ✅
-│   │   └── vade-hesaplayici/VadeHesaplayici.jsx ✅
-│   ├── App.jsx                    ✅
-│   └── App.css                    ✅
+│   │   ├── auth/ (GirisYap, KayitOl, SifreSifirla)
+│   │   ├── dashboard/Dashboard.jsx
+│   │   ├── cariler/ (CariYonetimi, CarilerListesi)
+│   │   ├── cek-senet/CekSenet.jsx
+│   │   ├── kasa/VarlikKasa.jsx
+│   │   ├── odeme-takip/OdemeTakip.jsx
+│   │   ├── vade-hesaplayici/VadeHesaplayici.jsx
+│   │   ├── abonelik/PlanSecim.jsx
+│   │   ├── kullanicilar/ (KullaniciYonetimi, Modal, SifreGuncelle)
+│   │   ├── ayarlar/TemaSecimi.jsx
+│   │   ├── guvenlik/GuvenlikEkrani.jsx
+│   │   ├── bildirimler/BildirimlerEkrani.jsx
+│   │   ├── raporlar/ (6 rapor sayfasi)
+│   │   └── veresiye/ (Liste, Detay)
+│   ├── hooks/ (usePlanKontrol, useSinirler)
+│   ├── stores/ (authStore, bildirimStore, temaStore)
+│   ├── logo/ParamGoLogo.jsx
+│   ├── lib/ (temaRenkleri, temaPrefix)
+│   ├── temalar/paramgo.css (tek aktif tema)
+│   ├── App.jsx
+│   └── main.jsx
 ├── public/
-│   ├── index.php                  ✅ Tek giriş noktası
-│   ├── .htaccess                  ✅
-│   └── frontend-build/            ✅ Vite build çıktısı
+│   ├── index.php
+│   ├── .htaccess
+│   └── frontend-build/
 ├── .env / .env.example
 ├── CLAUDE.md
 └── PROJE.md
@@ -297,28 +333,32 @@ finans-kalesi/
 
 ---
 
-## 🛠️ TEKNOLOJİ YIĞINI
+## TEKNOLOJI YIGINI
 
 | Katman | Teknoloji | Versiyon |
 |--------|-----------|---------|
 | Backend | PHP (Saf) | 8.4 |
-| Veritabanı | MariaDB | 10.5+ |
-| Auth | Özel JWT | — |
-| Şifreleme | AES-256-GCM | — |
+| Veritabani | MariaDB | 10.5+ |
+| Auth | Ozel JWT | access: 15dk, refresh: 7gun |
+| Sifreleme | AES-256-GCM | KriptoHelper.php |
 | Frontend | React + Vite | 19 / 7+ |
 | Routing | React Router | v7 |
 | State | Zustand | v5 |
 | HTTP | Axios | v1 |
 | UI | Bootstrap + Bootstrap Icons | 5.3 |
+| Grafik | Chart.js + react-chartjs-2 | v4 |
 | PDF | html2pdf.js | 0.14 |
+| Excel | xlsx | 0.18 |
 | Toast | sonner | v2 |
-| Mobil (gelecek) | Capacitor.js | — |
-| Hosting | cPanel Shared Hosting | — |
+| Mobil | Capacitor.js | Henuz entegre edilmedi |
+| Hosting | cPanel Shared Hosting | paramgo.com |
 
 ---
 
-## 🚨 AKTİF TEKNİK BORÇLAR
+## AKTIF TEKNIK BORCLAR
 
-| # | Sorun | Öncelik |
+| # | Sorun | Oncelik |
 |---|-------|---------|
-| 1 | sonner toast Bootstrap dışı — gerekirse Bootstrap toast'a geçilecek | 🟡 Değerlendirilecek |
+| 1 | sonner toast Bootstrap disi — degerlendirilecek | DUSUK |
+| 2 | Eski tema dosyalari (banking.css, earthy.css, dark.css) henuz silinmedi | DUSUK |
+| 3 | Eski layout dosyalari (AppLayoutBanking, Earthy, Dark) henuz silinmedi | DUSUK |

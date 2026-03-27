@@ -7,6 +7,8 @@
 import { useState, useEffect } from 'react'
 import { raporlarApi } from '../../api/raporlar'
 import { toast } from 'sonner'
+import { usePlanKontrol } from '../../hooks/usePlanKontrol'
+import PlanYukseltModal from '../../components/PlanYukseltModal'
 import {
   Chart as ChartJS, CategoryScale, LinearScale, BarElement, Title, Tooltip, Legend,
 } from 'chart.js'
@@ -24,6 +26,8 @@ const CARI_TURLERI = [
 ]
 
 export default function CariYaslandirma() {
+  const { izinVarMi, plan } = usePlanKontrol()
+  const [modalGoster, setModalGoster] = useState(false)
   const [veri, setVeri] = useState(null)
   const [yukleniyor, setYukleniyor] = useState(true)
   const [filtre, setFiltre] = useState({ cari_turu: '' })
@@ -146,74 +150,78 @@ export default function CariYaslandirma() {
   }
 
   if (yukleniyor) {
-    return <div className="rpr-loading"><div className="rpr-spinner" /> Yükleniyor…</div>
+    return <div className="p-rpr-loading"><div className="p-rpr-spinner" /> Yükleniyor…</div>
   }
 
   return (
     <div>
       {/* Filtre */}
-      <div className="rpr-filter-bar">
-        <div className="rpr-filter-group">
-          <span className="rpr-filter-label">Cari Türü</span>
+      <div className="p-rpr-filter-bar">
+        <div className="p-rpr-filter-group">
+          <span className="p-rpr-filter-label">Cari Türü</span>
           <select
-            className="rpr-filter-input"
+            className="p-rpr-filter-input"
             value={filtre.cari_turu}
             onChange={(e) => setFiltre({ ...filtre, cari_turu: e.target.value })}
           >
             {CARI_TURLERI.map((t) => <option key={t.value} value={t.value}>{t.label}</option>)}
           </select>
         </div>
-        <button className="rpr-filter-btn rpr-filter-btn-primary" onClick={uygula}>
+        <button className="p-rpr-filter-btn p-rpr-filter-btn-primary" onClick={uygula}>
           <i className="bi bi-funnel-fill" /> Filtrele
         </button>
-        <div className="rpr-export-bar">
-          <button className="rpr-export-btn" onClick={pdfIndir}>
+        <div className="p-rpr-export-bar">
+          <button className="p-rpr-export-btn" onClick={() => izinVarMi('pdf_rapor') ? pdfIndir() : setModalGoster(true)}>
             <i className="bi bi-file-earmark-pdf-fill" /> PDF
+            {!izinVarMi('pdf_rapor') && <i className="bi bi-lock-fill" style={{ fontSize: 10, opacity: 0.5 }} />}
           </button>
-          <button className="rpr-export-btn" onClick={excelIndir}>
+          <button className="p-rpr-export-btn" onClick={() => izinVarMi('excel_rapor') ? excelIndir() : setModalGoster(true)}>
             <i className="bi bi-file-earmark-excel-fill" /> Excel
+            {!izinVarMi('excel_rapor') && <i className="bi bi-lock-fill" style={{ fontSize: 10, opacity: 0.5 }} />}
           </button>
         </div>
       </div>
 
+      <PlanYukseltModal goster={modalGoster} kapat={() => setModalGoster(false)} ozellikAdi="PDF & Excel Rapor" mevcutPlan={plan} />
+
       {/* KPI */}
       {veri?.ozet && (
-        <div className="rpr-kpi-row">
-          <div className="rpr-kpi">
-            <div className="rpr-kpi-accent" style={{ background: '#10B981' }} />
-            <div className="rpr-kpi-label">0-30 Gün (Güncel)</div>
-            <div className="rpr-kpi-value financial-num">{TL(veri.ozet.guncel)}</div>
-            <i className="bi bi-check-circle rpr-kpi-icon" />
+        <div className="p-rpr-kpi-row">
+          <div className="p-rpr-kpi">
+            <div className="p-rpr-kpi-accent" style={{ background: '#10B981' }} />
+            <div className="p-rpr-kpi-label">0-30 Gün (Güncel)</div>
+            <div className="p-rpr-kpi-value financial-num">{TL(veri.ozet.guncel)}</div>
+            <i className="bi bi-check-circle p-rpr-kpi-icon" />
           </div>
-          <div className="rpr-kpi">
-            <div className="rpr-kpi-accent" style={{ background: '#F59E0B' }} />
-            <div className="rpr-kpi-label">31-60 Gün</div>
-            <div className="rpr-kpi-value financial-num">{TL(veri.ozet.otuz_altmis)}</div>
-            <i className="bi bi-clock rpr-kpi-icon" />
+          <div className="p-rpr-kpi">
+            <div className="p-rpr-kpi-accent" style={{ background: '#F59E0B' }} />
+            <div className="p-rpr-kpi-label">31-60 Gün</div>
+            <div className="p-rpr-kpi-value financial-num">{TL(veri.ozet.otuz_altmis)}</div>
+            <i className="bi bi-clock p-rpr-kpi-icon" />
           </div>
-          <div className="rpr-kpi">
-            <div className="rpr-kpi-accent" style={{ background: '#F97316' }} />
-            <div className="rpr-kpi-label">61-90 Gün</div>
-            <div className="rpr-kpi-value financial-num">{TL(veri.ozet.altmis_doksan)}</div>
-            <i className="bi bi-exclamation-triangle rpr-kpi-icon" />
+          <div className="p-rpr-kpi">
+            <div className="p-rpr-kpi-accent" style={{ background: '#F97316' }} />
+            <div className="p-rpr-kpi-label">61-90 Gün</div>
+            <div className="p-rpr-kpi-value financial-num">{TL(veri.ozet.altmis_doksan)}</div>
+            <i className="bi bi-exclamation-triangle p-rpr-kpi-icon" />
           </div>
-          <div className="rpr-kpi">
-            <div className="rpr-kpi-accent" style={{ background: '#DC2626' }} />
-            <div className="rpr-kpi-label">90+ Gün (Riskli)</div>
-            <div className="rpr-kpi-value financial-num">{TL(veri.ozet.doksan_ustu)}</div>
-            <i className="bi bi-exclamation-octagon rpr-kpi-icon" />
+          <div className="p-rpr-kpi">
+            <div className="p-rpr-kpi-accent" style={{ background: '#DC2626' }} />
+            <div className="p-rpr-kpi-label">90+ Gün (Riskli)</div>
+            <div className="p-rpr-kpi-value financial-num">{TL(veri.ozet.doksan_ustu)}</div>
+            <i className="bi bi-exclamation-octagon p-rpr-kpi-icon" />
           </div>
         </div>
       )}
 
       {/* Grafik */}
       {chartData && (
-        <div className="rpr-card">
-          <div className="rpr-card-header">
-            <h3 className="rpr-card-title"><i className="bi bi-bar-chart-fill" /> Vade Grubu Dağılımı</h3>
+        <div className="p-rpr-card">
+          <div className="p-rpr-card-header">
+            <h3 className="p-rpr-card-title"><i className="bi bi-bar-chart-fill" /> Vade Grubu Dağılımı</h3>
           </div>
-          <div className="rpr-card-body">
-            <div className="rpr-chart-wrap">
+          <div className="p-rpr-card-body">
+            <div className="p-rpr-chart-wrap">
               <Bar data={chartData} options={chartOptions} />
             </div>
           </div>
@@ -221,15 +229,15 @@ export default function CariYaslandirma() {
       )}
 
       {/* Tablo */}
-      <div className="rpr-card">
-        <div className="rpr-card-header">
-          <h3 className="rpr-card-title"><i className="bi bi-table" /> Cari Detay</h3>
+      <div className="p-rpr-card">
+        <div className="p-rpr-card-header">
+          <h3 className="p-rpr-card-title"><i className="bi bi-table" /> Cari Detay</h3>
           <span style={{ fontSize: 12, color: 'var(--p-text-muted)' }}>
             {veri?.cariler?.length ?? 0} cari
           </span>
         </div>
         <div className="table-responsive" id="rpr-cari-yas-tablo">
-          <table className="table table-hover align-middle rpr-table mb-0">
+          <table className="table table-hover align-middle p-rpr-table mb-0">
             <thead>
               <tr>
                 <th>Cari</th>
@@ -248,7 +256,7 @@ export default function CariYaslandirma() {
                 <tr key={i}>
                   <td style={{ fontWeight: 600 }}>{c.unvan}</td>
                   <td>
-                    <span className={`rpr-badge ${c.cari_turu === 'musteri' ? 'rpr-badge-emerald' : 'rpr-badge-blue'}`}>
+                    <span className={`p-rpr-badge ${c.cari_turu === 'musteri' ? 'p-rpr-badge-emerald' : 'p-rpr-badge-blue'}`}>
                       {c.cari_turu === 'musteri' ? 'Müşteri' : 'Tedarikçi'}
                     </span>
                   </td>

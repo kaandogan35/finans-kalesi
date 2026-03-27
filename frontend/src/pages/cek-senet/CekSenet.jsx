@@ -1,6 +1,6 @@
 /**
  * CekSenet.jsx — Çek & Senet Yönetimi
- * 3 Tema Uyumlu (Banking / Earthy / Dark)
+ * ParamGo v2 — Tek Tema
  * 5 Tab: Dashboard | Portföydeki | Tahsildeki | Kendi Çekimiz | Cirolanan
  * Bootstrap 5 + Saf React | ParamGo
  */
@@ -673,7 +673,7 @@ export default function CekSenet() {
         const r = await cekSenetApi.durumGuncelle(id, { durum: 'tahsil_edildi', tahsil_tarihi: bugunStr() })
         setTahsil(p => p.filter(i => i.id !== id))
         setArsiv(p => [normalize(r.data.veri), ...p])
-        toast.success('Evrak tahsil edildi, arşive taşındı.')
+        toast.success('Evrak tahsil edildi, arşive taşındı. Kasaya gelir kaydı otomatik oluşturuldu.')
       } catch { toast.error('İşlem başarısız.') }
       setOnay(null)
     },
@@ -771,7 +771,7 @@ export default function CekSenet() {
         const r = await cekSenetApi.durumGuncelle(id, { durum: 'odendi', tahsil_tarihi: bugunStr() })
         setKendi(p => p.filter(i => i.id !== id))
         setArsiv(p => [normalize(r.data.veri), ...p])
-        toast.success('Evrak ödendi olarak kapatıldı, arşive taşındı.')
+        toast.success('Evrak ödendi olarak kapatıldı, arşive taşındı. Kasadan gider kaydı otomatik oluşturuldu.')
       } catch { toast.error('İşlem başarısız.') }
       setOnay(null)
     },
@@ -799,7 +799,7 @@ export default function CekSenet() {
         const r = await cekSenetApi.durumGuncelle(id, { durum: 'tahsil_edildi', tahsil_tarihi: bugunStr() })
         setCiro(p => p.filter(i => i.id !== id))
         setArsiv(p => [normalize(r.data.veri), ...p])
-        toast.success('Ciro tamamlandı, arşive taşındı.')
+        toast.success('Ciro tamamlandı, arşive taşındı. Kasaya gelir kaydı otomatik oluşturuldu.')
       } catch { toast.error('İşlem başarısız.') }
       setOnay(null)
     },

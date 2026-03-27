@@ -7,6 +7,8 @@
 import { useState, useEffect } from 'react'
 import { raporlarApi } from '../../api/raporlar'
 import { toast } from 'sonner'
+import { usePlanKontrol } from '../../hooks/usePlanKontrol'
+import PlanYukseltModal from '../../components/PlanYukseltModal'
 import {
   Chart as ChartJS, CategoryScale, LinearScale, BarElement, Title, Tooltip, Legend,
 } from 'chart.js'
@@ -25,11 +27,11 @@ const DURUM_ETIKET = {
   iptal: 'İptal',
 }
 const DURUM_BADGE = {
-  bekliyor: 'rpr-badge-amber',
-  cevap_vermedi: 'rpr-badge-red',
-  soz_verildi: 'rpr-badge-blue',
-  tamamlandi: 'rpr-badge-emerald',
-  iptal: 'rpr-badge-gray',
+  bekliyor: 'p-rpr-badge-amber',
+  cevap_vermedi: 'p-rpr-badge-red',
+  soz_verildi: 'p-rpr-badge-blue',
+  tamamlandi: 'p-rpr-badge-emerald',
+  iptal: 'p-rpr-badge-gray',
 }
 const YON_ETIKET = { tahsilat: 'Tahsilat', odeme: 'Ödeme' }
 
@@ -39,6 +41,8 @@ const AY_ADLARI = {
 }
 
 export default function OdemeOzet() {
+  const { izinVarMi, plan } = usePlanKontrol()
+  const [modalGoster, setModalGoster] = useState(false)
   const [veri, setVeri] = useState(null)
   const [yukleniyor, setYukleniyor] = useState(true)
   const yil = new Date().getFullYear()
@@ -173,80 +177,84 @@ export default function OdemeOzet() {
   }
 
   if (yukleniyor) {
-    return <div className="rpr-loading"><div className="rpr-spinner" /> Yükleniyor…</div>
+    return <div className="p-rpr-loading"><div className="p-rpr-spinner" /> Yükleniyor…</div>
   }
 
   return (
     <div>
       {/* Filtre */}
-      <div className="rpr-filter-bar">
-        <div className="rpr-filter-group">
-          <span className="rpr-filter-label">Başlangıç</span>
-          <input type="date" className="rpr-filter-input" value={filtre.baslangic_tarihi}
+      <div className="p-rpr-filter-bar">
+        <div className="p-rpr-filter-group">
+          <span className="p-rpr-filter-label">Başlangıç</span>
+          <input type="date" className="p-rpr-filter-input" value={filtre.baslangic_tarihi}
             onChange={(e) => setFiltre({ ...filtre, baslangic_tarihi: e.target.value })} />
         </div>
-        <div className="rpr-filter-group">
-          <span className="rpr-filter-label">Bitiş</span>
-          <input type="date" className="rpr-filter-input" value={filtre.bitis_tarihi}
+        <div className="p-rpr-filter-group">
+          <span className="p-rpr-filter-label">Bitiş</span>
+          <input type="date" className="p-rpr-filter-input" value={filtre.bitis_tarihi}
             onChange={(e) => setFiltre({ ...filtre, bitis_tarihi: e.target.value })} />
         </div>
-        <div className="rpr-filter-group">
-          <span className="rpr-filter-label">Durum</span>
-          <select className="rpr-filter-input" value={filtre.durum}
+        <div className="p-rpr-filter-group">
+          <span className="p-rpr-filter-label">Durum</span>
+          <select className="p-rpr-filter-input" value={filtre.durum}
             onChange={(e) => setFiltre({ ...filtre, durum: e.target.value })}>
             <option value="">Tümü</option>
             {Object.entries(DURUM_ETIKET).map(([k, v]) => <option key={k} value={k}>{v}</option>)}
           </select>
         </div>
-        <button className="rpr-filter-btn rpr-filter-btn-primary" onClick={uygula}>
+        <button className="p-rpr-filter-btn p-rpr-filter-btn-primary" onClick={uygula}>
           <i className="bi bi-funnel-fill" /> Filtrele
         </button>
-        <div className="rpr-export-bar">
-          <button className="rpr-export-btn" onClick={pdfIndir}>
+        <div className="p-rpr-export-bar">
+          <button className="p-rpr-export-btn" onClick={() => izinVarMi('pdf_rapor') ? pdfIndir() : setModalGoster(true)}>
             <i className="bi bi-file-earmark-pdf-fill" /> PDF
+            {!izinVarMi('pdf_rapor') && <i className="bi bi-lock-fill" style={{ fontSize: 10, opacity: 0.5 }} />}
           </button>
-          <button className="rpr-export-btn" onClick={excelIndir}>
+          <button className="p-rpr-export-btn" onClick={() => izinVarMi('excel_rapor') ? excelIndir() : setModalGoster(true)}>
             <i className="bi bi-file-earmark-excel-fill" /> Excel
+            {!izinVarMi('excel_rapor') && <i className="bi bi-lock-fill" style={{ fontSize: 10, opacity: 0.5 }} />}
           </button>
         </div>
       </div>
 
+      <PlanYukseltModal goster={modalGoster} kapat={() => setModalGoster(false)} ozellikAdi="PDF & Excel Rapor" mevcutPlan={plan} />
+
       {/* KPI */}
-      <div className="rpr-kpi-row">
-        <div className="rpr-kpi">
-          <div className="rpr-kpi-accent" style={{ background: '#10B981' }} />
-          <div className="rpr-kpi-label">Tahsilat</div>
-          <div className="rpr-kpi-value financial-num">{TL(tahsilatOzet.toplam_tutar)}</div>
-          <i className="bi bi-arrow-down-circle rpr-kpi-icon" />
+      <div className="p-rpr-kpi-row">
+        <div className="p-rpr-kpi">
+          <div className="p-rpr-kpi-accent" style={{ background: '#10B981' }} />
+          <div className="p-rpr-kpi-label">Tahsilat</div>
+          <div className="p-rpr-kpi-value financial-num">{TL(tahsilatOzet.toplam_tutar)}</div>
+          <i className="bi bi-arrow-down-circle p-rpr-kpi-icon" />
         </div>
-        <div className="rpr-kpi">
-          <div className="rpr-kpi-accent" style={{ background: '#6366F1' }} />
-          <div className="rpr-kpi-label">Ödeme</div>
-          <div className="rpr-kpi-value financial-num">{TL(odemeOzet.toplam_tutar)}</div>
-          <i className="bi bi-arrow-up-circle rpr-kpi-icon" />
+        <div className="p-rpr-kpi">
+          <div className="p-rpr-kpi-accent" style={{ background: '#6366F1' }} />
+          <div className="p-rpr-kpi-label">Ödeme</div>
+          <div className="p-rpr-kpi-value financial-num">{TL(odemeOzet.toplam_tutar)}</div>
+          <i className="bi bi-arrow-up-circle p-rpr-kpi-icon" />
         </div>
-        <div className="rpr-kpi">
-          <div className="rpr-kpi-accent" style={{ background: '#F59E0B' }} />
-          <div className="rpr-kpi-label">Bekleyen Tahsilat</div>
-          <div className="rpr-kpi-value financial-num">{TL(tahsilatOzet.bekleyen_tutar)}</div>
-          <i className="bi bi-hourglass-split rpr-kpi-icon" />
+        <div className="p-rpr-kpi">
+          <div className="p-rpr-kpi-accent" style={{ background: '#F59E0B' }} />
+          <div className="p-rpr-kpi-label">Bekleyen Tahsilat</div>
+          <div className="p-rpr-kpi-value financial-num">{TL(tahsilatOzet.bekleyen_tutar)}</div>
+          <i className="bi bi-hourglass-split p-rpr-kpi-icon" />
         </div>
-        <div className="rpr-kpi">
-          <div className="rpr-kpi-accent" style={{ background: '#DC2626' }} />
-          <div className="rpr-kpi-label">Geciken ({geciken.adet ?? 0} adet)</div>
-          <div className="rpr-kpi-value financial-num" style={{ color: '#DC2626' }}>{TL(geciken.toplam_tutar)}</div>
-          <i className="bi bi-exclamation-triangle rpr-kpi-icon" />
+        <div className="p-rpr-kpi">
+          <div className="p-rpr-kpi-accent" style={{ background: '#DC2626' }} />
+          <div className="p-rpr-kpi-label">Geciken ({geciken.adet ?? 0} adet)</div>
+          <div className="p-rpr-kpi-value financial-num" style={{ color: '#DC2626' }}>{TL(geciken.toplam_tutar)}</div>
+          <i className="bi bi-exclamation-triangle p-rpr-kpi-icon" />
         </div>
       </div>
 
       {/* Grafik */}
       {barData && (
-        <div className="rpr-card">
-          <div className="rpr-card-header">
-            <h3 className="rpr-card-title"><i className="bi bi-bar-chart-fill" /> Aylık Tahsilat vs Ödeme</h3>
+        <div className="p-rpr-card">
+          <div className="p-rpr-card-header">
+            <h3 className="p-rpr-card-title"><i className="bi bi-bar-chart-fill" /> Aylık Tahsilat vs Ödeme</h3>
           </div>
-          <div className="rpr-card-body">
-            <div className="rpr-chart-wrap">
+          <div className="p-rpr-card-body">
+            <div className="p-rpr-chart-wrap">
               <Bar data={barData} options={barOptions} />
             </div>
           </div>
@@ -254,12 +262,12 @@ export default function OdemeOzet() {
       )}
 
       {/* Tablo */}
-      <div className="rpr-card">
-        <div className="rpr-card-header">
-          <h3 className="rpr-card-title"><i className="bi bi-table" /> Durum Dağılımı</h3>
+      <div className="p-rpr-card">
+        <div className="p-rpr-card-header">
+          <h3 className="p-rpr-card-title"><i className="bi bi-table" /> Durum Dağılımı</h3>
         </div>
         <div className="table-responsive" id="rpr-odeme-tablo">
-          <table className="table table-hover align-middle rpr-table mb-0">
+          <table className="table table-hover align-middle p-rpr-table mb-0">
             <thead>
               <tr>
                 <th>Durum</th>
@@ -274,7 +282,7 @@ export default function OdemeOzet() {
               ) : veri.durum_dagilim.map((d, i) => (
                 <tr key={i}>
                   <td>
-                    <span className={`rpr-badge ${DURUM_BADGE[d.durum] || 'rpr-badge-gray'}`}>
+                    <span className={`p-rpr-badge ${DURUM_BADGE[d.durum] || 'p-rpr-badge-gray'}`}>
                       {DURUM_ETIKET[d.durum] || d.durum}
                     </span>
                   </td>

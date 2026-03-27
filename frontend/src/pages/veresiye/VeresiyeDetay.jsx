@@ -88,7 +88,7 @@ function IslemModal({ goster, tur, cariAdi, onKapat, onKaydet, yukleniyor, p }) 
 
             {/* Tutar — büyük gösterim */}
             <div className="mb-4">
-              <label className="p-vry-form-label">
+              <label className={`${p}-vry-form-label`}>
                 Tutar <span className="text-danger">*</span>
               </label>
               <div className="input-group input-group-lg">
@@ -108,7 +108,7 @@ function IslemModal({ goster, tur, cariAdi, onKapat, onKaydet, yukleniyor, p }) 
 
             {/* Açıklama */}
             <div className="mb-3">
-              <label className="p-vry-form-label">
+              <label className={`${p}-vry-form-label`}>
                 {isSatis ? 'Ürün / Hizmet Açıklaması' : 'Ödeme Notu'}
               </label>
               <input
@@ -123,7 +123,7 @@ function IslemModal({ goster, tur, cariAdi, onKapat, onKaydet, yukleniyor, p }) 
 
             {/* Tarih */}
             <div>
-              <label className="p-vry-form-label">İşlem Tarihi</label>
+              <label className={`${p}-vry-form-label`}>İşlem Tarihi</label>
               <input
                 type="date"
                 className="form-control"
@@ -312,7 +312,7 @@ export default function VeresiyeDetay() {
 
       {/* ─── Breadcrumb ──────────────────────────────────────────────── */}
       <div className="d-flex align-items-center gap-2 mb-3">
-        <button type="button" className="p-vry-geri-btn" onClick={() => navigate('/veresiye')}>
+        <button type="button" className={`${p}-vry-geri-btn`} onClick={() => navigate('/veresiye')}>
           <i className="bi bi-arrow-left me-1" />
           Veresiye
         </button>
@@ -334,10 +334,10 @@ export default function VeresiyeDetay() {
           </div>
         </div>
         <div className={`${p}-page-header-right d-flex gap-2`}>
-          <button type="button" className="btn p-vry-btn-odeme" onClick={() => setIslemModal('odeme')}>
+          <button type="button" className={`btn ${p}-vry-btn-odeme`} onClick={() => setIslemModal('odeme')}>
             <i className="bi bi-cash-coin me-2" />Ödeme Al
           </button>
-          <button type="button" className="btn p-vry-btn-satis" onClick={() => setIslemModal('satis')}>
+          <button type="button" className={`btn ${p}-vry-btn-satis`} onClick={() => setIslemModal('satis')}>
             <i className="bi bi-bag-plus me-2" />Satış Ekle
           </button>
         </div>
@@ -346,29 +346,29 @@ export default function VeresiyeDetay() {
       {/* ─── KPI Kartları ────────────────────────────────────────────── */}
       <div className="row g-3 mb-3">
         <div className="col-12 col-md-4">
-          <div className={`${p}-kpi-card p-vry-kpi`}>
-            <i className="bi bi-bag p-vry-kpi-deco" style={{ opacity: 0.35 }} />
-            <div className="p-vry-kpi-label">TOPLAM SATIŞ</div>
-            <div className="p-vry-kpi-value text-danger financial-num">{TL(ozet.toplam_satis ?? 0)}</div>
-            <div className="p-vry-kpi-desc">{ozet.toplam_islem ?? 0} işlem kaydı</div>
+          <div className={`${p}-kpi-card ${p}-vry-kpi`}>
+            <i className={`bi bi-bag ${p}-vry-kpi-deco`} style={{ opacity: 0.35 }} />
+            <div className={`${p}-vry-kpi-label`}>TOPLAM SATIŞ</div>
+            <div className={`${p}-vry-kpi-value text-danger financial-num`}>{TL(ozet.toplam_satis ?? 0)}</div>
+            <div className={`${p}-vry-kpi-desc`}>{ozet.toplam_islem ?? 0} işlem kaydı</div>
           </div>
         </div>
         <div className="col-12 col-md-4">
-          <div className={`${p}-kpi-card p-vry-kpi`}>
-            <i className="bi bi-cash-stack p-vry-kpi-deco" style={{ opacity: 0.35 }} />
-            <div className="p-vry-kpi-label">TOPLAM ÖDEME</div>
-            <div className="p-vry-kpi-value text-success financial-num">{TL(ozet.toplam_odeme ?? 0)}</div>
-            <div className="p-vry-kpi-desc">tahsil edildi</div>
+          <div className={`${p}-kpi-card ${p}-vry-kpi`}>
+            <i className={`bi bi-cash-stack ${p}-vry-kpi-deco`} style={{ opacity: 0.35 }} />
+            <div className={`${p}-vry-kpi-label`}>TOPLAM ÖDEME</div>
+            <div className={`${p}-vry-kpi-value text-success financial-num`}>{TL(ozet.toplam_odeme ?? 0)}</div>
+            <div className={`${p}-vry-kpi-desc`}>tahsil edildi</div>
           </div>
         </div>
         <div className="col-12 col-md-4">
-          <div className={`${p}-kpi-card p-vry-kpi p-vry-kpi-highlight`}>
-            <i className="bi bi-wallet2 p-vry-kpi-deco" style={{ opacity: 0.35 }} />
-            <div className="p-vry-kpi-label">AÇIK BAKİYE</div>
-            <div className={`p-vry-kpi-value financial-num ${bakiye > 0 ? 'text-danger' : bakiye < 0 ? 'text-success' : ''}`}>
+          <div className={`${p}-kpi-card ${p}-vry-kpi ${p}-vry-kpi-highlight`}>
+            <i className={`bi bi-wallet2 ${p}-vry-kpi-deco`} style={{ opacity: 0.35 }} />
+            <div className={`${p}-vry-kpi-label`}>AÇIK BAKİYE</div>
+            <div className={`${p}-vry-kpi-value financial-num ${bakiye > 0 ? 'text-danger' : bakiye < 0 ? 'text-success' : ''}`}>
               {TL(bakiye)}
             </div>
-            <div className="p-vry-kpi-desc">
+            <div className={`${p}-vry-kpi-desc`}>
               {bakiye > 0 ? 'borçlu' : bakiye < 0 ? 'alacaklı' : 'hesap kapalı'}
             </div>
           </div>
@@ -388,7 +388,7 @@ export default function VeresiyeDetay() {
         <div className="table-responsive">
           <table className="table table-hover align-middle mb-0">
             <thead>
-              <tr className="p-vry-thead-row">
+              <tr className={`${p}-vry-thead-row`}>
                 <th>TARİH</th>
                 <th>TÜR</th>
                 <th>AÇIKLAMA / NOT</th>
@@ -404,7 +404,7 @@ export default function VeresiyeDetay() {
                     <i className="bi bi-journal-x" style={{ fontSize: 32, opacity: 0.25, display: 'block', marginBottom: 8 }} />
                     <span style={{ fontSize: 13, color: 'var(--p-text-muted)' }}>Henüz işlem kaydı yok.</span>
                     <br />
-                    <button type="button" className="btn p-vry-btn-satis mt-3" onClick={() => setIslemModal('satis')}>
+                    <button type="button" className={`btn ${p}-vry-btn-satis mt-3`} onClick={() => setIslemModal('satis')}>
                       <i className="bi bi-bag-plus me-2" />İlk Satışı Ekle
                     </button>
                   </td>
@@ -412,12 +412,12 @@ export default function VeresiyeDetay() {
               ) : islemler.map((islem) => {
                 const isSatis = islem.tur === 'satis'
                 return (
-                  <tr key={islem.id} className="p-vry-tablo-satir">
+                  <tr key={islem.id} className={`${p}-vry-tablo-satir`}>
                     <td style={{ fontSize: 13, color: 'var(--p-text-sec)', whiteSpace: 'nowrap' }}>
                       {tarihFmt(islem.tarih)}
                     </td>
                     <td>
-                      <span className={`p-vry-islem-badge ${isSatis ? 'p-vry-badge-satis' : 'p-vry-badge-odeme'}`}>
+                      <span className={`${p}-vry-islem-badge ${isSatis ? `${p}-vry-badge-satis` : `${p}-vry-badge-odeme`}`}>
                         <i className={`bi ${isSatis ? 'bi-bag' : 'bi-cash'} me-1`} />
                         {isSatis ? 'Satış' : 'Ödeme'}
                       </span>
@@ -438,7 +438,7 @@ export default function VeresiyeDetay() {
                       </span>
                     </td>
                     <td>
-                      <button type="button" className="p-vry-sil-btn" title="Kaydı sil" onClick={() => setSilModal(islem.id)}>
+                      <button type="button" className={`${p}-vry-sil-btn`} title="Kaydı sil" onClick={() => setSilModal(islem.id)}>
                         <i className="bi bi-trash3" />
                       </button>
                     </td>

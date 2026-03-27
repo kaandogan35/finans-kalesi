@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from 'react'
 import { bildirimApi } from '../../api/bildirimler'
 import useBildirimStore from '../../stores/bildirimStore'
+import useTemaStore from '../../stores/temaStore'
 
 // ─── SABİTLER ─────────────────────────────────────────────────
 
@@ -49,19 +50,21 @@ function zamanOnce(tarih) {
 // ═══════════════════════════════════════════════════════════════
 
 export default function BildirimlerEkrani() {
+  const aktifTema = useTemaStore((s) => s.aktifTema)
+  const p = { paramgo: 'p' }[aktifTema] || 'p'
   const [aktifSekme, setAktifSekme] = useState('bildirimler')
 
   return (
-    <div style={{ maxWidth: 900, margin: '0 auto' }}>
+    <div className={`${p}-page-root`} style={{ maxWidth: 900, margin: '0 auto' }}>
       {/* Sayfa Header */}
-      <div className="p-page-header">
-        <div className="p-page-header-left">
-          <div className="p-page-header-icon">
+      <div className={`${p}-page-header`}>
+        <div className={`${p}-page-header-left`}>
+          <div className={`${p}-page-header-icon`}>
             <i className="bi bi-bell-fill" />
           </div>
           <div>
-            <h1 className="p-page-title">Bildirimler</h1>
-            <p className="p-page-sub">Tüm bildirimlerinizi görüntüleyin ve tercihlerinizi yönetin</p>
+            <h1 className={`${p}-page-title`}>Bildirimler</h1>
+            <p className={`${p}-page-sub`}>Tüm bildirimlerinizi görüntüleyin ve tercihlerinizi yönetin</p>
           </div>
         </div>
       </div>
@@ -89,7 +92,6 @@ export default function BildirimlerEkrani() {
       {/* İçerik */}
       {aktifSekme === 'bildirimler' ? <BildirimListesi /> : <BildirimTercihleri />}
 
-      <style>{BildirimlerCSS}</style>
     </div>
   )
 }
@@ -442,282 +444,3 @@ function ToggleSwitch({ aktif, onClick, disabled }) {
   )
 }
 
-// ═══════════════════════════════════════════════════════════════
-// CSS
-// ═══════════════════════════════════════════════════════════════
-
-const BildirimlerCSS = `
-  /* Sekmeler */
-  .bld-tabs {
-    display: flex;
-    gap: 4px;
-    margin-bottom: 16px;
-    background: #F3F4F6;
-    padding: 4px;
-    border-radius: 12px;
-  }
-  .bld-tab {
-    flex: 1;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 6px;
-    padding: 10px 16px;
-    border: none;
-    background: none;
-    color: #6B7280;
-    font-size: 13px;
-    font-weight: 600;
-    font-family: 'Outfit', sans-serif;
-    border-radius: 10px;
-    cursor: pointer;
-    transition: all 0.15s;
-    min-height: 44px;
-  }
-  .bld-tab:hover { color: #374151; }
-  .bld-tab-active {
-    background: #fff;
-    color: #10B981;
-    box-shadow: 0 1px 3px rgba(0,0,0,0.08);
-  }
-
-  /* İçerik kartı */
-  .bld-content-card {
-    background: #fff;
-    border: 1px solid #E5E7EB;
-    border-radius: 14px;
-    overflow: hidden;
-  }
-
-  /* Filtreler */
-  .bld-filters {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    padding: 14px 18px;
-    border-bottom: 1px solid #F3F4F6;
-    flex-wrap: wrap;
-  }
-  .bld-filter-select {
-    max-width: 170px;
-    font-size: 13px;
-    border-radius: 10px;
-    border-color: #E5E7EB;
-    min-height: 36px;
-  }
-  .bld-filter-select:focus {
-    border-color: #10B981;
-    box-shadow: 0 0 0 3px rgba(16,185,129,0.12);
-  }
-  .bld-mark-all-btn {
-    display: flex;
-    align-items: center;
-    gap: 5px;
-    background: none;
-    border: 1px solid #E5E7EB;
-    color: #374151;
-    font-size: 12px;
-    font-weight: 600;
-    padding: 7px 14px;
-    border-radius: 10px;
-    cursor: pointer;
-    transition: all 0.15s;
-    min-height: 36px;
-  }
-  .bld-mark-all-btn:hover { border-color: #10B981; color: #10B981; }
-
-  /* Boş durum */
-  .bld-empty {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    padding: 60px 20px;
-    gap: 4px;
-  }
-
-  /* Bildirim satırı */
-  .bld-list {}
-  .bld-row {
-    display: flex;
-    align-items: flex-start;
-    gap: 14px;
-    padding: 16px 18px;
-    border-bottom: 1px solid #FAFAFA;
-    transition: background 0.12s;
-  }
-  .bld-row:last-child { border-bottom: none; }
-  .bld-row:hover { background: #FAFAFA; }
-  .bld-row-unread { background: #F0FDF9; }
-  .bld-row-unread:hover { background: #ECFDF5; }
-
-  .bld-row-icon {
-    flex-shrink: 0;
-    width: 38px; height: 38px;
-    border-radius: 10px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 16px;
-  }
-
-  .bld-row-body { flex: 1; min-width: 0; }
-  .bld-row-top {
-    display: flex;
-    align-items: flex-start;
-    justify-content: space-between;
-    gap: 8px;
-  }
-  .bld-row-title {
-    font-size: 13px;
-    font-weight: 500;
-    color: #374151;
-    line-height: 1.35;
-  }
-  .bld-row-unread .bld-row-title { font-weight: 650; color: #111827; }
-  .bld-row-priority {
-    flex-shrink: 0;
-    font-size: 10px;
-    font-weight: 600;
-    padding: 2px 8px;
-    border-radius: 10px;
-    text-transform: uppercase;
-    letter-spacing: 0.04em;
-  }
-  .bld-row-msg {
-    font-size: 12px;
-    color: #6B7280;
-    margin-top: 3px;
-    line-height: 1.4;
-    display: -webkit-box;
-    -webkit-line-clamp: 2;
-    -webkit-box-orient: vertical;
-    overflow: hidden;
-  }
-  .bld-row-meta {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    margin-top: 6px;
-  }
-  .bld-row-type-badge {
-    font-size: 11px;
-    font-weight: 600;
-    display: flex;
-    align-items: center;
-  }
-  .bld-row-time {
-    font-size: 11px;
-    color: #9CA3AF;
-  }
-
-  .bld-row-actions {
-    display: flex;
-    gap: 4px;
-    flex-shrink: 0;
-    opacity: 0;
-    transition: opacity 0.12s;
-  }
-  .bld-row:hover .bld-row-actions { opacity: 1; }
-
-  .bld-row-btn {
-    width: 30px; height: 30px;
-    border: none;
-    background: #F3F4F6;
-    color: #6B7280;
-    border-radius: 8px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    cursor: pointer;
-    font-size: 13px;
-    transition: all 0.12s;
-  }
-  .bld-row-btn:hover { background: #E5E7EB; color: #374151; }
-  .bld-row-btn-del:hover { background: #FEF2F2; color: #DC2626; }
-
-  /* Sayfalama */
-  .bld-pagination {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 16px;
-    padding: 14px;
-    border-top: 1px solid #F3F4F6;
-  }
-  .bld-page-btn {
-    width: 36px; height: 36px;
-    border: 1px solid #E5E7EB;
-    background: #fff;
-    border-radius: 10px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    cursor: pointer;
-    font-size: 13px;
-    color: #374151;
-    transition: all 0.12s;
-  }
-  .bld-page-btn:hover:not(:disabled) { border-color: #10B981; color: #10B981; }
-  .bld-page-btn:disabled { opacity: 0.4; cursor: default; }
-  .bld-page-info { font-size: 13px; color: #6B7280; font-weight: 500; }
-
-  /* Tercih footer */
-  .bld-tercih-footer {
-    display: flex;
-    align-items: center;
-    justify-content: flex-end;
-    gap: 12px;
-    padding: 14px 22px;
-    border-top: 1px solid #F3F4F6;
-  }
-  .bld-save-btn {
-    display: flex;
-    align-items: center;
-    gap: 6px;
-    background: #10B981;
-    color: #fff;
-    border: none;
-    padding: 0 20px;
-    min-height: 40px;
-    border-radius: 10px;
-    font-size: 13px;
-    font-weight: 600;
-    cursor: pointer;
-    transition: background 0.15s;
-  }
-  .bld-save-btn:hover { background: #059669; }
-  .bld-save-btn:disabled { opacity: 0.6; cursor: default; }
-
-  /* Toggle switch */
-  .bld-toggle {
-    position: relative;
-    width: 42px; height: 24px;
-    background: #D1D5DB;
-    border: none;
-    border-radius: 20px;
-    cursor: pointer;
-    transition: background 0.2s;
-    padding: 0;
-    flex-shrink: 0;
-  }
-  .bld-toggle-on { background: #10B981; }
-  .bld-toggle-thumb {
-    position: absolute;
-    top: 3px; left: 3px;
-    width: 18px; height: 18px;
-    background: #fff;
-    border-radius: 50%;
-    transition: transform 0.2s;
-    box-shadow: 0 1px 3px rgba(0,0,0,0.15);
-  }
-  .bld-toggle-on .bld-toggle-thumb { transform: translateX(18px); }
-
-  @media (max-width: 767px) {
-    .bld-filters { flex-direction: column; align-items: stretch; }
-    .bld-filter-select { max-width: 100%; }
-    .bld-row-actions { opacity: 1; }
-    .bld-row { padding: 12px 14px; }
-    .bld-row-msg { -webkit-line-clamp: 1; }
-  }
-`

@@ -13,6 +13,7 @@
 
 // Model ve Controller dosyalarini yukle
 require_once BASE_PATH . '/models/CekSenet.php';
+require_once BASE_PATH . '/models/Kasa.php';
 require_once BASE_PATH . '/controllers/CekSenetController.php';
 
 // JWT dogrulama — her endpoint giris gerektirir

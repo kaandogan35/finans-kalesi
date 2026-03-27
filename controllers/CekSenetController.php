@@ -260,6 +260,7 @@ class CekSenetController {
                 'tahsil_tarihi'       => isset($veri['tahsil_tarihi']) ? $veri['tahsil_tarihi'] : null,
                 'ciro_edilen_cari_id' => isset($veri['ciro_edilen_cari_id']) ? $veri['ciro_edilen_cari_id'] : null,
                 'ciro_tarihi'         => isset($veri['ciro_tarihi']) ? $veri['ciro_tarihi'] : null,
+                'ekleyen_id'          => (int)$payload['sub'],
             );
 
             $cek = $this->cekSenet->durum_degistir($payload['sirket_id'], $cek_id, $veri['durum'], $ekstra);

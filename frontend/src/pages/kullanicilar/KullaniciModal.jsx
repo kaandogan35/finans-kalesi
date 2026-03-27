@@ -23,120 +23,6 @@ const ROLLER = [
   { value: 'personel',   label: 'Personel',   desc: 'Yalnızca izin verilen modüllere erişir' },
 ]
 
-const CSS = `
-  @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800&display=swap');
-
-  .kum-overlay {
-    position: fixed; inset: 0;
-    background: rgba(0,0,0,0.45);
-    backdrop-filter: blur(5px);
-    -webkit-backdrop-filter: blur(5px);
-    z-index: 1060;
-    display: flex; align-items: center; justify-content: center;
-    padding: 16px;
-  }
-
-  .kum-box {
-    background: #ffffff;
-    border-radius: 18px;
-    box-shadow: 0 24px 60px rgba(0,0,0,0.15), 0 0 0 1px rgba(0,0,0,0.05);
-    max-width: 520px; width: 100%;
-    max-height: 90vh; overflow-y: auto;
-    font-family: 'Outfit', sans-serif;
-  }
-
-  /* mh-default: beyaz başlık */
-  .kum-header.mh-default {
-    background: #ffffff;
-    border-bottom: 1px solid #F3F4F6;
-    border-radius: 18px 18px 0 0;
-    padding: 20px 24px 16px;
-    position: sticky; top: 0; z-index: 1;
-  }
-
-  .kum-body { padding: 20px 24px; }
-  .kum-footer {
-    padding: 16px 24px;
-    border-top: 1px solid #F3F4F6;
-    background: #F9FAFB;
-    border-radius: 0 0 18px 18px;
-    position: sticky; bottom: 0;
-  }
-
-  /* Form alanı */
-  .kum-label {
-    font-size: 12px; font-weight: 700; color: #374151;
-    margin-bottom: 5px; display: block;
-    letter-spacing: 0.01em;
-  }
-  .kum-input {
-    width: 100%; padding: 9px 12px;
-    border: 1.5px solid #E5E7EB;
-    border-radius: 10px;
-    font-size: 13px; color: #111827;
-    font-family: 'Outfit', sans-serif;
-    outline: none;
-    transition: border-color 0.15s ease;
-    background: #ffffff;
-  }
-  .kum-input:focus { border-color: #10B981; box-shadow: 0 0 0 3px rgba(16,185,129,0.08); }
-  .kum-input::placeholder { color: #9CA3AF; }
-
-  /* Rol seçici */
-  .kum-rol-btn {
-    flex: 1; padding: 10px 12px;
-    border: 1.5px solid #E5E7EB;
-    border-radius: 10px;
-    background: #ffffff; cursor: pointer;
-    text-align: left;
-    transition: all 0.15s ease;
-  }
-  .kum-rol-btn.active {
-    border-color: #10B981;
-    background: rgba(16,185,129,0.06);
-    box-shadow: 0 0 0 3px rgba(16,185,129,0.08);
-  }
-
-  /* Modül toggle */
-  .kum-modul-item {
-    display: flex; align-items: center; gap-10px;
-    padding: 9px 12px;
-    border-radius: 10px;
-    border: 1.5px solid #E5E7EB;
-    cursor: pointer;
-    transition: all 0.15s ease;
-    background: #ffffff;
-  }
-  .kum-modul-item:hover:not(.zorunlu) { border-color: rgba(16,185,129,0.3); background: rgba(16,185,129,0.03); }
-  .kum-modul-item.aktif { border-color: #10B981; background: rgba(16,185,129,0.06); }
-  .kum-modul-item.zorunlu { opacity: 0.75; cursor: default; }
-
-  /* Checkbox özel */
-  .kum-checkbox {
-    width: 18px; height: 18px;
-    border-radius: 5px;
-    border: 1.5px solid #D1D5DB;
-    flex-shrink: 0;
-    display: flex; align-items: center; justify-content: center;
-    transition: all 0.15s ease;
-  }
-  .kum-checkbox.aktif { border-color: #10B981; background: #10B981; }
-
-  /* Kaydet butonu */
-  .kum-kaydet-btn {
-    padding: 10px 24px;
-    border-radius: 10px; border: none;
-    background: linear-gradient(135deg, #10B981, #059669);
-    color: #fff; font-weight: 700; font-size: 13px;
-    font-family: 'Outfit', sans-serif;
-    cursor: pointer;
-    transition: opacity 0.15s ease, box-shadow 0.15s ease;
-    box-shadow: 0 2px 10px rgba(16,185,129,0.25);
-    display: flex; align-items: center; gap: 7px;
-  }
-  .kum-kaydet-btn:hover { opacity: 0.9; box-shadow: 0 4px 16px rgba(16,185,129,0.35); }
-  .kum-kaydet-btn:disabled { opacity: 0.5; cursor: default; box-shadow: none; }
-`
 
 export default function KullaniciModal({ mod, hedef = null, onKaydet, onKapat }) {
   const mevcutModuller = hedef?.yetkiler?.moduller || ['dashboard']
@@ -220,7 +106,6 @@ export default function KullaniciModal({ mod, hedef = null, onKaydet, onKapat })
 
   const modal = (
     <div className="kum-overlay" onClick={onKapat}>
-      <style>{CSS}</style>
       <div className="kum-box" onClick={e => e.stopPropagation()}>
 
         {/* ── Başlık (mh-default) ── */}

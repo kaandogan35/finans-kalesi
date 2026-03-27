@@ -854,10 +854,6 @@ export default function OdemeTakip() {
         </>
       )}
 
-      {/* Spinner animasyonu */}
-      <style>{`
-        @keyframes spin { to { transform: rotate(360deg) } }
-      `}</style>
     </div>
   )
 }
