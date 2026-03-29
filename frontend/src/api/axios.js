@@ -6,11 +6,16 @@
  */
 
 import axios from 'axios'
+import { Capacitor } from '@capacitor/core'
 import useAuthStore from '../stores/authStore'
 
-// Backend URL — Vite proxy /api isteklerini PHP sunucusuna yönlendirir
+// Mobilde tam URL gerekli — web'de Vite proxy /api yönlendirir
+const baseURL = Capacitor.isNativePlatform()
+  ? 'https://kaandogan.com.tr/api'
+  : '/api'
+
 const api = axios.create({
-  baseURL: '/api',
+  baseURL,
   headers: { 'Content-Type': 'application/json' },
   timeout: 15000,
 })

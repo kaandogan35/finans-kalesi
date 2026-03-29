@@ -7,9 +7,12 @@
 import { useState } from 'react'
 import { useNavigate, Link } from 'react-router-dom'
 import { toast } from 'sonner'
+import { Capacitor } from '@capacitor/core'
 import useAuthStore from '../../stores/authStore'
 import useTemaStore from '../../stores/temaStore'
 import ParamGoLogo from '../../logo/ParamGoLogo'
+
+const isNative = Capacitor.isNativePlatform()
 
 const prefixMap = { paramgo: 'p' }
 
@@ -142,17 +145,17 @@ export default function GirisYap() {
 
             <div className={`${p}-giris-kart-ic`}>
 
-              {/* Ana sayfaya dönüş */}
-              <a href="https://paramgo.com" className={`${p}-giris-anasayfa-link`}>
-                <i className="bi bi-arrow-left me-1" />
-                Ana Sayfa
-              </a>
+              {/* Ana sayfaya dönüş — mobil uygulamada gizle */}
+              {!isNative && (
+                <a href="https://paramgo.com" className={`${p}-giris-anasayfa-link`}>
+                  <i className="bi bi-arrow-left me-1" />
+                  Ana Sayfa
+                </a>
+              )}
 
               {/* Mobil logo (lg altinda gorunur) */}
               <div className={`d-flex d-lg-none align-items-center justify-content-center mb-4`}>
-                <a href="https://paramgo.com">
-                  <ParamGoLogo size="sm" />
-                </a>
+                <ParamGoLogo size="sm" />
               </div>
 
               {/* Form basligi */}
