@@ -12,42 +12,51 @@
  *     /kasa                 → Kozmik Oda (Aşama 2.3)
  */
 
-import { useEffect } from 'react'
+import { useEffect, lazy, Suspense } from 'react'
 import { BrowserRouter, Routes, Route, Navigate, Outlet, useNavigate } from 'react-router-dom'
 import useAuthStore from './stores/authStore'
 import ErrorBoundary from './components/ErrorBoundary'
 
-// Layout
+// Layout — eagerly loaded (her zaman lazım)
 import KorunanSayfa      from './components/layout/KorunanSayfa'
 import TemaLayout        from './components/layout/TemaLayout'
 import ModulKoruma       from './components/layout/ModulKoruma'
 import GuvenlikKoruyucu  from './components/GuvenlikKoruyucu'
 import KvkkOnay          from './components/KvkkOnay'
 
-// Auth sayfaları
+// Auth sayfaları — eagerly loaded (ilk açılan sayfalar)
 import GirisYap     from './pages/auth/GirisYap'
 import KayitOl      from './pages/auth/KayitOl'
 import SifreSifirla from './pages/auth/SifreSifirla'
 
-// Uygulama sayfaları
-import Dashboard       from './pages/dashboard/Dashboard'
-import CariYonetimi   from './pages/cariler/CariYonetimi'
-import VarlikKasa     from './pages/kasa/VarlikKasa'
-import CekSenet       from './pages/cek-senet/CekSenet'
-import OdemeTakip       from './pages/odeme-takip/OdemeTakip'
-import VadeHesaplayici  from './pages/vade-hesaplayici/VadeHesaplayici'
-import TemaSecimi        from './pages/ayarlar/TemaSecimi'
-import PlanSecim         from './pages/abonelik/PlanSecim'
-import KullaniciYonetimi from './pages/kullanicilar/KullaniciYonetimi'
-import GuvenlikEkrani      from './pages/guvenlik/GuvenlikEkrani'
-import BildirimlerEkrani  from './pages/bildirimler/BildirimlerEkrani'
-import VeresiyeListesi   from './pages/veresiye/VeresiyeListesi'
-import VeresiyeDetay     from './pages/veresiye/VeresiyeDetay'
-import RaporlarEkrani    from './pages/raporlar/RaporlarEkrani'
-import Gelirler          from './pages/gelirler/Gelirler'
-import Giderler          from './pages/giderler/Giderler'
-import TekrarlayanIslemler from './pages/tekrarlayan-islemler/TekrarlayanIslemler'
-import Onboarding          from './pages/onboarding/Onboarding'
+// L — Uygulama sayfaları lazy loaded (WKWebView bellek tasarrufu)
+const Dashboard            = lazy(() => import('./pages/dashboard/Dashboard'))
+const CariYonetimi         = lazy(() => import('./pages/cariler/CariYonetimi'))
+const VarlikKasa           = lazy(() => import('./pages/kasa/VarlikKasa'))
+const CekSenet             = lazy(() => import('./pages/cek-senet/CekSenet'))
+const OdemeTakip           = lazy(() => import('./pages/odeme-takip/OdemeTakip'))
+const VadeHesaplayici      = lazy(() => import('./pages/vade-hesaplayici/VadeHesaplayici'))
+const TemaSecimi           = lazy(() => import('./pages/ayarlar/TemaSecimi'))
+const PlanSecim            = lazy(() => import('./pages/abonelik/PlanSecim'))
+const KullaniciYonetimi    = lazy(() => import('./pages/kullanicilar/KullaniciYonetimi'))
+const GuvenlikEkrani       = lazy(() => import('./pages/guvenlik/GuvenlikEkrani'))
+const BildirimlerEkrani    = lazy(() => import('./pages/bildirimler/BildirimlerEkrani'))
+const VeresiyeListesi      = lazy(() => import('./pages/veresiye/VeresiyeListesi'))
+const VeresiyeDetay        = lazy(() => import('./pages/veresiye/VeresiyeDetay'))
+const RaporlarEkrani       = lazy(() => import('./pages/raporlar/RaporlarEkrani'))
+const Gelirler             = lazy(() => import('./pages/gelirler/Gelirler'))
+const Giderler             = lazy(() => import('./pages/giderler/Giderler'))
+const TekrarlayanIslemler  = lazy(() => import('./pages/tekrarlayan-islemler/TekrarlayanIslemler'))
+const Onboarding           = lazy(() => import('./pages/onboarding/Onboarding'))
+
+// Lazy yükleme sırasında gösterilecek minimal yükleyici
+function SayfaYukleniyor() {
+  return (
+    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '60vh' }}>
+      <div style={{ width: 28, height: 28, border: '3px solid #E5E7EB', borderTopColor: '#10B981', borderRadius: '50%', animation: 'spin 0.7s linear infinite' }} />
+    </div>
+  )
+}
 
 // Onboarding tamamlanmamışsa /onboarding'e yönlendir
 function OnboardingKoruma() {
@@ -110,6 +119,7 @@ export default function App() {
       <KvkkOnay>
       <GuvenlikKoruyucu>
       <AuthLogoutListener />
+      <Suspense fallback={<SayfaYukleniyor />}>
       <Routes>
 
         {/* ─── Public sayfalar ───────────────────────────────────────── */}
@@ -195,6 +205,7 @@ export default function App() {
         <Route path="*" element={<Navigate to="/dashboard" replace />} />
 
       </Routes>
+      </Suspense>
     </GuvenlikKoruyucu>
     </KvkkOnay>
     </BrowserRouter>

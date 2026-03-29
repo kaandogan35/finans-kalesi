@@ -3,6 +3,7 @@
  * Native <input type="date"> yerine modern takvim popover
  * Klavyeden yazılabilir (GG.AA.YYYY) + takvimden seçilebilir
  * createPortal ile modal içinde kesilmez
+ * G — Capacitor native platformda iOS/Android system date picker kullanılır
  */
 
 import { useState, useRef, useEffect, useCallback } from 'react'
@@ -10,6 +11,7 @@ import { createPortal } from 'react-dom'
 import { DayPicker } from 'react-day-picker'
 import { tr } from 'date-fns/locale'
 import { format, parse, isValid } from 'date-fns'
+import { Capacitor } from '@capacitor/core'
 import 'react-day-picker/dist/style.css'
 
 /**
@@ -20,7 +22,25 @@ import 'react-day-picker/dist/style.css'
  *   placeholder: string
  *   disabled: bool
  */
-export function DateInput({ value, onChange, className = '', placeholder = 'Tarih seçin', disabled }) {
+
+// G — Modül yüklendiğinde bir kez kontrol edilir (hook kuralı ihlali olmaz)
+const isNative = Capacitor.isNativePlatform()
+
+// G — Native (iOS/Android) için sistem date picker
+function DateInputNative({ value, onChange, className = '', disabled }) {
+  return (
+    <input
+      type="date"
+      value={value || ''}
+      onChange={(e) => onChange(e.target.value)}
+      disabled={disabled}
+      className={`p-date-input-native ${className}`}
+    />
+  )
+}
+
+// Web için takvim popover bileşeni (mevcut davranış korundu)
+function DateInputDesktop({ value, onChange, className = '', placeholder = 'Tarih seçin', disabled }) {
   const [open, setOpen] = useState(false)
   const [typing, setTyping] = useState(false)
   const [textVal, setTextVal] = useState('')
@@ -52,7 +72,6 @@ export function DateInput({ value, onChange, className = '', placeholder = 'Tari
   useEffect(() => {
     const handler = (e) => {
       if (ref.current && !ref.current.contains(e.target)) {
-        // Portal popover'ı kontrol et
         const popover = document.getElementById('p-date-portal')
         if (popover && popover.contains(e.target)) return
         setOpen(false)
@@ -96,19 +115,16 @@ export function DateInput({ value, onChange, className = '', placeholder = 'Tari
   const commitText = () => {
     setTyping(false)
     if (!textVal.trim()) { onChange(''); return }
-    // GG.AA.YYYY veya GG/AA/YYYY
     const cleaned = textVal.replace(/\//g, '.')
     const parsed = parse(cleaned, 'dd.MM.yyyy', new Date())
     if (isValid(parsed) && parsed.getFullYear() > 1900 && parsed.getFullYear() < 2100) {
       onChange(format(parsed, 'yyyy-MM-dd'))
     }
-    // Geçersizse eski değeri koru
   }
 
   // Otomatik nokta ekleme
   const handleTextChange = (e) => {
     let v = e.target.value.replace(/[^0-9.\/]/g, '')
-    // Otomatik nokta ekle: 28 -> 28. , 28.03 -> 28.03.
     const digits = v.replace(/[^0-9]/g, '')
     if (digits.length >= 2 && !v.includes('.') && !v.includes('/')) {
       v = digits.slice(0, 2) + '.' + digits.slice(2)
@@ -186,7 +202,6 @@ export function DateInput({ value, onChange, className = '', placeholder = 'Tari
           aria-expanded={open}
           onKeyDown={(e) => {
             if (e.key === 'Enter') toggleCalendar()
-            // Rakam tuşuna basınca direkt yazım moduna geç
             if (/^[0-9]$/.test(e.key) && !disabled) {
               e.preventDefault()
               setTyping(true)
@@ -221,4 +236,10 @@ export function DateInput({ value, onChange, className = '', placeholder = 'Tari
       {popover}
     </div>
   )
+}
+
+// G — Ana dışa aktarım: native'de sistem seçici, web'de takvim popover
+export function DateInput(props) {
+  if (isNative) return <DateInputNative {...props} />
+  return <DateInputDesktop {...props} />
 }

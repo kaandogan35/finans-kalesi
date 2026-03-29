@@ -17,6 +17,9 @@ export async function capacitorBaslat() {
     const { StatusBar, Style } = await import('@capacitor/status-bar')
     await StatusBar.setOverlaysWebView({ overlay: true })
     await StatusBar.setStyle({ style: Style.Dark })
+    // F, I — Sidebar/koyu ekranlar bu fonksiyonları window üzerinden çağırır
+    window.__statusBarSetDark  = () => StatusBar.setStyle({ style: Style.Dark })
+    window.__statusBarSetLight = () => StatusBar.setStyle({ style: Style.Light })
   } catch {}
 
   // ─── Splash Screen ────────────────────────────────────
@@ -31,13 +34,13 @@ export async function capacitorBaslat() {
 
     Keyboard.addListener('keyboardWillShow', () => {
       document.body.classList.add('keyboard-open')
-      // Aktif input'u görünür alana kaydır
+      // D, E — Aktif input'u görünür alana kaydır (300ms: klavye tam açılana kadar bekle)
       setTimeout(() => {
         const el = document.activeElement
-        if (el && (el.tagName === 'INPUT' || el.tagName === 'TEXTAREA')) {
-          el.scrollIntoView({ behavior: 'smooth', block: 'center' })
+        if (el && (el.tagName === 'INPUT' || el.tagName === 'TEXTAREA' || el.tagName === 'SELECT')) {
+          el.scrollIntoView({ behavior: 'smooth', block: 'nearest' })
         }
-      }, 150)
+      }, 300)
     })
 
     Keyboard.addListener('keyboardWillHide', () => {

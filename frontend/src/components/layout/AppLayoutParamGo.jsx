@@ -120,6 +120,9 @@ export default function AppLayoutParamGo() {
 
   useEffect(() => {
     document.body.style.overflow = sidebarOpen ? 'hidden' : ''
+    // F — Koyu sidebar açıkken status bar ikonları beyaz olsun
+    if (sidebarOpen) window.__statusBarSetLight?.()
+    else window.__statusBarSetDark?.()
     return () => { document.body.style.overflow = '' }
   }, [sidebarOpen])
 

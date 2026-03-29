@@ -29,6 +29,7 @@ const config: CapacitorConfig = {
   ios: {
     scheme: 'ParamGo',
     contentInset: 'automatic',
+    backgroundColor: '#F8FAFC',
   },
   android: {
     allowMixedContent: false,

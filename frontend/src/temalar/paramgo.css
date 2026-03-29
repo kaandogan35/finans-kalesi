@@ -28,6 +28,21 @@ body.keyboard-open .p-bottom-nav {
   transition: transform 0.2s ease;
 }
 
+/* D/E — Klavye açıkken auth ekranı scroll edilebilir */
+body.keyboard-open .pm-auth-screen {
+  justify-content: flex-start;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  padding-top: max(env(safe-area-inset-top, 16px), 16px);
+}
+
+/* H — Klavye açıkken modal üstten hizalanır, scroll edilebilir */
+body.keyboard-open .p-modal-center {
+  align-items: flex-start;
+  padding-top: calc(env(safe-area-inset-top, 0px) + 8px);
+  overflow-y: auto;
+}
+
 /* ============================================================
    TEMA 4 — PARAMGO  |  Modern Fintech · Inter
    Prefix: .p-  (tüm renkler bu dosyadaki değişkenlerden)
@@ -464,7 +479,7 @@ body.keyboard-open .p-bottom-nav {
 /* ── Topbar ─────────────────────────────────────── */
 .p-topbar {
   position: sticky; top: 0;
-  height: var(--p-topbar-height);
+  height: calc(var(--p-topbar-height) + env(safe-area-inset-top, 0px));
   background: var(--p-bg-topbar);
   box-shadow: var(--p-shadow-topbar);
   display: flex; align-items: center; justify-content: space-between;
@@ -1167,7 +1182,7 @@ body.keyboard-open .p-bottom-nav {
   box-shadow: 0 24px 80px rgba(0,0,0,0.2), 0 8px 24px rgba(0,0,0,0.1);
   background: #ffffff; color: var(--p-text-primary);
   border: 1px solid rgba(0,0,0,0.06); display: flex; flex-direction: column;
-  max-height: 90vh; will-change: transform;
+  max-height: 90vh; max-height: 90dvh; will-change: transform;
 }
 .p-modal-header {
   padding: 20px 24px; display: flex; align-items: center;
@@ -1634,9 +1649,10 @@ body.keyboard-open .p-bottom-nav {
     transform: translateX(0);
   }
 
-  /* Main tam genişlik */
+  /* Main tam genişlik + fixed topbar boşluğu */
   .p-main {
     margin-left: 0;
+    padding-top: calc(var(--p-topbar-height) + env(safe-area-inset-top, 0px));
   }
 
   /* Overlay görünür */
@@ -1650,9 +1666,13 @@ body.keyboard-open .p-bottom-nav {
     font-size: 24px;
   }
 
-  /* Topbar padding küçült */
+  /* J, C fix — Topbar sabit (fixed), status bar dahil */
   .p-topbar {
+    position: fixed;
+    top: 0; left: 0; right: 0;
     padding: 0 16px;
+    padding-top: env(safe-area-inset-top, 0px);
+    height: calc(var(--p-topbar-height) + env(safe-area-inset-top, 0px));
     overflow-x: hidden;
   }
   .p-topbar-brand-text { font-size: 15px; }
@@ -4928,6 +4948,19 @@ body.keyboard-open .p-bottom-nav {
    Sidebar renk ailesi: #0F172A navy, #10B981 emerald
    ============================================================ */
 
+/* A, V1 — Auth ekranında html/body dark arka plan + scroll engelle */
+html:has(.pm-auth-screen) {
+  background: #0B1120;
+  overflow: hidden;
+  position: fixed;
+  width: 100%;
+  height: 100%;
+}
+body:has(.pm-auth-screen) {
+  background: #0B1120;
+  overflow: hidden;
+}
+
 /* -- Ana ekran: SABİT, scroll yok -- */
 .pm-auth-screen {
   position: fixed;
@@ -4937,7 +4970,7 @@ body.keyboard-open .p-bottom-nav {
   justify-content: center;
   background: #0B1120;
   font-family: 'Plus Jakarta Sans', sans-serif;
-  padding: env(safe-area-inset-top, 20px) 28px env(safe-area-inset-bottom, 20px);
+  padding: env(safe-area-inset-top, 32px) 28px env(safe-area-inset-bottom, 28px);
   overflow: hidden;
   z-index: 9999;
 }
@@ -5556,6 +5589,32 @@ body.keyboard-open .p-bottom-nav {
 .p-fab-btn-icon.p-fab-open { transform: rotate(45deg); }
 
 /* ─── DATE INPUT — DateInput.jsx ──────────────────────────────────────────── */
+/* G — Native (iOS/Android) sistem tarih seçici */
+.p-date-input-native {
+  width: 100%;
+  padding: 8px 12px;
+  background: var(--p-bg-input, #fff);
+  border: 1px solid var(--p-border);
+  border-radius: var(--p-radius);
+  font-size: 16px;
+  color: var(--p-text);
+  min-height: 44px;
+  font-family: 'Plus Jakarta Sans', sans-serif;
+  -webkit-appearance: none;
+  appearance: none;
+  cursor: pointer;
+  transition: border-color 150ms;
+}
+.p-date-input-native:focus {
+  border-color: var(--p-primary);
+  box-shadow: 0 0 0 3px rgba(16,185,129,0.1);
+  outline: none;
+}
+.p-date-input-native:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
 .p-date-input-trigger {
   display: flex; align-items: center; gap: 8px;
   width: 100%; padding: 8px 12px;
