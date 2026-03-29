@@ -1,7 +1,7 @@
 /**
  * KayitOl — Ücretsiz Hesap Oluşturma
- * Split-screen: Sol dekoratif panel + Sag form
- * Tek tema: ParamGo (p prefix)
+ * Mobilde: Native tam ekran form
+ * Web'de: Mevcut split-screen banking teması
  */
 
 import { useState } from 'react'
@@ -14,8 +14,7 @@ import useTemaStore from '../../stores/temaStore'
 
 import ParamGoLogo from '../../logo/ParamGoLogo'
 
-const isNative = Capacitor.isNativePlatform()
-
+const isNative = Capacitor.isNativePlatform() || new URLSearchParams(window.location.search).has('native')
 const prefixMap = { paramgo: 'p' }
 
 const AVANTAJLAR = [
@@ -41,7 +40,7 @@ export default function KayitOl() {
   const [sifreGoster, setSifreGoster] = useState(false)
   const [yukleniyor, setYukleniyor]   = useState(false)
   const [hata, setHata]               = useState('')
-  const [adim, setAdim]               = useState(1) // 1: bilgiler, 2: sifre
+  const [adim, setAdim]               = useState(1)
 
   const handleChange = (e) => {
     setForm((prev) => ({ ...prev, [e.target.name]: e.target.value }))
@@ -89,6 +88,152 @@ export default function KayitOl() {
     } finally { setYukleniyor(false) }
   }
 
+  /* ═══════ MOBİL — Native kayıt ekranı ═══════ */
+  if (isNative) {
+    return (
+      <div className="pm-reg-root">
+        <div className="pm-reg-header">
+          <div style={{ marginBottom: 20 }}>
+            <ParamGoLogo size="sm" />
+          </div>
+          <h1 className="pm-reg-title">Ücretsiz Hesap Oluşturun</h1>
+          <p className="pm-reg-subtitle">
+            {adim === 1 ? 'Firma ve iletişim bilgileriniz' : 'Hesap şifrenizi belirleyin'}
+          </p>
+        </div>
+
+        {/* Adım göstergesi */}
+        <div className="pm-reg-steps">
+          {[1, 2].map((a) => (
+            <div key={a} className={`pm-reg-step-dot${a === adim ? ' active' : ''}`} />
+          ))}
+        </div>
+
+        <div className="pm-reg-form-area">
+          {hata && (
+            <div className="pm-login-error">
+              <i className="bi bi-exclamation-circle-fill" />
+              <span>{hata}</span>
+            </div>
+          )}
+
+          <form onSubmit={handleSubmit} noValidate>
+            {adim === 1 ? (
+              <>
+                <div className="pm-login-field">
+                  <label className="pm-login-label">Firma / İşletme Adı</label>
+                  <div className="pm-login-input-wrap">
+                    <i className="bi bi-building pm-login-input-icon" />
+                    <input
+                      type="text" name="firma_adi" value={form.firma_adi}
+                      onChange={handleChange} placeholder="Örn: ABC Hırdavat Ltd."
+                      autoComplete="organization" autoFocus
+                      className="pm-login-input"
+                    />
+                  </div>
+                </div>
+
+                <div className="pm-login-field">
+                  <label className="pm-login-label">Ad Soyad</label>
+                  <div className="pm-login-input-wrap">
+                    <i className="bi bi-person pm-login-input-icon" />
+                    <input
+                      type="text" name="ad_soyad" value={form.ad_soyad}
+                      onChange={handleChange} placeholder="Ahmet Yılmaz"
+                      autoComplete="name"
+                      className="pm-login-input"
+                    />
+                  </div>
+                </div>
+
+                <div className="pm-login-field">
+                  <label className="pm-login-label">E-posta Adresi</label>
+                  <div className="pm-login-input-wrap">
+                    <i className="bi bi-envelope pm-login-input-icon" />
+                    <input
+                      type="email" name="email" value={form.email}
+                      onChange={handleChange} placeholder="ornek@firma.com"
+                      autoComplete="email"
+                      className="pm-login-input"
+                    />
+                  </div>
+                </div>
+
+                <button type="button" className="pm-login-btn" onClick={ilerle}>
+                  Devam Et
+                </button>
+              </>
+            ) : (
+              <>
+                <div className="pm-login-field">
+                  <label className="pm-login-label">Şifre Oluşturun</label>
+                  <div className="pm-login-input-wrap">
+                    <i className="bi bi-lock pm-login-input-icon" />
+                    <input
+                      type={sifreGoster ? 'text' : 'password'}
+                      name="sifre" value={form.sifre}
+                      onChange={handleChange} placeholder="En az 8 karakter"
+                      autoComplete="new-password" autoFocus
+                      className="pm-login-input pm-login-input-pwd"
+                    />
+                    <button
+                      type="button" tabIndex={-1}
+                      onClick={() => setSifreGoster(v => !v)}
+                      className="pm-login-eye"
+                    >
+                      <i className={`bi ${sifreGoster ? 'bi-eye-slash' : 'bi-eye'}`} />
+                    </button>
+                  </div>
+                </div>
+
+                <div className="pm-login-field">
+                  <label className="pm-login-label">Şifre Tekrarı</label>
+                  <div className="pm-login-input-wrap">
+                    <i className="bi bi-lock-fill pm-login-input-icon" />
+                    <input
+                      type="password" name="sifre_tekrar" value={form.sifre_tekrar}
+                      onChange={handleChange} placeholder="Şifreyi tekrar girin"
+                      autoComplete="new-password"
+                      className="pm-login-input"
+                    />
+                  </div>
+                </div>
+
+                <div className="pm-reg-btn-row">
+                  <button
+                    type="button"
+                    onClick={() => { setAdim(1); setHata('') }}
+                    className="pm-reg-back-btn"
+                  >
+                    <i className="bi bi-arrow-left" />
+                  </button>
+                  <button type="submit" className="pm-login-btn" disabled={yukleniyor} style={{ flex: 1 }}>
+                    {yukleniyor ? (
+                      <><i className="bi bi-arrow-repeat pm-spin me-2" />Oluşturuluyor...</>
+                    ) : (
+                      'Hesabı Oluştur'
+                    )}
+                  </button>
+                </div>
+              </>
+            )}
+          </form>
+
+          <p className="pm-reg-login-text">
+            Zaten hesabınız var mı?{' '}
+            <Link to="/giris" className="pm-reg-login-link">Giriş yapın</Link>
+          </p>
+        </div>
+
+        <div className="pm-reg-footer">
+          <i className="bi bi-shield-check" />
+          <span>AES-256-GCM şifreli &middot; Kart bilgisi gerekmez</span>
+        </div>
+      </div>
+    )
+  }
+
+  /* ═══════ WEB — Mevcut split-screen banking teması ═══════ */
   return (
     <div className={`${p}-giris-root`}>
 
@@ -109,14 +254,12 @@ export default function KayitOl() {
           }} />
         ))}
 
-        {/* Marka */}
         <div className={`${p}-giris-sol-anim-1`}>
           <a href="https://paramgo.com" className={`${p}-giris-marka-wrap`}>
             <ParamGoLogo size="md" variant="white" />
           </a>
         </div>
 
-        {/* Vizyon */}
         <div className={`${p}-giris-sol-anim-2`}>
           <div className={`${p}-giris-buyuk-ikon`}>
             <div className={`${p}-giris-halka-1`} />
@@ -133,7 +276,6 @@ export default function KayitOl() {
           </p>
         </div>
 
-        {/* Ücretsiz plan özellikleri */}
         <div className={`${p}-giris-ozellik-wrap`}>
           <div className={`${p}-giris-ozellik-liste`}>
             {AVANTAJLAR.map((o, i) => (
@@ -162,20 +304,15 @@ export default function KayitOl() {
             <div className={`${p}-giris-kart-serit`} />
             <div className={`${p}-giris-kart-ic`}>
 
-              {/* Ana sayfaya dönüş — mobil uygulamada gizle */}
-              {!isNative && (
-                <a href="https://paramgo.com" className={`${p}-giris-anasayfa-link`}>
-                  <i className="bi bi-arrow-left me-1" />
-                  Ana Sayfa
-                </a>
-              )}
+              <a href="https://paramgo.com" className={`${p}-giris-anasayfa-link`}>
+                <i className="bi bi-arrow-left me-1" />
+                Ana Sayfa
+              </a>
 
-              {/* Mobil logo */}
               <div className="d-flex d-lg-none align-items-center justify-content-center mb-4">
                 <ParamGoLogo size="sm" />
               </div>
 
-              {/* Form başlığı */}
               <div className={`${p}-giris-form-baslik-wrap`}>
                 <div className={`${p}-giris-form-ikon`}>
                   <i className="bi bi-person-plus" />
@@ -188,7 +325,6 @@ export default function KayitOl() {
                 </p>
               </div>
 
-              {/* Adım göstergesi */}
               <div className="d-flex align-items-center justify-content-center gap-2 mb-4">
                 {[1, 2].map((a) => (
                   <div key={a} style={{
@@ -199,7 +335,6 @@ export default function KayitOl() {
                 ))}
               </div>
 
-              {/* Hata */}
               {hata && (
                 <div className={`${p}-giris-hata d-flex align-items-center gap-2 mb-4 p-3`}>
                   <i className={`bi bi-exclamation-triangle-fill ${p}-giris-hata-ikon`} />
@@ -208,140 +343,89 @@ export default function KayitOl() {
               )}
 
               <form onSubmit={handleSubmit} noValidate>
-
                 {adim === 1 ? (
                   <>
-                    {/* Firma Adı */}
                     <div className="mb-3">
                       <label className={`${p}-giris-label`}>Firma / İşletme Adı</label>
                       <div className={`${p}-giris-alan`}>
-                        <span className={`${p}-giris-alan-ikon`}>
-                          <i className="bi bi-building" />
-                        </span>
-                        <input
-                          type="text" name="firma_adi" value={form.firma_adi}
+                        <span className={`${p}-giris-alan-ikon`}><i className="bi bi-building" /></span>
+                        <input type="text" name="firma_adi" value={form.firma_adi}
                           onChange={handleChange} placeholder="Örn: ABC Hırdavat Ltd. Şti."
-                          autoComplete="organization" autoFocus
-                          className={`${p}-giris-input`}
-                        />
+                          autoComplete="organization" autoFocus className={`${p}-giris-input`} />
                       </div>
                     </div>
-
-                    {/* Ad Soyad */}
                     <div className="mb-3">
                       <label className={`${p}-giris-label`}>Ad Soyad</label>
                       <div className={`${p}-giris-alan`}>
-                        <span className={`${p}-giris-alan-ikon`}>
-                          <i className="bi bi-person" />
-                        </span>
-                        <input
-                          type="text" name="ad_soyad" value={form.ad_soyad}
+                        <span className={`${p}-giris-alan-ikon`}><i className="bi bi-person" /></span>
+                        <input type="text" name="ad_soyad" value={form.ad_soyad}
                           onChange={handleChange} placeholder="Ahmet Yılmaz"
-                          autoComplete="name"
-                          className={`${p}-giris-input`}
-                        />
+                          autoComplete="name" className={`${p}-giris-input`} />
                       </div>
                     </div>
-
-                    {/* E-posta */}
                     <div className="mb-4">
                       <label className={`${p}-giris-label`}>E-posta Adresi</label>
                       <div className={`${p}-giris-alan`}>
-                        <span className={`${p}-giris-alan-ikon`}>
-                          <i className="bi bi-envelope" />
-                        </span>
-                        <input
-                          type="email" name="email" value={form.email}
+                        <span className={`${p}-giris-alan-ikon`}><i className="bi bi-envelope" /></span>
+                        <input type="email" name="email" value={form.email}
                           onChange={handleChange} placeholder="ornek@firma.com"
-                          autoComplete="email"
-                          className={`${p}-giris-input`}
-                        />
+                          autoComplete="email" className={`${p}-giris-input`} />
                       </div>
                     </div>
-
                     <button type="button" className={`${p}-giris-btn`} onClick={ilerle}>
-                      <i className="bi bi-arrow-right me-2" />
-                      Devam Et
+                      <i className="bi bi-arrow-right me-2" />Devam Et
                     </button>
                   </>
                 ) : (
                   <>
-                    {/* Şifre */}
                     <div className="mb-3">
                       <label className={`${p}-giris-label`}>Şifre Oluşturun</label>
                       <div className={`${p}-giris-alan`} style={{ position: 'relative' }}>
-                        <span className={`${p}-giris-alan-ikon`}>
-                          <i className="bi bi-lock" />
-                        </span>
-                        <input
-                          type={sifreGoster ? 'text' : 'password'}
+                        <span className={`${p}-giris-alan-ikon`}><i className="bi bi-lock" /></span>
+                        <input type={sifreGoster ? 'text' : 'password'}
                           name="sifre" value={form.sifre}
                           onChange={handleChange} placeholder="En az 8 karakter"
                           autoComplete="new-password" autoFocus
-                          className={`${p}-giris-input ${p}-giris-input-sifre`}
-                        />
-                        <button
-                          type="button" tabIndex={-1}
+                          className={`${p}-giris-input ${p}-giris-input-sifre`} />
+                        <button type="button" tabIndex={-1}
                           onClick={() => setSifreGoster(v => !v)}
-                          className={`${p}-giris-sifre-toggle`}
-                        >
+                          className={`${p}-giris-sifre-toggle`}>
                           <i className={`bi ${sifreGoster ? 'bi-eye-slash' : 'bi-eye'}`} />
                         </button>
                       </div>
                     </div>
-
-                    {/* Şifre Tekrar */}
                     <div className="mb-4">
                       <label className={`${p}-giris-label`}>Şifre Tekrarı</label>
                       <div className={`${p}-giris-alan`}>
-                        <span className={`${p}-giris-alan-ikon`}>
-                          <i className="bi bi-lock-fill" />
-                        </span>
-                        <input
-                          type="password" name="sifre_tekrar" value={form.sifre_tekrar}
+                        <span className={`${p}-giris-alan-ikon`}><i className="bi bi-lock-fill" /></span>
+                        <input type="password" name="sifre_tekrar" value={form.sifre_tekrar}
                           onChange={handleChange} placeholder="Şifreyi tekrar girin"
-                          autoComplete="new-password"
-                          className={`${p}-giris-input`}
-                        />
+                          autoComplete="new-password" className={`${p}-giris-input`} />
                       </div>
                     </div>
-
                     <div className="d-flex gap-2">
-                      <button
-                        type="button"
-                        onClick={() => { setAdim(1); setHata('') }}
+                      <button type="button" onClick={() => { setAdim(1); setHata('') }}
                         className={`${p}-giris-btn`}
-                        style={{ flex: '0 0 48px', background: 'transparent',
-                          border: '1px solid var(--p-border, #e5e8f0)' }}
-                      >
+                        style={{ flex: '0 0 48px', background: 'transparent', border: '1px solid var(--p-border, #e5e8f0)' }}>
                         <i className="bi bi-arrow-left" />
                       </button>
                       <button type="submit" className={`${p}-giris-btn`} disabled={yukleniyor} style={{ flex: 1 }}>
                         {yukleniyor ? (
-                          <>
-                            <i className={`bi bi-arrow-repeat me-2 ${p}-giris-spin`} />
-                            Hesap Oluşturuluyor...
-                          </>
+                          <><i className={`bi bi-arrow-repeat me-2 ${p}-giris-spin`} />Hesap Oluşturuluyor...</>
                         ) : (
-                          <>
-                            <i className="bi bi-person-check me-2" />
-                            Hesabı Oluştur
-                          </>
+                          <><i className="bi bi-person-check me-2" />Hesabı Oluştur</>
                         )}
                       </button>
                     </div>
                   </>
                 )}
-
               </form>
 
-              {/* Giriş linki */}
               <p className={`${p}-giris-kayit-text text-center mt-4 mb-3`}>
                 Zaten hesabınız var mı?{' '}
                 <Link to="/giris" className={`${p}-giris-kayit-link`}>Giriş yapın</Link>
               </p>
 
-              {/* Güvenlik notu */}
               <div className={`${p}-giris-guvenlik d-flex align-items-center justify-content-center gap-2`}>
                 <i className={`bi bi-shield-check ${p}-giris-guvenlik-ikon`} />
                 <span className={`${p}-giris-guvenlik-metin`}>

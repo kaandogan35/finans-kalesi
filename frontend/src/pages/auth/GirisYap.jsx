@@ -1,7 +1,7 @@
 /**
- * GirisYap — ParamGo Premium Login
- * Split-screen: Sol dekoratif panel + Sag glassmorphism form
- * Tek tema: ParamGo
+ * GirisYap — ParamGo Login
+ * Mobilde: Papara tarzı native tam ekran
+ * Web'de: Mevcut split-screen banking teması
  */
 
 import { useState } from 'react'
@@ -12,8 +12,7 @@ import useAuthStore from '../../stores/authStore'
 import useTemaStore from '../../stores/temaStore'
 import ParamGoLogo from '../../logo/ParamGoLogo'
 
-const isNative = Capacitor.isNativePlatform()
-
+const isNative = Capacitor.isNativePlatform() || new URLSearchParams(window.location.search).has('native')
 const prefixMap = { paramgo: 'p' }
 
 const OZELLIKLER = [
@@ -57,6 +56,94 @@ export default function GirisYap() {
     } finally { setYukleniyor(false) }
   }
 
+  /* ═══════ MOBİL — Papara tarzı native ekran ═══════ */
+  if (isNative) {
+    return (
+      <div className="pm-login-root">
+        {/* Üst: Logo + Slogan */}
+        <div className="pm-login-header">
+          <div className="pm-login-logo-wrap">
+            <ParamGoLogo size="md" />
+          </div>
+          <h1 className="pm-login-title">Hoş Geldiniz</h1>
+          <p className="pm-login-subtitle">E-posta ve şifrenizle giriş yapın</p>
+        </div>
+
+        {/* Form */}
+        <div className="pm-login-form-area">
+          {hata && (
+            <div className="pm-login-error">
+              <i className="bi bi-exclamation-circle-fill" />
+              <span>{hata}</span>
+            </div>
+          )}
+
+          <form onSubmit={handleSubmit} noValidate>
+            <div className="pm-login-field">
+              <label className="pm-login-label">E-posta Adresi</label>
+              <div className="pm-login-input-wrap">
+                <i className="bi bi-envelope pm-login-input-icon" />
+                <input
+                  type="email"
+                  name="email"
+                  value={form.email}
+                  onChange={handleChange}
+                  placeholder="ornek@firma.com"
+                  autoComplete="email"
+                  className="pm-login-input"
+                />
+              </div>
+            </div>
+
+            <div className="pm-login-field">
+              <label className="pm-login-label">Şifre</label>
+              <div className="pm-login-input-wrap">
+                <i className="bi bi-lock pm-login-input-icon" />
+                <input
+                  type={sifreGoster ? 'text' : 'password'}
+                  name="sifre"
+                  value={form.sifre}
+                  onChange={handleChange}
+                  placeholder="Şifrenizi girin"
+                  autoComplete="current-password"
+                  className="pm-login-input pm-login-input-pwd"
+                />
+                <button
+                  type="button"
+                  tabIndex={-1}
+                  onClick={() => setSifreGoster(v => !v)}
+                  className="pm-login-eye"
+                >
+                  <i className={`bi ${sifreGoster ? 'bi-eye-slash' : 'bi-eye'}`} />
+                </button>
+              </div>
+              <Link to="/sifre-sifirla" className="pm-login-forgot-link">Şifremi unuttum</Link>
+            </div>
+
+            <button type="submit" className="pm-login-btn" disabled={yukleniyor}>
+              {yukleniyor ? (
+                <><i className="bi bi-arrow-repeat pm-spin me-2" />Giriş yapılıyor...</>
+              ) : (
+                'Giriş Yap'
+              )}
+            </button>
+          </form>
+
+          <Link to="/kayit" className="pm-login-btn-secondary">
+            Hesap Oluştur
+          </Link>
+        </div>
+
+        {/* Alt güvenlik notu */}
+        <div className="pm-login-footer">
+          <i className="bi bi-shield-check" />
+          <span>256-bit şifreli güvenli bağlantı</span>
+        </div>
+      </div>
+    )
+  }
+
+  /* ═══════ WEB — Mevcut split-screen banking teması ═══════ */
   return (
     <div className={`${p}-giris-root`}>
 
@@ -87,15 +174,11 @@ export default function GirisYap() {
 
         {/* Merkez vizyon alani */}
         <div className={`${p}-giris-sol-anim-2`}>
-
-          {/* Buyuk ikon */}
           <div className={`${p}-giris-buyuk-ikon`}>
-            {/* Dis halkalar */}
             <div className={`${p}-giris-halka-1`} />
             <div className={`${p}-giris-halka-2`} />
             <i className={`bi bi-bank ${p}-giris-bank-ikon`} />
           </div>
-
           <h2 className={`${p}-giris-vizyon-baslik`}>
             Finansal Gücünüzü<br />
             <span className={`${p}-giris-vizyon-vurgu`}>Tek Yerden</span> Yönetin
@@ -145,13 +228,11 @@ export default function GirisYap() {
 
             <div className={`${p}-giris-kart-ic`}>
 
-              {/* Ana sayfaya dönüş — mobil uygulamada gizle */}
-              {!isNative && (
-                <a href="https://paramgo.com" className={`${p}-giris-anasayfa-link`}>
-                  <i className="bi bi-arrow-left me-1" />
-                  Ana Sayfa
-                </a>
-              )}
+              {/* Ana sayfaya dönüş */}
+              <a href="https://paramgo.com" className={`${p}-giris-anasayfa-link`}>
+                <i className="bi bi-arrow-left me-1" />
+                Ana Sayfa
+              </a>
 
               {/* Mobil logo (lg altinda gorunur) */}
               <div className={`d-flex d-lg-none align-items-center justify-content-center mb-4`}>
