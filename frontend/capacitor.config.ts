@@ -18,9 +18,8 @@ const config: CapacitorConfig = {
       showSpinner: false,
     },
     StatusBar: {
-      style: 'LIGHT',
-      backgroundColor: '#FFFFFF',
-      overlaysWebView: false,
+      overlaysWebView: true,
+      style: 'DARK',
     },
     Keyboard: {
       resize: 'body',
@@ -29,7 +28,7 @@ const config: CapacitorConfig = {
   },
   ios: {
     scheme: 'ParamGo',
-    contentInset: 'always',
+    contentInset: 'automatic',
   },
   android: {
     allowMixedContent: false,
