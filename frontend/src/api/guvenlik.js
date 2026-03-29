@@ -39,4 +39,8 @@ export const guvenlikApi = {
   // KVKK veri dışa aktarma
   veriDisaAktar: (sifre) =>
     api.post('/guvenlik/veri-disa-aktar', { sifre }),
+
+  // App Store Guideline 5.1.1 — Hesap silme zorunluluğu
+  hesapSil: (sifre) =>
+    api.delete('/auth/hesap-sil', { data: { sifre } }),
 }

@@ -22,7 +22,7 @@ class Sirket {
      */
     public function olustur($veri) {
         $sql = "INSERT INTO sirketler (firma_adi, vergi_no, telefon, email, adres, sektor, abonelik_plani, aktif_mi)
-                VALUES (?, ?, ?, ?, ?, ?, 'ucretsiz', 1)";
+                VALUES (?, ?, ?, ?, ?, ?, 'deneme', 1)";
         
         $stmt = $this->db->prepare($sql);
         $stmt->execute([
@@ -54,5 +54,23 @@ class Sirket {
         $sql = "UPDATE sirketler SET tema_adi = ? WHERE id = ?";
         $stmt = $this->db->prepare($sql);
         $stmt->execute([$tema_adi, $sirket_id]);
+    }
+
+    /**
+     * Onboarding — sektor ve calisan sayisi kaydet
+     */
+    public function onboarding_guncelle($sirket_id, $sektor, $calisan_sayisi) {
+        $sql = "UPDATE sirketler SET sektor = ?, calisan_sayisi = ? WHERE id = ?";
+        $stmt = $this->db->prepare($sql);
+        $stmt->execute([$sektor, $calisan_sayisi, (int)$sirket_id]);
+    }
+
+    /**
+     * Onboarding tamamlandi olarak isaretle
+     */
+    public function onboarding_tamamla($sirket_id) {
+        $sql = "UPDATE sirketler SET onboarding_tamamlandi = 1 WHERE id = ?";
+        $stmt = $this->db->prepare($sql);
+        $stmt->execute([(int)$sirket_id]);
     }
 }

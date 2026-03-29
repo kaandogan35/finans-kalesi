@@ -2,8 +2,6 @@
 /**
  * Finans Kalesi — Rapor Route'ları
  *
- * Tüm route'lar auth gerektirir (rol sınırlaması yok).
- *
  * GET /api/raporlar/cari-yaslandirma  → Cari yaşlandırma
  * GET /api/raporlar/nakit-akis        → Nakit akış
  * GET /api/raporlar/cek-portfoy       → Çek/senet portföy
@@ -11,8 +9,10 @@
  * GET /api/raporlar/genel-ozet        → Genel finansal özet
  * GET /api/raporlar/gecmis            → Rapor geçmişi
  */
-// Auth kontrolü — tüm kullanıcılar erişebilir
+// Auth kontrolü — JWT dogrulama
 $payload = AuthMiddleware::dogrula();
+// Rapor modülü erişim kontrolü (hassas finansal veri)
+YetkiKontrol::modul_kontrol($payload, 'raporlar');
 
 $rapor = new RaporController();
 
@@ -42,6 +42,11 @@ switch ($alt_yol) {
 
     case 'genel-ozet':
         if ($method === 'GET') { $rapor->genelOzet($payload); }
+        else { Response::hata('Method not allowed', 405); }
+        break;
+
+    case 'hesaplamalar':
+        if ($method === 'GET') { $rapor->hesaplamalar($payload); }
         else { Response::hata('Method not allowed', 405); }
         break;
 

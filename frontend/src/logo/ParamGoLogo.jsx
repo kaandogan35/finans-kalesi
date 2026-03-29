@@ -82,8 +82,8 @@ const ParamGoLogo = ({ variant = 'light', size = 'md', className = '' }) => {
 
   const isDark = variant === 'dark';
   const isWhite = variant === 'white';
-  const textColor = isWhite ? '#FFFFFF' : isDark ? '#F8FAFB' : '#1A1A1A';
-  const goColor = isWhite ? '#FFFFFF' : '#10B981';
+  const textColor = isWhite ? '#FFFFFF' : isDark ? '#FFFFFF' : '#1A1A1A';
+  const goColor = isWhite ? '#FFFFFF' : isDark ? '#34D399' : '#10B981';
 
   return (
     <div

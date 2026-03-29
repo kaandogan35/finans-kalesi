@@ -9,6 +9,7 @@ import { useNavigate } from 'react-router-dom'
 import { toast } from 'sonner'
 import { veresiyeApi } from '../../api/veresiye'
 import useTemaStore from '../../stores/temaStore'
+import { DynamicAvatar } from '../../components/SwipeCard'
 
 const prefixMap = { paramgo: 'p' }
 
@@ -72,7 +73,7 @@ export default function VeresiyeListesi() {
           </div>
           <div>
             <h1 className={`${p}-page-title`}>Veresiye Defteri</h1>
-            <p className={`${p}-page-sub`}>Faturasız satış ve açık hesap takibi</p>
+            <p className={`${p}-page-sub`}>Veresiye satışlarını ve borçları takip et</p>
           </div>
         </div>
       </div>
@@ -150,7 +151,7 @@ export default function VeresiyeListesi() {
 
         {/* ─── Masaüstü Tablo (md ve üzeri) ───────────────────────── */}
         <div className="table-responsive d-none d-md-block">
-          <table className="table table-hover align-middle mb-0">
+          <table className="table table-hover align-middle p-table mb-0">
             <thead>
               <tr className={`${p}-vry-thead-row`}>
                 <th>MÜŞTERİ</th>
@@ -172,20 +173,17 @@ export default function VeresiyeListesi() {
                 </tr>
               ) : cariler.length === 0 ? (
                 <tr>
-                  <td colSpan={7} className="text-center py-5">
-                    <i className="bi bi-journal-x" style={{ fontSize: 32, opacity: 0.25, display: 'block', marginBottom: 8 }} />
-                    <span style={{ fontSize: 13, color: 'var(--p-text-muted)' }}>
-                      {arama ? 'Arama sonucu bulunamadı.' : 'Henüz veresiye kaydı yok.'}
-                    </span>
+                  <td colSpan={7} className={`${p}-empty-state`}>
+                    <i className="bi bi-journal-x" />
+                    <h6>{arama ? 'Arama sonucu bulunamadı' : 'Henüz veresiye kaydı yok'}</h6>
+                    <p>{arama ? 'Farklı bir arama deneyin' : 'İlk veresiye kaydınızı ekleyin'}</p>
                   </td>
                 </tr>
               ) : cariler.map((c) => (
                 <tr key={c.cari_id} className={`${p}-vry-tablo-satir`}>
                   <td>
                     <div className="d-flex align-items-center gap-2">
-                      <div className={`${p}-vry-avatar`}>
-                        {(c.cari_adi || '?').charAt(0).toUpperCase()}
-                      </div>
+                      <DynamicAvatar isim={c.cari_adi} boyut={32} />
                       <span className="fw-600" style={{ fontSize: 14 }}>{c.cari_adi}</span>
                     </div>
                   </td>
@@ -232,11 +230,10 @@ export default function VeresiyeListesi() {
               <span style={{ fontSize: 13, color: 'var(--p-text-muted)' }}>Yükleniyor...</span>
             </div>
           ) : cariler.length === 0 ? (
-            <div className="text-center py-5">
-              <i className="bi bi-journal-x" style={{ fontSize: 32, opacity: 0.25, display: 'block', marginBottom: 8 }} />
-              <span style={{ fontSize: 13, color: 'var(--p-text-muted)' }}>
-                {arama ? 'Arama sonucu bulunamadı.' : 'Henüz veresiye kaydı yok.'}
-              </span>
+            <div className={`${p}-empty-state`}>
+              <i className="bi bi-journal-x" />
+              <h6>{arama ? 'Arama sonucu bulunamadı' : 'Henüz veresiye kaydı yok'}</h6>
+              <p>{arama ? 'Farklı bir arama deneyin' : 'İlk veresiye kaydınızı ekleyin'}</p>
             </div>
           ) : (
             <div className={`${p}-vry-mobil-liste`}>
@@ -249,9 +246,7 @@ export default function VeresiyeListesi() {
                 >
                   {/* Üst Satır: Avatar + İsim + Tür + Chevron */}
                   <div className={`${p}-vry-mk-ust`}>
-                    <div className={`${p}-vry-avatar ${p}-vry-avatar-md`}>
-                      {(c.cari_adi || '?').charAt(0).toUpperCase()}
-                    </div>
+                    <DynamicAvatar isim={c.cari_adi} boyut={36} />
                     <div className={`${p}-vry-mk-isim-grup`}>
                       <span className={`${p}-vry-mk-isim`}>{c.cari_adi}</span>
                       <span className={`${p}-vry-tur-badge`}>{cariTurEtiketi(c.cari_turu)}</span>

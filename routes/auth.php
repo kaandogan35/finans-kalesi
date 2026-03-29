@@ -77,6 +77,14 @@ switch ($islem) {
         $auth->sifreSifirla($girdi);
         break;
 
+    case 'hesap-sil':
+        if ($metod !== 'DELETE') {
+            Response::hata('Bu endpoint sadece DELETE kabul eder', 405);
+            break;
+        }
+        $auth->hesapSil($girdi);
+        break;
+
     default:
         Response::bulunamadi("Auth endpoint'i bulunamadi: " . htmlspecialchars($islem, ENT_QUOTES, 'UTF-8'));
         break;

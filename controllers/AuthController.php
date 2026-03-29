@@ -89,23 +89,8 @@ class AuthController {
                 'rol'       => 'sahip'  // Ilk kullanici = sirket sahibi
             ]);
             
-            // 7. Abonelik oluştur (ücretsiz plan + kampanya kontrolü)
-            $kampanya = $this->abonelik_model->kampanyaAktifMi();
-            $this->abonelik_model->planGuncelle(
-                (int) $sirket_id,
-                'ucretsiz',
-                null,
-                null,
-                null,
-                false
-            );
-
-            // Kampanya aktifse şirketi işaretle
-            if ($kampanya) {
-                $db = Database::baglan();
-                $stmt = $db->prepare("UPDATE sirketler SET kampanya_kullanici = 1 WHERE id = :id");
-                $stmt->execute([':id' => $sirket_id]);
-            }
+            // 7. 30 gün ücretsiz deneme başlat
+            $this->abonelik_model->denemeBaslat((int) $sirket_id);
 
             // 8. Tokenlar olustur
             $kullanici_bilgi = [
@@ -113,7 +98,7 @@ class AuthController {
                 'sirket_id' => $sirket_id,
                 'rol'       => 'sahip',
                 'tema_adi'  => 'paramgo',
-                'plan'      => 'ucretsiz',
+                'plan'      => 'deneme',
             ];
 
             $access_token = JWTHelper::access_token_olustur($kullanici_bilgi);
@@ -158,7 +143,7 @@ class AuthController {
                     'email'     => $girdi['email'],
                     'rol'       => 'sahip',
                     'tema_adi'  => 'paramgo',
-                    'plan'      => 'ucretsiz',
+                    'plan'      => 'deneme',
                 ],
                 'tokenlar' => [
                     'access_token'  => $access_token,
@@ -302,7 +287,7 @@ class AuthController {
                 'sirket_id' => $kullanici['sirket_id'],
                 'rol'       => $kullanici['rol'],
                 'tema_adi'  => $sirket['tema_adi'] ?? 'paramgo',
-                'plan'      => $sirket['abonelik_plani'] ?? 'ucretsiz',
+                'plan'      => $sirket['abonelik_plani'] ?? 'deneme',
                 'yetkiler'  => $kullanici['yetkiler'] ?? null,
             ];
 
@@ -365,14 +350,15 @@ class AuthController {
             // 14. Basarili yanit
             Response::basarili([
                 'kullanici' => [
-                    'id'        => (int) $kullanici['id'],
-                    'sirket_id' => (int) $kullanici['sirket_id'],
-                    'ad_soyad'  => $kullanici['ad_soyad'],
-                    'email'     => $kullanici['email'],
-                    'rol'       => $kullanici['rol'],
-                    'tema_adi'  => $sirket['tema_adi'] ?? 'paramgo',
-                    'plan'      => $sirket['abonelik_plani'] ?? 'ucretsiz',
-                    'yetkiler'  => $kullanici['yetkiler'] ?? null,
+                    'id'                     => (int) $kullanici['id'],
+                    'sirket_id'              => (int) $kullanici['sirket_id'],
+                    'ad_soyad'               => $kullanici['ad_soyad'],
+                    'email'                  => $kullanici['email'],
+                    'rol'                    => $kullanici['rol'],
+                    'tema_adi'               => $sirket['tema_adi'] ?? 'paramgo',
+                    'plan'                   => $sirket['abonelik_plani'] ?? 'deneme',
+                    'yetkiler'               => $kullanici['yetkiler'] ?? null,
+                    'onboarding_tamamlandi'  => (int)($sirket['onboarding_tamamlandi'] ?? 0),
                 ],
                 'tokenlar' => [
                     'access_token'  => $access_token,
@@ -452,7 +438,7 @@ class AuthController {
                 'sirket_id' => (int) $token_kayit['sirket_id'],
                 'rol'       => $token_kayit['rol'],
                 'tema_adi'  => $sirket['tema_adi'] ?? 'paramgo',
-                'plan'      => $sirket['abonelik_plani'] ?? 'ucretsiz',
+                'plan'      => $sirket['abonelik_plani'] ?? 'deneme',
                 'yetkiler'  => $k_bilgi['yetkiler'] ?? null,
             ];
             
@@ -650,13 +636,111 @@ class AuthController {
             return;
         }
 
-        // Sirket tema ve plan bilgisini ekle
+        // Sirket tema, plan ve onboarding bilgisini ekle
         $sirket = $this->sirket_model->id_ile_bul($kullanici['sirket_id']);
-        $kullanici['tema_adi'] = $sirket['tema_adi'] ?? 'paramgo';
-        $kullanici['plan']     = $sirket['abonelik_plani'] ?? 'ucretsiz';
+        $kullanici['tema_adi']              = $sirket['tema_adi'] ?? 'paramgo';
+        $kullanici['plan']                  = $sirket['abonelik_plani'] ?? 'deneme';
+        $kullanici['onboarding_tamamlandi'] = (int)($sirket['onboarding_tamamlandi'] ?? 0);
         // yetkiler zaten id_ile_bul() sorgusuyla geliyor
 
         unset($kullanici['sifre_hash']);
         Response::basarili(['kullanici' => $kullanici]);
     }
+
+    /**
+     * HESAP SİL
+     * DELETE /api/auth/hesap-sil
+     *
+     * App Store Guideline 5.1.1 — Hesap oluşturan uygulamalar hesap silme sunmak zorunda.
+     * Şifre doğrulaması zorunlu (yanlışlıkla silmeyi engeller).
+     *
+     * - Kullanıcı "sahip" ise: şirket + tüm kullanıcılar deaktive edilir
+     * - Diğer roller: yalnızca kendi hesabı deaktive edilir
+     */
+    public function hesapSil($girdi) {
+        // 1. JWT doğrula
+        $payload = AuthMiddleware::dogrula();
+        $kullanici_id = (int) $payload['sub'];
+        $sirket_id    = (int) $payload['sirket_id'];
+
+        // 2. Şifre zorunlu
+        if (empty($girdi['sifre'])) {
+            Response::dogrulama_hatasi(['sifre' => 'Hesabı silmek için şifrenizi girin']);
+            return;
+        }
+
+        // 3. Kullanıcıyı DB'den al (sifre_hash dahil)
+        $db = Database::baglan();
+        $stmt = $db->prepare(
+            "SELECT id, sirket_id, email, rol, sifre_hash
+             FROM kullanicilar
+             WHERE id = :id AND aktif_mi = 1
+             LIMIT 1"
+        );
+        $stmt->execute([':id' => $kullanici_id]);
+        $kullanici = $stmt->fetch();
+
+        if (!$kullanici) {
+            Response::bulunamadi('Kullanıcı bulunamadı');
+            return;
+        }
+
+        // 4. Şifre doğrula
+        if (!password_verify($girdi['sifre'], $kullanici['sifre_hash'])) {
+            Response::hata('Şifre hatalı', 401);
+            return;
+        }
+
+        try {
+            $db->beginTransaction();
+
+            // 5. Tüm refresh token'larını geçersiz kıl (tüm cihazlardan çıkış)
+            $stmt2 = $db->prepare(
+                "UPDATE refresh_tokens SET silindi_mi = 1 WHERE kullanici_id = :kid"
+            );
+            $stmt2->execute([':kid' => $kullanici_id]);
+
+            // 6. Kullanıcıyı deaktive et, e-posta adresini serbest bırak
+            // (UNIQUE constraint nedeniyle aynı e-posta ile yeniden kayıt yapılabilmesi için)
+            $stmt3 = $db->prepare(
+                "UPDATE kullanicilar
+                 SET aktif_mi = 0,
+                     email    = CONCAT('_silindi_', id, '_', :ts, '@paramgo.com')
+                 WHERE id = :id"
+            );
+            $stmt3->execute([':ts' => time(), ':id' => $kullanici_id]);
+
+            // 7. Sahip ise şirketi ve diğer kullanıcıları da deaktive et
+            if ($kullanici['rol'] === 'sahip') {
+                $stmt4 = $db->prepare(
+                    "UPDATE sirketler SET aktif_mi = 0 WHERE id = :sid"
+                );
+                $stmt4->execute([':sid' => $sirket_id]);
+
+                $stmt5 = $db->prepare(
+                    "UPDATE kullanicilar SET aktif_mi = 0
+                     WHERE sirket_id = :sid AND id != :id"
+                );
+                $stmt5->execute([':sid' => $sirket_id, ':id' => $kullanici_id]);
+            }
+
+            $db->commit();
+
+            SistemLog::kaydet(
+                SistemLog::CIKIS,
+                'hesap_silindi, hash: ' . substr(hash('sha256', $kullanici['email']), 0, 12),
+                $sirket_id,
+                $kullanici_id
+            );
+
+            Response::basarili(null, 'Hesabınız başarıyla silindi');
+
+        } catch (Exception $e) {
+            $db->rollBack();
+            error_log('Hesap silme hatası: ' . $e->getMessage());
+            Response::sunucu_hatasi('Hesap silinemedi');
+        }
+    }
 }
+
+

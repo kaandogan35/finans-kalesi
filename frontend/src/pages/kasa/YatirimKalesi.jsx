@@ -13,6 +13,7 @@ import {
   guncelFiyatlariKaydet,
 } from '../../api/kasa'
 import { prefixMap, TL, tarihFmt, bugunTarih, formatParaInput, parseParaInput } from './kasaUtils'
+import { DateInput } from '../../components/ui/DateInput'
 import DonemFiltresi from './components/DonemFiltresi'
 
 // ─── Sabitler ────────────────────────────────────────────────────────────────
@@ -148,8 +149,7 @@ function YatirimModal({ open, onClose, onKaydet, duzenlenen, p, renkler }) {
               </div>
               <div className="col-12 col-sm-4">
                 <label className={`${p}-kasa-input-label`}>Alış Tarihi</label>
-                <input type="date" className={`${p}-kasa-input`}
-                  value={form.alis_tarihi} onChange={e => set('alis_tarihi', e.target.value)} />
+                <DateInput value={form.alis_tarihi} onChange={val => set('alis_tarihi', val)} placeholder="Alış tarihi" />
               </div>
               <div className="col-12 col-sm-4">
                 <label className={`${p}-kasa-input-label`}>Birim Fiyat (₺)</label>
@@ -502,7 +502,7 @@ export default function YatirimKalesi({ yatirimlar, setYatirimlar, p, renkler })
                   <i className="bi bi-pie-chart" style={{ color:renkler.accent, fontSize:14 }} />
                 </div>
                 <div>
-                  <span className={`${p}-kasa-text-primary`} style={{ fontSize:14, fontWeight:700 }}>Portföy Dağılımı</span>
+                  <span className={`${p}-kasa-text-primary`} style={{ fontSize:14, fontWeight:700 }}>Varlık Dağılımı</span>
                   <p className={`mb-0 ${p}-kasa-text-muted`} style={{ fontSize:11 }}>Alış maliyetine göre ağırlıklar</p>
                 </div>
               </div>

@@ -72,12 +72,12 @@ return [
     'app' => [
         'env'   => env('APP_ENV', 'production'),
         'debug' => env('APP_DEBUG', 'false') === 'true',
-        'url'   => env('APP_URL', 'https://app.hirdavatduragi.shop'),
+        'url'   => env('APP_URL', 'https://paramgo.com'),
     ],
     
     // CORS
     'cors' => [
-        'origin' => env('CORS_ORIGIN', 'https://app.hirdavatduragi.shop'),
+        'origin' => env('CORS_ORIGIN', 'https://paramgo.com'),
     ],
     
     // Şifreleme — Varlık & Kasa (kullanıcı kasa şifresi salt'ı)

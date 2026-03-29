@@ -3,6 +3,7 @@ import { odemeApi } from '../../api/odeme'
 import { carilerApi } from '../../api/cariler'
 import useTemaStore from '../../stores/temaStore'
 import { temaRenkleri } from '../../lib/temaRenkleri'
+import { DateInput } from '../../components/ui/DateInput'
 
 const prefixMap = { paramgo: 'p' }
 
@@ -257,7 +258,7 @@ export default function OdemeTakip() {
             <i className="bi bi-credit-card-2-front-fill" />
           </div>
           <div>
-            <h1 className={`${p}-page-title`}>Ödeme Takip</h1>
+            <h1 className={`${p}-page-title`}>Tahsilat Takibi</h1>
             <p className={`${p}-page-sub`}>Tahsilat ve ödeme süreçlerini takip edin</p>
           </div>
         </div>
@@ -529,18 +530,9 @@ export default function OdemeTakip() {
                     <label style={{ fontSize: 12, fontWeight: 600, color: 'var(--p-text-label)', display: 'block', marginBottom: 6 }}>
                       Tekrar Arama Tarihi *
                     </label>
-                    <input
-                      type="date"
-                      min={bugunStr(1)}
-                      value={aramaHatTarihi}
-                      onChange={e => setAramaHatTarihi(e.target.value)}
-                      style={{
-                        width: '100%', height: 42, padding: '0 12px',
-                        border: '1px solid var(--p-border)', borderRadius: 10,
-                        background: 'var(--p-bg-input)', color: 'var(--p-text)',
-                        fontSize: 13, outline: 'none',
-                      }}
-                    />
+                    <DateInput value={aramaHatTarihi}
+                      onChange={val => setAramaHatTarihi(val)}
+                      placeholder="Tekrar arama tarihi" />
                   </div>
                 )}
 
@@ -549,18 +541,9 @@ export default function OdemeTakip() {
                     <label style={{ fontSize: 12, fontWeight: 600, color: 'var(--p-text-label)', display: 'block', marginBottom: 6 }}>
                       Söz Verilen Tarih *
                     </label>
-                    <input
-                      type="date"
-                      min={bugunStr(0)}
-                      value={aramaSozTarihi}
-                      onChange={e => setAramaSozTarihi(e.target.value)}
-                      style={{
-                        width: '100%', height: 42, padding: '0 12px',
-                        border: '1px solid var(--p-border)', borderRadius: 10,
-                        background: 'var(--p-bg-input)', color: 'var(--p-text)',
-                        fontSize: 13, outline: 'none',
-                      }}
-                    />
+                    <DateInput value={aramaSozTarihi}
+                      onChange={val => setAramaSozTarihi(val)}
+                      placeholder="Söz verilen tarih" />
                   </div>
                 )}
 
@@ -672,7 +655,7 @@ export default function OdemeTakip() {
       {silId && (
         <>
           <div className={`${p}-modal-overlay`} onClick={() => !silYukleniyor && setSilId(null)} />
-          <div className={`${p}-modal-center`}>
+          <div className={`${p}-modal-center ${p}-modal-confirm`}>
             <div className={`${p}-modal-box`} style={{ maxWidth: 420 }}>
               <div className={`${p}-modal-header ${p}-mh-danger`}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
@@ -1047,16 +1030,10 @@ function BosList({ tab, p }) {
   const m = meta[tab] || meta.aranmasi_gerekenler
 
   return (
-    <div style={{ padding: '48px 24px', textAlign: 'center' }}>
-      <div style={{
-        width: 56, height: 56, borderRadius: 14, margin: '0 auto 16px',
-        background: 'var(--p-bg-table-header)',
-        display: 'flex', alignItems: 'center', justifyContent: 'center',
-      }}>
-        <i className={`bi ${m.icon}`} style={{ fontSize: 22, color: 'var(--p-text-muted)', opacity: 0.35 }} />
-      </div>
-      <div style={{ fontWeight: 700, fontSize: 15, color: 'var(--p-text)', marginBottom: 6 }}>{m.text}</div>
-      <div style={{ fontSize: 12, color: 'var(--p-text-muted)', maxWidth: 320, margin: '0 auto' }}>{m.sub}</div>
+    <div className={`${p}-empty-state`}>
+      <i className={`bi ${m.icon}`} />
+      <h6>{m.text}</h6>
+      <p>{m.sub}</p>
     </div>
   )
 }

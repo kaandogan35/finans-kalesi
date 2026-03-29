@@ -25,8 +25,10 @@ class RaporController {
         $sirket_id = (int)$payload['sirket_id'];
 
         $filtreler = [];
-        if (!empty($_GET['cari_id']))   $filtreler['cari_id'] = (int)$_GET['cari_id'];
-        if (!empty($_GET['cari_turu'])) $filtreler['cari_turu'] = $_GET['cari_turu'];
+        if (!empty($_GET['cari_id']))           $filtreler['cari_id'] = (int)$_GET['cari_id'];
+        if (!empty($_GET['cari_turu']))         $filtreler['cari_turu'] = $_GET['cari_turu'];
+        if (!empty($_GET['baslangic_tarihi']))  $filtreler['baslangic_tarihi'] = $_GET['baslangic_tarihi'];
+        if (!empty($_GET['bitis_tarihi']))      $filtreler['bitis_tarihi'] = $_GET['bitis_tarihi'];
 
         $veri = $this->model->cari_yaslandirma($sirket_id, $filtreler);
 
@@ -100,6 +102,16 @@ class RaporController {
 
         $kullanici_id = (int)$payload['sub'];
         $this->model->gecmis_kaydet($sirket_id, $kullanici_id, 'genel_ozet', 'Genel Finansal Özet', 'ekran');
+
+        Response::basarili($veri);
+    }
+
+    // ─── Hesaplamalar ─────────────────────────────────────────────
+
+    public function hesaplamalar(array $payload): void {
+        $sirket_id = (int)$payload['sirket_id'];
+
+        $veri = $this->model->hesaplamalar($sirket_id);
 
         Response::basarili($veri);
     }

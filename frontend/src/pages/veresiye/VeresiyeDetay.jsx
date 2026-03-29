@@ -10,6 +10,8 @@ import { useParams, useNavigate } from 'react-router-dom'
 import { toast } from 'sonner'
 import { veresiyeApi } from '../../api/veresiye'
 import useTemaStore from '../../stores/temaStore'
+import SwipeCard from '../../components/SwipeCard'
+import { DateInput } from '../../components/ui/DateInput'
 
 const prefixMap = { paramgo: 'p' }
 
@@ -124,12 +126,9 @@ function IslemModal({ goster, tur, cariAdi, onKapat, onKaydet, yukleniyor, p }) 
             {/* Tarih */}
             <div>
               <label className={`${p}-vry-form-label`}>İşlem Tarihi</label>
-              <input
-                type="date"
-                className="form-control"
-                value={form.tarih}
-                onChange={(e) => setForm(f => ({ ...f, tarih: e.target.value }))}
-              />
+              <DateInput value={form.tarih}
+                onChange={(val) => setForm(f => ({ ...f, tarih: val }))}
+                placeholder="İşlem tarihi" />
             </div>
 
           </div>
@@ -172,7 +171,7 @@ function SilModal({ goster, onKapat, onOnayla, yukleniyor, p }) {
   return createPortal(
     <>
       <div className={`${p}-modal-overlay`} />
-      <div className={`${p}-modal-center`} role="dialog" aria-modal="true">
+      <div className={`${p}-modal-center ${p}-modal-confirm`} role="dialog" aria-modal="true">
         <div className={`${p}-modal-box`} style={{ maxWidth: 400 }}>
 
           <div className={`${p}-modal-header ${p}-mh-danger`}>
@@ -385,8 +384,9 @@ export default function VeresiyeDetay() {
           <span style={{ fontSize: 12, color: 'var(--p-text-muted)' }}>{islemler.length} kayıt</span>
         </div>
 
-        <div className="table-responsive">
-          <table className="table table-hover align-middle mb-0">
+        {/* Desktop Tablo */}
+        <div className="table-responsive d-none d-md-block">
+          <table className="table table-hover align-middle p-table mb-0">
             <thead>
               <tr className={`${p}-vry-thead-row`}>
                 <th>TARİH</th>
@@ -447,6 +447,51 @@ export default function VeresiyeDetay() {
               })}
             </tbody>
           </table>
+        </div>
+
+        {/* Mobil Kart Listesi */}
+        <div className="d-md-none">
+          {islemler.length === 0 ? (
+            <div className="text-center py-5">
+              <i className="bi bi-journal-x" style={{ fontSize: 32, opacity: 0.25, display: 'block', marginBottom: 8 }} />
+              <span style={{ fontSize: 13, color: 'var(--p-text-muted)' }}>Henüz işlem kaydı yok.</span>
+              <br />
+              <button type="button" className={`btn ${p}-vry-btn-satis mt-3`} onClick={() => setIslemModal('satis')}>
+                <i className="bi bi-bag-plus me-2" />İlk Satışı Ekle
+              </button>
+            </div>
+          ) : <>
+            <div className="p-swipe-hint"><i className="bi bi-arrow-left-right" /> Sola kaydırarak silebilirsiniz</div>
+            {islemler.map((islem) => {
+              const isSatis = islem.tur === 'satis'
+              return (
+                <SwipeCard key={islem.id} aksiyonlar={[
+                  { icon: 'bi-trash3', label: 'Sil', renk: 'danger', onClick: () => setSilModal(islem.id) },
+                ]}>
+                  <div className="p-gg-mcard">
+                    <div className="p-gg-mcard-top">
+                      <div className="p-gg-mcard-kat">
+                        <span className={`${p}-vry-islem-badge ${isSatis ? `${p}-vry-badge-satis` : `${p}-vry-badge-odeme`}`}>
+                          <i className={`bi ${isSatis ? 'bi-bag' : 'bi-cash'} me-1`} />
+                          {isSatis ? 'Satış' : 'Ödeme'}
+                        </span>
+                      </div>
+                      <span className="p-gg-mcard-tutar financial-num" style={{ color: isSatis ? 'var(--p-color-danger)' : 'var(--p-color-success)' }}>
+                        {isSatis ? '+' : '-'}{TL(islem.tutar)}
+                      </span>
+                    </div>
+                    {islem.aciklama && <div className="p-gg-mcard-aciklama">{islem.aciklama}</div>}
+                    <div className="p-gg-mcard-alt">
+                      <span className="p-gg-mcard-tarih"><i className="bi bi-calendar3" /> {tarihFmt(islem.tarih)}</span>
+                      <span className="financial-num" style={{ fontSize: 12, fontWeight: 600, color: islem.kumulatif_bakiye > 0 ? 'var(--p-color-danger)' : 'var(--p-color-success)' }}>
+                        Bakiye: {TL(islem.kumulatif_bakiye)}
+                      </span>
+                    </div>
+                  </div>
+                </SwipeCard>
+              )
+            })}
+          </>}
         </div>
       </div>
 

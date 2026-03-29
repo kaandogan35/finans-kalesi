@@ -67,7 +67,7 @@ function BilancoGrafik({ kapanislar, renkler, p }) {
           <g key={i}>
             <line x1={mL} y1={t.y} x2={svgW-mR} y2={t.y} stroke={hexRgba(renkler.textSec, 0.1)} strokeWidth="1" />
             <text x={mL-5} y={t.y+4} textAnchor="end" fontSize="10" fill={hexRgba(renkler.textSec, 0.5)}>
-              {Math.abs(t.val)>=1000000 ? `${(t.val/1000000).toFixed(1)}M` : Math.abs(t.val)>=1000 ? `${(t.val/1000).toFixed(0)}K` : t.val}
+              {new Intl.NumberFormat('tr-TR', { minimumFractionDigits: 0, maximumFractionDigits: 0 }).format(t.val)}
             </text>
           </g>
         ))}
@@ -447,6 +447,16 @@ export default function AylikBilanco({ kapanislar, setKapanislar, yatirimGuncelD
   return (
     <div>
 
+      {/* ─── Sağ Üst Aksiyon Butonu ─── */}
+      <div className="d-flex justify-content-end mb-3">
+        <button
+          onClick={acEkle}
+          className={`${p}-cym-btn-new d-flex align-items-center gap-2`}
+        >
+          <i className="bi bi-calculator-fill" /> Ay Kapanışı Yap
+        </button>
+      </div>
+
       {/* ══════════════════════════════════════════════════════════════
           ÜST SATIR — Varlıklar (3'lü Grid)
           ══════════════════════════════════════════════════════════════ */}
@@ -538,48 +548,8 @@ export default function AylikBilanco({ kapanislar, setKapanislar, yatirimGuncelD
           ══════════════════════════════════════════════════════════════ */}
       <div className="row g-3 mb-4">
 
-        {/* ── Ay Kapanışı Yap — Belirgin Aksiyon Alanı ── */}
-        <div className="col-12 col-md-4">
-          <div style={{
-            background:`linear-gradient(160deg, ${hexRgba(renkler.accent, 0.08)} 0%, ${hexRgba(renkler.accent, 0.04)} 100%)`,
-            border:`1px solid ${hexRgba(renkler.accent, 0.2)}`,
-            borderRadius:14, padding:'28px 22px',
-            height:'100%', display:'flex', flexDirection:'column',
-            alignItems:'center', justifyContent:'center', textAlign:'center'
-          }}>
-            {/* İkon alanı */}
-            <div style={{
-              width:60, height:60, borderRadius:14, marginBottom:16,
-              background:`linear-gradient(135deg, ${hexRgba(renkler.accent, 0.15)}, ${hexRgba(renkler.accent, 0.08)})`,
-              border:`1px solid ${hexRgba(renkler.accent, 0.25)}`,
-              display:'flex', alignItems:'center', justifyContent:'center'
-            }}>
-              <i className="bi bi-calculator-fill" style={{ fontSize:26, color:renkler.accent }} />
-            </div>
-
-            <div className={`${p}-kasa-text-primary`} style={{ fontSize:14, fontWeight:700, marginBottom:6, opacity:0.8 }}>
-              Ay Kapanışı Yap
-            </div>
-            <p className={`${p}-kasa-text-muted`} style={{ fontSize:12, margin:'0 0 20px', lineHeight:1.5 }}>
-              Dönemi hesapla, varlığını kaydet ve büyüme grafiğini güncelle.
-            </p>
-
-            {/* Glow buton */}
-            <button onClick={acEkle}
-              className={`${p}-kasa-btn-accent d-none d-md-flex align-items-center gap-2`}
-              style={{
-                borderRadius:50, padding:'12px 28px',
-                boxShadow:`0 4px 20px ${hexRgba(renkler.accent, 0.35)}, 0 0 60px ${hexRgba(renkler.accent, 0.08)}`,
-                animation:'kasaGlow 2s ease-in-out infinite alternate'
-              }}>
-              <i className="bi bi-plus-circle-fill" style={{ fontSize:16 }} />
-              Hesapla & Kaydet
-            </button>
-          </div>
-        </div>
-
         {/* ── Aylık Büyüme Grafiği ── */}
-        <div className="col-12 col-md-8">
+        <div className="col-12">
           <div className={`${p}-kasa-glass-card`} style={{ padding:'20px 22px', height:'100%' }}>
             <div className="d-flex align-items-center gap-2 mb-3">
               <div className={`${p}-kasa-icon-box-sm`} style={{ background:hexRgba(renkler.accent, 0.1) }}>
@@ -608,7 +578,8 @@ export default function AylikBilanco({ kapanislar, setKapanislar, yatirimGuncelD
               placeholder="Dönem filtrele..." className={`${p}-kasa-search`} />
           </div>
         </div>
-        <div className="table-responsive">
+        {/* ── Masaüstü Tablo ── */}
+        <div className="table-responsive d-none d-md-block">
           <table className={`${p}-kasa-table`}>
             <thead>
               <tr style={{ background:hexRgba(renkler.text, 0.03) }}>
@@ -663,6 +634,61 @@ export default function AylikBilanco({ kapanislar, setKapanislar, yatirimGuncelD
               )}
             </tbody>
           </table>
+        </div>
+
+        {/* ── Mobil Kart Listesi ── */}
+        <div className="d-md-none">
+          {sayfaliVeri.length === 0 && (
+            <div className={`${p}-kasa-text-muted`} style={{ textAlign:'center', padding:'32px', fontSize:14 }}>Kayıt bulunamadı</div>
+          )}
+          {sayfaliVeri.map(k => (
+            <div key={k.id} className="p-gg-mcard" style={{ borderBottom:`1px solid var(--p-border)` }}>
+              {/* Üst: dönem adı + kar marjı */}
+              <div className="p-gg-mcard-top mb-2">
+                <div style={{ display:'flex', alignItems:'baseline', gap:6 }}>
+                  <span style={{ fontWeight:700, fontSize:15, color:renkler.primary }}>{donemFmt(k.donem)}</span>
+                  <span style={{ fontSize:11, color:'var(--p-text-muted)' }}>{k.donem}</span>
+                </div>
+                <span className={`${p}-kasa-badge`} style={{ color:renkler.primary, flexShrink:0 }}>%{k.kar_marji}</span>
+              </div>
+              {/* Metrikler */}
+              <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:'6px 12px', marginBottom:10 }}>
+                <div>
+                  <div style={{ fontSize:10, fontWeight:600, textTransform:'uppercase', letterSpacing:'0.07em', color:'var(--p-text-muted)', marginBottom:1 }}>Aylık Ciro</div>
+                  <div className="financial-num" style={{ fontSize:14, fontWeight:700, color:renkler.primary }}>{TL(k.kesilen_fatura)}</div>
+                </div>
+                <div>
+                  <div style={{ fontSize:10, fontWeight:600, textTransform:'uppercase', letterSpacing:'0.07em', color:'var(--p-text-muted)', marginBottom:1 }}>Net Varlık</div>
+                  <div className="financial-num" style={{ fontSize:14, fontWeight:800, color:renkler.accent }}>{TL(k.net_varlik)}</div>
+                </div>
+                <div>
+                  <div style={{ fontSize:10, fontWeight:600, textTransform:'uppercase', letterSpacing:'0.07em', color:'var(--p-text-muted)', marginBottom:1 }}>Sanal Stok</div>
+                  <div className="financial-num" style={{ fontSize:13, fontWeight:700, color:'var(--p-text-sec)' }}>{TL(k.sanal_stok)}</div>
+                </div>
+              </div>
+              {/* Aksiyonlar */}
+              <div className="p-gg-mcard-alt" style={{ paddingTop:10, marginTop:0 }}>
+                {silOnayId === k.id ? (
+                  <div className="d-flex align-items-center gap-2 w-100">
+                    <span style={{ fontSize:12, fontWeight:600, color:'var(--p-text-sec)', flex:1 }}>Emin misiniz?</span>
+                    <button onClick={() => sil(k.id)} className={`${p}-kasa-sil-btn`}>Sil</button>
+                    <button onClick={() => setSilOnayId(null)} className={`${p}-kasa-vazgec-btn`}>Vazgeç</button>
+                  </div>
+                ) : (
+                  <div className="d-flex gap-2 w-100">
+                    <button onClick={() => acDuzenle(k)}
+                      style={{ flex:1, height:36, background:'none', border:`1.5px solid ${hexRgba(renkler.accent, 0.3)}`, borderRadius:8, cursor:'pointer', display:'flex', alignItems:'center', justifyContent:'center', gap:5, fontSize:12, fontWeight:600, color:renkler.accent }}>
+                      <i className="bi bi-pencil" style={{ fontSize:11 }} /> Düzenle
+                    </button>
+                    <button onClick={() => setSilOnayId(k.id)}
+                      style={{ width:36, height:36, background:'none', border:`1.5px solid ${hexRgba(renkler.danger, 0.25)}`, borderRadius:8, cursor:'pointer', display:'flex', alignItems:'center', justifyContent:'center' }}>
+                      <i className="bi bi-trash3" style={{ fontSize:12, color:renkler.danger }} />
+                    </button>
+                  </div>
+                )}
+              </div>
+            </div>
+          ))}
         </div>
 
         {/* Sayfalama */}

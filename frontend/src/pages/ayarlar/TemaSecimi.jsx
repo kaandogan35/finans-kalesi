@@ -162,7 +162,7 @@ function RenkPaleti({ renkler }) {
             boxShadow: '0 1px 3px rgba(0,0,0,0.08)',
           }} />
           <span style={{
-            fontSize: 9,
+            fontSize: 11,
             color: 'var(--p-text-muted)',
             fontFamily: 'var(--p-font-body)',
             letterSpacing: '0.03em',

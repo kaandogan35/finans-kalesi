@@ -3,12 +3,14 @@
  * ParamGo v2 tasarım sistemi
  * gvn- prefix ile modüle özel CSS class'ları
  *
- * 6 sekme: Aktif Oturumlar, Giriş Geçmişi, 2FA, Şifre Politikası, IP Kuralları, Denetim Logları
+ * 7 sekme: Aktif Oturumlar, Giriş Geçmişi, 2FA, Şifre Politikası, IP Kuralları, Denetim Logları, Hesabım
  */
 
 import { useState, useEffect, useCallback } from 'react'
 import { toast } from 'sonner'
+import { useNavigate } from 'react-router-dom'
 import { guvenlikApi } from '../../api/guvenlik'
+import useAuthStore from '../../stores/authStore'
 
 // ─── Yardımcılar ────────────────────────────────────────────────────────────────
 const tarihFmt = (s) =>
@@ -50,6 +52,7 @@ const SEKMELER = [
   { id: 'sifre',         label: 'Şifre Politikası',  icon: 'bi-key' },
   { id: 'ip',            label: 'IP Kuralları',       icon: 'bi-globe2' },
   { id: 'loglar',        label: 'Denetim Logları',    icon: 'bi-journal-text' },
+  { id: 'hesabim',       label: 'Hesabım',            icon: 'bi-person-x' },
 ]
 
 
@@ -173,7 +176,7 @@ function GirisGecmisi() {
   return (
     <div>
       <div className="table-responsive">
-        <table className="table table-hover align-middle" style={{ fontSize: 13 }}>
+        <table className="table table-hover align-middle p-table">
           <thead>
             <tr>
               <th style={{ fontSize: 11, fontWeight: 700, color: '#6B7280', background: 'linear-gradient(90deg, rgba(16,185,129,0.06) 0%, rgba(16,185,129,0.01) 100%)', border: 'none', padding: '10px 14px' }}>Tarih</th>
@@ -749,7 +752,7 @@ function DenetimLoglar() {
       ) : (
         <>
           <div className="table-responsive">
-            <table className="table table-hover align-middle" style={{ fontSize: 13 }}>
+            <table className="table table-hover align-middle p-table">
               <thead>
                 <tr>
                   <th style={{ fontSize: 11, fontWeight: 700, color: '#6B7280', background: 'linear-gradient(90deg, rgba(16,185,129,0.06) 0%, transparent 100%)', border: 'none', padding: '10px 14px' }}>Tarih</th>
@@ -803,6 +806,117 @@ function DenetimLoglar() {
   )
 }
 
+// ─── Hesabım / Hesap Silme Sekmesi ─────────────────────────────────────────────
+function HesabimSekme() {
+  const [sifre, setSifre]         = useState('')
+  const [onay, setOnay]           = useState(false)
+  const [siliniyor, setSiliniyor] = useState(false)
+  const { kullanici, cikisYap }   = useAuthStore()
+  const navigate                  = useNavigate()
+
+  const hesapSil = async () => {
+    if (!sifre) { toast.error('Şifrenizi girin'); return }
+    if (!onay)  { toast.error('Onay kutucuğunu işaretleyin'); return }
+
+    setSiliniyor(true)
+    try {
+      await guvenlikApi.hesapSil(sifre)
+      toast.success('Hesabınız silindi')
+      await cikisYap()
+      navigate('/giris')
+    } catch (e) {
+      toast.error(e?.response?.data?.hata || 'Hesap silinemedi')
+    } finally {
+      setSiliniyor(false)
+    }
+  }
+
+  const isSahip = kullanici?.rol === 'sahip'
+
+  return (
+    <div>
+      {/* Hesap Bilgileri */}
+      <div className="gvn-card mb-3">
+        <p style={{ fontSize: 14, fontWeight: 700, color: '#111827', margin: '0 0 12px' }}>
+          <i className="bi bi-person-circle me-2" style={{ color: '#10B981' }} />
+          Hesap Bilgileri
+        </p>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+          <div style={{ display: 'flex', gap: 12 }}>
+            <span style={{ fontSize: 12, color: '#9CA3AF', width: 80 }}>Ad Soyad</span>
+            <span style={{ fontSize: 13, fontWeight: 600, color: '#111827' }}>{kullanici?.ad_soyad || '—'}</span>
+          </div>
+          <div style={{ display: 'flex', gap: 12 }}>
+            <span style={{ fontSize: 12, color: '#9CA3AF', width: 80 }}>E-posta</span>
+            <span style={{ fontSize: 13, color: '#374151' }}>{kullanici?.email || '—'}</span>
+          </div>
+          <div style={{ display: 'flex', gap: 12 }}>
+            <span style={{ fontSize: 12, color: '#9CA3AF', width: 80 }}>Rol</span>
+            <span style={{ fontSize: 12, fontWeight: 600, color: '#059669',
+              background: 'rgba(16,185,129,0.08)', padding: '2px 8px', borderRadius: 6 }}>
+              {kullanici?.rol || '—'}
+            </span>
+          </div>
+        </div>
+      </div>
+
+      {/* Tehlikeli Alan — Hesap Silme */}
+      <div style={{
+        border: '1.5px solid rgba(239,68,68,0.25)',
+        borderRadius: 14,
+        padding: '20px',
+        background: 'rgba(239,68,68,0.02)',
+      }}>
+        <p style={{ fontSize: 14, fontWeight: 700, color: '#DC2626', margin: '0 0 4px' }}>
+          <i className="bi bi-exclamation-triangle-fill me-2" />
+          Hesabı Sil
+        </p>
+        <p style={{ fontSize: 12, color: '#6B7280', margin: '0 0 16px', lineHeight: 1.6 }}>
+          {isSahip
+            ? 'Hesabınızı sildiğinizde şirketinize ait tüm veriler (cariler, gelir/gider kayıtları, çekler, raporlar) kalıcı olarak silinir. Bu işlem geri alınamaz.'
+            : 'Hesabınız şirketten kaldırılacak. Şirket verilerine erişiminiz kesilecek. Bu işlem geri alınamaz.'}
+        </p>
+
+        <div className="mb-3">
+          <label className="gvn-label">Şifrenizi Girin</label>
+          <input
+            className="gvn-input"
+            type="password"
+            placeholder="Hesabınızın şifresi"
+            value={sifre}
+            onChange={e => setSifre(e.target.value)}
+            style={{ maxWidth: 300 }}
+          />
+        </div>
+
+        <div className="gvn-toggle-row mb-3" style={{ background: 'none', border: 'none', padding: 0 }}>
+          <label style={{ display: 'flex', alignItems: 'flex-start', gap: 10, cursor: 'pointer' }}>
+            <input
+              type="checkbox"
+              checked={onay}
+              onChange={e => setOnay(e.target.checked)}
+              style={{ marginTop: 2, accentColor: '#ef4444', width: 16, height: 16 }}
+            />
+            <span style={{ fontSize: 13, color: '#374151', lineHeight: 1.5 }}>
+              Hesabımı ve tüm verilerimi kalıcı olarak silmek istiyorum. Bu işlemin geri alınamayacağını anlıyorum.
+            </span>
+          </label>
+        </div>
+
+        <button
+          className="gvn-btn-danger"
+          onClick={hesapSil}
+          disabled={siliniyor || !sifre || !onay}
+          style={{ opacity: (!sifre || !onay) ? 0.5 : 1 }}
+        >
+          <i className="bi bi-trash3-fill" style={{ fontSize: 13 }} />
+          {siliniyor ? 'Siliniyor...' : 'Hesabımı Kalıcı Olarak Sil'}
+        </button>
+      </div>
+    </div>
+  )
+}
+
 // ─── Ana Bileşen ────────────────────────────────────────────────────────────────
 export default function GuvenlikEkrani() {
   const [aktifSekme, setAktifSekme] = useState('oturumlar')
@@ -814,6 +928,7 @@ export default function GuvenlikEkrani() {
     'sifre':         <SifrePolitikasi />,
     'ip':            <IpKurallar />,
     'loglar':        <DenetimLoglar />,
+    'hesabim':       <HesabimSekme />,
   }
 
   return (

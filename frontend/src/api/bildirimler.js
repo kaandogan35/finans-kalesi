@@ -27,4 +27,12 @@ export const bildirimApi = {
 
   tercihlerKaydet: (tercihler) =>
     api.put('/bildirimler/tercihler', tercihler),
+
+  // Push token kaydet (mobil uygulama açılışında çağrılır)
+  pushTokenKaydet: (token, platform, cihaz_id = null) =>
+    api.post('/bildirimler/push-token', { token, platform, cihaz_id }),
+
+  // Push token sil (çıkış yapıldığında çağrılır)
+  pushTokenSil: (token) =>
+    api.delete('/bildirimler/push-token', { data: { token } }),
 }

@@ -28,12 +28,12 @@ class KasaController {
     // ─── GET /api/kasa/hareketler ───
     public function hareketler_listele($payload) {
         try {
-            $plan = isset($payload['plan']) ? $payload['plan'] : 'ucretsiz';
+            $plan = isset($payload['plan']) ? $payload['plan'] : 'deneme';
             $gecmis_kisitli = false;
 
-            // Ücretsiz planda geçmiş verisi son 2 ay ile sınırlı
+            // Deneme süresi dolmuşsa geçmiş verisi son 2 ay ile sınırlı
             $baslangic = isset($_GET['baslangic_tarihi']) ? $_GET['baslangic_tarihi'] : null;
-            if ($plan === 'ucretsiz') {
+            if ($plan === 'deneme' && (new Abonelik(Database::baglan()))->denemeSuresiDolduMu((int) $payload['sirket_id'])) {
                 $sinir = date('Y-m-d', strtotime('-2 months'));
                 if ($baslangic === null || $baslangic < $sinir) {
                     $baslangic = $sinir;

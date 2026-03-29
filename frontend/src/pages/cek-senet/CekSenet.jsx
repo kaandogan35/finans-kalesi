@@ -14,6 +14,8 @@ import useTemaStore from '../../stores/temaStore'
 import { temaRenkleri } from '../../lib/temaRenkleri'
 import { useSinirler } from '../../hooks/useSinirler'
 import useAuthStore from '../../stores/authStore'
+import SwipeCard, { DynamicAvatar } from '../../components/SwipeCard'
+import { DateInput } from '../../components/ui/DateInput'
 
 const prefixMap = { paramgo: 'p' }
 
@@ -62,7 +64,7 @@ function arsivBadgeCfg(kat, rnk) {
   const map = {
     tahsil_edildi:   { renk: rnk.success, label: 'Tahsil Edildi'   },
     kendi_odendi:    { renk: rnk.primary,  label: 'Kendi Ödendi'    },
-    ciro_tamamlandi: { renk: rnk.primary, label: 'Ciro Tamamlandı' },
+    ciro_tamamlandi: { renk: rnk.primary, label: 'Devredildi' },
     iade_edildi:     { renk: rnk.info,    label: 'İade Edildi'     },
     karsiliksiz:     { renk: rnk.danger,  label: 'Karşılıksız'    },
     protestolu:      { renk: rnk.danger,  label: 'Protestolu'     },
@@ -94,6 +96,9 @@ function normalize(item) {
     tutar:               parseFloat(item.tutar_tl || item.tutar || 0),
     tur_kategori,
     kapanis_tarihi:      item.tahsil_tarihi || item.ciro_tarihi || '',
+    serh_tarihi:         item.serh_tarihi         || '',
+    karsiliksiz_not:     item.karsiliksiz_not     || '',
+    karsiliksiz_aksiyon: item.karsiliksiz_aksiyon || '',
   }
 }
 
@@ -183,17 +188,187 @@ function OnayModal({ open, onClose, onOnayla, baslik, mesaj, ikon, btnRenk, btnY
         {/* Metin */}
         <h2 id="cek-onay-modal-title" className={`${p}-onay-baslik`}>{baslik}</h2>
         <p className={`${p}-onay-aciklama`}>{mesaj}</p>
-        {/* Butonlar */}
+        {/* Butonlar — İptal önce ve autoFocus: yanlışlıkla Enter'a basma engeli */}
         <div className={`${p}-onay-butonlar`}>
-          <button className={`${p}-onay-iptal`} onClick={onClose}>İptal</button>
+          <button className={`${p}-onay-iptal`} onClick={onClose} autoFocus>İptal</button>
           <button
             className={`${p}-onay-onayla`}
             style={{ background: renk, boxShadow: `0 4px 14px ${hexRgba(renk, 0.3)}` }}
             onClick={onOnayla}
+            tabIndex={-1}
           >
             {btnYazi}
           </button>
         </div>
+      </div>
+    </Modal>
+  )
+}
+
+// ─── Karşılıksız Çek Rehberlik Modalı ────────────────────────────────────────
+function KarsiliksizModal({ open, onClose, item, form, setForm, onKaydet, kayitIyor, p = 'b', renkler }) {
+  if (!open || !item) return null
+
+  const serhTarihiVar = !!form.serh_tarihi
+  const deadline = serhTarihiVar
+    ? (() => {
+        const d = new Date(form.serh_tarihi + 'T00:00:00')
+        d.setFullYear(d.getFullYear() + 3)
+        return d
+      })()
+    : null
+
+  const bugunMs = new Date().setHours(0, 0, 0, 0)
+  const kalanGun = deadline ? Math.ceil((deadline.getTime() - bugunMs) / 86400000) : null
+  const kritikMi = kalanGun !== null && kalanGun < 180
+
+  const aksiyonlar = [
+    {
+      v: 'anlasacagim',
+      icon: 'bi-handshake',
+      label: 'Anlaşacağım',
+      alt: 'Not & ödeme planı',
+      renk: 'success',
+    },
+    {
+      v: 'bekleyecegim',
+      icon: 'bi-hourglass-split',
+      label: 'Bekleyeceğim',
+      alt: 'Takibe alındı',
+      renk: 'warning',
+    },
+    {
+      v: 'kapatildi',
+      icon: 'bi-check-circle-fill',
+      label: 'Kapatıldı',
+      alt: 'Çözüme kavuştu',
+      renk: 'success',
+    },
+  ]
+
+  const aksiyonRenkMap = {
+    success: { cls: `${p}-cym-radio-success`, renk: renkler?.success || '#059669' },
+    warning: { cls: `${p}-cym-radio-warning`, renk: renkler?.accent  || '#D97706' },
+  }
+
+  return (
+    <Modal open={open} onClose={onClose} size="sm" scrollable p={p} ariaId="karsiliksiz-modal-title">
+      {/* ── Başlık ─── */}
+      <div className={`${p}-modal-header ${p}-mh-danger`}>
+        <div className="d-flex align-items-center gap-3">
+          <div className={`${p}-modal-icon`} style={{ background: 'rgba(255,255,255,0.18)', border: '1.5px solid rgba(255,255,255,0.25)' }}>
+            <i className="bi bi-exclamation-triangle-fill" />
+          </div>
+          <div>
+            <h2 id="karsiliksiz-modal-title" className={`${p}-modal-title`}>Karşılıksız Çek</h2>
+            <div className={`${p}-modal-sub`}>{item.firma_adi} — <span className="financial-num">{new Intl.NumberFormat('tr-TR',{minimumFractionDigits:2}).format(item.tutar??0)+' ₺'}</span></div>
+          </div>
+        </div>
+        <button className={`${p}-modal-close`} onClick={onClose} aria-label="Kapat">
+          <i className="bi bi-x-lg" />
+        </button>
+      </div>
+
+      {/* ── Gövde ─── */}
+      <div className={`${p}-modal-body`}>
+
+        {/* Şerh Tarihi */}
+        <div className="mb-3">
+          <label className={`form-label ${p}-form-label`}>
+            <i className="bi bi-calendar-x me-1" style={{ color: renkler?.danger }} />
+            Bankadan şerh tarihi neydi?
+          </label>
+          <DateInput
+            value={form.serh_tarihi}
+            onChange={(val) => setForm({ ...form, serh_tarihi: val })}
+            placeholder="Şerh tarihi"
+          />
+        </div>
+
+        {/* 3 Yıl Uyarı Kutusu */}
+        <div className={`${p}-karsiliksiz-uyari${kritikMi ? ` ${p}-karsiliksiz-uyari-kritik` : ''}`}>
+          <i className={`bi ${kritikMi ? 'bi-clock-history' : 'bi-info-circle-fill'}`} />
+          <div>
+            <div style={{ fontWeight: 700, marginBottom: 2 }}>
+              {kritikMi ? '⚡ Acil — Süre daralıyor!' : '3 Yıllık Hak Kaybı Uyarısı'}
+            </div>
+            <div style={{ fontSize: 13 }}>
+              Karşılıksız çekte <strong>yasal takip hakkı şerh tarihinden itibaren 3 yıl</strong> içinde kullanılmalıdır.
+            </div>
+            {deadline && (
+              <div className={`${p}-karsiliksiz-deadline`} style={{ color: kritikMi ? '#B91C1C' : renkler?.danger }}>
+                <i className="bi bi-calendar-event me-1" />
+                Son tarih: <strong>{deadline.toLocaleDateString('tr-TR')}</strong>
+                {kalanGun !== null && <span style={{ marginLeft: 8, opacity: 0.8 }}>({kalanGun} gün kaldı)</span>}
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* 3 Aksiyon */}
+        <div className="mb-3">
+          <div className={`${p}-cym-label mb-2`}>Ne yapmayı düşünüyorsunuz?</div>
+          <div className="d-flex gap-2">
+            {aksiyonlar.map(a => {
+              const rc = aksiyonRenkMap[a.renk]
+              const secili = form.karsiliksiz_aksiyon === a.v
+              return (
+                <div
+                  key={a.v}
+                  className={`${p}-cym-radio-option ${p}-cym-radio-col ${rc.cls} ${secili ? `${p}-cym-radio-selected` : ''}`}
+                  style={{ cursor: 'pointer', flex: 1 }}
+                  onClick={() => setForm({ ...form, karsiliksiz_aksiyon: a.v })}
+                  role="button"
+                  tabIndex={0}
+                  onKeyDown={e => e.key === 'Enter' && setForm({ ...form, karsiliksiz_aksiyon: a.v })}
+                >
+                  <i className={`bi ${a.icon} ${p}-cym-radio-icon-lg`} />
+                  <span className={`${p}-cym-radio-label`} style={{ textAlign: 'center' }}>{a.label}</span>
+                  <span style={{ fontSize: 10, color: 'var(--p-text-muted)', textAlign: 'center' }}>{a.alt}</span>
+                </div>
+              )
+            })}
+          </div>
+        </div>
+
+        {/* Not Alanı — seçim yapılınca göster */}
+        {form.karsiliksiz_aksiyon && (
+          <div className="mb-1">
+            <label className={`form-label ${p}-form-label`}>
+              {form.karsiliksiz_aksiyon === 'anlasacagim' && 'Anlaşma Planı / Not'}
+              {form.karsiliksiz_aksiyon === 'bekleyecegim' && 'Takip Notu'}
+              {form.karsiliksiz_aksiyon === 'kapatildi' && 'Kapanış Notu (opsiyonel)'}
+            </label>
+            <textarea
+              className="form-control"
+              rows={3}
+              style={{ resize: 'vertical', fontSize: 14 }}
+              placeholder={
+                form.karsiliksiz_aksiyon === 'anlasacagim' ? 'Ör: 3 taksit anlaştık, ilk ödeme 15 Nisan...' :
+                form.karsiliksiz_aksiyon === 'bekleyecegim' ? 'Ör: Avukata vereceğim, 30 gün bekleyeceğim...' :
+                'Ör: Nakit tahsil edildi, çek iade alındı...'
+              }
+              value={form.karsiliksiz_not}
+              onChange={e => setForm({ ...form, karsiliksiz_not: e.target.value })}
+            />
+          </div>
+        )}
+
+      </div>
+
+      {/* ── Footer ─── */}
+      <div className={`${p}-modal-footer`}>
+        <button className={`${p}-btn-cancel`} onClick={onClose}>Kapat</button>
+        <button
+          className={`${p}-btn-save ${p}-btn-save-red`}
+          disabled={kayitIyor}
+          onClick={onKaydet}
+        >
+          {kayitIyor
+            ? <><i className={`bi bi-hourglass-split ${p}-cym-spin me-2`} />Kaydediliyor...</>
+            : <><i className="bi bi-floppy me-2" />Kaydet</>
+          }
+        </button>
       </div>
     </Modal>
   )
@@ -457,6 +632,9 @@ export default function CekSenet() {
   const [cirolaForm,      setCirolaForm]      = useState({ firma: '', cari_id: null, tarih: bugunStr() })
   const [cirolaId,        setCirolaId]        = useState(null)
 
+  // ─ Kaydetme durumu (loading butonu için) ─────────────────────────────────────
+  const [kaydediyor, setKaydediyor] = useState(false)
+
   // ─ Kendi Modalleri ───────────────────────────────────────────────────────────
   const [kendiModal,      setKendiModal]      = useState(false)
   const [kendiForm,       setKendiForm]       = useState(kendiBosluk())
@@ -471,6 +649,12 @@ export default function CekSenet() {
   const [ciroDzlModal,    setCiroDzlModal]    = useState(false)
   const [ciroDzlForm,     setCiroDzlForm]     = useState({})
   const [ciroDzlId,       setCiroDzlId]       = useState(null)
+
+  // ─ Karşılıksız Modal ─────────────────────────────────────────────────────────
+  const [karsiliksizModal,      setKarsiliksizModal]      = useState(false)
+  const [karsiliksizItem,       setKarsiliksizItem]       = useState(null)
+  const [karsiliksizForm,       setKarsiliksizForm]       = useState({ serh_tarihi: '', karsiliksiz_not: '', karsiliksiz_aksiyon: '' })
+  const [karsiliksizKayitIyor,  setKarsiliksizKayitIyor]  = useState(false)
 
 
   // ─ Veri Yükleme ─────────────────────────────────────────────────────────────
@@ -570,9 +754,9 @@ export default function CekSenet() {
 
   // ─ Tab Sayıları ──────────────────────────────────────────────────────────────
   const TABS = [
-    { label: 'Dashboard',     renk: renkler.primary,  count: null,           icon: 'bi-speedometer2'          },
-    { label: 'Portföydeki',   renk: renkler.primary,  count: portfoy.length, icon: 'bi-collection-fill'       },
-    { label: 'Tahsildeki',    renk: renkler.success, count: tahsil.length,  icon: 'bi-bank'                  },
+    { label: 'Özet',          renk: renkler.primary,  count: null,           icon: 'bi-speedometer2'          },
+    { label: 'Elimdeki',      renk: renkler.primary,  count: portfoy.length, icon: 'bi-collection-fill'       },
+    { label: 'Bankada / Tahsilatta', renk: renkler.success, count: tahsil.length,  icon: 'bi-bank'           },
     { label: 'Kendi Çekimiz', renk: renkler.danger,  count: kendi.length,   icon: 'bi-arrow-up-circle-fill'  },
     { label: 'Cirolanan',     renk: renkler.primary, count: ciro.length,    icon: 'bi-arrow-left-right'      },
     { label: 'Arşiv',         renk: renkler.textSec, count: arsiv.length,   icon: 'bi-archive-fill'          },
@@ -593,6 +777,7 @@ export default function CekSenet() {
       tutar,
       aciklama:       portfoyForm.asil_borclu  || undefined,
     }
+    setKaydediyor(true)
     try {
       if (portfoyDzlId) {
         const r = await cekSenetApi.guncelle(portfoyDzlId, veri)
@@ -606,6 +791,8 @@ export default function CekSenet() {
       setPortfoyModal(false); setPortfoyForm(portfoyBosluk()); setPortfoyDzlId(null)
     } catch {
       toast.error('İşlem başarısız, lütfen tekrar deneyin.')
+    } finally {
+      setKaydediyor(false)
     }
   }
 
@@ -634,6 +821,7 @@ export default function CekSenet() {
 
   const tahsileVer = async () => {
     if (!tahsileForm.tarih) { toast.error('Tarih zorunludur.'); return }
+    setKaydediyor(true)
     try {
       if (tahsileForm.banka) {
         await cekSenetApi.guncelle(tahsileId, { banka_adi: tahsileForm.banka })
@@ -644,12 +832,13 @@ export default function CekSenet() {
       setTahsil(p => [{ ...item, tahsil_tarihi: tahsileForm.tarih }, ...p])
       setTahsileModal(false); setTahsileForm({ banka: '', tarih: bugunStr() })
       toast.success('Evrak tahsile verildi.')
-    } catch { toast.error('İşlem başarısız.') }
+    } catch { toast.error('İşlem başarısız.') } finally { setKaydediyor(false) }
   }
 
   const cirolaKaydet = async () => {
     if (!cirolaForm.cari_id) { toast.error('Lütfen listeden teslim edilecek cariyi seçin.'); return }
     if (!cirolaForm.tarih) { toast.error('Ciro tarihi zorunludur.'); return }
+    setKaydediyor(true)
     try {
       const r = await cekSenetApi.durumGuncelle(cirolaId, {
         durum: 'cirolandi',
@@ -660,7 +849,7 @@ export default function CekSenet() {
       setCiro(p => [normalize(r.data.veri), ...p])
       setCirolaModal(false); setCirolaForm({ firma: '', cari_id: null, tarih: bugunStr() })
       toast.success('Evrak cirolandı.')
-    } catch { toast.error('İşlem başarısız.') }
+    } catch { toast.error('İşlem başarısız.') } finally { setKaydediyor(false) }
   }
 
   // ─ Tahsil İşlem Fonksiyonları ─────────────────────────────────────────────
@@ -693,6 +882,22 @@ export default function CekSenet() {
     },
   })
 
+  const tahsilKarsiliksiz = (id) => setOnay({
+    baslik: 'Karşılıksız Olarak İşaretle?',
+    mesaj: 'Bu çek karşılıksız olarak işaretlenecek ve arşive taşınacaktır. E-posta bildirimi gönderilecek.',
+    ikon: 'bi-exclamation-triangle-fill',
+    btnRenk: renkler.danger, btnYazi: 'Evet, Karşılıksız!',
+    islem: async () => {
+      try {
+        const r = await cekSenetApi.durumGuncelle(id, { durum: 'karsiliksiz' })
+        setTahsil(p => p.filter(i => i.id !== id))
+        setArsiv(p => [normalize(r.data.veri), ...p])
+        toast.error('Çek karşılıksız olarak işaretlendi, arşive taşındı.')
+      } catch { toast.error('İşlem başarısız.') }
+      setOnay(null)
+    },
+  })
+
   const tahsilDzlAc = (item) => {
     setTahsilDzlForm({
       tur: item.tur, firma_adi: item.firma_adi, cari_id: item.cari_id,
@@ -708,6 +913,7 @@ export default function CekSenet() {
     if (!tahsilDzlForm.vade_tarihi || tutar <= 0) {
       toast.error('Vade tarihi ve tutar zorunludur.'); return
     }
+    setKaydediyor(true)
     try {
       const r = await cekSenetApi.guncelle(tahsilDzlId, {
         cari_id:     tahsilDzlForm.cari_id   || undefined,
@@ -719,7 +925,7 @@ export default function CekSenet() {
       })
       setTahsil(p => p.map(i => i.id === tahsilDzlId ? normalize(r.data.veri) : i))
       setTahsilDzlModal(false); toast.success('Evrak güncellendi.')
-    } catch { toast.error('Güncelleme başarısız.') }
+    } catch { toast.error('Güncelleme başarısız.') } finally { setKaydediyor(false) }
   }
 
   // ─ Kendi İşlem Fonksiyonları ──────────────────────────────────────────────
@@ -739,6 +945,7 @@ export default function CekSenet() {
       tutar,
       aciklama:       kendiForm.asil_borclu  || undefined,
     }
+    setKaydediyor(true)
     try {
       if (kendiDzlId) {
         const r = await cekSenetApi.guncelle(kendiDzlId, veri)
@@ -750,7 +957,7 @@ export default function CekSenet() {
         toast.success('Borç evrakı eklendi.')
       }
       setKendiModal(false); setKendiForm(kendiBosluk()); setKendiDzlId(null)
-    } catch { toast.error('İşlem başarısız.') }
+    } catch { toast.error('İşlem başarısız.') } finally { setKaydediyor(false) }
   }
 
   const kendiDzlAc = (item) => {
@@ -848,6 +1055,7 @@ export default function CekSenet() {
     if (!ciroDzlForm.vade_tarihi || tutar <= 0) {
       toast.error('Vade tarihi ve tutar zorunludur.'); return
     }
+    setKaydediyor(true)
     try {
       const r = await cekSenetApi.guncelle(ciroDzlId, {
         seri_no:     ciroDzlForm.evrak_no   || undefined,
@@ -856,7 +1064,35 @@ export default function CekSenet() {
       })
       setCiro(p => p.map(i => i.id === ciroDzlId ? normalize(r.data.veri) : i))
       setCiroDzlModal(false); toast.success('Evrak güncellendi.')
-    } catch { toast.error('Güncelleme başarısız.') }
+    } catch { toast.error('Güncelleme başarısız.') } finally { setKaydediyor(false) }
+  }
+
+  // ─ Karşılıksız İşlem Fonksiyonları ───────────────────────────────────────────
+  const karsiliksizAc = (item) => {
+    setKarsiliksizItem(item)
+    setKarsiliksizForm({
+      serh_tarihi:         item.serh_tarihi         || '',
+      karsiliksiz_not:     item.karsiliksiz_not     || '',
+      karsiliksiz_aksiyon: item.karsiliksiz_aksiyon || '',
+    })
+    setKarsiliksizModal(true)
+  }
+
+  const karsiliksizKaydet = async () => {
+    if (!karsiliksizItem) return
+    setKarsiliksizKayitIyor(true)
+    try {
+      const r = await cekSenetApi.guncelle(karsiliksizItem.id, {
+        serh_tarihi:         karsiliksizForm.serh_tarihi         || null,
+        karsiliksiz_not:     karsiliksizForm.karsiliksiz_not     || null,
+        karsiliksiz_aksiyon: karsiliksizForm.karsiliksiz_aksiyon || null,
+      })
+      const guncellendi = normalize(r.data.veri)
+      setArsiv(p => p.map(i => i.id === karsiliksizItem.id ? guncellendi : i))
+      setKarsiliksizModal(false)
+      toast.success('Karşılıksız çek bilgileri kaydedildi.')
+    } catch { toast.error('Kayıt başarısız.') }
+    finally { setKarsiliksizKayitIyor(false) }
   }
 
   // ─────────────────────────────────────────────────────────────────────────────
@@ -971,12 +1207,12 @@ export default function CekSenet() {
               {/* 4 KPI Kartı */}
               <div className="row g-3 mb-4">
 
-                {/* Kart 1 — Portföydeki */}
+                {/* Kart 1 — Elimdeki */}
                 <div className="col-12 col-sm-6 col-xl-3">
                   <div className={`${p}-cek-kpi`} onClick={() => tabDegistir(1)}>
                     <i className={`bi bi-collection-fill ${p}-kpi-deco`} style={{ color: renkler.primary }} />
                     <h6 style={{ fontSize: 11, fontWeight: 600, color: renkler.textSec, textTransform: 'uppercase', letterSpacing: '0.8px', margin: '0 0 12px' }}>
-                      Portföydeki Toplam
+                      Elimdeki Toplam
                     </h6>
                     <div className={`${p}-td-amount financial-num`} style={{ fontSize: 26, color: renkler.primary }}>
                       {TL(portfoyToplam)}
@@ -987,12 +1223,12 @@ export default function CekSenet() {
                   </div>
                 </div>
 
-                {/* Kart 2 — Tahsildeki */}
+                {/* Kart 2 — Bankada / Tahsilatta */}
                 <div className="col-12 col-sm-6 col-xl-3">
                   <div className={`${p}-cek-kpi`} onClick={() => tabDegistir(2)}>
                     <i className={`bi bi-bank ${p}-kpi-deco`} style={{ color: renkler.success }} />
                     <h6 style={{ fontSize: 11, fontWeight: 600, color: renkler.textSec, textTransform: 'uppercase', letterSpacing: '0.8px', margin: '0 0 12px' }}>
-                      Tahsildeki
+                      Bankada / Tahsilatta
                     </h6>
                     <div className={`${p}-td-amount financial-num`} style={{ fontSize: 26, color: renkler.success }}>
                       {TL(tahsilToplam)}
@@ -1172,7 +1408,7 @@ export default function CekSenet() {
                       const groupGap = 22
                       const padX = 10
                       const totalW = son6AyVeri.length * (groupW + groupGap) - groupGap + padX * 2
-                      const fmtK = (v) => v >= 1000000 ? (v / 1000000).toFixed(1) + 'M' : v >= 1000 ? Math.round(v / 1000) + 'K' : Math.round(v)
+                      const fmtK = (v) => new Intl.NumberFormat('tr-TR', { minimumFractionDigits: 0, maximumFractionDigits: 0 }).format(Math.round(v))
                       return (
                         <svg width="100%" viewBox={`0 0 ${totalW} ${chartH + 36}`} style={{ overflow: 'visible', display: 'block' }}>
                           {son6AyVeri.map((r, i) => {
@@ -1243,7 +1479,7 @@ export default function CekSenet() {
                   {aramaMetni && <button className="btn btn-outline-secondary" onClick={() => setAramaMetni('')}><i className="bi bi-x" /></button>}
                 </div>
                 <div className="d-flex flex-column align-items-end gap-1">
-                  {kullanici?.plan === 'ucretsiz' && cekBilgi && !cekBilgi.sinirsiz && (cekDurum === 'uyari' || cekDurum === 'dolu') && (
+                  {kullanici?.plan === 'deneme' && cekBilgi && !cekBilgi.sinirsiz && (cekDurum === 'uyari' || cekDurum === 'dolu') && (
                     <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 11, fontWeight: 600,
                       color: cekLimitDolu ? renkler.danger : renkler.warning }}>
                       <div style={{ width: 60, height: 3, borderRadius: 2, background: hexRgba(renkler.textSec, 0.15), overflow: 'hidden' }}>
@@ -1272,7 +1508,7 @@ export default function CekSenet() {
                       <th>Vade Tarihi</th>
                       <th>İşlem Tarihi</th>
                       <th>Tutar</th>
-                      <th>Firma / Asıl Borçlu</th>
+                      <th>Çeki Kesen Kişi / Firma</th>
                       <th>Tür / Banka</th>
                       <th>Evrak No</th>
                       <th style={{ textAlign: 'right' }}>İşlemler</th>
@@ -1281,10 +1517,13 @@ export default function CekSenet() {
                   <tbody>
                     {fP.length === 0 && (
                       <tr>
-                        <td colSpan={7} className={`py-5 text-center ${p}-empty-state`}>
-                          <i className="bi bi-file-earmark-x" style={{ fontSize: 36, color: renkler.textSec, display: 'block', marginBottom: 10 }} />
-                          <div style={{ fontSize: 14, color: renkler.textSec, fontWeight: 500 }}>Bu dönemde evrak bulunamadı</div>
-                          <div style={{ fontSize: 12, color: renkler.textSec, marginTop: 4 }}>Filtre değiştirin veya yeni evrak ekleyin</div>
+                        <td colSpan={7} className={`${p}-empty-state`}>
+                          <i className="bi bi-file-earmark-x" />
+                          <h6>Bu dönemde evrak bulunamadı</h6>
+                          <p>Filtre değiştirin veya yeni evrak ekleyin</p>
+                          <button className="p-empty-cta" onClick={() => { setPortfoyForm(portfoyBosluk()); setPortfoyDzlId(null); setPortfoyModal(true) }}>
+                            <i className="bi bi-plus-lg" /> Yeni Evrak Ekle
+                          </button>
                         </td>
                       </tr>
                     )}
@@ -1303,7 +1542,7 @@ export default function CekSenet() {
                         </td>
                         <td className={`${p}-td-mono`} style={{ padding: '12px' }}>{item.evrak_no || '—'}</td>
                         <td style={{ padding: '12px' }}>
-                          <div className="d-flex gap-1 justify-content-end">
+                          <div className="d-flex gap-1 justify-content-end p-row-actions">
                             <button className={`${p}-act ${p}-act-success`} title="Tahsile Ver"
                               onClick={() => { setTahsileId(item.id); setTahsileForm({ banka: '', tarih: bugunStr() }); setTahsileModal(true) }}>
                               <i className="bi bi-bank" />
@@ -1328,38 +1567,41 @@ export default function CekSenet() {
               {/* ─── Mobil Kart Listesi ─── */}
               <div className="d-md-none">
                 {fP.length === 0 ? (
-                  <div className={`text-center py-4 ${p}-empty-state`}>
-                    <i className="bi bi-file-earmark-x" style={{ fontSize: 32, display: 'block', marginBottom: 8 }} />
-                    <div style={{ fontSize: 13 }}>Bu dönemde evrak bulunamadı</div>
+                  <div className={`${p}-empty-state`}>
+                    <i className="bi bi-file-earmark-x" />
+                    <h6>Bu dönemde evrak bulunamadı</h6>
+                    <p>Yeni evrak eklemek için butona tıklayın</p>
+                    <button className="p-empty-cta" onClick={() => { setPortfoyForm(portfoyBosluk()); setPortfoyDzlId(null); setPortfoyModal(true) }}>
+                      <i className="bi bi-plus-lg" /> Yeni Evrak Ekle
+                    </button>
                   </div>
-                ) : fP.map(item => (
-                  <div key={item.id} className="p-cek-mk">
-                    <div className="p-cek-mk-ust">
-                      <TurBadge tur={item.tur} renkler={renkler} />
-                      <span className="p-cek-mk-tutar financial-num" style={{ color: renkler.primary }}>{TL(item.tutar)}</span>
-                    </div>
-                    <div className="p-cek-mk-firma">{item.firma_adi}</div>
-                    {item.asil_borclu && <div className="p-cek-mk-banka">{item.asil_borclu}</div>}
-                    {item.banka && <div className="p-cek-mk-banka"><i className="bi bi-bank me-1" />{item.banka}{item.evrak_no && <span className="p-cek-mk-evrak"> · {item.evrak_no}</span>}</div>}
-                    <div className="p-cek-mk-vade"><VadeBadge tarih={item.vade_tarihi} p={p} /></div>
-                    <div className="p-cek-mk-aksiyonlar">
-                      <button className={`${p}-act ${p}-act-success`} title="Tahsile Ver"
-                        onClick={() => { setTahsileId(item.id); setTahsileForm({ banka: '', tarih: bugunStr() }); setTahsileModal(true) }}>
-                        <i className="bi bi-bank" />
-                      </button>
-                      <button className={`${p}-act ${p}-act-warning`} title="Cirola"
-                        onClick={() => { setCirolaId(item.id); setCirolaForm({ firma: '', tarih: bugunStr() }); setCirolaModal(true) }}>
-                        <i className="bi bi-arrow-left-right" />
-                      </button>
-                      <button className={`${p}-act`} title="Düzenle" onClick={() => portfoyDzlAc(item)}>
-                        <i className="bi bi-pencil" />
-                      </button>
-                      <button className={`${p}-act ${p}-act-danger`} title="Sil" onClick={() => portfoySil(item.id)}>
-                        <i className="bi bi-trash" />
-                      </button>
-                    </div>
-                  </div>
-                ))}
+                ) : <>
+                  <div className="p-swipe-hint"><i className="bi bi-arrow-left-right" /> Sola kaydırarak işlem yapabilirsiniz</div>
+                  {fP.map(item => (
+                    <SwipeCard key={item.id} aksiyonlar={[
+                      { icon: 'bi-bank', label: 'Tahsil', renk: 'success', onClick: () => { setTahsileId(item.id); setTahsileForm({ banka: '', tarih: bugunStr() }); setTahsileModal(true) } },
+                      { icon: 'bi-arrow-left-right', label: 'Cirola', renk: 'warning', onClick: () => { setCirolaId(item.id); setCirolaForm({ firma: '', tarih: bugunStr() }); setCirolaModal(true) } },
+                      { icon: 'bi-pencil', label: 'Düzenle', renk: 'info', onClick: () => portfoyDzlAc(item) },
+                      { icon: 'bi-trash', label: 'Sil', renk: 'danger', onClick: () => portfoySil(item.id) },
+                    ]}>
+                      <div className="p-cek-mk">
+                        <div className="p-cek-mk-ust">
+                          <DynamicAvatar isim={item.firma_adi} boyut={36} />
+                          <div style={{ flex: 1, minWidth: 0 }}>
+                            <div className="p-cek-mk-firma" style={{ margin: 0 }}>{item.firma_adi}</div>
+                            {item.banka && <div className="p-cek-mk-banka"><i className="bi bi-bank me-1" />{item.banka}</div>}
+                          </div>
+                          <span className="p-cek-mk-tutar financial-num" style={{ color: renkler.primary }}>{TL(item.tutar)}</span>
+                        </div>
+                        <div className="p-cek-mk-alt">
+                          <TurBadge tur={item.tur} renkler={renkler} />
+                          {item.evrak_no && <span className="p-cek-mk-evrak-no">{item.evrak_no}</span>}
+                          <span style={{ marginLeft: 'auto' }}><VadeBadge tarih={item.vade_tarihi} p={p} /></span>
+                        </div>
+                      </div>
+                    </SwipeCard>
+                  ))}
+                </>}
               </div>
               {fP.length > 0 && (
                 <div className={`${p}-list-footer ${p}-list-footer-warning`}>
@@ -1388,7 +1630,7 @@ export default function CekSenet() {
                       <div className={`${p}-banner-value financial-num`} style={{ color: renkler.danger }}>{TL(tahsilGecmis)}</div>
                     </div>
                     <div>
-                      <div className={`${p}-banner-label`}>Toplam Tahsilde</div>
+                      <div className={`${p}-banner-label`}>Toplam Bankada / Tahsilatta</div>
                       <div className={`${p}-banner-value financial-num`} style={{ color: renkler.text }}>{TL(tahsilToplam)}</div>
                     </div>
                   </div>
@@ -1411,7 +1653,7 @@ export default function CekSenet() {
                       <th>Ödeme Tarihi (Vade)</th>
                       <th>Tahsile Veriş</th>
                       <th>Tutar</th>
-                      <th>Firma / Asıl Borçlu</th>
+                      <th>Çeki Kesen Kişi / Firma</th>
                       <th>Tür / Banka</th>
                       <th>Evrak No</th>
                       <th style={{ textAlign: 'right' }}>İşlemler</th>
@@ -1420,10 +1662,10 @@ export default function CekSenet() {
                   <tbody>
                     {fT.length === 0 && (
                       <tr>
-                        <td colSpan={7} className={`py-5 text-center ${p}-empty-state`}>
-                          <i className="bi bi-bank" style={{ fontSize: 36, color: renkler.textSec, display: 'block', marginBottom: 10 }} />
-                          <div style={{ fontSize: 14, color: renkler.textSec, fontWeight: 500 }}>Bu dönemde tahsildeki evrak bulunamadı</div>
-                          <div style={{ fontSize: 12, color: renkler.textSec, marginTop: 4 }}>Portföyden evrak tahsile gönderin</div>
+                        <td colSpan={7} className={`${p}-empty-state`}>
+                          <i className="bi bi-bank" />
+                          <h6>Bu dönemde tahsildeki evrak bulunamadı</h6>
+                          <p>Portföyden evrak tahsile gönderin</p>
                         </td>
                       </tr>
                     )}
@@ -1442,12 +1684,15 @@ export default function CekSenet() {
                         </td>
                         <td className={`${p}-td-mono`} style={{ padding: '12px' }}>{item.evrak_no || '—'}</td>
                         <td style={{ padding: '12px' }}>
-                          <div className="d-flex gap-1 justify-content-end">
+                          <div className="d-flex gap-1 justify-content-end p-row-actions">
                             <button className={`${p}-act ${p}-act-success`} title="Ödendi" onClick={() => tahsilOdendi(item.id)}>
                               <i className="bi bi-check-lg" />
                             </button>
                             <button className={`${p}-act`} title="Portföye İade Et" onClick={() => tahsilIade(item.id)}>
                               <i className="bi bi-arrow-counterclockwise" />
+                            </button>
+                            <button className={`${p}-act ${p}-act-danger`} title="Karşılıksız" onClick={() => tahsilKarsiliksiz(item.id)}>
+                              <i className="bi bi-exclamation-triangle" />
                             </button>
                             <button className={`${p}-act`} title="Düzenle" onClick={() => tahsilDzlAc(item)}>
                               <i className="bi bi-pencil" />
@@ -1462,33 +1707,38 @@ export default function CekSenet() {
               {/* ─── Mobil Kart Listesi ─── */}
               <div className="d-md-none">
                 {fT.length === 0 ? (
-                  <div className={`text-center py-4 ${p}-empty-state`}>
-                    <i className="bi bi-bank" style={{ fontSize: 32, display: 'block', marginBottom: 8 }} />
-                    <div style={{ fontSize: 13 }}>Bu dönemde tahsildeki evrak bulunamadı</div>
+                  <div className={`${p}-empty-state`}>
+                    <i className="bi bi-bank" />
+                    <h6>Bu dönemde tahsildeki evrak bulunamadı</h6>
+                    <p>Portföyden evrak tahsile gönderin</p>
                   </div>
-                ) : fT.map(item => (
-                  <div key={item.id} className="p-cek-mk">
-                    <div className="p-cek-mk-ust">
-                      <TurBadge tur={item.tur} renkler={renkler} />
-                      <span className="p-cek-mk-tutar financial-num" style={{ color: renkler.success }}>{TL(item.tutar)}</span>
-                    </div>
-                    <div className="p-cek-mk-firma">{item.firma_adi}</div>
-                    {item.asil_borclu && <div className="p-cek-mk-banka">{item.asil_borclu}</div>}
-                    {item.banka && <div className="p-cek-mk-banka"><i className="bi bi-bank me-1" />{item.banka}{item.evrak_no && <span className="p-cek-mk-evrak"> · {item.evrak_no}</span>}</div>}
-                    <div className="p-cek-mk-vade"><VadeBadge tarih={item.vade_tarihi} p={p} /></div>
-                    <div className="p-cek-mk-aksiyonlar">
-                      <button className={`${p}-act ${p}-act-success`} title="Ödendi" onClick={() => tahsilOdendi(item.id)}>
-                        <i className="bi bi-check-lg" />
-                      </button>
-                      <button className={`${p}-act`} title="Portföye İade Et" onClick={() => tahsilIade(item.id)}>
-                        <i className="bi bi-arrow-counterclockwise" />
-                      </button>
-                      <button className={`${p}-act`} title="Düzenle" onClick={() => tahsilDzlAc(item)}>
-                        <i className="bi bi-pencil" />
-                      </button>
-                    </div>
-                  </div>
-                ))}
+                ) : <>
+                  <div className="p-swipe-hint"><i className="bi bi-arrow-left-right" /> Sola kaydırarak işlem yapabilirsiniz</div>
+                  {fT.map(item => (
+                    <SwipeCard key={item.id} aksiyonlar={[
+                      { icon: 'bi-check-lg', label: 'Ödendi', renk: 'success', onClick: () => tahsilOdendi(item.id) },
+                      { icon: 'bi-arrow-counterclockwise', label: 'İade', renk: 'info', onClick: () => tahsilIade(item.id) },
+                      { icon: 'bi-exclamation-triangle', label: 'Karşılıksız', renk: 'danger', onClick: () => tahsilKarsiliksiz(item.id) },
+                      { icon: 'bi-pencil', label: 'Düzenle', renk: 'warning', onClick: () => tahsilDzlAc(item) },
+                    ]}>
+                      <div className="p-cek-mk">
+                        <div className="p-cek-mk-ust">
+                          <DynamicAvatar isim={item.firma_adi} boyut={36} />
+                          <div style={{ flex: 1, minWidth: 0 }}>
+                            <div className="p-cek-mk-firma" style={{ margin: 0 }}>{item.firma_adi}</div>
+                            {item.banka && <div className="p-cek-mk-banka"><i className="bi bi-bank me-1" />{item.banka}</div>}
+                          </div>
+                          <span className="p-cek-mk-tutar financial-num" style={{ color: renkler.success }}>{TL(item.tutar)}</span>
+                        </div>
+                        <div className="p-cek-mk-alt">
+                          <TurBadge tur={item.tur} renkler={renkler} />
+                          {item.evrak_no && <span className="p-cek-mk-evrak-no">{item.evrak_no}</span>}
+                          <span style={{ marginLeft: 'auto' }}><VadeBadge tarih={item.vade_tarihi} p={p} /></span>
+                        </div>
+                      </div>
+                    </SwipeCard>
+                  ))}
+                </>}
               </div>
               {fT.length > 0 && (
                 <div className={`${p}-list-footer ${p}-list-footer-green`}>
@@ -1534,7 +1784,7 @@ export default function CekSenet() {
                   {aramaMetni && <button className="btn btn-outline-secondary" onClick={() => setAramaMetni('')}><i className="bi bi-x" /></button>}
                 </div>
                 <div className="d-flex flex-column align-items-end gap-1">
-                  {kullanici?.plan === 'ucretsiz' && cekBilgi && !cekBilgi.sinirsiz && (cekDurum === 'uyari' || cekDurum === 'dolu') && (
+                  {kullanici?.plan === 'deneme' && cekBilgi && !cekBilgi.sinirsiz && (cekDurum === 'uyari' || cekDurum === 'dolu') && (
                     <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 11, fontWeight: 600,
                       color: cekLimitDolu ? renkler.danger : renkler.warning }}>
                       <div style={{ width: 60, height: 3, borderRadius: 2, background: hexRgba(renkler.textSec, 0.15), overflow: 'hidden' }}>
@@ -1570,10 +1820,13 @@ export default function CekSenet() {
                   <tbody>
                     {fK.length === 0 && (
                       <tr>
-                        <td colSpan={7} className={`py-5 text-center ${p}-empty-state`}>
-                          <i className="bi bi-arrow-up-circle" style={{ fontSize: 36, color: renkler.textSec, display: 'block', marginBottom: 10 }} />
-                          <div style={{ fontSize: 14, color: renkler.textSec, fontWeight: 500 }}>Bu dönemde borç evrakı bulunamadı</div>
-                          <div style={{ fontSize: 12, color: renkler.textSec, marginTop: 4 }}>Yeni borç evrakı ekleyin</div>
+                        <td colSpan={7} className={`${p}-empty-state`}>
+                          <i className="bi bi-arrow-up-circle" />
+                          <h6>Bu dönemde borç evrakı bulunamadı</h6>
+                          <p>Yeni borç evrakı ekleyin</p>
+                          <button className="p-empty-cta" onClick={() => { setKendiForm(kendiBosluk()); setKendiDzlId(null); setKendiModal(true) }}>
+                            <i className="bi bi-plus-lg" /> Borç Evrakı Ekle
+                          </button>
                         </td>
                       </tr>
                     )}
@@ -1589,7 +1842,7 @@ export default function CekSenet() {
                         </td>
                         <td className={`${p}-td-mono`} style={{ padding: '12px' }}>{item.evrak_no || '—'}</td>
                         <td style={{ padding: '12px' }}>
-                          <div className="d-flex gap-1 justify-content-end">
+                          <div className="d-flex gap-1 justify-content-end p-row-actions">
                             <button className={`${p}-act ${p}-act-success`} title="Ödendi" onClick={() => kendiOdendi(item.id)}>
                               <i className="bi bi-check-lg" />
                             </button>
@@ -1609,32 +1862,40 @@ export default function CekSenet() {
               {/* ─── Mobil Kart Listesi ─── */}
               <div className="d-md-none">
                 {fK.length === 0 ? (
-                  <div className={`text-center py-4 ${p}-empty-state`}>
-                    <i className="bi bi-arrow-up-circle" style={{ fontSize: 32, display: 'block', marginBottom: 8 }} />
-                    <div style={{ fontSize: 13 }}>Bu dönemde borç evrakı bulunamadı</div>
+                  <div className={`${p}-empty-state`}>
+                    <i className="bi bi-arrow-up-circle" />
+                    <h6>Bu dönemde borç evrakı bulunamadı</h6>
+                    <p>Yeni borç evrakı eklemek için butona tıklayın</p>
+                    <button className="p-empty-cta" onClick={() => { setKendiForm(kendiBosluk()); setKendiDzlId(null); setKendiModal(true) }}>
+                      <i className="bi bi-plus-lg" /> Borç Evrakı Ekle
+                    </button>
                   </div>
-                ) : fK.map(item => (
-                  <div key={item.id} className="p-cek-mk">
-                    <div className="p-cek-mk-ust">
-                      <TurBadge tur={item.tur} renkler={renkler} />
-                      <span className="p-cek-mk-tutar financial-num" style={{ color: renkler.danger }}>{TL(item.tutar)}</span>
-                    </div>
-                    <div className="p-cek-mk-firma">{item.firma_adi}</div>
-                    {item.banka && <div className="p-cek-mk-banka"><i className="bi bi-bank me-1" />{item.banka}{item.evrak_no && <span className="p-cek-mk-evrak"> · {item.evrak_no}</span>}</div>}
-                    <div className="p-cek-mk-vade"><VadeBadge tarih={item.vade_tarihi} p={p} /></div>
-                    <div className="p-cek-mk-aksiyonlar">
-                      <button className={`${p}-act ${p}-act-success`} title="Ödendi" onClick={() => kendiOdendi(item.id)}>
-                        <i className="bi bi-check-lg" />
-                      </button>
-                      <button className={`${p}-act`} title="Düzenle" onClick={() => kendiDzlAc(item)}>
-                        <i className="bi bi-pencil" />
-                      </button>
-                      <button className={`${p}-act ${p}-act-danger`} title="Sil" onClick={() => kendiSil(item.id)}>
-                        <i className="bi bi-trash" />
-                      </button>
-                    </div>
-                  </div>
-                ))}
+                ) : <>
+                  <div className="p-swipe-hint"><i className="bi bi-arrow-left-right" /> Sola kaydırarak işlem yapabilirsiniz</div>
+                  {fK.map(item => (
+                    <SwipeCard key={item.id} aksiyonlar={[
+                      { icon: 'bi-check-lg', label: 'Ödendi', renk: 'success', onClick: () => kendiOdendi(item.id) },
+                      { icon: 'bi-pencil', label: 'Düzenle', renk: 'info', onClick: () => kendiDzlAc(item) },
+                      { icon: 'bi-trash', label: 'Sil', renk: 'danger', onClick: () => kendiSil(item.id) },
+                    ]}>
+                      <div className="p-cek-mk">
+                        <div className="p-cek-mk-ust">
+                          <DynamicAvatar isim={item.firma_adi} boyut={36} />
+                          <div style={{ flex: 1, minWidth: 0 }}>
+                            <div className="p-cek-mk-firma" style={{ margin: 0 }}>{item.firma_adi}</div>
+                            {item.banka && <div className="p-cek-mk-banka"><i className="bi bi-bank me-1" />{item.banka}</div>}
+                          </div>
+                          <span className="p-cek-mk-tutar financial-num" style={{ color: renkler.danger }}>{TL(item.tutar)}</span>
+                        </div>
+                        <div className="p-cek-mk-alt">
+                          <TurBadge tur={item.tur} renkler={renkler} />
+                          {item.evrak_no && <span className="p-cek-mk-evrak-no">{item.evrak_no}</span>}
+                          <span style={{ marginLeft: 'auto' }}><VadeBadge tarih={item.vade_tarihi} p={p} /></span>
+                        </div>
+                      </div>
+                    </SwipeCard>
+                  ))}
+                </>}
               </div>
               {fK.length > 0 && (
                 <div className={`${p}-list-footer ${p}-list-footer-red`}>
@@ -1695,10 +1956,10 @@ export default function CekSenet() {
                   <tbody>
                     {fC.length === 0 && (
                       <tr>
-                        <td colSpan={7} className={`py-5 text-center ${p}-empty-state`}>
-                          <i className="bi bi-arrow-left-right" style={{ fontSize: 36, color: renkler.textSec, display: 'block', marginBottom: 10 }} />
-                          <div style={{ fontSize: 14, color: renkler.textSec, fontWeight: 500 }}>Bu dönemde cirolanan evrak bulunamadı</div>
-                          <div style={{ fontSize: 12, color: renkler.textSec, marginTop: 4 }}>Portföyden evrak cirolandığında burada görünür</div>
+                        <td colSpan={7} className={`${p}-empty-state`}>
+                          <i className="bi bi-arrow-left-right" />
+                          <h6>Bu dönemde cirolanan evrak bulunamadı</h6>
+                          <p>Portföyden evrak cirolandığında burada görünür</p>
                         </td>
                       </tr>
                     )}
@@ -1718,7 +1979,7 @@ export default function CekSenet() {
                           {item.evrak_no && <div className={`${p}-td-mono`} style={{ marginTop: 4 }}>{item.evrak_no}</div>}
                         </td>
                         <td style={{ padding: '12px' }}>
-                          <div className="d-flex gap-1 justify-content-end">
+                          <div className="d-flex gap-1 justify-content-end p-row-actions">
                             <button className={`${p}-act ${p}-act-success`} title="Tamamlandı" onClick={() => ciroTamamlandi(item.id)}>
                               <i className="bi bi-check-lg" />
                             </button>
@@ -1741,36 +2002,38 @@ export default function CekSenet() {
               {/* ─── Mobil Kart Listesi ─── */}
               <div className="d-md-none">
                 {fC.length === 0 ? (
-                  <div className={`text-center py-4 ${p}-empty-state`}>
-                    <i className="bi bi-arrow-left-right" style={{ fontSize: 32, display: 'block', marginBottom: 8 }} />
-                    <div style={{ fontSize: 13 }}>Bu dönemde cirolanan evrak bulunamadı</div>
+                  <div className={`${p}-empty-state`}>
+                    <i className="bi bi-arrow-left-right" />
+                    <h6>Bu dönemde cirolanan evrak bulunamadı</h6>
+                    <p>Portföyden evrak cirolandığında burada görünür</p>
                   </div>
-                ) : fC.map(item => (
-                  <div key={item.id} className="p-cek-mk">
-                    <div className="p-cek-mk-ust">
-                      <TurBadge tur={item.tur} renkler={renkler} />
-                      <span className="p-cek-mk-tutar financial-num" style={{ color: renkler.primary }}>{TL(item.tutar)}</span>
-                    </div>
-                    <div className="p-cek-mk-firma">{item.asil_firma}</div>
-                    {item.teslim_yeri && <div className="p-cek-mk-banka"><i className="bi bi-arrow-right me-1" style={{ color: renkler.primary }} />{item.teslim_yeri}</div>}
-                    {item.evrak_no && <div className="p-cek-mk-banka p-cek-mk-evrak">{item.evrak_no}</div>}
-                    <div className="p-cek-mk-vade"><VadeBadge tarih={item.vade_tarihi} p={p} /></div>
-                    <div className="p-cek-mk-aksiyonlar">
-                      <button className={`${p}-act ${p}-act-success`} title="Tamamlandı" onClick={() => ciroTamamlandi(item.id)}>
-                        <i className="bi bi-check-lg" />
-                      </button>
-                      <button className={`${p}-act`} title="Portföye İade Et" onClick={() => ciroIade(item.id)}>
-                        <i className="bi bi-arrow-counterclockwise" />
-                      </button>
-                      <button className={`${p}-act`} title="Düzenle" onClick={() => ciroDzlAc(item)}>
-                        <i className="bi bi-pencil" />
-                      </button>
-                      <button className={`${p}-act ${p}-act-danger`} title="Sil" onClick={() => ciroSil(item.id)}>
-                        <i className="bi bi-trash" />
-                      </button>
-                    </div>
-                  </div>
-                ))}
+                ) : <>
+                  <div className="p-swipe-hint"><i className="bi bi-arrow-left-right" /> Sola kaydırarak işlem yapabilirsiniz</div>
+                  {fC.map(item => (
+                    <SwipeCard key={item.id} aksiyonlar={[
+                      { icon: 'bi-check-lg', label: 'Tamam', renk: 'success', onClick: () => ciroTamamlandi(item.id) },
+                      { icon: 'bi-arrow-counterclockwise', label: 'İade', renk: 'info', onClick: () => ciroIade(item.id) },
+                      { icon: 'bi-pencil', label: 'Düzenle', renk: 'warning', onClick: () => ciroDzlAc(item) },
+                      { icon: 'bi-trash', label: 'Sil', renk: 'danger', onClick: () => ciroSil(item.id) },
+                    ]}>
+                      <div className="p-cek-mk">
+                        <div className="p-cek-mk-ust">
+                          <DynamicAvatar isim={item.asil_firma} boyut={36} />
+                          <div style={{ flex: 1, minWidth: 0 }}>
+                            <div className="p-cek-mk-firma" style={{ margin: 0 }}>{item.asil_firma}</div>
+                            {item.teslim_yeri && <div className="p-cek-mk-banka"><i className="bi bi-arrow-right me-1" />{item.teslim_yeri}</div>}
+                          </div>
+                          <span className="p-cek-mk-tutar financial-num" style={{ color: renkler.primary }}>{TL(item.tutar)}</span>
+                        </div>
+                        <div className="p-cek-mk-alt">
+                          <TurBadge tur={item.tur} renkler={renkler} />
+                          {item.evrak_no && <span className="p-cek-mk-evrak-no">{item.evrak_no}</span>}
+                          <span style={{ marginLeft: 'auto' }}><VadeBadge tarih={item.vade_tarihi} p={p} /></span>
+                        </div>
+                      </div>
+                    </SwipeCard>
+                  ))}
+                </>}
               </div>
               {fC.length > 0 && (
                 <div className={`${p}-list-footer ${p}-list-footer-warning-alt`}>
@@ -1852,17 +2115,29 @@ export default function CekSenet() {
                   <tbody>
                     {fA.length === 0 && (
                       <tr>
-                        <td colSpan={6} className={`py-5 text-center ${p}-empty-state`}>
-                          <i className="bi bi-archive" style={{ fontSize: 36, color: renkler.textSec, display: 'block', marginBottom: 10 }} />
-                          <div style={{ fontSize: 14, color: renkler.textSec, fontWeight: 500 }}>Arşivde kayıt bulunamadı</div>
-                          <div style={{ fontSize: 12, color: renkler.textSec, marginTop: 4 }}>Tamamlanan evraklar burada görünür</div>
+                        <td colSpan={6} className={`${p}-empty-state`}>
+                          <i className="bi bi-archive" />
+                          <h6>Arşivde kayıt bulunamadı</h6>
+                          <p>Tamamlanan evraklar burada görünür</p>
                         </td>
                       </tr>
                     )}
                     {fA.map(item => {
                       const cfg = arsivBadgeCfg(item.tur_kategori, renkler)
+                      const isKarsiliksiz = item.tur_kategori === 'karsiliksiz'
+                      const aksiyonIcon = {
+                        anlasacagim:  'bi-handshake',
+                        bekleyecegim: 'bi-hourglass-split',
+                        kapatildi:    'bi-check-circle-fill',
+                      }[item.karsiliksiz_aksiyon]
                       return (
-                        <tr key={item.id}>
+                        <tr
+                          key={item.id}
+                          className={isKarsiliksiz ? `${p}-cek-tr-karsiliksiz` : ''}
+                          onClick={isKarsiliksiz ? () => karsiliksizAc(item) : undefined}
+                          style={isKarsiliksiz ? { cursor: 'pointer' } : undefined}
+                          title={isKarsiliksiz ? 'Detay / Not ekle' : undefined}
+                        >
                           <td className={`${p}-td-muted`} style={{ padding: '12px' }}>{tarihFmt(item.kapanis_tarihi)}</td>
                           <td className={`${p}-td-muted`} style={{ padding: '12px' }}>{tarihFmt(item.vade_tarihi)}</td>
                           <td className={`${p}-td-amount financial-num`} style={{ padding: '12px', color: cfg.renk }}>{TL(item.tutar)}</td>
@@ -1885,6 +2160,21 @@ export default function CekSenet() {
                               <span className="cek-dot" style={{ background: cfg.renk, boxShadow: `0 0 6px ${hexRgba(cfg.renk, 0.5)}` }} />
                               {cfg.label}
                             </span>
+                            {isKarsiliksiz && (
+                              <div style={{ marginTop: 4, display: 'flex', alignItems: 'center', gap: 4, flexWrap: 'wrap' }}>
+                                {item.karsiliksiz_aksiyon && (
+                                  <span className={`${p}-karsiliksiz-aksiyon-badge`}>
+                                    <i className={`bi ${aksiyonIcon}`} />
+                                    {item.karsiliksiz_aksiyon === 'anlasacagim' && 'Anlaşılıyor'}
+                                    {item.karsiliksiz_aksiyon === 'bekleyecegim' && 'Takipte'}
+                                    {item.karsiliksiz_aksiyon === 'kapatildi' && 'Kapatıldı'}
+                                  </span>
+                                )}
+                                <span className={`${p}-karsiliksiz-tikla`}>
+                                  <i className="bi bi-pencil-square" /> Detay
+                                </span>
+                              </div>
+                            )}
                           </td>
                         </tr>
                       )
@@ -1895,35 +2185,53 @@ export default function CekSenet() {
               {/* ─── Mobil Kart Listesi ─── */}
               <div className="d-md-none">
                 {fA.length === 0 ? (
-                  <div className={`text-center py-4 ${p}-empty-state`}>
-                    <i className="bi bi-archive" style={{ fontSize: 32, display: 'block', marginBottom: 8 }} />
-                    <div style={{ fontSize: 13 }}>Arşivde kayıt bulunamadı</div>
+                  <div className={`${p}-empty-state`}>
+                    <i className="bi bi-archive" />
+                    <h6>Arşivde kayıt bulunamadı</h6>
+                    <p>Tamamlanan evraklar burada görünür</p>
                   </div>
                 ) : fA.map(item => {
                   const cfg = arsivBadgeCfg(item.tur_kategori, renkler)
+                  const isKarsiliksiz = item.tur_kategori === 'karsiliksiz'
                   return (
-                    <div key={item.id} className="p-cek-mk">
+                    <div
+                      key={item.id}
+                      className={`p-cek-mk${isKarsiliksiz ? ` ${p}-cek-mk-karsiliksiz` : ''}`}
+                      onClick={isKarsiliksiz ? () => karsiliksizAc(item) : undefined}
+                      style={isKarsiliksiz ? { cursor: 'pointer' } : undefined}
+                    >
                       <div className="p-cek-mk-ust">
+                        <DynamicAvatar isim={item.firma_adi || item.asil_firma} boyut={36} />
+                        <div style={{ flex: 1, minWidth: 0 }}>
+                          <div className="p-cek-mk-firma" style={{ margin: 0 }}>{item.firma_adi || item.asil_firma}</div>
+                          {item.evrak_no && <div className="p-cek-mk-banka">{item.evrak_no}</div>}
+                        </div>
+                        <span className="p-cek-mk-tutar financial-num" style={{ color: cfg.renk }}>{TL(item.tutar)}</span>
+                      </div>
+                      <div className="p-cek-mk-alt">
                         <span style={{
-                          display: 'inline-flex', alignItems: 'center', gap: 6,
+                          display: 'inline-flex', alignItems: 'center', gap: 4,
                           background: cfg.bg, color: cfg.renk,
-                          fontSize: 11, fontWeight: 700, borderRadius: 10, padding: '3px 8px',
+                          fontSize: 10, fontWeight: 700, borderRadius: 8, padding: '2px 7px',
                           border: `1px solid ${hexRgba(cfg.renk, 0.18)}`,
                         }}>
                           <span className="cek-dot" style={{ background: cfg.renk }} />
                           {cfg.label}
                         </span>
-                        <span className="p-cek-mk-tutar financial-num" style={{ color: cfg.renk }}>{TL(item.tutar)}</span>
-                      </div>
-                      <div className="p-cek-mk-firma">{item.firma_adi || item.asil_firma}</div>
-                      {item.evrak_no && <div className="p-cek-mk-banka p-cek-mk-evrak">{item.evrak_no}</div>}
-                      <div className="p-cek-mk-vade">
                         <TurBadge tur={item.tur} renkler={renkler} />
+                        <span style={{ marginLeft: 'auto', fontSize: 11, color: renkler.textSec }}>
+                          {tarihFmt(item.vade_tarihi)}
+                        </span>
                       </div>
-                      <div style={{ fontSize: 11, color: renkler.textSec, marginTop: 4 }}>
-                        Vade: {tarihFmt(item.vade_tarihi)}
-                        {item.kapanis_tarihi && <> · Kapanış: {tarihFmt(item.kapanis_tarihi)}</>}
-                      </div>
+                      {isKarsiliksiz && (
+                        <div className={`${p}-karsiliksiz-mobil-hint`}>
+                          <i className="bi bi-pencil-square me-1" />
+                          {item.karsiliksiz_aksiyon
+                            ? (item.karsiliksiz_aksiyon === 'anlasacagim' ? 'Anlaşılıyor' : item.karsiliksiz_aksiyon === 'bekleyecegim' ? 'Takipte' : 'Kapatıldı')
+                            : 'Detay eklemek için dokun'
+                          }
+                        </div>
+                      )}
                     </div>
                   )
                 })}
@@ -1943,6 +2251,19 @@ export default function CekSenet() {
       {/* ═══════════════════════════════════════════════════════════════════════
           MODALLER
       ═══════════════════════════════════════════════════════════════════════ */}
+
+      {/* ─── Karşılıksız Çek Rehberi ────────────────────────────────────────── */}
+      <KarsiliksizModal
+        open={karsiliksizModal}
+        onClose={() => setKarsiliksizModal(false)}
+        item={karsiliksizItem}
+        form={karsiliksizForm}
+        setForm={setKarsiliksizForm}
+        onKaydet={karsiliksizKaydet}
+        kayitIyor={karsiliksizKayitIyor}
+        p={p}
+        renkler={renkler}
+      />
 
       {/* ─── Generic Onay ───────────────────────────────────────────────────── */}
       <OnayModal
@@ -1997,7 +2318,7 @@ export default function CekSenet() {
               </FG>
             </div>
             <div className="col-md-6">
-              <FG label="Asıl Borçlu" p={p} renkler={renkler}>
+              <FG label="Çeki Kesen Kişi / Firma" p={p} renkler={renkler}>
                 <input className="form-control" value={portfoyForm.asil_borclu}
                   placeholder="Asıl borçlu adı (opsiyonel)"
                   onChange={(e) => setPortfoyForm({ ...portfoyForm, asil_borclu: e.target.value })} />
@@ -2017,30 +2338,32 @@ export default function CekSenet() {
                   onChange={(e) => setPortfoyForm({ ...portfoyForm, evrak_no: e.target.value })} />
               </FG>
             </div>
+            {portfoyForm.tur === 'Müşteri Çeki' && (
             <div className="col-md-6">
               <FG label="Banka Adı" p={p} renkler={renkler}>
                 <AutoComplete value={portfoyForm.banka} onChange={(v) => setPortfoyForm({ ...portfoyForm, banka: v })}
                   options={BANKALAR} placeholder="Banka seç veya yaz..." id="pf-banka" p={p} />
               </FG>
             </div>
+            )}
             <div className="col-md-6">
               <FG label="Vade Tarihi" zorunlu kritik p={p} renkler={renkler}>
-                <input type="date" className="form-control"
-                  value={portfoyForm.vade_tarihi}
-                  onChange={(e) => setPortfoyForm({ ...portfoyForm, vade_tarihi: e.target.value })} />
+                <DateInput value={portfoyForm.vade_tarihi}
+                  onChange={(val) => setPortfoyForm({ ...portfoyForm, vade_tarihi: val })}
+                  placeholder="Vade tarihi" />
               </FG>
             </div>
             <div className="col-md-6">
               <FG label="Düzenlenme / Alınma Tarihi" p={p} renkler={renkler}>
-                <input type="date" className="form-control"
-                  value={portfoyForm.islem_tarihi}
-                  onChange={(e) => setPortfoyForm({ ...portfoyForm, islem_tarihi: e.target.value })} />
+                <DateInput value={portfoyForm.islem_tarihi}
+                  onChange={(val) => setPortfoyForm({ ...portfoyForm, islem_tarihi: val })}
+                  placeholder="İşlem tarihi" />
               </FG>
             </div>
             <div className="col-12">
               <FG label="Tutar" zorunlu p={p} renkler={renkler}>
                 <div className="input-group">
-                  <input className="form-control" placeholder="0,00"
+                  <input className="form-control p-tutar-input" placeholder="0,00"
                     value={portfoyForm.tutarStr}
                     onChange={(e) => setPortfoyForm({ ...portfoyForm, tutarStr: formatParaInput(e.target.value) })} />
                   <span className="input-group-text">₺</span>
@@ -2052,9 +2375,9 @@ export default function CekSenet() {
         <div className={`${p}-modal-footer`}>
           <button className={`${p}-btn-cancel`}
             onClick={() => { setPortfoyModal(false); setPortfoyDzlId(null) }}>İptal</button>
-          <button className={`${p}-btn-save ${p}-btn-save-default`}
-            onClick={portfoyKaydet}>
-            <i className="bi bi-floppy me-2" />Kaydet
+          <button className={`${p}-btn-save ${p}-btn-save-default${kaydediyor ? ' p-btn-loading' : ''}`}
+            onClick={portfoyKaydet} disabled={kaydediyor}>
+            {kaydediyor ? <><span className="p-btn-spinner" />Kaydediliyor...</> : <><i className="bi bi-floppy me-2" />Kaydet</>}
           </button>
         </div>
       </Modal>
@@ -2081,14 +2404,14 @@ export default function CekSenet() {
               options={BANKALAR} placeholder="Banka seç veya yaz..." id="tv-banka" required p={p} />
           </FG>
           <FG label="Tahsile Veriş Tarihi" zorunlu p={p} renkler={renkler}>
-            <input type="date" className="form-control"
-              value={tahsileForm.tarih}
-              onChange={(e) => setTahsileForm({ ...tahsileForm, tarih: e.target.value })} />
+            <DateInput value={tahsileForm.tarih}
+              onChange={(val) => setTahsileForm({ ...tahsileForm, tarih: val })}
+              placeholder="Tahsile veriş tarihi" />
           </FG>
         </div>
         <div className={`${p}-modal-footer`}>
           <button className={`${p}-btn-cancel`} onClick={() => setTahsileModal(false)}>İptal</button>
-          <button className={`${p}-btn-save ${p}-btn-save-green`} onClick={tahsileVer}>
+          <button className={`${p}-btn-save ${p}-btn-save-green${kaydediyor ? ' p-btn-loading' : ''}`} onClick={tahsileVer} disabled={kaydediyor}>
             <i className="bi bi-check-circle me-2" />İşlemi Tamamla
           </button>
         </div>
@@ -2117,14 +2440,14 @@ export default function CekSenet() {
               options={cariSecenekleri} placeholder="Cari seç..." id="ci-firma" required p={p} />
           </FG>
           <FG label="Ciro Tarihi" zorunlu p={p} renkler={renkler}>
-            <input type="date" className="form-control"
-              value={cirolaForm.tarih}
-              onChange={(e) => setCirolaForm({ ...cirolaForm, tarih: e.target.value })} />
+            <DateInput value={cirolaForm.tarih}
+              onChange={(val) => setCirolaForm({ ...cirolaForm, tarih: val })}
+              placeholder="Ciro tarihi" />
           </FG>
         </div>
         <div className={`${p}-modal-footer`}>
           <button className={`${p}-btn-cancel`} onClick={() => setCirolaModal(false)}>İptal</button>
-          <button className={`${p}-btn-save ${p}-btn-save-warning-alt`} onClick={cirolaKaydet}>
+          <button className={`${p}-btn-save ${p}-btn-save-warning-alt${kaydediyor ? ' p-btn-loading' : ''}`} onClick={cirolaKaydet} disabled={kaydediyor}>
             <i className="bi bi-arrow-left-right me-2" />Ciroyu Tamamla
           </button>
         </div>
@@ -2170,7 +2493,7 @@ export default function CekSenet() {
               </FG>
             </div>
             <div className="col-md-6">
-              <FG label="Asıl Borçlu" p={p} renkler={renkler}>
+              <FG label="Çeki Kesen Kişi / Firma" p={p} renkler={renkler}>
                 <input className="form-control" value={kendiForm.asil_borclu}
                   placeholder="İsteğe bağlı"
                   onChange={(e) => setKendiForm({ ...kendiForm, asil_borclu: e.target.value })} />
@@ -2190,30 +2513,32 @@ export default function CekSenet() {
                   onChange={(e) => setKendiForm({ ...kendiForm, evrak_no: e.target.value })} />
               </FG>
             </div>
+            {kendiForm.tur === 'Kendi Çekimiz' && (
             <div className="col-md-6">
               <FG label="Banka Adı" zorunlu p={p} renkler={renkler}>
                 <AutoComplete value={kendiForm.banka} onChange={(v) => setKendiForm({ ...kendiForm, banka: v })}
                   options={BANKALAR} placeholder="Banka seç..." id="ke-banka" required p={p} />
               </FG>
             </div>
+            )}
             <div className="col-md-6">
               <FG label="Vade Tarihi" zorunlu kritik p={p} renkler={renkler}>
-                <input type="date" className="form-control"
-                  value={kendiForm.vade_tarihi}
-                  onChange={(e) => setKendiForm({ ...kendiForm, vade_tarihi: e.target.value })} />
+                <DateInput value={kendiForm.vade_tarihi}
+                  onChange={(val) => setKendiForm({ ...kendiForm, vade_tarihi: val })}
+                  placeholder="Vade tarihi" />
               </FG>
             </div>
             <div className="col-md-6">
               <FG label="Düzenlenme / Veriliş Tarihi" p={p} renkler={renkler}>
-                <input type="date" className="form-control"
-                  value={kendiForm.islem_tarihi}
-                  onChange={(e) => setKendiForm({ ...kendiForm, islem_tarihi: e.target.value })} />
+                <DateInput value={kendiForm.islem_tarihi}
+                  onChange={(val) => setKendiForm({ ...kendiForm, islem_tarihi: val })}
+                  placeholder="Veriliş tarihi" />
               </FG>
             </div>
             <div className="col-12">
               <FG label="Tutar" zorunlu p={p} renkler={renkler}>
                 <div className="input-group">
-                  <input className="form-control" placeholder="0,00"
+                  <input className="form-control p-tutar-input" placeholder="0,00"
                     value={kendiForm.tutarStr}
                     onChange={(e) => setKendiForm({ ...kendiForm, tutarStr: formatParaInput(e.target.value) })} />
                   <span className="input-group-text">₺</span>
@@ -2225,9 +2550,9 @@ export default function CekSenet() {
         <div className={`${p}-modal-footer`}>
           <button className={`${p}-btn-cancel`}
             onClick={() => { setKendiModal(false); setKendiDzlId(null) }}>İptal</button>
-          <button className={`${p}-btn-save ${p}-btn-save-red`}
-            onClick={kendiKaydet}>
-            <i className="bi bi-floppy me-2" />Kaydet
+          <button className={`${p}-btn-save ${p}-btn-save-red${kaydediyor ? ' p-btn-loading' : ''}`}
+            onClick={kendiKaydet} disabled={kaydediyor}>
+            {kaydediyor ? <><span className="p-btn-spinner" />Kaydediliyor...</> : <><i className="bi bi-floppy me-2" />Kaydet</>}
           </button>
         </div>
       </Modal>
@@ -2240,7 +2565,7 @@ export default function CekSenet() {
               <i className="bi bi-pencil-square" />
             </div>
             <div>
-              <h2 id="cek-tahsilduzle-modal-title" className={`${p}-modal-title`}>Tahsildeki Evrak Düzenle</h2>
+              <h2 id="cek-tahsilduzle-modal-title" className={`${p}-modal-title`}>Bankada / Tahsilattaki Evrak Düzenle</h2>
               <div className={`${p}-modal-sub`}>Tahsil bilgilerini güncelle</div>
             </div>
           </div>
@@ -2258,7 +2583,7 @@ export default function CekSenet() {
               </FG>
             </div>
             <div className="col-md-6">
-              <FG label="Asıl Borçlu" p={p} renkler={renkler}>
+              <FG label="Çeki Kesen Kişi / Firma" p={p} renkler={renkler}>
                 <input className="form-control" value={tahsilDzlForm.asil_borclu || ''}
                   onChange={(e) => setTahsilDzlForm({ ...tahsilDzlForm, asil_borclu: e.target.value })} />
               </FG>
@@ -2277,20 +2602,22 @@ export default function CekSenet() {
             </div>
             <div className="col-md-6">
               <FG label="Vade Tarihi" zorunlu p={p} renkler={renkler}>
-                <input type="date" className="form-control" value={tahsilDzlForm.vade_tarihi || ''}
-                  onChange={(e) => setTahsilDzlForm({ ...tahsilDzlForm, vade_tarihi: e.target.value })} />
+                <DateInput value={tahsilDzlForm.vade_tarihi || ''}
+                  onChange={(val) => setTahsilDzlForm({ ...tahsilDzlForm, vade_tarihi: val })}
+                  placeholder="Vade tarihi" />
               </FG>
             </div>
             <div className="col-md-6">
               <FG label="Tahsile Veriş Tarihi" p={p} renkler={renkler}>
-                <input type="date" className="form-control" value={tahsilDzlForm.tahsil_tarihi || ''}
-                  onChange={(e) => setTahsilDzlForm({ ...tahsilDzlForm, tahsil_tarihi: e.target.value })} />
+                <DateInput value={tahsilDzlForm.tahsil_tarihi || ''}
+                  onChange={(val) => setTahsilDzlForm({ ...tahsilDzlForm, tahsil_tarihi: val })}
+                  placeholder="Tahsile veriş tarihi" />
               </FG>
             </div>
             <div className="col-12">
               <FG label="Tutar" zorunlu p={p} renkler={renkler}>
                 <div className="input-group">
-                  <input className="form-control" placeholder="0,00"
+                  <input className="form-control p-tutar-input" placeholder="0,00"
                     value={tahsilDzlForm.tutarStr || ''}
                     onChange={(e) => setTahsilDzlForm({ ...tahsilDzlForm, tutarStr: formatParaInput(e.target.value) })} />
                   <span className="input-group-text">₺</span>
@@ -2301,8 +2628,9 @@ export default function CekSenet() {
         </div>
         <div className={`${p}-modal-footer`}>
           <button className={`${p}-btn-cancel`} onClick={() => setTahsilDzlModal(false)}>İptal</button>
-          <button className={`${p}-btn-save ${p}-btn-save-green`} onClick={tahsilDzlKaydet}>
-            <i className="bi bi-floppy me-2" />Güncelle
+          <button className={`${p}-btn-save ${p}-btn-save-green${kaydediyor ? ' p-btn-loading' : ''}`}
+            onClick={tahsilDzlKaydet} disabled={kaydediyor}>
+            {kaydediyor ? <><span className="p-btn-spinner" />Kaydediliyor...</> : <><i className="bi bi-floppy me-2" />Güncelle</>}
           </button>
         </div>
       </Modal>
@@ -2356,20 +2684,22 @@ export default function CekSenet() {
             </div>
             <div className="col-md-6">
               <FG label="Vade Tarihi" zorunlu p={p} renkler={renkler}>
-                <input type="date" className="form-control" value={ciroDzlForm.vade_tarihi || ''}
-                  onChange={(e) => setCiroDzlForm({ ...ciroDzlForm, vade_tarihi: e.target.value })} />
+                <DateInput value={ciroDzlForm.vade_tarihi || ''}
+                  onChange={(val) => setCiroDzlForm({ ...ciroDzlForm, vade_tarihi: val })}
+                  placeholder="Vade tarihi" />
               </FG>
             </div>
             <div className="col-md-6">
               <FG label="Ciro Tarihi" p={p} renkler={renkler}>
-                <input type="date" className="form-control" value={ciroDzlForm.ciro_tarihi || ''}
-                  onChange={(e) => setCiroDzlForm({ ...ciroDzlForm, ciro_tarihi: e.target.value })} />
+                <DateInput value={ciroDzlForm.ciro_tarihi || ''}
+                  onChange={(val) => setCiroDzlForm({ ...ciroDzlForm, ciro_tarihi: val })}
+                  placeholder="Ciro tarihi" />
               </FG>
             </div>
             <div className="col-12">
               <FG label="Tutar" zorunlu p={p} renkler={renkler}>
                 <div className="input-group">
-                  <input className="form-control" placeholder="0,00"
+                  <input className="form-control p-tutar-input" placeholder="0,00"
                     value={ciroDzlForm.tutarStr || ''}
                     onChange={(e) => setCiroDzlForm({ ...ciroDzlForm, tutarStr: formatParaInput(e.target.value) })} />
                   <span className="input-group-text">₺</span>
@@ -2380,8 +2710,9 @@ export default function CekSenet() {
         </div>
         <div className={`${p}-modal-footer`}>
           <button className={`${p}-btn-cancel`} onClick={() => setCiroDzlModal(false)}>İptal</button>
-          <button className={`${p}-btn-save ${p}-btn-save-warning-alt`} onClick={ciroDzlKaydet}>
-            <i className="bi bi-floppy me-2" />Güncelle
+          <button className={`${p}-btn-save ${p}-btn-save-warning-alt${kaydediyor ? ' p-btn-loading' : ''}`}
+            onClick={ciroDzlKaydet} disabled={kaydediyor}>
+            {kaydediyor ? <><span className="p-btn-spinner" />Kaydediliyor...</> : <><i className="bi bi-floppy me-2" />Güncelle</>}
           </button>
         </div>
       </Modal>

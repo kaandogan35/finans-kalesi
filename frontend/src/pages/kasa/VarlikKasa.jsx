@@ -27,10 +27,10 @@ import YatirimKalesi from './YatirimKalesi'
 const prefixMap = { paramgo: 'p' }
 
 const SAYFA_BILGI = {
-  gosterge:  { baslik: 'Gösterge Paneli',  alt: 'Nakit akışı, gelir-gider özeti ve finansal durum',  ikon: 'bi-graph-up-arrow' },
-  bilanco:   { baslik: 'Aylık Bilanço',     alt: 'Ay sonu kapanış ve performans karşılaştırması',      ikon: 'bi-journal-text' },
-  ortak:     { baslik: 'Ortak Carisi',      alt: 'Ortak para giriş-çıkışları ve bakiye takibi',        ikon: 'bi-people-fill' },
-  yatirim:   { baslik: 'Yatırım Kalesi',    alt: 'Altın, döviz ve yatırım portföyü takibi',            ikon: 'bi-gem' },
+  gosterge:  { baslik: 'Kasa Özeti',       alt: 'Kasada ne var, anlık gör — nakit, banka ve finansal durum', ikon: 'bi-graph-up-arrow' },
+  bilanco:   { baslik: 'Ay Sonu Özeti',    alt: 'Ay sonunda kasa durumunu kayıt altına alın',                ikon: 'bi-journal-text' },
+  ortak:     { baslik: 'Ortaklarım',       alt: 'Ortak para giriş-çıkışları ve bakiye takibi',               ikon: 'bi-people-fill' },
+  yatirim:   { baslik: 'Döviz & Altın',    alt: 'Altın, döviz ve yatırım portföyü takibi',                   ikon: 'bi-gem' },
 }
 
 // ─── Ana Bileşen (Route-Aware) ─────────────────────────────────────────────────

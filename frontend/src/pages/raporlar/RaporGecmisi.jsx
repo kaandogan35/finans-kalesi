@@ -7,6 +7,7 @@
 import { useState, useEffect } from 'react'
 import { raporlarApi } from '../../api/raporlar'
 import { toast } from 'sonner'
+import EmptyState from '../../components/EmptyState'
 
 const RAPOR_IKON = {
   cari_yaslandirma: 'bi-people-fill',
@@ -66,11 +67,11 @@ export default function RaporGecmisi() {
 
   if (!gecmis.length) {
     return (
-      <div className="p-rpr-empty">
-        <div className="p-rpr-empty-icon"><i className="bi bi-clock-history" /></div>
-        <div className="p-rpr-empty-text">Henüz rapor geçmişi yok</div>
-        <div className="p-rpr-empty-sub">Rapor görüntülediğinizde burada listelenecek</div>
-      </div>
+      <EmptyState
+        ikon="bi-clock-history"
+        baslik="Henüz rapor geçmişi yok"
+        aciklama="Rapor görüntülediğinizde burada listelenecek"
+      />
     )
   }
 
@@ -80,7 +81,8 @@ export default function RaporGecmisi() {
         <h3 className="p-rpr-card-title"><i className="bi bi-clock-history" /> Son Raporlar</h3>
         <span style={{ fontSize: 12, color: 'var(--p-text-muted)' }}>{gecmis.length} kayıt</span>
       </div>
-      <div className="table-responsive">
+      {/* Masaüstü Tablo */}
+      <div className="table-responsive d-none d-md-block">
         <table className="table table-hover align-middle p-rpr-table mb-0">
           <thead>
             <tr>
@@ -117,6 +119,34 @@ export default function RaporGecmisi() {
             ))}
           </tbody>
         </table>
+      </div>
+
+      {/* Mobil Kart Listesi */}
+      <div className="d-md-none">
+        {gecmis.map((g) => (
+          <div key={g.id} className="p-gg-mcard">
+            <div className="p-gg-mcard-top">
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8, flex: 1, minWidth: 0 }}>
+                <i className={`bi ${RAPOR_IKON[g.rapor_turu] || 'bi-file-text'}`}
+                  style={{ fontSize: 16, color: 'var(--p-primary)', flexShrink: 0 }} />
+                <span style={{ fontWeight: 600, fontSize: 13, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                  {g.rapor_adi}
+                </span>
+              </div>
+            </div>
+            <div className="p-gg-mcard-alt">
+              <span className={`p-rpr-badge ${RAPOR_BADGE[g.rapor_turu] || 'p-rpr-badge-gray'}`} style={{ fontSize: 11 }}>
+                {g.rapor_turu?.replace(/_/g, ' ') || '—'}
+              </span>
+              <span className="p-rpr-badge p-rpr-badge-gray" style={{ fontSize: 11 }}>
+                {FORMAT_ETIKET[g.format] || g.format}
+              </span>
+              <span style={{ fontSize: 11, color: 'var(--p-text-muted)', marginLeft: 'auto' }}>
+                <i className="bi bi-clock me-1" />{zamanOnce(g.olusturma_tarihi)}
+              </span>
+            </div>
+          </div>
+        ))}
       </div>
     </div>
   )

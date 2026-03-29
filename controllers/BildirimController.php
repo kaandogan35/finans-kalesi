@@ -114,6 +114,79 @@ class BildirimController {
     }
 
     /**
+     * POST /api/bildirimler/push-token
+     * Mobil cihazın push token'ını kaydeder veya günceller
+     */
+    public function pushTokenKaydet($payload, $girdi) {
+        if (empty($girdi['token'])) {
+            Response::dogrulama_hatasi(['token' => 'Token zorunludur']);
+            return;
+        }
+
+        $platform = $girdi['platform'] ?? '';
+        if (!in_array($platform, ['ios', 'android'])) {
+            Response::dogrulama_hatasi(['platform' => 'Platform ios veya android olmalıdır']);
+            return;
+        }
+
+        $token    = substr(trim($girdi['token']), 0, 512);
+        $cihaz_id = !empty($girdi['cihaz_id']) ? substr(trim($girdi['cihaz_id']), 0, 255) : null;
+
+        $db = Database::baglan();
+
+        // Token varsa güncelle, yoksa ekle
+        $stmt = $db->prepare("
+            INSERT INTO push_tokens (sirket_id, kullanici_id, token, platform, cihaz_id, aktif)
+            VALUES (:sirket_id, :kullanici_id, :token, :platform, :cihaz_id, 1)
+            ON DUPLICATE KEY UPDATE
+                sirket_id    = VALUES(sirket_id),
+                kullanici_id = VALUES(kullanici_id),
+                platform     = VALUES(platform),
+                cihaz_id     = VALUES(cihaz_id),
+                aktif        = 1,
+                guncelleme_tarihi = NOW()
+        ");
+        $stmt->execute([
+            ':sirket_id'    => (int)$payload['sirket_id'],
+            ':kullanici_id' => (int)$payload['sub'],
+            ':token'        => $token,
+            ':platform'     => $platform,
+            ':cihaz_id'     => $cihaz_id,
+        ]);
+
+        Response::basarili(null, 'Push token kaydedildi');
+    }
+
+    /**
+     * DELETE /api/bildirimler/push-token
+     * Çıkış yapıldığında token'ı pasif yapar
+     */
+    public function pushTokenSil($payload, $girdi) {
+        if (empty($girdi['token'])) {
+            Response::dogrulama_hatasi(['token' => 'Token zorunludur']);
+            return;
+        }
+
+        $token = substr(trim($girdi['token']), 0, 512);
+        $db = Database::baglan();
+
+        $stmt = $db->prepare("
+            UPDATE push_tokens
+            SET aktif = 0, guncelleme_tarihi = NOW()
+            WHERE token = :token
+              AND kullanici_id = :kullanici_id
+              AND sirket_id = :sirket_id
+        ");
+        $stmt->execute([
+            ':token'        => $token,
+            ':kullanici_id' => (int)$payload['sub'],
+            ':sirket_id'    => (int)$payload['sirket_id'],
+        ]);
+
+        Response::basarili(null, 'Push token kaldırıldı');
+    }
+
+    /**
      * PUT /api/bildirimler/tercihler
      */
     public function tercihlerKaydet($payload, $girdi) {

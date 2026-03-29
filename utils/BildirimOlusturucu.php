@@ -72,6 +72,11 @@ class BildirimOlusturucu {
                 self::email_gonder($sirket_id, $kullanici_id, $veri);
             }
 
+            // 5. WhatsApp bildirimi (tercih açıksa ve entegrasyon aktifse)
+            if (!empty($tercih['whatsapp']) && class_exists('WhatsappHelper') && WhatsappHelper::aktif_mi()) {
+                self::whatsapp_gonder($sirket_id, $kullanici_id, $veri);
+            }
+
             return $bildirim_id;
 
         } catch (\Exception $e) {
@@ -109,6 +114,27 @@ class BildirimOlusturucu {
             if ($sonuc !== false) $basarili++;
         }
         return $basarili;
+    }
+
+    /**
+     * WhatsApp mesajı gönder
+     */
+    private static function whatsapp_gonder(int $sirket_id, int $kullanici_id, array $veri): void {
+        try {
+            $db = Database::baglan();
+            $stmt = $db->prepare("SELECT telefon FROM kullanicilar WHERE id = :id AND sirket_id = :sid");
+            $stmt->execute([':id' => $kullanici_id, ':sid' => $sirket_id]);
+            $kullanici = $stmt->fetch();
+
+            if (!$kullanici || empty($kullanici['telefon'])) return;
+
+            $mesaj = "[{$veri['baslik']}]\n{$veri['mesaj']}\n— ParamGo";
+
+            WhatsappHelper::gonder($kullanici['telefon'], $mesaj);
+
+        } catch (\Exception $e) {
+            error_log("Bildirim WhatsApp hatası: " . $e->getMessage());
+        }
     }
 
     /**

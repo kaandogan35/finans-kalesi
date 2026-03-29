@@ -23,10 +23,14 @@ switch ($metod) {
         break;
 
     case 'POST':
+        // Kategori ekleme: sahip veya admin
+        AuthMiddleware::rol_kontrol($payload, ['sahip', 'admin']);
         $controller->ekle($payload, $girdi);
         break;
 
     case 'PUT':
+        // Kategori düzenleme: sahip veya admin
+        AuthMiddleware::rol_kontrol($payload, ['sahip', 'admin']);
         if (!$id) {
             Response::dogrulama_hatasi(['id' => 'Kategori ID gerekli']);
             break;
@@ -35,6 +39,8 @@ switch ($metod) {
         break;
 
     case 'DELETE':
+        // Kategori silme: yalnızca sahip
+        AuthMiddleware::rol_kontrol($payload, ['sahip']);
         if (!$id) {
             Response::dogrulama_hatasi(['id' => 'Kategori ID gerekli']);
             break;

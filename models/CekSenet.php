@@ -215,7 +215,7 @@ class CekSenet {
             return false;
         }
 
-        $duz_alanlar = ['cari_id', 'seri_no', 'kesilme_tarihi', 'vade_tarihi', 'tutar', 'doviz_kodu', 'kur'];
+        $duz_alanlar = ['cari_id', 'seri_no', 'kesilme_tarihi', 'vade_tarihi', 'tutar', 'doviz_kodu', 'kur', 'serh_tarihi', 'karsiliksiz_not', 'karsiliksiz_aksiyon'];
         $pii_alanlar = ['banka_adi', 'sube', 'hesap_no', 'aciklama'];
 
         $setler  = [];

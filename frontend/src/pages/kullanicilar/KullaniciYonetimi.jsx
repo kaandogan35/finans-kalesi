@@ -291,7 +291,7 @@ export default function KullaniciYonetimi() {
 
                       {/* Rol badge */}
                       <span className="kuy-rol-badge" style={{ color: rolBilgi.renk, background: rolBilgi.bg }}>
-                        {isSahip && <i className="bi bi-crown-fill" style={{ fontSize: 9 }} />}
+                        {isSahip && <i className="bi bi-crown-fill" style={{ fontSize: 12 }} />}
                         {rolBilgi.label}
                       </span>
                     </div>

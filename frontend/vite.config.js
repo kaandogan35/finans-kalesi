@@ -15,6 +15,11 @@ export default defineConfig({
   build: {
     outDir: '../public/frontend-build',
     emptyOutDir: true,
+    // Production build'de console.log ve debugger'ları kaldır
+    // Güvenlik: loglar üzerinden veri sızıntısı engellenmiş olur
+    esbuild: {
+      drop: ['console', 'debugger'],
+    },
   },
   server: {
     port: 3000,

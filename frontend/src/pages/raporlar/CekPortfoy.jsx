@@ -13,7 +13,9 @@ import {
   Chart as ChartJS, CategoryScale, LinearScale, BarElement,
   ArcElement, Title, Tooltip, Legend,
 } from 'chart.js'
-import { Pie, Bar } from 'react-chartjs-2'
+import { Doughnut, Bar } from 'react-chartjs-2'
+import { standardTooltip, standardAnimation, standardLegend, standardYScale, standardXScale } from '../../lib/chartConfig'
+import { pdfIndir as pdfIndirUtil } from '../../lib/pdfExport'
 
 ChartJS.register(CategoryScale, LinearScale, BarElement, ArcElement, Title, Tooltip, Legend)
 
@@ -21,7 +23,7 @@ const TL = (n) =>
   new Intl.NumberFormat('tr-TR', { style: 'currency', currency: 'TRY', minimumFractionDigits: 2 }).format(n ?? 0)
 
 const DURUM_ETIKET = {
-  portfoyde: 'Portföyde',
+  portfoyde: 'Elimde',
   tahsile_verildi: 'Tahsile Verildi',
   tahsil_edildi: 'Tahsil Edildi',
   odendi: 'Ödendi',
@@ -79,41 +81,7 @@ export default function CekPortfoy() {
   const uygula = () => getir(filtre)
 
   // PDF
-  const pdfIndir = async () => {
-    const html2pdf = (await import('html2pdf.js')).default
-    const el = document.getElementById('rpr-cek-tablo')
-    if (!el) return
-    toast.info('PDF hazırlanıyor…')
-    const wrapper = document.createElement('div')
-    wrapper.innerHTML = `
-      <div style="padding:20px;font-family:Arial,sans-serif">
-        <div style="display:flex;align-items:center;gap:10px;margin-bottom:4px">
-          <svg width="36" height="36" viewBox="0 0 120 120" fill="none" xmlns="http://www.w3.org/2000/svg">
-            <defs><linearGradient id="pg" x1="0" y1="0" x2="120" y2="120" gradientUnits="userSpaceOnUse"><stop offset="0%" stop-color="#10B981"/><stop offset="100%" stop-color="#059669"/></linearGradient></defs>
-            <rect width="120" height="120" rx="28" fill="url(#pg)"/>
-            <path d="M38 88V36H62C70.837 36 78 43.163 78 52C78 60.837 70.837 68 62 68H38" stroke="#fff" stroke-width="9" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
-            <path d="M68 62L82 48M82 48L68 34M82 48H56" stroke="#fff" stroke-width="7" stroke-linecap="round" stroke-linejoin="round" opacity="0.6"/>
-          </svg>
-          <div>
-            <div style="font-family:'Plus Jakarta Sans',Arial,sans-serif;font-weight:800;font-size:18px;color:#1A1A1A;letter-spacing:-0.04em">Param<span style="color:#10B981;font-weight:700">Go</span></div>
-          </div>
-        </div>
-        <h2 style="color:#10B981;margin:12px 0 4px">Çek/Senet Portföy Raporu</h2>
-        <p style="color:#6B7280;font-size:12px;margin-bottom:16px">${new Date().toLocaleDateString('tr-TR')} tarihli rapor</p>
-        ${el.outerHTML}
-      </div>`
-    document.body.appendChild(wrapper)
-    try {
-      await html2pdf().set({
-        margin: [10, 10, 10, 10],
-        filename: `cek_portfoy_${new Date().toISOString().split('T')[0]}.pdf`,
-        html2canvas: { scale: 2 },
-        jsPDF: { unit: 'mm', format: 'a4', orientation: 'landscape' },
-      }).from(wrapper).save()
-      toast.success('PDF indirildi')
-    } catch { toast.error('PDF oluşturulamadı') }
-    finally { document.body.removeChild(wrapper) }
-  }
+  const pdfIndir = () => pdfIndirUtil('rpr-cek-tablo', '\u00c7ek/Senet Portf\u00f6y Raporu', 'cek_portfoy')
 
   // Excel
   const excelIndir = async () => {
@@ -153,14 +121,15 @@ export default function CekPortfoy() {
   const pieOptions = {
     responsive: true,
     maintainAspectRatio: false,
+    cutout: '65%',
+    animation: standardAnimation,
     plugins: {
+      datalabels: { display: false },
       legend: {
         position: 'right',
-        labels: { usePointStyle: true, pointStyle: 'circle', padding: 12, font: { size: 11 } },
+        labels: { usePointStyle: true, pointStyle: 'circle', padding: 12, font: { family: 'Plus Jakarta Sans', size: 11 } },
       },
-      tooltip: {
-        callbacks: { label: (ctx) => `${ctx.label}: ${TL(ctx.raw)}` },
-      },
+      tooltip: { ...standardTooltip, callbacks: { label: (ctx) => ` ${ctx.label}: ${TL(ctx.raw)}` } },
     },
   }
 
@@ -193,22 +162,18 @@ export default function CekPortfoy() {
   const barOptions = {
     responsive: true,
     maintainAspectRatio: false,
+    animation: standardAnimation,
     plugins: {
-      legend: {
-        position: 'top',
-        labels: { usePointStyle: true, pointStyle: 'circle', padding: 16, font: { size: 12 } },
+      datalabels: { display: false },
+      legend: { position: 'top', ...standardLegend },
+      tooltip: {
+        ...standardTooltip,
+        callbacks: { label: (ctx) => ` ${ctx.dataset.label}: ${TL(ctx.raw)}` },
       },
-      tooltip: { callbacks: { label: (ctx) => `${ctx.dataset.label}: ${TL(ctx.raw)}` } },
     },
     scales: {
-      y: {
-        ticks: {
-          callback: (v) => new Intl.NumberFormat('tr-TR', { notation: 'compact' }).format(v),
-          font: { size: 11 }, color: '#9CA3AF',
-        },
-        grid: { color: 'rgba(0,0,0,0.04)' },
-      },
-      x: { ticks: { font: { size: 11 }, color: '#6B7280' }, grid: { display: false } },
+      y: standardYScale,
+      x: standardXScale,
     },
   }
 
@@ -257,26 +222,22 @@ export default function CekPortfoy() {
 
       {/* KPI */}
       <div className="p-rpr-kpi-row">
-        <div className="p-rpr-kpi">
-          <div className="p-rpr-kpi-accent" style={{ background: '#6366F1' }} />
+        <div className="p-rpr-kpi" style={{ '--p-rpr-kpi-accent-color': '#6366F1' }}>
           <div className="p-rpr-kpi-label">Toplam Adet</div>
           <div className="p-rpr-kpi-value">{ozet.toplam_adet ?? 0}</div>
           <i className="bi bi-file-earmark-text p-rpr-kpi-icon" />
         </div>
-        <div className="p-rpr-kpi">
-          <div className="p-rpr-kpi-accent" style={{ background: '#10B981' }} />
+        <div className="p-rpr-kpi" style={{ '--p-rpr-kpi-accent-color': '#10B981' }}>
           <div className="p-rpr-kpi-label">Alacak Toplam</div>
           <div className="p-rpr-kpi-value financial-num">{TL(ozet.alacak_toplam)}</div>
           <i className="bi bi-arrow-down-circle p-rpr-kpi-icon" />
         </div>
-        <div className="p-rpr-kpi">
-          <div className="p-rpr-kpi-accent" style={{ background: '#F59E0B' }} />
+        <div className="p-rpr-kpi" style={{ '--p-rpr-kpi-accent-color': '#F59E0B' }}>
           <div className="p-rpr-kpi-label">Borç Toplam</div>
           <div className="p-rpr-kpi-value financial-num">{TL(ozet.borc_toplam)}</div>
           <i className="bi bi-arrow-up-circle p-rpr-kpi-icon" />
         </div>
-        <div className="p-rpr-kpi">
-          <div className="p-rpr-kpi-accent" style={{ background: '#DC2626' }} />
+        <div className="p-rpr-kpi" style={{ '--p-rpr-kpi-accent-color': '#DC2626' }}>
           <div className="p-rpr-kpi-label">Karşılıksız</div>
           <div className="p-rpr-kpi-value financial-num" style={{ color: '#DC2626' }}>{TL(ozet.karsiliksiz_toplam)}</div>
           <i className="bi bi-exclamation-octagon p-rpr-kpi-icon" />
@@ -292,7 +253,7 @@ export default function CekPortfoy() {
             </div>
             <div className="p-rpr-card-body">
               <div className="p-rpr-chart-wrap" style={{ height: 260 }}>
-                <Pie data={pieData} options={pieOptions} />
+                <Doughnut data={pieData} options={pieOptions} />
               </div>
             </div>
           </div>
@@ -316,7 +277,8 @@ export default function CekPortfoy() {
         <div className="p-rpr-card-header">
           <h3 className="p-rpr-card-title"><i className="bi bi-table" /> Durum Detay</h3>
         </div>
-        <div className="table-responsive" id="rpr-cek-tablo">
+        {/* Masaüstü Tablo */}
+        <div className="table-responsive d-none d-md-block" id="rpr-cek-tablo">
           <table className="table table-hover align-middle p-rpr-table mb-0">
             <thead>
               <tr>
@@ -345,6 +307,32 @@ export default function CekPortfoy() {
               ))}
             </tbody>
           </table>
+        </div>
+
+        {/* Mobil Kart Listesi */}
+        <div className="d-md-none">
+          {(!veri?.durum_dagilim || veri.durum_dagilim.length === 0) ? (
+            <div className="text-center py-5 text-muted" style={{ fontSize: 13 }}>Veri bulunamadı</div>
+          ) : veri.durum_dagilim.map((d, i) => (
+            <div key={i} className="p-gg-mcard">
+              <div className="p-gg-mcard-top">
+                <div style={{ display: 'flex', alignItems: 'center', gap: 6, flex: 1 }}>
+                  <span style={{
+                    display: 'inline-block', width: 8, height: 8, borderRadius: 2,
+                    background: DURUM_RENK[d.durum] || '#9CA3AF', flexShrink: 0,
+                  }} />
+                  <span style={{ fontWeight: 600, fontSize: 13 }}>{DURUM_ETIKET[d.durum] || d.durum}</span>
+                </div>
+                <span className="p-gg-mcard-tutar financial-num" style={{ fontWeight: 600 }}>{TL(d.toplam_tutar)}</span>
+              </div>
+              <div className="p-gg-mcard-alt">
+                <span style={{ fontSize: 11, color: 'var(--p-text-muted)' }}>{TUR_ETIKET[d.tur] || d.tur}</span>
+                <span style={{ fontSize: 11, color: 'var(--p-text-muted)' }}>
+                  <i className="bi bi-hash me-1" />{d.adet} adet
+                </span>
+              </div>
+            </div>
+          ))}
         </div>
       </div>
 

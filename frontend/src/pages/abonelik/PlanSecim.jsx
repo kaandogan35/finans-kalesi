@@ -1,6 +1,7 @@
 /**
  * PlanSecim — Abonelik Yönetim Sayfası
  * Route: /abonelik
+ * v2: 30 gün deneme + Standart 290₺ / Kurumsal 490₺
  */
 
 import { useState, useEffect } from 'react'
@@ -10,10 +11,9 @@ import { abonelikApi } from '../../api/abonelik'
 import { usePlanKontrol } from '../../hooks/usePlanKontrol'
 
 const FIYATLAR = {
-  standart: { aylik: 399.90, yillik: 3499.00 },
-  kurumsal: { aylik: 749.90, yillik: 6490.00 },
+  standart: { aylik: 290.00, yillik: 2900.00 },
+  kurumsal: { aylik: 490.00, yillik: 4900.00 },
 }
-const KAMPANYA_FIYAT = 99.90
 
 const fmt = (n) => new Intl.NumberFormat('tr-TR', { minimumFractionDigits: 2 }).format(n)
 const tarihFmt = (t) => t ? new Intl.DateTimeFormat('tr-TR', { day: '2-digit', month: 'long', year: 'numeric' }).format(new Date(t)) : '—'
@@ -62,29 +62,29 @@ export default function PlanSecim() {
 
   // API'den gelen plan yetkili kaynak; yüklenene kadar JWT'deki plan kullanılır
   const plan = durum?.plan || jwtPlan
-  const kampanyaAktif = durum?.kampanya_kullanici || false
+  const denemeDoldu = durum?.deneme_doldu || false
+  const denemeKalanGun = durum?.deneme_kalan_gun ?? null
   const standartGosterilen = yillik
     ? Math.round(FIYATLAR.standart.yillik / 12 * 100) / 100
-    : (kampanyaAktif ? KAMPANYA_FIYAT : FIYATLAR.standart.aylik)
+    : FIYATLAR.standart.aylik
   const kurumGosterilen = yillik
     ? Math.round(FIYATLAR.kurumsal.yillik / 12 * 100) / 100
     : FIYATLAR.kurumsal.aylik
 
   const planlar = [
     {
-      id: 'ucretsiz', ad: 'Başlangıç', ikon: 'bi-gift', btnSinif: 'pasif',
-      aciklama: 'Yeni başlayanlar için temel özellikler',
+      id: 'deneme', ad: '30 Gün Deneme', ikon: 'bi-gift', btnSinif: 'pasif',
+      aciklama: 'Tüm özellikleri 30 gün boyunca ücretsiz deneyin',
       ozellikler: [
-        '1 kullanıcı',
-        '30 cari hesap',
-        '10 çek/senet kaydı (aylık, sıfırlanır)',
-        'Kasa yönetimi (1 yıl ücretsiz deneme)',
-        'Ödeme takibi',
-        'Vade hesaplayıcı',
+        '30 gün tüm özellikler açık',
+        '2 kullanıcıya kadar',
+        'Sınırsız cari hesap',
+        '50 çek/senet kaydı (aylık)',
+        'Sınırsız kasa yönetimi',
+        'PDF & Excel rapor',
       ],
       kisitlamalar: [
-        'PDF & Excel rapor (Standart\'ta mevcut)',
-        'Çoklu kullanıcı (Standart\'ta mevcut)',
+        '30 gün sonra plan seçimi gerekir',
       ],
     },
     {
@@ -92,7 +92,7 @@ export default function PlanSecim() {
       aciklama: 'Büyüyen işletmeler için tam özellik seti',
       fiyat: standartGosterilen, fiyatYillik: FIYATLAR.standart.yillik,
       tasarruf: fmt(FIYATLAR.standart.aylik * 12 - FIYATLAR.standart.yillik),
-      onerilen: true, kampanya: kampanyaAktif && !yillik,
+      onerilen: true,
       ozellikler: [
         '2 kullanıcıya kadar',
         'Sınırsız cari hesap',
@@ -134,12 +134,37 @@ export default function PlanSecim() {
           <div className={`${p}-abn-page-sub`}>Planınızı yönetin, işletmenizi büyütün</div>
         </div>
 
+        {/* DENEME SÜRESİ BANNER */}
+        {plan === 'deneme' && !yukleniyor && (
+          <div className={`abn-deneme-banner ${denemeDoldu ? 'doldu' : ''}`}>
+            <i className={`bi ${denemeDoldu ? 'bi-exclamation-triangle-fill' : 'bi-clock-fill'}`}
+               style={{ fontSize: 22, color: denemeDoldu ? '#dc2626' : '#d97706' }} />
+            <div style={{ flex: 1 }}>
+              <div style={{ fontWeight: 700, fontSize: 14, color: denemeDoldu ? '#991b1b' : '#92400e', marginBottom: 2 }}>
+                {denemeDoldu
+                  ? 'Deneme süreniz doldu'
+                  : `Deneme süreniz: ${denemeKalanGun} gün kaldı`
+                }
+              </div>
+              <div style={{ fontSize: 12, color: denemeDoldu ? '#b91c1c' : '#a16207' }}>
+                {denemeDoldu
+                  ? 'Verileriniz güvende ancak yeni kayıt ekleyemezsiniz. Devam etmek için bir plan satın alın.'
+                  : 'Tüm özellikler açık. Süre dolmadan bir plan seçerek kesintisiz devam edin.'
+                }
+              </div>
+            </div>
+            <span className={`abn-deneme-chip ${denemeDoldu ? 'doldu' : ''}`}>
+              {denemeDoldu ? 'Süre Doldu' : `${denemeKalanGun} Gün`}
+            </span>
+          </div>
+        )}
+
         {/* HERO — Satış odaklı */}
         <div className={`${p}-abn-hero`}>
           <div className="row align-items-center">
             <div className="col-12 col-md-8">
               <div style={{ fontSize: 11, fontWeight: 700, opacity: .75, textTransform: 'uppercase', letterSpacing: '.08em', marginBottom: 6 }}>
-                {kampanyaAktif ? '🎉 Lansman Kampanyası Aktif' : 'ParamGo Premium'}
+                ParamGo Premium
               </div>
               <div style={{ fontSize: 22, fontWeight: 800, lineHeight: 1.25, marginBottom: 8, color: '#fff' }}>
                 Tüm finans süreçleriniz tek platformda — hiçbir şey gözden kaçmasın
@@ -147,16 +172,11 @@ export default function PlanSecim() {
               <div style={{ fontSize: 13, opacity: .75, lineHeight: 1.6, color: '#fff' }}>
                 Cari hesaplar, çek/senet, ödeme takibi, kasa ve daha fazlası.
               </div>
-              {kampanyaAktif && (
-                <div style={{ marginTop: 12 }}>
-                  <span className="abn-kampanya-chip">🎉 Standart Plan — İlk 3 Ay 99,90₺ Lansman Fiyatı</span>
-                </div>
-              )}
             </div>
             <div className="col-12 col-md-4 d-none d-md-flex justify-content-end align-items-center gap-4 mt-3 mt-md-0">
               <div className={`${p}-abn-hero-stat`} style={{ textAlign: 'center' }}>
-                <div style={{ fontSize: 28, fontWeight: 800, lineHeight: 1, color: '#fff' }}>500+</div>
-                <div style={{ fontSize: 11, marginTop: 3, color: '#fff', opacity: .65 }}>İşletme</div>
+                <div style={{ fontSize: 28, fontWeight: 800, lineHeight: 1, color: '#fff' }}>30 Gün</div>
+                <div style={{ fontSize: 11, marginTop: 3, color: '#fff', opacity: .65 }}>Ücretsiz Deneme</div>
               </div>
               <div style={{ width: 1, height: 44, background: 'rgba(255,255,255,0.2)' }} />
               <div className={`${p}-abn-hero-stat`} style={{ textAlign: 'center' }}>
@@ -185,15 +205,18 @@ export default function PlanSecim() {
               <div style={{ minWidth: 0 }}>
                 <div className={`${p}-abn-current-label`}>Mevcut Plan</div>
                 <div className="d-flex align-items-center gap-2 flex-wrap">
-                  <span className={`${p}-abn-current-name`}>{durum?.plan_adi || 'Ücretsiz'}</span>
-                  {durum?.kampanya_kullanici && (
-                    <span className="abn-kampanya-chip" style={{ fontSize: 9 }}>🎉 Kampanya — {fmt(KAMPANYA_FIYAT)}₺/ay</span>
-                  )}
+                  <span className={`${p}-abn-current-name`}>{durum?.plan_adi || '30 Gün Deneme'}</span>
                 </div>
               </div>
-              {(durum?.bitis_tarihi || durum?.odeme_kanali) && (
+              {(durum?.bitis_tarihi || durum?.odeme_kanali || durum?.deneme_bitis) && (
                 <div className="d-flex gap-4 flex-wrap ms-auto">
-                  {durum?.bitis_tarihi && (
+                  {durum?.deneme && durum?.deneme_bitis && (
+                    <div>
+                      <div className={`${p}-abn-meta-label`}>DENEME BİTİŞ</div>
+                      <div className={`${p}-abn-meta-value`}>{tarihFmt(durum.deneme_bitis)}</div>
+                    </div>
+                  )}
+                  {!durum?.deneme && durum?.bitis_tarihi && (
                     <div>
                       <div className={`${p}-abn-meta-label`}>BİTİŞ TARİHİ</div>
                       <div className={`${p}-abn-meta-value`}>{tarihFmt(durum.bitis_tarihi)}</div>
@@ -231,19 +254,21 @@ export default function PlanSecim() {
             onClick={() => setYillik(true)}
           >
             Yıllık
-            <span className="abn-tasarruf-chip ms-2">%27 Tasarruf</span>
+            <span className="abn-tasarruf-chip ms-2">%17 Tasarruf</span>
           </span>
         </div>
 
         <div className="row g-3 mb-4">
           {planlar.map((pl) => {
             const aktif = plan === pl.id
-            const iconBoxCls = pl.id === 'ucretsiz'
-              ? `${p}-abn-icon-ucretsiz`
-              : (p === 'p' ? `p-abn-icon-${pl.id}` : `abn-icon-${pl.id}`)
-            const iconColor = p === 'p'
-              ? (pl.id === 'standart' ? 'var(--p-color-primary)' : pl.id === 'kurumsal' ? 'var(--p-color-primary-dark)' : undefined)
-              : (pl.id === 'standart' ? '#10B981' : pl.id === 'kurumsal' ? '#3b82f6' : undefined)
+            const iconBoxCls = pl.id === 'deneme'
+              ? `${p}-abn-icon-deneme`
+              : `p-abn-icon-${pl.id}`
+            const iconColor = pl.id === 'standart'
+              ? 'var(--p-color-primary)'
+              : pl.id === 'kurumsal'
+              ? 'var(--p-color-primary-dark)'
+              : undefined
 
             return (
               <div key={pl.id} className="col-12 col-md-4">
@@ -255,7 +280,6 @@ export default function PlanSecim() {
                       {aktif && <span className={`${p}-abn-badge-active`}>✓ Aktif Plan</span>}
                       {pl.onerilen && !aktif && <span className={`${p}-abn-badge-rec`}>★ Önerilen</span>}
                     </div>
-                    {pl.kampanya && <span className="abn-kampanya-chip">🎉 Kampanya</span>}
                   </div>
 
                   {/* İkon + Ad */}
@@ -277,13 +301,10 @@ export default function PlanSecim() {
 
                   {/* Fiyat */}
                   <div className="mb-2">
-                    {pl.id === 'ucretsiz' ? (
+                    {pl.id === 'deneme' ? (
                       <div className={`${p}-abn-plan-price`}>Ücretsiz</div>
                     ) : (
                       <>
-                        {pl.kampanya && (
-                          <div className={`${p}-abn-strike`}>{fmt(FIYATLAR.standart.aylik)}₺/ay</div>
-                        )}
                         <div className="d-flex align-items-baseline gap-1">
                           <span className={`${p}-abn-plan-price`}>{fmt(pl.fiyat)}</span>
                           <span className={`${p}-abn-price-unit`}>₺/ay</span>
@@ -319,11 +340,11 @@ export default function PlanSecim() {
                   {/* Buton */}
                   {aktif ? (
                     <button className={`${p}-abn-btn-pasif`} disabled>✓ Mevcut Planınız</button>
-                  ) : pl.id === 'ucretsiz' ? (
-                    <button className={`${p}-abn-btn-pasif`} disabled>Ücretsiz Kullan</button>
+                  ) : pl.id === 'deneme' ? (
+                    <button className={`${p}-abn-btn-pasif`} disabled>Ücretsiz Deneme</button>
                   ) : (
                     <button
-                      className={`abn-btn ${p === 'p' ? (pl.id === 'standart' ? 'yesil-standart' : 'yesil-kurumsal') : pl.btnSinif}`}
+                      className={`abn-btn ${pl.id === 'standart' ? 'yesil-standart' : 'yesil-kurumsal'}`}
                       onClick={() => toast.info('Ödeme sistemi yakında entegre edilecek. Detaylar için bizimle iletişime geçin.')}
                     >
                       <i className="bi bi-arrow-up-circle me-2" />
@@ -355,14 +376,14 @@ export default function PlanSecim() {
               ))}
             </div>
           ) : gecmis.length === 0 ? (
-            <div style={{ padding: '40px 24px', textAlign: 'center' }}>
-              <i className={`bi bi-receipt ${p}-abn-empty`} style={{ fontSize: 32, display: 'block', marginBottom: 10, opacity: .5 }} />
-              <div className={`${p}-abn-empty`} style={{ fontSize: 14, fontWeight: 600 }}>Henüz ödeme geçmişi yok</div>
-              <div className={`${p}-abn-empty`} style={{ fontSize: 12, marginTop: 4 }}>Abonelik aldığınızda burada görünecek</div>
+            <div className={`${p}-empty-state`}>
+              <i className="bi bi-receipt" />
+              <h6>Henüz ödeme geçmişi yok</h6>
+              <p>Abonelik aldığınızda burada görünecek</p>
             </div>
           ) : (
             <div className="table-responsive">
-              <table className="table table-hover align-middle mb-0">
+              <table className="table table-hover align-middle p-table mb-0">
                 <thead>
                   <tr>
                     {['Tarih', 'Plan', 'Dönem', 'Tutar', 'Kanal', 'Durum'].map((h) => (

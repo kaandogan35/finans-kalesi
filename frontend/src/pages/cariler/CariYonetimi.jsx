@@ -11,12 +11,14 @@ import { createPortal } from 'react-dom'
 import { useNavigate } from 'react-router-dom'
 import { toast } from 'sonner'
 import { carilerApi } from '../../api/cariler'
+import SwipeCard, { DynamicAvatar } from '../../components/SwipeCard'
 import { odemeApi } from '../../api/odeme'
 import useTemaStore from '../../stores/temaStore'
 import { temaRenkleri, hexRgba } from '../../lib/temaRenkleri'
 import { useSinirler } from '../../hooks/useSinirler'
 import { usePlanKontrol } from '../../hooks/usePlanKontrol'
 import PlanYukseltModal from '../../components/PlanYukseltModal'
+import { DateInput } from '../../components/ui/DateInput'
 import useAuthStore from '../../stores/authStore'
 
 const prefixMap = { paramgo: 'p' }
@@ -707,7 +709,7 @@ export default function CariYonetimi() {
           </div>
         </div>
         <div className={`${p}-page-header-right`}>
-          {kullanici?.plan === 'ucretsiz' && cariBilgi && !cariBilgi.sinirsiz && (cariDurum === 'uyari' || cariDurum === 'dolu') && (
+          {kullanici?.plan === 'deneme' && cariBilgi && !cariBilgi.sinirsiz && (cariDurum === 'uyari' || cariDurum === 'dolu') && (
             <div style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 12, fontWeight: 600,
               color: cariDurum === 'dolu' ? renkler.danger : renkler.warning }}>
               <div style={{ width: 80, height: 4, borderRadius: 2, background: hexRgba(renkler.textSec, 0.15), overflow: 'hidden' }}>
@@ -847,7 +849,9 @@ export default function CariYonetimi() {
 
         {/* Tablo */}
         {!(listYukleniyor || (aktifSekme === 'vadesi_gecmis' && vadesiGecmisYukleniyor)) && !listHata && (
-        <div className="table-responsive" data-tur="cari-listesi">
+        <>
+        {/* ── Desktop Tablo ── */}
+        <div className={`${p}-cym-desktop-table table-responsive`} data-tur="cari-listesi">
           <table className={`${p}-cym-table`}>
             <thead>
               <tr>
@@ -902,9 +906,7 @@ export default function CariYonetimi() {
                     {/* Cari Ünvanı & İletişim */}
                     <td className={`${p}-cym-td`}>
                       <div className="d-flex align-items-center gap-2" style={{ minWidth: 0 }}>
-                        <div className={`${p}-cym-avatar flex-shrink-0`}>
-                          <i className={`bi ${cari.tip === 'kurumsal' ? 'bi-buildings-fill' : 'bi-person-fill'}`} />
-                        </div>
+                        <DynamicAvatar isim={cari.unvan || cari.cari_adi} />
                         <div style={{ minWidth: 0 }}>
                           <div
                             onClick={() => kartAc(cari)}
@@ -988,6 +990,77 @@ export default function CariYonetimi() {
             </tbody>
           </table>
         </div>
+
+        {/* ── Mobil Kart Listesi ── */}
+        <div className={`${p}-cym-mobile-list`}>
+          {sayfaliVeri.length === 0 ? (
+            <div className={`${p}-cym-empty-state`} style={{ padding: '48px 24px', textAlign: 'center' }}>
+              <i className="bi bi-inbox d-block mb-2" style={{ fontSize: 40, color: 'var(--p-text-muted)', opacity: 0.5 }} />
+              <span style={{ fontSize: 14, fontWeight: 600, color: 'var(--p-text-muted)' }}>
+                {arama ? 'Aramanızla eşleşen cari bulunamadı.' : 'Bu kategoride kayıt yok.'}
+              </span>
+            </div>
+          ) : (
+            <>
+              <div className="p-swipe-hint">
+                <i className="bi bi-arrow-left-right" /> Sola kaydırarak işlem yapabilirsiniz
+              </div>
+              {sayfaliVeri.map((cari) => {
+                const borc   = parseFloat(cari.toplam_borc ?? 0)
+                const alacak = parseFloat(cari.toplam_alacak ?? 0)
+                return (
+                  <SwipeCard
+                    key={cari.id}
+                    aksiyonlar={[
+                      { icon: 'bi-currency-exchange', label: 'İşlem', renk: 'success', onClick: () => islemAc(cari) },
+                      { icon: 'bi-person-vcard', label: 'Kart', renk: 'warning', onClick: () => kartAc(cari) },
+                      { icon: 'bi-clock-history', label: 'Geçmiş', renk: 'info', onClick: () => kartAc(cari, 'ekstre') },
+                      { icon: 'bi-trash', label: 'Sil', renk: 'danger', onClick: () => { setSilCari(cari); setSilModalAcik(true) } },
+                    ]}
+                  >
+                    <div className={`${p}-cym-mcard`} onClick={() => kartAc(cari)}>
+                      <div className={`${p}-cym-mcard-top`}>
+                        <DynamicAvatar isim={cari.unvan || cari.cari_adi} />
+                        <div className={`${p}-cym-mcard-info`}>
+                          <div className={`${p}-cym-mcard-name`}>{cari.unvan}</div>
+                          {cari.telefon && (
+                            <div className={`${p}-cym-mcard-phone`}>
+                              <i className="bi bi-telephone-fill" /> {cari.telefon}
+                            </div>
+                          )}
+                        </div>
+                        <div className={`${p}-cym-mcard-bakiye`} style={{ color: bakiyeRenk(cari.bakiye) }}>
+                          {TL(cari.bakiye)}
+                        </div>
+                      </div>
+                      <div className={`${p}-cym-mcard-bottom`}>
+                        <div className={`${p}-cym-mcard-stat`}>
+                          <span className={`${p}-cym-mcard-stat-label`}>Alacak</span>
+                          <span className={`${p}-cym-mcard-stat-val`} style={{ color: 'var(--p-color-success)' }}>
+                            {alacak > 0 ? TL(alacak) : '—'}
+                          </span>
+                        </div>
+                        <div className={`${p}-cym-mcard-divider`} />
+                        <div className={`${p}-cym-mcard-stat`}>
+                          <span className={`${p}-cym-mcard-stat-label`}>Borç</span>
+                          <span className={`${p}-cym-mcard-stat-val`} style={{ color: 'var(--p-color-danger)' }}>
+                            {borc > 0 ? TL(borc) : '—'}
+                          </span>
+                        </div>
+                        <div className={`${p}-cym-mcard-divider`} />
+                        <div className={`${p}-cym-mcard-stat`}>
+                          <span className={`${p}-cym-mcard-stat-label`}>Son İşlem</span>
+                          <span className={`${p}-cym-mcard-stat-val`}>{tarihFmt(cari.son_islem)}</span>
+                        </div>
+                      </div>
+                    </div>
+                  </SwipeCard>
+                )
+              })}
+            </>
+          )}
+        </div>
+        </>
         )}
 
         {!(listYukleniyor || (aktifSekme === 'vadesi_gecmis' && vadesiGecmisYukleniyor)) && !listHata && toplamSayfa > 1 && (
@@ -1179,12 +1252,12 @@ export default function CariYonetimi() {
                           <label className={`${p}-cym-label`}>Tutar (₺) *</label>
                           <input type="text" inputMode="decimal" value={islem.tutar}
                             onChange={e => setIslem(prev => ({ ...prev, tutar: formatParaInput(e.target.value) }))}
-                            placeholder="0,00" className="form-control" required />
+                            placeholder="0,00" className="form-control p-tutar-input" required />
                         </div>
                         <div className="mb-3">
                           <label className={`${p}-cym-label`}>İşlem Tarihi</label>
-                          <input type="date" value={islem.tarih} onChange={e => setIslem(prev => ({ ...prev, tarih: e.target.value }))}
-                            className="form-control" />
+                          <DateInput value={islem.tarih} onChange={val => setIslem(prev => ({ ...prev, tarih: val }))}
+                            placeholder="İşlem tarihi" />
                         </div>
                         <div>
                           <label className={`${p}-cym-label`}>Açıklama <span className={`${p}-cym-label-hint`}>(opsiyonel)</span></label>
@@ -1495,8 +1568,8 @@ export default function CariYonetimi() {
                                     return (
                                       <tr key={h.id} className={`${p}-cym-tr-edit`}>
                                         <td className={`${p}-cym-td`}>
-                                          <input type="date" value={duzenForm.tarih} onChange={e => setDuzenForm(prev => ({ ...prev, tarih: e.target.value }))}
-                                            className="form-control form-control-sm" style={{ maxWidth: 150 }} />
+                                          <DateInput value={duzenForm.tarih} onChange={val => setDuzenForm(prev => ({ ...prev, tarih: val }))}
+                                            placeholder="Tarih" />
                                         </td>
                                         <td className={`${p}-cym-td`}>
                                           <input type="text" value={duzenForm.aciklama} onChange={e => setDuzenForm(prev => ({ ...prev, aciklama: e.target.value }))}
@@ -1879,7 +1952,7 @@ export default function CariYonetimi() {
       {silModalAcik && createPortal(
         <>
           <div className={`${p}-modal-overlay`} />
-          <div className={`${p}-modal-center`} role="dialog" aria-modal="true" aria-labelledby="sil-modal-title">
+          <div className={`${p}-modal-center ${p}-modal-confirm`} role="dialog" aria-modal="true" aria-labelledby="sil-modal-title">
             <div className={`${p}-modal-box`} style={{ maxWidth: 420 }}>
               <div className={`${p}-modal-header ${p}-mh-danger`}>
                 <h2 className={`${p}-modal-title`} id="sil-modal-title">

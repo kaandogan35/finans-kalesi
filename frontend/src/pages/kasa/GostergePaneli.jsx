@@ -1,10 +1,11 @@
 /**
  * GostergePaneli — Varlık & Kasa Gösterge Paneli (v2)
  * Patronun en sevdiği modül — Executive Financial Dashboard
- * 6 KPI Kart: Merkez Kasa | Giriş | Çıkış | Banka | Net Değer | Nakit Tamponu
+ * 6 KPI Kart: Merkez Kasa | Giriş | Çıkış | Banka | Net Değer | Hazır Param
  */
 import { useState, useMemo, useEffect } from 'react'
 import { createPortal } from 'react-dom'
+import { Link } from 'react-router-dom'
 import { hexRgba } from '../../lib/temaRenkleri'
 import { TL, tarihFmt, donemNormalize } from './kasaUtils'
 import DegisimBadge from './components/DegisimBadge'
@@ -87,7 +88,7 @@ export function KategoriDetayModal({ show, onClose, kategori, tip, hareketler, p
                         Tarih <SiralamaIkon alan="tarih" />
                       </th>
                       <th onClick={() => sutunTikla('baglanti')} style={{ cursor:'pointer', userSelect:'none' }}>
-                        Bağlantı Türü <SiralamaIkon alan="baglanti" />
+                        İşlem Kaynağı <SiralamaIkon alan="baglanti" />
                       </th>
                       <th onClick={() => sutunTikla('tutar')} style={{ textAlign:'right', cursor:'pointer', userSelect:'none' }}>
                         Tutar <SiralamaIkon alan="tutar" />
@@ -168,7 +169,7 @@ export default function GostergePaneli({ hareketler, kapanislar, yatirimGuncelDe
     const girisTrend = gecenAyGiris > 0 ? ((aylikGiris - gecenAyGiris) / gecenAyGiris) * 100 : null
     const cikisTrend = gecenAyCikis > 0 ? ((aylikCikis - gecenAyCikis) / gecenAyCikis) * 100 : null
 
-    // Nakit Tamponu = (hazır nakit + tahsildeki çekler) − (sabit giderler + borç çekleri)
+    // Hazır Param = (hazır nakit + tahsildeki çekler) − (sabit giderler + borç çekleri)
     const tampon = (merkezKasa + bankaBakiye + tahsilCekler) - (aylikSabitGider + odenecekCekler)
     const tamponDurum = tampon > 0
       ? { label:'Güvenli', renk:renkler.success, ikon:'bi-shield-check', bg:hexRgba(renkler.success, 0.1) }
@@ -266,7 +267,7 @@ export default function GostergePaneli({ hareketler, kapanislar, yatirimGuncelDe
               <div className={`${p}-kasa-icon-box-sm`} style={{ background: hexRgba(renkler.info, 0.12) }}>
                 <i className="bi bi-building" style={{ color: renkler.info, fontSize:16 }} />
               </div>
-              <span className={`${p}-kasa-text-label`} style={{ fontSize:11, fontWeight:700, textTransform:'uppercase', letterSpacing:'0.9px' }}>Şirketin Net Değeri</span>
+              <span className={`${p}-kasa-text-label`} style={{ fontSize:11, fontWeight:700, textTransform:'uppercase', letterSpacing:'0.9px' }}>Toplam Varlığım</span>
             </div>
 
             <div className={`${p}-kasa-gp-hero-body`}>
@@ -283,37 +284,37 @@ export default function GostergePaneli({ hareketler, kapanislar, yatirimGuncelDe
               <div className="row g-2">
                 <div className="col-6">
                   <div className={`${p}-kasa-gp-tile`}>
-                    <div className={`${p}-kasa-text-muted`} style={{ fontSize:9, fontWeight:700, textTransform:'uppercase', letterSpacing:'0.5px', marginBottom:3 }}>Merkez Kasa</div>
+                    <div className={`${p}-kasa-text-muted`} style={{ fontSize:11, fontWeight:700, textTransform:'uppercase', letterSpacing:'0.5px', marginBottom:3 }}>Merkez Kasa</div>
                     <div className={`financial-num ${p}-kasa-fin-num`} style={{ fontSize:11, fontWeight:700, color: renkler.success }}>{TL(merkezKasa)}</div>
                   </div>
                 </div>
                 <div className="col-6">
                   <div className={`${p}-kasa-gp-tile`}>
-                    <div className={`${p}-kasa-text-muted`} style={{ fontSize:9, fontWeight:700, textTransform:'uppercase', letterSpacing:'0.5px', marginBottom:3 }}>Banka</div>
+                    <div className={`${p}-kasa-text-muted`} style={{ fontSize:11, fontWeight:700, textTransform:'uppercase', letterSpacing:'0.5px', marginBottom:3 }}>Banka</div>
                     <div className={`financial-num ${p}-kasa-fin-num`} style={{ fontSize:11, fontWeight:700, color: renkler.success }}>{TL(bankaBakiye)}</div>
                   </div>
                 </div>
                 <div className="col-6">
                   <div className={`${p}-kasa-gp-tile`}>
-                    <div className={`${p}-kasa-text-muted`} style={{ fontSize:9, fontWeight:700, textTransform:'uppercase', letterSpacing:'0.5px', marginBottom:3 }}>Yatırım</div>
+                    <div className={`${p}-kasa-text-muted`} style={{ fontSize:11, fontWeight:700, textTransform:'uppercase', letterSpacing:'0.5px', marginBottom:3 }}>Yatırım</div>
                     <div className={`financial-num ${p}-kasa-fin-num`} style={{ fontSize:11, fontWeight:700, color: renkler.primary }}>{TL(yatirimGuncelDeger)}</div>
                   </div>
                 </div>
                 <div className="col-6">
                   <div className={`${p}-kasa-gp-tile`}>
-                    <div className={`${p}-kasa-text-muted`} style={{ fontSize:9, fontWeight:700, textTransform:'uppercase', letterSpacing:'0.5px', marginBottom:3 }}>Sanal Stok</div>
+                    <div className={`${p}-kasa-text-muted`} style={{ fontSize:11, fontWeight:700, textTransform:'uppercase', letterSpacing:'0.5px', marginBottom:3 }}>Stok Değerim</div>
                     <div className={`financial-num ${p}-kasa-fin-num`} style={{ fontSize:11, fontWeight:700, color: renkler.primary }}>{TL(sanalStok)}</div>
                   </div>
                 </div>
                 <div className="col-6">
                   <div className={`${p}-kasa-gp-tile`} style={{ background: hexRgba(renkler.success, 0.06), borderColor: hexRgba(renkler.success, 0.12) }}>
-                    <div style={{ fontSize:9, fontWeight:700, color: hexRgba(renkler.success, 0.6), textTransform:'uppercase', letterSpacing:'0.5px', marginBottom:3 }}>Alacaklar</div>
+                    <div style={{ fontSize:11, fontWeight:700, color: hexRgba(renkler.success, 0.6), textTransform:'uppercase', letterSpacing:'0.5px', marginBottom:3 }}>Tahsil Edeceğim</div>
                     <div className={`financial-num ${p}-kasa-fin-num`} style={{ fontSize:11, fontWeight:700, color: renkler.success }}>{TL(alacaklar)}</div>
                   </div>
                 </div>
                 <div className="col-6">
                   <div className={`${p}-kasa-gp-tile`} style={{ background: hexRgba(renkler.danger, 0.06), borderColor: hexRgba(renkler.danger, 0.12) }}>
-                    <div style={{ fontSize:9, fontWeight:700, color: hexRgba(renkler.danger, 0.6), textTransform:'uppercase', letterSpacing:'0.5px', marginBottom:3 }}>Borçlar</div>
+                    <div style={{ fontSize:11, fontWeight:700, color: hexRgba(renkler.danger, 0.6), textTransform:'uppercase', letterSpacing:'0.5px', marginBottom:3 }}>Ödeyeceğim</div>
                     <div className={`financial-num ${p}-kasa-fin-num`} style={{ fontSize:11, fontWeight:700, color: renkler.danger }}>−{TL(borclar)}</div>
                   </div>
                 </div>
@@ -322,14 +323,14 @@ export default function GostergePaneli({ hareketler, kapanislar, yatirimGuncelDe
           </div>
         </div>
 
-        {/* ── 6. Operasyonel Nakit Tamponu ── */}
+        {/* ── 6. Operasyonel Hazır Param ── */}
         <div className="col-12 col-md-4">
           <div className={`${p}-kasa-gp-hero`} style={{ height:'100%' }}>
             <div className={`${p}-kasa-gp-hero-header`}>
               <div className={`${p}-kasa-icon-box-sm`} style={{ background: tamponDurum.bg }}>
                 <i className={`bi ${tamponDurum.ikon}`} style={{ color: tamponDurum.renk, fontSize:16 }} />
               </div>
-              <span className={`${p}-kasa-text-label`} style={{ fontSize:11, fontWeight:700, textTransform:'uppercase', letterSpacing:'0.9px' }}>Nakit Tamponu</span>
+              <span className={`${p}-kasa-text-label`} style={{ fontSize:11, fontWeight:700, textTransform:'uppercase', letterSpacing:'0.9px' }}>Hazır Param</span>
               <span style={{
                 marginLeft:'auto', fontSize:11, fontWeight:700, padding:'4px 11px', borderRadius:10,
                 background: tamponDurum.bg, color: tamponDurum.renk, whiteSpace:'nowrap', flexShrink:0
@@ -361,7 +362,7 @@ export default function GostergePaneli({ hareketler, kapanislar, yatirimGuncelDe
                 </div>
                 <div className="d-flex justify-content-between align-items-center">
                   <span className={`${p}-kasa-text-muted`} style={{ fontSize:11, fontWeight:600 }}>
-                    <i className="bi bi-plus-circle me-1" style={{ color: renkler.success, fontSize:10 }} />Tahsildeki Çekler
+                    <i className="bi bi-plus-circle me-1" style={{ color: renkler.success, fontSize:10 }} />Bankada / Tahsilattaki Çekler
                   </span>
                   <span className={`financial-num ${p}-kasa-text-sec`} style={{ fontSize:12, fontWeight:700 }}>
                     {TL(tahsilCekler)}
@@ -386,6 +387,45 @@ export default function GostergePaneli({ hareketler, kapanislar, yatirimGuncelDe
               </div>
             </div>
           </div>
+        </div>
+      </div>
+
+      {/* ══════════════════════════════════════════════════════════════
+          KASA ALT MODÜLLER — Hızlı Yönlendirme
+          ══════════════════════════════════════════════════════════════ */}
+      <div style={{ marginTop: 20 }}>
+        <h6 className={`${p}-kpi-label`} style={{ fontSize: 12, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.8px', marginBottom: 12, opacity: 0.6 }}>
+          Kasa İşlemleri
+        </h6>
+        <div className="row g-3">
+          {[
+            { path: '/gelirler',        icon: 'bi-arrow-down-circle', label: 'Gelirler',       desc: 'Gelir kayıtlarını görüntüle',  renk: renkler.success },
+            { path: '/giderler',        icon: 'bi-arrow-up-circle',   label: 'Giderler',       desc: 'Gider kayıtlarını görüntüle',  renk: renkler.danger  },
+            { path: '/kasa/bilanco',    icon: 'bi-journal-text',      label: 'Ay Sonu Özeti',  desc: 'Aylık bilanço ve kapanış',      renk: renkler.info    },
+            { path: '/kasa/ortaklar',   icon: 'bi-people-fill',       label: 'Ortaklarım',     desc: 'Ortak cari hesapları',          renk: renkler.accent  },
+            { path: '/kasa/yatirimlar', icon: 'bi-gem',               label: 'Döviz & Altın',  desc: 'Yatırım portföyü takibi',      renk: renkler.primary },
+          ].map(item => (
+            <div className="col-6 col-md-4" key={item.path}>
+              <Link to={item.path} style={{ textDecoration: 'none' }}>
+                <div className={`${p}-kpi-card`} style={{
+                  height: '100%', cursor: 'pointer', transition: 'transform 0.15s ease, box-shadow 0.15s ease',
+                  display: 'flex', flexDirection: 'column', alignItems: 'center', textAlign: 'center', padding: '20px 12px'
+                }}
+                  onMouseEnter={e => { e.currentTarget.style.transform = 'translateY(-2px)'; e.currentTarget.style.boxShadow = `0 8px 24px ${hexRgba(item.renk, 0.15)}` }}
+                  onMouseLeave={e => { e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.boxShadow = '' }}
+                >
+                  <div style={{
+                    width: 44, height: 44, borderRadius: 12, display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    background: hexRgba(item.renk, 0.1), marginBottom: 10
+                  }}>
+                    <i className={`bi ${item.icon}`} style={{ fontSize: 20, color: item.renk }} />
+                  </div>
+                  <div style={{ fontWeight: 700, fontSize: 13, color: renkler.text, marginBottom: 3 }}>{item.label}</div>
+                  <div className={`${p}-kasa-text-muted`} style={{ fontSize: 11 }}>{item.desc}</div>
+                </div>
+              </Link>
+            </div>
+          ))}
         </div>
       </div>
 

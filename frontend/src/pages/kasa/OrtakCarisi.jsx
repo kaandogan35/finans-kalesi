@@ -10,6 +10,8 @@ import { hexRgba } from '../../lib/temaRenkleri'
 import { ortakHareketEkle, ortakHareketSil } from '../../api/kasa'
 import { TL, tarihFmt, bugunTarih, formatParaInput, parseParaInput, ORTAK_RENKLERI } from './kasaUtils'
 import DonemFiltresi from './components/DonemFiltresi'
+import SwipeCard, { DynamicAvatar } from '../../components/SwipeCard'
+import { DateInput } from '../../components/ui/DateInput'
 
 // ─── Ortak İşlem Ekleme Modalı ──────────────────────────────────────────────
 function OrtakModal({ open, onClose, mevcutOrtaklar, onKaydet, p, renkler }) {
@@ -117,8 +119,7 @@ function OrtakModal({ open, onClose, mevcutOrtaklar, onKaydet, p, renkler }) {
             <div className="row g-3 mb-3">
               <div className="col-12 col-sm-6">
                 <label className={`${p}-kasa-input-label`}>Tarih</label>
-                <input type="date" value={tarih} onChange={e => setTarih(e.target.value)}
-                  className={`${p}-kasa-input`} />
+                <DateInput value={tarih} onChange={val => setTarih(val)} placeholder="Tarih seçin" />
               </div>
               <div className="col-12 col-sm-6">
                 <label className={`${p}-kasa-input-label`}>Tutar (₺)</label>
@@ -322,7 +323,7 @@ export default function OrtakCarisi({ ortakHareketler, setOrtakHareketler, p, re
                     <div style={{ flex:1, height:4, borderRadius:2, background:hexRgba(renkler.danger, 0.25), overflow:'hidden' }}>
                       <div style={{ width:`${girisYuzde}%`, height:'100%', borderRadius:2, background:renkler.success, transition:'width 0.4s ease' }} />
                     </div>
-                    <span className={`${p}-kasa-text-muted`} style={{ fontSize:9, fontWeight:700, whiteSpace:'nowrap' }}>
+                    <span className={`${p}-kasa-text-muted`} style={{ fontSize:11, fontWeight:700, whiteSpace:'nowrap' }}>
                       {Math.round(girisYuzde)}G / {Math.round(100-girisYuzde)}Ç
                     </span>
                   </div>
@@ -342,7 +343,8 @@ export default function OrtakCarisi({ ortakHareketler, setOrtakHareketler, p, re
             </p>
           </div>
         </div>
-        <div className="table-responsive">
+        {/* Desktop Tablo */}
+        <div className="table-responsive d-none d-md-block">
           <table className={`${p}-kasa-table`}>
             <thead>
               <tr style={{ background:hexRgba(renkler.text, 0.03) }}>
@@ -353,19 +355,14 @@ export default function OrtakCarisi({ ortakHareketler, setOrtakHareketler, p, re
             </thead>
             <tbody>
               {sayfaliVeri.map(h => {
-                const renk = ortakRenk(h.ortak_adi)
                 const giris = h.islem_tipi === 'para_girisi'
                 return (
                   <tr key={h.id}>
                     <td style={{ fontSize:13, color:renkler.textSec, padding:'10px 16px', whiteSpace:'nowrap' }}>{tarihFmt(h.tarih)}</td>
                     <td style={{ padding:'10px 16px' }}>
                       <div className="d-flex align-items-center gap-2">
-                        <div style={{ width:28, height:28, borderRadius:10, background:renk, display:'flex', alignItems:'center', justifyContent:'center', flexShrink:0 }}>
-                          <span style={{ fontSize:11, fontWeight:800, color:'#fff', lineHeight:1 }}>
-                            {h.ortak_adi.split(' ').map(s=>s[0]).slice(0,2).join('')}
-                          </span>
-                        </div>
-                        <span style={{ fontWeight:700, fontSize:13, color: renk }}>{h.ortak_adi}</span>
+                        <DynamicAvatar isim={h.ortak_adi} boyut={28} />
+                        <span style={{ fontWeight:700, fontSize:13, color: 'var(--p-text)' }}>{h.ortak_adi}</span>
                       </div>
                     </td>
                     <td style={{ padding:'10px 16px' }}>
@@ -398,12 +395,56 @@ export default function OrtakCarisi({ ortakHareketler, setOrtakHareketler, p, re
                 )
               })}
               {sayfaliVeri.length === 0 && (
-                <tr><td colSpan={6} className={`${p}-kasa-text-muted`} style={{ textAlign:'center', padding:'32px', fontSize:14 }}>
-                  {arama ? `"${arama}" için kayıt bulunamadı` : 'Henüz işlem yok'}
+                <tr><td colSpan={6} className={`${p}-empty-state`}>
+                  <i className="bi bi-people" />
+                  <h6>{arama ? `"${arama}" için kayıt bulunamadı` : 'Henüz işlem yok'}</h6>
+                  <p>{arama ? 'Farklı bir arama deneyin' : 'Ortak cari hesabınıza ilk işlemi ekleyin'}</p>
                 </td></tr>
               )}
             </tbody>
           </table>
+        </div>
+
+        {/* Mobil Kart Listesi */}
+        <div className="d-md-none" style={{ padding: '0 0 8px' }}>
+          {sayfaliVeri.length === 0 ? (
+            <div className={`${p}-empty-state`} style={{ padding: '40px 16px', textAlign: 'center' }}>
+              <i className="bi bi-people" style={{ fontSize: 36, color: renkler.textSec, opacity: 0.4, display: 'block', marginBottom: 8 }} />
+              <h6 style={{ fontSize: 14, fontWeight: 700, color: 'var(--p-text)' }}>{arama ? `"${arama}" için kayıt bulunamadı` : 'Henüz işlem yok'}</h6>
+            </div>
+          ) : <>
+            <div className="p-swipe-hint"><i className="bi bi-arrow-left-right" /> Sola kaydırarak silebilirsiniz</div>
+            {sayfaliVeri.map(h => {
+              const giris = h.islem_tipi === 'para_girisi'
+              return (
+                <SwipeCard key={h.id} aksiyonlar={[
+                  { icon: 'bi-trash3', label: 'Sil', renk: 'danger', onClick: () => setSilOnayId(h.id) },
+                ]}>
+                  <div className="p-gg-mcard">
+                    <div className="p-gg-mcard-top">
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 8, flex: 1, minWidth: 0 }}>
+                        <DynamicAvatar isim={h.ortak_adi} boyut={36} />
+                        <div style={{ minWidth: 0 }}>
+                          <div style={{ fontWeight: 700, fontSize: 14, color: 'var(--p-text)' }}>{h.ortak_adi}</div>
+                          <span className={`${p}-kasa-badge`} style={{ background: giris ? hexRgba(renkler.success, 0.12) : hexRgba(renkler.danger, 0.1), color: giris ? renkler.success : renkler.danger, fontSize: 10, padding: '1px 6px' }}>
+                            <i className={`bi ${giris ? 'bi-arrow-down-circle' : 'bi-arrow-up-circle'} me-1`} style={{ fontSize: 12 }} />
+                            {giris ? 'Giriş' : 'Çıkış'}
+                          </span>
+                        </div>
+                      </div>
+                      <span className="p-gg-mcard-tutar financial-num" style={{ color: giris ? renkler.success : renkler.danger }}>
+                        {giris ? '+' : '-'}{TL(h.tutar)}
+                      </span>
+                    </div>
+                    {h.aciklama && <div className="p-gg-mcard-aciklama">{h.aciklama}</div>}
+                    <div className="p-gg-mcard-alt">
+                      <span className="p-gg-mcard-tarih"><i className="bi bi-calendar3" /> {tarihFmt(h.tarih)}</span>
+                    </div>
+                  </div>
+                </SwipeCard>
+              )
+            })}
+          </>}
         </div>
 
         {toplamSayfa > 1 && (

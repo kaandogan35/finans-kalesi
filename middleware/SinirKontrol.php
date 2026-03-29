@@ -1,9 +1,12 @@
 <?php
 // =============================================================
-// SinirKontrol.php — Ücretsiz Plan Kullanım Sınırları
+// SinirKontrol.php — Plan Kullanım Sınırları
 // Finans Kalesi SaaS
 //
 // Plan başına işlem sınırlarını tanımlar ve kontrol eder.
+// Deneme planı: Standart ile aynı sınırlar.
+// Deneme süresi dolmuşsa yazma engellenir.
+//
 // Kullanım:
 //   SinirKontrol::kontrol($payload, 'cari');   // 403 + exit
 //   SinirKontrol::cariSayisi($payload);        // int döner
@@ -14,11 +17,11 @@ class SinirKontrol {
     // ─── Plan Başına Sınırlar ───────────────────────────────
     // -1 = sınırsız
     const SINIRLAR = [
-        'ucretsiz' => [
-            'cari_toplam'     => 30,   // Toplam cari kart
-            'cek_aylik'       => 10,   // Aylık çek/senet ekleme
-            'kasa_gecmis_ay'  => 2,    // Kasa geçmişi (ay)
-            'kullanici_sayisi'=> 1,    // Toplam kullanıcı
+        'deneme' => [
+            'cari_toplam'     => -1,   // Sınırsız (Standart ile aynı)
+            'cek_aylik'       => 50,
+            'kasa_gecmis_ay'  => -1,   // Sınırsız
+            'kullanici_sayisi'=> 2,
         ],
         'standart' => [
             'cari_toplam'     => -1,   // Sınırsız
@@ -73,9 +76,14 @@ class SinirKontrol {
     // ─── Kontrol + 403 (Sınır Aşılmışsa) ──────────────────
     // $tur: 'cari' | 'cek' | 'kullanici'
     public static function kontrol(array $payload, string $tur): void {
-        $plan     = $payload['plan'] ?? 'ucretsiz';
-        $sinirlar = self::SINIRLAR[$plan] ?? self::SINIRLAR['ucretsiz'];
+        $plan     = $payload['plan'] ?? 'deneme';
+        $sinirlar = self::SINIRLAR[$plan] ?? self::SINIRLAR['deneme'];
         $sirket   = (int) $payload['sirket_id'];
+
+        // Deneme süresi dolmuşsa yazma işlemlerini engelle
+        if ($plan === 'deneme') {
+            PlanKontrol::denemeSuresiKontrol($payload);
+        }
 
         if ($tur === 'cari') {
             $sinir = $sinirlar['cari_toplam'];
@@ -84,7 +92,7 @@ class SinirKontrol {
             if ($mevcut >= $sinir) {
                 Response::json([
                     'basarili' => false,
-                    'hata'     => "Ücretsiz planda en fazla {$sinir} cari kart açabilirsiniz. Mevcut: {$mevcut}. Planınızı yükseltin.",
+                    'hata'     => "Planınızda en fazla {$sinir} cari kart açabilirsiniz. Mevcut: {$mevcut}. Planınızı yükseltin.",
                     'kod'      => 'SINIR_ASILDI',
                     'sinir'    => $sinir,
                     'mevcut'   => $mevcut,
@@ -127,8 +135,8 @@ class SinirKontrol {
 
     // ─── Durum Özeti (API için) ─────────────────────────────
     public static function durumOzeti(array $payload): array {
-        $plan     = $payload['plan'] ?? 'ucretsiz';
-        $sinirlar = self::SINIRLAR[$plan] ?? self::SINIRLAR['ucretsiz'];
+        $plan     = $payload['plan'] ?? 'deneme';
+        $sinirlar = self::SINIRLAR[$plan] ?? self::SINIRLAR['deneme'];
         $sirket   = (int) $payload['sirket_id'];
 
         $cari_mevcut = self::cariSayisi($sirket);

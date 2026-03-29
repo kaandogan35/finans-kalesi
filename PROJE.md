@@ -1,5 +1,5 @@
 # PROJE.md — ParamGo (Finans Kalesi) Durum ve Yol Haritasi
-# Son Guncelleme: 25 Mart 2026
+# Son Guncelleme: 29 Mart 2026
 
 ---
 
@@ -32,7 +32,7 @@ Kaan bunu cPanel phpMyAdmin (hosting) ve Laragon (local) uzerinden kendisi calis
 ## TAMAMLANAN ASAMALAR
 
 ### Asama 1 — PHP REST API ✅ KILITLENDI
-48+ endpoint, 15 controller, 12 model, 16 route dosyasi. Degistirilmeden once onay istenir.
+20 controller, 14 model, 19 route dosyasi. Degistirilmeden once onay istenir.
 
 | Modul | Controller | Route | Endpoint |
 |-------|-----------|-------|----------|
@@ -45,15 +45,20 @@ Kaan bunu cPanel phpMyAdmin (hosting) ve Laragon (local) uzerinden kendisi calis
 | Abonelik | AbonelikController.php | routes/abonelik.php | 5 |
 | Sinir | SinirController.php | routes/sinir.php | 1 |
 | Raporlar | RaporController.php | routes/raporlar.php | 7 |
-| Kullanicilar | — | routes/kullanicilar.php | 6 |
+| Kullanicilar | KullaniciController.php | routes/kullanicilar.php | 6 |
 | Bildirimler | BildirimController.php | routes/bildirimler.php | 2 |
 | Guvenlik | GuvenlikController.php | routes/guvenlik.php | 4 |
 | Veresiye | VeresiyeController.php | routes/veresiye.php | 2 |
-| Cron | — | routes/cron.php | 4 |
+| Cron | CronController.php | routes/cron.php | 4 |
 | Webhook | WebhookController.php | routes/abonelik.php | 3 |
+| Kategoriler | KategoriController.php | routes/kategoriler.php | — |
+| Tekrarlayan Islemler | TekrarlayanIslemController.php | routes/tekrarlayan_islem.php | — |
+| Onboarding | OnboardingController.php | routes/onboarding.php | — |
+| Turler | TurController.php | routes/tur.php | — |
+| Ayarlar | AyarlarController.php | routes/ayarlar.php | — |
 
 ### Asama 2 — React Frontend ✅ TAMAMLANDI
-26 sayfa bileseni, 14 API dosyasi, 3 store, 2 hook. Tum moduller API'ye bagli.
+38 sayfa bileseni, 19 API dosyasi, 3 store, 2 hook, 13 component. Tum moduller API'ye bagli.
 
 ### Asama 3 — Canliya Cikis ✅ TAMAMLANDI
 Domain: paramgo.com | SSL aktif | PHP 8.4 | MariaDB canli
@@ -92,9 +97,9 @@ Domain: paramgo.com | SSL aktif | PHP 8.4 | MariaDB canli
 
 | # | Is | Durum |
 |---|-----|-------|
-| 1 | 2FA (TOTP) implementasyonu | ⬜ |
+| 1 | 2FA (TOTP) implementasyonu | 🔶 Backend hazir (TOTPHelper.php), frontend eksik |
 | 2 | Biometric login hazirligi (Capacitor sonrasi) | ⬜ |
-| 3 | Session timeout UI bildirimi | ⬜ |
+| 3 | Session timeout UI bildirimi | ✅ OturumUyari.jsx |
 
 #### 5C — Eksik Moduller (Rakip Analizi Sonucu)
 
@@ -102,8 +107,8 @@ Papara, YNAB, PocketGuard, Spendee, Wallet analiz edildi. Store rekabeti icin:
 
 | # | Modul | Aciklama | Durum |
 |---|-------|----------|-------|
-| 1 | Tekrarlayan Islemler | Kira, maas, abonelik otomatik kayit | ⬜ |
-| 2 | Kategori Yonetimi | Gelir/gider kategorileri (ozellestirilebilir) | ⬜ |
+| 1 | Tekrarlayan Islemler | Kira, maas, abonelik otomatik kayit | ✅ Backend + Frontend tamamlandi |
+| 2 | Kategori Yonetimi | Gelir/gider kategorileri (ozellestirilebilir) | ✅ Backend + Frontend tamamlandi |
 | 3 | Butce Planlama | Aylik kategori bazli butce + takip | ⬜ |
 | 4 | Gelir/Gider Grafikler | Trend grafikleri, pasta grafik, karsilastirma | ⬜ |
 | 5 | Disa Aktarma Gelistirme | Tum modullerden CSV/Excel/PDF | ⬜ |
@@ -114,11 +119,11 @@ Papara, YNAB, PocketGuard, Spendee, Wallet analiz edildi. Store rekabeti icin:
 
 | # | Is | Durum |
 |---|-----|-------|
-| 1 | Bos durum (empty state) ekranlari | ⬜ |
+| 1 | Bos durum (empty state) ekranlari | ✅ EmptyState.jsx |
 | 2 | Skeleton loading animasyonlari | ⬜ |
 | 3 | Pull-to-refresh (mobil) | ⬜ |
-| 4 | Swipe gesture (silme, durum degistirme) | ⬜ |
-| 5 | Onboarding wizard (ilk giris rehberi) | ⬜ |
+| 4 | Swipe gesture (silme, durum degistirme) | ✅ SwipeCard.jsx |
+| 5 | Onboarding wizard (ilk giris rehberi) | ✅ Onboarding.jsx + OnboardingController |
 | 6 | Offline banner ("Baglanti yok") | ⬜ |
 
 ---
@@ -230,27 +235,34 @@ finans-kalesi/
 ├── config/
 │   ├── app.php
 │   └── database.php
-├── controllers/
+├── controllers/ (20 dosya)
+│   ├── AbonelikController.php
 │   ├── AuthController.php
 │   ├── AyarlarController.php
-│   ├── AbonelikController.php
 │   ├── BildirimController.php
 │   ├── CariController.php
 │   ├── CekSenetController.php
+│   ├── CronController.php
 │   ├── DashboardController.php
 │   ├── GuvenlikController.php
 │   ├── KasaController.php
+│   ├── KategoriController.php
+│   ├── KullaniciController.php
 │   ├── OdemeTakipController.php
+│   ├── OnboardingController.php
 │   ├── RaporController.php
 │   ├── SinirController.php
+│   ├── TekrarlayanIslemController.php
+│   ├── TurController.php
 │   ├── VeresiyeController.php
 │   └── WebhookController.php
-├── middleware/
+├── middleware/ (5 dosya)
 │   ├── AuthMiddleware.php
 │   ├── CorsMiddleware.php
 │   ├── PlanKontrol.php
-│   └── SinirKontrol.php
-├── models/
+│   ├── SinirKontrol.php
+│   └── YetkiKontrol.php
+├── models/ (14 dosya)
 │   ├── Abonelik.php
 │   ├── Bildirim.php
 │   ├── CariHareket.php
@@ -258,15 +270,17 @@ finans-kalesi/
 │   ├── CekSenet.php
 │   ├── Guvenlik.php
 │   ├── Kasa.php
+│   ├── Kategori.php
 │   ├── Kullanici.php
 │   ├── OdemeTakip.php
 │   ├── Rapor.php
 │   ├── Sirket.php
+│   ├── TekrarlayanIslem.php
 │   └── Veresiye.php
-├── routes/
+├── routes/ (19 dosya)
+│   ├── abonelik.php
 │   ├── auth.php
 │   ├── ayarlar.php
-│   ├── abonelik.php
 │   ├── bildirimler.php
 │   ├── cari.php
 │   ├── cek_senet.php
@@ -274,47 +288,72 @@ finans-kalesi/
 │   ├── dashboard.php
 │   ├── guvenlik.php
 │   ├── kasa.php
+│   ├── kategoriler.php
 │   ├── kullanicilar.php
 │   ├── odeme.php
+│   ├── onboarding.php
 │   ├── raporlar.php
 │   ├── sinir.php
+│   ├── tekrarlayan_islem.php
+│   ├── tur.php
 │   └── veresiye.php
-├── utils/
+├── utils/ (12 dosya)
+│   ├── BildirimOlusturucu.php
 │   ├── JWTHelper.php
 │   ├── KriptoHelper.php
+│   ├── MailHelper.php
+│   ├── MailSablonlar.php
 │   ├── RateLimiter.php
 │   ├── Response.php
 │   ├── SistemKripto.php
-│   └── SistemLog.php
+│   ├── SistemLog.php
+│   ├── SmtpHelper.php
+│   ├── TOTPHelper.php
+│   └── WhatsappHelper.php
+├── cron/
+│   ├── .htaccess
+│   └── vade-uyari-cron.php
 ├── database/
-│   └── finans_kalesi_schema.sql (20 tablo)
+│   ├── finans_kalesi_schema.sql (20 tablo)
+│   └── migration_*.sql (6 migration dosyasi)
 ├── frontend/src/
-│   ├── api/ (14 dosya — auth, axios, abonelik, bildirimler, cariler, cekSenet, dashboard, guvenlik, kasa, kullanicilar, odeme, raporlar, sinir, veresiye)
-│   ├── components/
+│   ├── api/ (19 dosya — auth, axios, abonelik, ayarlar, bildirimler, cariler, cekSenet, dashboard, guvenlik, kasa, kategori, kullanicilar, odeme, onboarding, raporlar, sinir, tekrarlayanIslem, tur, veresiye)
+│   ├── components/ (15 dosya)
 │   │   ├── layout/
-│   │   │   ├── AppLayout.jsx (ParamGo — tek aktif layout)
+│   │   │   ├── AppLayoutParamGo.jsx (tek aktif layout)
 │   │   │   ├── KorunanSayfa.jsx
 │   │   │   ├── ModulKoruma.jsx
 │   │   │   └── TemaLayout.jsx
-│   │   ├── PlanYukseltModal.jsx
-│   │   ├── UpgradeBildirim.jsx
+│   │   ├── ui/ (DateInput, DateRangePicker)
 │   │   ├── BildirimZili.jsx
-│   │   └── ErrorBoundary.jsx
-│   ├── pages/
+│   │   ├── EmptyState.jsx
+│   │   ├── ErrorBoundary.jsx
+│   │   ├── GuvenlikKoruyucu.jsx (biyometrik kilit + jailbreak tespiti)
+│   │   ├── KvkkOnay.jsx (KVKK ilk acilis onay ekrani)
+│   │   ├── OturumUyari.jsx
+│   │   ├── PlanYukseltModal.jsx
+│   │   ├── SwipeCard.jsx
+│   │   └── UpgradeBildirim.jsx
+│   ├── utils/ (haptics.js — titresim feedback)
+│   ├── pages/ (39 JSX, 16 klasor)
 │   │   ├── auth/ (GirisYap, KayitOl, SifreSifirla)
 │   │   ├── dashboard/Dashboard.jsx
 │   │   ├── cariler/ (CariYonetimi, CarilerListesi)
 │   │   ├── cek-senet/CekSenet.jsx
-│   │   ├── kasa/VarlikKasa.jsx
+│   │   ├── kasa/ (VarlikKasa, GostergePaneli, AylikBilanco, GelirGiderSayfasi, OrtakCarisi, YatirimKalesi + components/)
+│   │   ├── gelirler/Gelirler.jsx
+│   │   ├── giderler/Giderler.jsx
 │   │   ├── odeme-takip/OdemeTakip.jsx
 │   │   ├── vade-hesaplayici/VadeHesaplayici.jsx
+│   │   ├── tekrarlayan-islemler/TekrarlayanIslemler.jsx
+│   │   ├── onboarding/Onboarding.jsx
 │   │   ├── abonelik/PlanSecim.jsx
-│   │   ├── kullanicilar/ (KullaniciYonetimi, Modal, SifreGuncelle)
+│   │   ├── kullanicilar/ (KullaniciYonetimi, KullaniciModal, SifreGuncelleModal)
 │   │   ├── ayarlar/TemaSecimi.jsx
 │   │   ├── guvenlik/GuvenlikEkrani.jsx
 │   │   ├── bildirimler/BildirimlerEkrani.jsx
-│   │   ├── raporlar/ (6 rapor sayfasi)
-│   │   └── veresiye/ (Liste, Detay)
+│   │   ├── raporlar/ (RaporlarEkrani, GenelOzet, NakitAkis, CariYaslandirma, OdemeOzet, CekPortfoy, RaporGecmisi)
+│   │   └── veresiye/ (VeresiyeListesi, VeresiyeDetay)
 │   ├── hooks/ (usePlanKontrol, useSinirler)
 │   ├── stores/ (authStore, bildirimStore, temaStore)
 │   ├── logo/ParamGoLogo.jsx
@@ -323,12 +362,19 @@ finans-kalesi/
 │   ├── App.jsx
 │   └── main.jsx
 ├── public/
-│   ├── index.php
+│   ├── index.php (tek giris noktasi)
 │   ├── .htaccess
+│   ├── .well-known/ (apple-app-site-association, assetlinks.json)
+│   ├── gizlilik.html
+│   ├── destek.html
+│   ├── kullanim-sartlari.html
 │   └── frontend-build/
+├── frontend/ios/ (Capacitor iOS projesi)
+├── frontend/android/ (Capacitor Android projesi)
 ├── .env / .env.example
 ├── CLAUDE.md
-└── PROJE.md
+├── PROJE.md
+└── MOBIL-GECIS-PLANI.md (45 gorev, mobil store yol haritasi)
 ```
 
 ---
@@ -350,7 +396,9 @@ finans-kalesi/
 | PDF | html2pdf.js | 0.14 |
 | Excel | xlsx | 0.18 |
 | Toast | sonner | v2 |
-| Mobil | Capacitor.js | Henuz entegre edilmedi |
+| Mobil | Capacitor.js | 8.3 (iOS + Android projesi hazir) |
+| Biyometrik | @aparajita/capacitor-biometric-auth | v10 |
+| Guvenli Storage | @capacitor/preferences | v8 |
 | Hosting | cPanel Shared Hosting | paramgo.com |
 
 ---
@@ -360,5 +408,5 @@ finans-kalesi/
 | # | Sorun | Oncelik |
 |---|-------|---------|
 | 1 | sonner toast Bootstrap disi — degerlendirilecek | DUSUK |
-| 2 | Eski tema dosyalari (banking.css, earthy.css, dark.css) henuz silinmedi | DUSUK |
-| 3 | Eski layout dosyalari (AppLayoutBanking, Earthy, Dark) henuz silinmedi | DUSUK |
+| 2 | ~~demo-renk-kontrast.html~~ ✅ Silindi (29 Mart 2026) | COZULDU |
+| 3 | public/index-canli.php — canli sunucu giris noktasi (deploy dosyasi, KALACAK) | BİLGİ |

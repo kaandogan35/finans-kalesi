@@ -58,7 +58,7 @@ export default function UpgradeBildirim() {
   const [modalAcik, setModalAcik]             = useState(false)
   const [modalOzellik, setModalOzellik]       = useState('Kullanım Limiti')
 
-  const plan = kullanici?.plan || 'ucretsiz'
+  const plan = kullanici?.plan || 'deneme'
   const renk = TEMA_RENKLER[aktifTema] || TEMA_RENKLER.paramgo
 
   const cariDurum = uyariDurum('cari')
@@ -66,7 +66,7 @@ export default function UpgradeBildirim() {
 
   // Limit dolu → oturum başına 1 kez modal aç
   useEffect(() => {
-    if (plan !== 'ucretsiz' || modalGosterildi || !sinirler) return
+    if (plan !== 'deneme' || modalGosterildi || !sinirler) return
     if (cariDurum === 'dolu') {
       setModalOzellik('Cari Hesap Limiti')
       setModalAcik(true)
@@ -78,7 +78,7 @@ export default function UpgradeBildirim() {
     }
   }, [cariDurum, cekDurum, sinirler, plan, modalGosterildi])
 
-  if (plan !== 'ucretsiz') return null
+  if (plan !== 'deneme') return null
 
   const limitDolu  = cariDurum === 'dolu'  || cekDurum === 'dolu'
   const limitUyari = cariDurum === 'uyari' || cekDurum === 'uyari'

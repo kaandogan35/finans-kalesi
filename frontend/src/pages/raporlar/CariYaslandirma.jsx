@@ -9,10 +9,14 @@ import { raporlarApi } from '../../api/raporlar'
 import { toast } from 'sonner'
 import { usePlanKontrol } from '../../hooks/usePlanKontrol'
 import PlanYukseltModal from '../../components/PlanYukseltModal'
+import { DateRangePicker } from '../../components/ui/DateRangePicker'
 import {
   Chart as ChartJS, CategoryScale, LinearScale, BarElement, Title, Tooltip, Legend,
 } from 'chart.js'
+import ChartDataLabels from 'chartjs-plugin-datalabels'
 import { Bar } from 'react-chartjs-2'
+import { standardTooltip, standardAnimation, standardYScale, standardXScale } from '../../lib/chartConfig'
+import { pdfIndir as pdfIndirUtil } from '../../lib/pdfExport'
 
 ChartJS.register(CategoryScale, LinearScale, BarElement, Title, Tooltip, Legend)
 
@@ -30,7 +34,7 @@ export default function CariYaslandirma() {
   const [modalGoster, setModalGoster] = useState(false)
   const [veri, setVeri] = useState(null)
   const [yukleniyor, setYukleniyor] = useState(true)
-  const [filtre, setFiltre] = useState({ cari_turu: '' })
+  const [filtre, setFiltre] = useState({ cari_turu: '', baslangic_tarihi: '', bitis_tarihi: '' })
 
   useEffect(() => { getir() }, [])
 
@@ -39,6 +43,8 @@ export default function CariYaslandirma() {
     try {
       const params = {}
       if (f.cari_turu) params.cari_turu = f.cari_turu
+      if (f.baslangic_tarihi) params.baslangic_tarihi = f.baslangic_tarihi
+      if (f.bitis_tarihi) params.bitis_tarihi = f.bitis_tarihi
       const { data } = await raporlarApi.cariYaslandirma(params)
       if (data.basarili) setVeri(data.veri)
     } catch {
@@ -51,42 +57,7 @@ export default function CariYaslandirma() {
   const uygula = () => getir(filtre)
 
   // PDF export
-  const pdfIndir = async () => {
-    const html2pdf = (await import('html2pdf.js')).default
-    const el = document.getElementById('rpr-cari-yas-tablo')
-    if (!el) return
-    toast.info('PDF hazırlanıyor…')
-    const wrapper = document.createElement('div')
-    wrapper.innerHTML = `
-      <div style="padding:20px;font-family:Arial,sans-serif">
-        <div style="display:flex;align-items:center;gap:10px;margin-bottom:4px">
-          <svg width="36" height="36" viewBox="0 0 120 120" fill="none" xmlns="http://www.w3.org/2000/svg">
-            <defs><linearGradient id="pg" x1="0" y1="0" x2="120" y2="120" gradientUnits="userSpaceOnUse"><stop offset="0%" stop-color="#10B981"/><stop offset="100%" stop-color="#059669"/></linearGradient></defs>
-            <rect width="120" height="120" rx="28" fill="url(#pg)"/>
-            <path d="M38 88V36H62C70.837 36 78 43.163 78 52C78 60.837 70.837 68 62 68H38" stroke="#fff" stroke-width="9" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
-            <path d="M68 62L82 48M82 48L68 34M82 48H56" stroke="#fff" stroke-width="7" stroke-linecap="round" stroke-linejoin="round" opacity="0.6"/>
-          </svg>
-          <div>
-            <div style="font-family:'Plus Jakarta Sans',Arial,sans-serif;font-weight:800;font-size:18px;color:#1A1A1A;letter-spacing:-0.04em">Param<span style="color:#10B981;font-weight:700">Go</span></div>
-          </div>
-        </div>
-        <h2 style="color:#10B981;margin:12px 0 4px">Cari Yaşlandırma Raporu</h2>
-        <p style="color:#6B7280;font-size:12px;margin-bottom:16px">${new Date().toLocaleDateString('tr-TR')} tarihli rapor</p>
-        ${el.outerHTML}
-      </div>`
-    document.body.appendChild(wrapper)
-    try {
-      await html2pdf().set({
-        margin: [10, 10, 10, 10],
-        filename: `cari_yaslandirma_${new Date().toISOString().split('T')[0]}.pdf`,
-        image: { type: 'jpeg', quality: 0.98 },
-        html2canvas: { scale: 2 },
-        jsPDF: { unit: 'mm', format: 'a4', orientation: 'landscape' },
-      }).from(wrapper).save()
-      toast.success('PDF indirildi')
-    } catch { toast.error('PDF oluşturulamadı') }
-    finally { document.body.removeChild(wrapper) }
-  }
+  const pdfIndir = () => pdfIndirUtil('rpr-cari-yas-tablo', 'Cari Ya\u015fland\u0131rma Raporu', 'cari_yaslandirma')
 
   // Excel export
   const excelIndir = async () => {
@@ -124,27 +95,34 @@ export default function CariYaslandirma() {
   const chartOptions = {
     responsive: true,
     maintainAspectRatio: false,
+    animation: standardAnimation,
     plugins: {
       legend: { display: false },
+      datalabels: {
+        anchor: 'end',
+        align: 'top',
+        formatter: (v) =>
+          new Intl.NumberFormat('tr-TR', { notation: 'compact' }).format(v) + ' \u20ba',
+        font: { family: 'Plus Jakarta Sans', size: 10, weight: '700' },
+        color: '#374151',
+        offset: 4,
+      },
       tooltip: {
+        ...standardTooltip,
         callbacks: {
-          label: (ctx) => TL(ctx.raw),
+          label: (ctx) => {
+            const toplam = ctx.dataset.data.reduce((a, b) => a + b, 0)
+            const yuzde = toplam > 0 ? ((ctx.raw / toplam) * 100).toFixed(1) : 0
+            return ` ${TL(ctx.raw)}  (%${yuzde})`
+          },
         },
       },
     },
     scales: {
-      y: {
-        beginAtZero: true,
-        ticks: {
-          callback: (v) => new Intl.NumberFormat('tr-TR', { notation: 'compact', compactDisplay: 'short' }).format(v),
-          font: { size: 11 },
-          color: '#9CA3AF',
-        },
-        grid: { color: 'rgba(0,0,0,0.04)' },
-      },
+      y: { ...standardYScale, beginAtZero: true },
       x: {
-        ticks: { font: { size: 12, weight: 600 }, color: '#6B7280' },
-        grid: { display: false },
+        ...standardXScale,
+        ticks: { font: { family: 'Plus Jakarta Sans', size: 12, weight: 600 }, color: '#6B7280' },
       },
     },
   }
@@ -158,7 +136,7 @@ export default function CariYaslandirma() {
       {/* Filtre */}
       <div className="p-rpr-filter-bar">
         <div className="p-rpr-filter-group">
-          <span className="p-rpr-filter-label">Cari Türü</span>
+          <span className="p-rpr-filter-label">Cari T&#252;r&#252;</span>
           <select
             className="p-rpr-filter-input"
             value={filtre.cari_turu}
@@ -167,9 +145,17 @@ export default function CariYaslandirma() {
             {CARI_TURLERI.map((t) => <option key={t.value} value={t.value}>{t.label}</option>)}
           </select>
         </div>
-        <button className="p-rpr-filter-btn p-rpr-filter-btn-primary" onClick={uygula}>
-          <i className="bi bi-funnel-fill" /> Filtrele
-        </button>
+        <div className="p-rpr-filter-group">
+          <DateRangePicker
+            from={filtre.baslangic_tarihi}
+            to={filtre.bitis_tarihi}
+            onApply={({ from, to }) => {
+              const yeniFiltre = { ...filtre, baslangic_tarihi: from, bitis_tarihi: to }
+              setFiltre(yeniFiltre)
+              getir(yeniFiltre)
+            }}
+          />
+        </div>
         <div className="p-rpr-export-bar">
           <button className="p-rpr-export-btn" onClick={() => izinVarMi('pdf_rapor') ? pdfIndir() : setModalGoster(true)}>
             <i className="bi bi-file-earmark-pdf-fill" /> PDF
@@ -187,26 +173,22 @@ export default function CariYaslandirma() {
       {/* KPI */}
       {veri?.ozet && (
         <div className="p-rpr-kpi-row">
-          <div className="p-rpr-kpi">
-            <div className="p-rpr-kpi-accent" style={{ background: '#10B981' }} />
+          <div className="p-rpr-kpi" style={{ '--p-rpr-kpi-accent-color': '#10B981' }}>
             <div className="p-rpr-kpi-label">0-30 Gün (Güncel)</div>
             <div className="p-rpr-kpi-value financial-num">{TL(veri.ozet.guncel)}</div>
             <i className="bi bi-check-circle p-rpr-kpi-icon" />
           </div>
-          <div className="p-rpr-kpi">
-            <div className="p-rpr-kpi-accent" style={{ background: '#F59E0B' }} />
+          <div className="p-rpr-kpi" style={{ '--p-rpr-kpi-accent-color': '#F59E0B' }}>
             <div className="p-rpr-kpi-label">31-60 Gün</div>
             <div className="p-rpr-kpi-value financial-num">{TL(veri.ozet.otuz_altmis)}</div>
             <i className="bi bi-clock p-rpr-kpi-icon" />
           </div>
-          <div className="p-rpr-kpi">
-            <div className="p-rpr-kpi-accent" style={{ background: '#F97316' }} />
+          <div className="p-rpr-kpi" style={{ '--p-rpr-kpi-accent-color': '#F97316' }}>
             <div className="p-rpr-kpi-label">61-90 Gün</div>
             <div className="p-rpr-kpi-value financial-num">{TL(veri.ozet.altmis_doksan)}</div>
             <i className="bi bi-exclamation-triangle p-rpr-kpi-icon" />
           </div>
-          <div className="p-rpr-kpi">
-            <div className="p-rpr-kpi-accent" style={{ background: '#DC2626' }} />
+          <div className="p-rpr-kpi" style={{ '--p-rpr-kpi-accent-color': '#DC2626' }}>
             <div className="p-rpr-kpi-label">90+ Gün (Riskli)</div>
             <div className="p-rpr-kpi-value financial-num">{TL(veri.ozet.doksan_ustu)}</div>
             <i className="bi bi-exclamation-octagon p-rpr-kpi-icon" />
@@ -222,7 +204,7 @@ export default function CariYaslandirma() {
           </div>
           <div className="p-rpr-card-body">
             <div className="p-rpr-chart-wrap">
-              <Bar data={chartData} options={chartOptions} />
+              <Bar data={chartData} options={chartOptions} plugins={[ChartDataLabels]} />
             </div>
           </div>
         </div>
@@ -236,7 +218,8 @@ export default function CariYaslandirma() {
             {veri?.cariler?.length ?? 0} cari
           </span>
         </div>
-        <div className="table-responsive" id="rpr-cari-yas-tablo">
+        {/* Masaüstü Tablo */}
+        <div className="table-responsive d-none d-md-block" id="rpr-cari-yas-tablo">
           <table className="table table-hover align-middle p-rpr-table mb-0">
             <thead>
               <tr>
@@ -283,6 +266,60 @@ export default function CariYaslandirma() {
               </tfoot>
             )}
           </table>
+        </div>
+
+        {/* Mobil Kart Listesi */}
+        <div className="d-md-none">
+          {(!veri?.cariler || veri.cariler.length === 0) ? (
+            <div className="text-center py-5 text-muted" style={{ fontSize: 13 }}>Veri bulunamadı</div>
+          ) : (
+            <>
+              {veri.cariler.map((c, i) => (
+                <div key={i} className="p-gg-mcard">
+                  <div className="p-gg-mcard-top">
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 6, flex: 1, minWidth: 0 }}>
+                      <span className="p-gg-mcard-aciklama" style={{ fontWeight: 600, WebkitLineClamp: 1 }}>{c.unvan}</span>
+                      <span className={`p-rpr-badge ${c.cari_turu === 'musteri' ? 'p-rpr-badge-emerald' : 'p-rpr-badge-blue'}`}
+                            style={{ fontSize: 11, flexShrink: 0 }}>
+                        {c.cari_turu === 'musteri' ? 'Müşteri' : 'Tedarikçi'}
+                      </span>
+                    </div>
+                    <span className="p-gg-mcard-tutar financial-num" style={{ fontWeight: 700 }}>{TL(c.toplam)}</span>
+                  </div>
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '4px 12px', padding: '6px 12px 10px' }}>
+                    <div style={{ fontSize: 11, color: 'var(--p-text-muted)' }}>
+                      0-30g: <span className="financial-num" style={{ color: '#10B981' }}>{TL(c.guncel)}</span>
+                    </div>
+                    <div style={{ fontSize: 11, color: 'var(--p-text-muted)' }}>
+                      31-60g: <span className="financial-num" style={{ color: '#F59E0B' }}>{TL(c.otuz_altmis)}</span>
+                    </div>
+                    <div style={{ fontSize: 11, color: 'var(--p-text-muted)' }}>
+                      61-90g: <span className="financial-num" style={{ color: '#F97316' }}>{TL(c.altmis_doksan)}</span>
+                    </div>
+                    <div style={{ fontSize: 11, color: 'var(--p-text-muted)' }}>
+                      90+g: <span className="financial-num" style={{ color: c.doksan_ustu > 0 ? '#DC2626' : 'var(--p-text-muted)' }}>{TL(c.doksan_ustu)}</span>
+                    </div>
+                  </div>
+                </div>
+              ))}
+              {veri?.ozet && (
+                <div className="p-gg-mcard" style={{ background: 'rgba(16,185,129,0.06)', borderLeft: '3px solid #10B981' }}>
+                  <div className="p-gg-mcard-top">
+                    <span className="p-gg-mcard-kat" style={{ fontWeight: 700 }}>
+                      <i className="bi bi-calculator me-1" />Toplam
+                    </span>
+                    <span className="p-gg-mcard-tutar financial-num" style={{ fontWeight: 700 }}>{TL(veri.ozet.toplam)}</span>
+                  </div>
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '4px 12px', padding: '6px 12px 10px' }}>
+                    <div style={{ fontSize: 11 }}>0-30g: <span className="financial-num">{TL(veri.ozet.guncel)}</span></div>
+                    <div style={{ fontSize: 11 }}>31-60g: <span className="financial-num">{TL(veri.ozet.otuz_altmis)}</span></div>
+                    <div style={{ fontSize: 11 }}>61-90g: <span className="financial-num">{TL(veri.ozet.altmis_doksan)}</span></div>
+                    <div style={{ fontSize: 11 }}>90+g: <span className="financial-num">{TL(veri.ozet.doksan_ustu)}</span></div>
+                  </div>
+                </div>
+              )}
+            </>
+          )}
         </div>
       </div>
     </div>

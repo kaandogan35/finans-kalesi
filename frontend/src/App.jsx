@@ -18,9 +18,11 @@ import useAuthStore from './stores/authStore'
 import ErrorBoundary from './components/ErrorBoundary'
 
 // Layout
-import KorunanSayfa  from './components/layout/KorunanSayfa'
-import TemaLayout    from './components/layout/TemaLayout'
-import ModulKoruma   from './components/layout/ModulKoruma'
+import KorunanSayfa      from './components/layout/KorunanSayfa'
+import TemaLayout        from './components/layout/TemaLayout'
+import ModulKoruma       from './components/layout/ModulKoruma'
+import GuvenlikKoruyucu  from './components/GuvenlikKoruyucu'
+import KvkkOnay          from './components/KvkkOnay'
 
 // Auth sayfaları
 import GirisYap     from './pages/auth/GirisYap'
@@ -45,6 +47,17 @@ import RaporlarEkrani    from './pages/raporlar/RaporlarEkrani'
 import Gelirler          from './pages/gelirler/Gelirler'
 import Giderler          from './pages/giderler/Giderler'
 import TekrarlayanIslemler from './pages/tekrarlayan-islemler/TekrarlayanIslemler'
+import Onboarding          from './pages/onboarding/Onboarding'
+
+// Onboarding tamamlanmamışsa /onboarding'e yönlendir
+function OnboardingKoruma() {
+  const { kullanici } = useAuthStore()
+  if (kullanici && kullanici.onboarding_tamamlandi === 0) {
+    return <Navigate to="/onboarding" replace />
+  }
+  return <Outlet />
+}
+
 // Yalnızca sahip rolü erişebilir — /kullanicilar gibi sayfalar için
 function SahipKoruma() {
   const { kullanici } = useAuthStore()
@@ -94,6 +107,8 @@ export default function App() {
   return (
     <ErrorBoundary>
     <BrowserRouter>
+      <KvkkOnay>
+      <GuvenlikKoruyucu>
       <AuthLogoutListener />
       <Routes>
 
@@ -104,6 +119,12 @@ export default function App() {
 
         {/* ─── Korumalı sayfalar (JWT gerekli) ───────────────────────── */}
         <Route element={<KorunanSayfa />}>
+
+          {/* Onboarding — TemaLayout dışında, herhangi bir route önce */}
+          <Route path="/onboarding" element={<Onboarding />} />
+
+          {/* Onboarding tamamlanmamışsa /onboarding'e yönlendir */}
+          <Route element={<OnboardingKoruma />}>
           <Route element={<TemaLayout />}>
             <Route path="/dashboard"             element={<Dashboard />} />
 
@@ -166,6 +187,7 @@ export default function App() {
             <Route path="/raporlar"               element={<RaporlarEkrani />} />
             <Route path="/ayarlar/tema"            element={<TemaSecimi />} />
           </Route>
+          </Route> {/* OnboardingKoruma */}
         </Route>
 
         {/* ─── Kök'ü dashboard'a yönlendir ───────────────────────────── */}
@@ -173,6 +195,8 @@ export default function App() {
         <Route path="*" element={<Navigate to="/dashboard" replace />} />
 
       </Routes>
+    </GuvenlikKoruyucu>
+    </KvkkOnay>
     </BrowserRouter>
     </ErrorBoundary>
   )

@@ -338,7 +338,7 @@ function BildirimTercihleri() {
       </div>
 
       <div className="table-responsive">
-        <table className="table align-middle" style={{ marginBottom: 0 }}>
+        <table className="table table-hover align-middle p-table" style={{ marginBottom: 0 }}>
           <thead>
             <tr>
               <th style={{ paddingLeft: 22, width: '45%', fontSize: 11, fontWeight: 700, color: '#6B7280', textTransform: 'uppercase', letterSpacing: '0.06em' }}>Bildirim Tipi</th>

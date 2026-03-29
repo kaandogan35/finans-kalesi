@@ -205,7 +205,7 @@ export default function GirisYap() {
                 <div className="mb-4">
                   <div className="d-flex justify-content-between align-items-center mb-2">
                     <label className={`${p}-giris-label`} style={{ margin: 0 }}>
-                      Güvenlik Şifresi
+                      Şifre
                     </label>
                     <Link to="/sifre-sifirla" className={`${p}-giris-link-sifre`}>
                       Şifremi unuttum

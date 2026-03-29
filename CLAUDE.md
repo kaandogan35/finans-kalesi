@@ -13,13 +13,14 @@
 
 ---
 
-## PROJE: FİNANS KALESİ (SaaS)
-KOBİ'lere (hırdavat, demir-çelik başta olmak üzere tüm sektörlere) satılacak
-abonelik tabanlı finans yönetim yazılımı.
+## PROJE: PARAMGO (SaaS)
+Çekle çalışan esnaf ve KOBİ'lere satılacak abonelik tabanlı finans takip yazılımı.
+Niş: Çek + Kasa + Cari takibi — muhasebe bilgisi gerektirmeden.
+Canlı: https://paramgo.com
 
-**Hedef platformlar:** Web → iOS → Android (Capacitor.js ile)
-**MVP modülleri:** Cari + Çek/Senet + Ödeme Takip + Kasa + Vade Hesaplayıcı
-**Dashboard:** En sona — tüm modüller bittikten sonra gerçek veriyle tasarlanacak.
+**Hedef platformlar:** Web (canlı) → iOS → Android (Capacitor.js ile — ileride)
+**Tamamlanan modüller:** Cari + Çek/Senet + Ödeme Takip + Kasa + Vade Hesaplayıcı + Dashboard + Raporlar
+**Sıradaki işler:** Mobil Store hazırlık (Aşama 5) → Ödeme entegrasyonu → Capacitor build → Store yayın
 
 ---
 
@@ -112,6 +113,33 @@ $stmt = $pdo->prepare("SELECT * FROM tablo WHERE id = :id");
 - Şifreler terminalde veya kodda açık yazılmaz
 - `.env` Git'e eklenmez
 
+### 5b. Deploy — SFTP Otomatik / public_html Manuel
+
+**Otomatik (SFTP watcher):** PHP dosyaları kaydedilince doğrudan sunucuya gider.
+- `controllers/`, `models/`, `routes/`, `middleware/`, `utils/`, `config/`, `cron/` → otomatik
+
+**public_html için KULLANICIYA UYAR:** Aşağıdaki durumlarda Kaan'a hatırlat:
+1. `public/frontend-build/` değiştiyse → WinSCP ile `/public_html/frontend-build/` üzerine kopyalaması gerekir
+2. `public/index-canli.php` değiştiyse → WinSCP ile `/public_html/index.php` olarak yüklemesi gerekir
+3. `public/.htaccess` değiştiyse → WinSCP ile `/public_html/.htaccess` olarak yüklemesi gerekir
+
+**Uyarı formatı:**
+> ⚠️ public_html güncellemesi gerekiyor: [dosya adı] → WinSCP ile [hedef yol] yükle
+
+### 5c. KRİTİK UYARI — index.php ve .htaccess
+
+Aşağıdaki dosyalar değiştiğinde **her seferinde** Kaan'a açıkça uyarı ver, devam etme:
+
+| Dosya | Sunucuda nereye? | Nasıl? |
+|-------|-----------------|--------|
+| `public/index-canli.php` | `public_html/index.php` | WinSCP ile manuel |
+| `public/.htaccess` | `public_html/.htaccess` | WinSCP ile manuel |
+
+**Uyarı formatı (geç, mutlaka yaz):**
+> 🚨 MANUEL ADIM GEREKİYOR: `[dosya]` değişti.
+> WinSCP ile `[kaynak]` → `[hedef]` yüklemeyi unutma!
+> Bunu yapmadan site bozulabilir.
+
 ### 6. JSON Yanıt Formatı
 ```json
 {"basarili": true, "veri": { ... }}
@@ -165,24 +193,29 @@ Anahtar kelime geçse bile OTOMATİK ÇAĞRILMAZ:
 ```
 finans-kalesi/
 ├── config/          app.php, database.php
-├── controllers/     Her modülün Controller'ı
-├── middleware/      AuthMiddleware.php, CorsMiddleware.php
-├── models/          Veritabanı sorguları burada
-├── routes/          URL → Controller eşleştirmesi
-├── utils/           JWTHelper, KriptoHelper, RateLimiter, Response, SistemLog
-├── public/          index.php (tek giriş), .htaccess
+├── controllers/     20 controller
+├── middleware/       5 dosya (Auth, Cors, PlanKontrol, SinirKontrol, YetkiKontrol)
+├── models/          14 model
+├── routes/          19 route dosyası
+├── utils/           12 dosya (JWT, Kripto, Mail, TOTP, Whatsapp vb.)
+├── cron/            Zamanlanmış görevler
+├── database/        Schema + 6 migration
+├── public/          index.php, .htaccess, .well-known/, gizlilik/destek/kullanim-sartlari.html, frontend-build/
+├── frontend/ios/    Capacitor iOS projesi (com.paramgo.app)
+├── frontend/android/ Capacitor Android projesi (com.paramgo.app)
 └── frontend/src/
-    ├── api/         Axios çağrıları (her modül ayrı dosya)
-    ├── components/  Bootstrap bileşenleri
-    ├── pages/       Tam sayfalar (her modül kendi klasöründe)
-    ├── stores/      Zustand (authStore.js)
+    ├── api/         19 API dosyası (her modül ayrı)
+    ├── components/  15 bileşen (layout, ui, ortak)
+    ├── pages/       39 sayfa bileşeni, 16 klasör
+    ├── stores/      3 store (auth, bildirim, tema)
+    ├── hooks/       2 hook (usePlanKontrol, useSinirler)
     └── App.jsx      Route tanımları + AuthLogoutListener
 ```
 
 ---
 
 ## TAMAMLANAN BACKEND MODÜLLERİ ✅
-Değiştirilmeden önce onay istenir.
+20 controller, 14 model, 19 route. Değiştirilmeden önce onay istenir.
 
 | Modül | Controller | Route |
 |-------|-----------|-------|
@@ -192,3 +225,17 @@ Değiştirilmeden önce onay istenir.
 | Ödeme Takip | OdemeTakipController.php | routes/odeme.php |
 | Kasa | KasaController.php | routes/kasa.php |
 | Dashboard | DashboardController.php | routes/dashboard.php |
+| Abonelik | AbonelikController.php | routes/abonelik.php |
+| Sınır | SinirController.php | routes/sinir.php |
+| Raporlar | RaporController.php | routes/raporlar.php |
+| Kullanıcılar | KullaniciController.php | routes/kullanicilar.php |
+| Bildirimler | BildirimController.php | routes/bildirimler.php |
+| Güvenlik | GuvenlikController.php | routes/guvenlik.php |
+| Veresiye | VeresiyeController.php | routes/veresiye.php |
+| Kategoriler | KategoriController.php | routes/kategoriler.php |
+| Tekrarlayan İşlemler | TekrarlayanIslemController.php | routes/tekrarlayan_islem.php |
+| Onboarding | OnboardingController.php | routes/onboarding.php |
+| Türler | TurController.php | routes/tur.php |
+| Ayarlar | AyarlarController.php | routes/ayarlar.php |
+| Cron | CronController.php | routes/cron.php |
+| Webhook | WebhookController.php | routes/abonelik.php |

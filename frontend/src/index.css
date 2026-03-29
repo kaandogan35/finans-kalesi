@@ -1,5 +1,5 @@
 /* ─── Google Fonts: Inter ────────────────────────────────────────────────────── */
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap');
 
 /* ─── ParamGo v2 — Marka Degiskenleri ────────────────────────────────────── */
 :root {
@@ -29,8 +29,8 @@
 
 body {
   margin: 0;
-  font-family: 'Inter', sans-serif;
-  background: #F8F9FA;
+  font-family: 'Plus Jakarta Sans', sans-serif;
+  background: #F8FAFC;
   min-height: 100vh;
   color: #111827;
   -webkit-font-smoothing: antialiased;
@@ -209,7 +209,7 @@ body::before {
   padding: 12px 16px;
   font-weight: 500;
   color: #111827;
-  font-family: 'Inter', sans-serif;
+  font-family: 'Plus Jakarta Sans', sans-serif;
   border-radius: 10px;
   transition: all 0.2s ease;
   font-size: 14px;
@@ -257,7 +257,7 @@ body::before {
   font-size: 1rem;
   border-radius: 10px;
   transition: all 0.2s ease;
-  font-family: 'Inter', sans-serif;
+  font-family: 'Plus Jakarta Sans', sans-serif;
   width: 100%;
   cursor: pointer;
   letter-spacing: 0.01em;
@@ -283,7 +283,7 @@ body::before {
   color: #FFFFFF;
   font-weight: 700;
   border: none;
-  font-family: 'Inter', sans-serif;
+  font-family: 'Plus Jakarta Sans', sans-serif;
   cursor: pointer;
   transition: all 0.2s ease;
   box-shadow: 0 4px 20px rgba(16,185,129,0.3);
@@ -295,6 +295,10 @@ body::before {
   box-shadow: 0 6px 28px rgba(16,185,129,0.45);
   color: #FFFFFF;
 }
+.btn-brand:active {
+  transform: translateY(0);
+  box-shadow: 0 2px 12px rgba(16,185,129,0.3);
+}
 
 /* ─── Glass Buton (Secondary/Iptal) ──────────────────────────────────────────── */
 .btn-outline-brand {
@@ -302,7 +306,7 @@ body::before {
   border: 1px solid #D1D5DB;
   color: #374151;
   font-weight: 600;
-  font-family: 'Inter', sans-serif;
+  font-family: 'Plus Jakarta Sans', sans-serif;
   border-radius: 10px;
   min-height: 44px;
   transition: all 0.2s ease;
@@ -315,7 +319,7 @@ body::before {
 
 /* ─── Finansal Rakamlar ──────────────────────────────────────────────────────── */
 .financial-num {
-  font-family: 'Inter', sans-serif;
+  font-family: 'Plus Jakarta Sans', sans-serif;
   font-variant-numeric: tabular-nums;
   font-feature-settings: "tnum";
   font-weight: 500;
@@ -377,7 +381,7 @@ body::before {
   color: #111827;
   border-radius: 10px;
   min-height: 44px;
-  font-family: 'Inter', sans-serif;
+  font-family: 'Plus Jakarta Sans', sans-serif;
   transition: all 0.2s ease;
 }
 .form-control:focus {

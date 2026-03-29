@@ -24,11 +24,27 @@ class CorsMiddleware {
         // NOT: Credentials (cookie/token) gönderiminde tarayıcılar "*" kabul etmez.
         // Bu yüzden development'ta bile gelen origin'i yansıtıyoruz.
         $app_env = env('APP_ENV', 'production');
+        $gelen_origin = $_SERVER['HTTP_ORIGIN'] ?? '';
+
         if ($app_env === 'development') {
             // Geliştirme: İsteğin geldiği origin'i yansıt (localhost portları değişebilir)
-            $izinli_adres = $_SERVER['HTTP_ORIGIN'] ?? env('CORS_ORIGIN', 'http://localhost:3000');
+            $izinli_adres = $gelen_origin ?: env('CORS_ORIGIN', 'http://localhost:3000');
         } else {
-            $izinli_adres = env('CORS_ORIGIN', 'https://app.hirdavatduragi.shop');
+            // Production: Web sitesi + Capacitor mobil uygulama origin'leri
+            // capacitor://localhost → iOS Capacitor uygulaması
+            // http://localhost     → Android Capacitor uygulaması
+            $izinli_originler = [
+                env('CORS_ORIGIN', 'https://paramgo.com'),
+                'https://paramgo.com',
+                'capacitor://localhost',
+                'http://localhost',
+            ];
+
+            if ($gelen_origin && in_array($gelen_origin, $izinli_originler, true)) {
+                $izinli_adres = $gelen_origin;
+            } else {
+                $izinli_adres = env('CORS_ORIGIN', 'https://paramgo.com');
+            }
         }
 
         // Tarayıcıya hangi adresten istek gelebileceğini söyle

@@ -238,6 +238,11 @@ try {
             require_once BASE_PATH . '/routes/kategoriler.php';
             break;
 
+        // ─── Onboarding Sihirbazı ───
+        case 'onboarding':
+            require_once BASE_PATH . '/routes/onboarding.php';
+            break;
+
         // ─── API Ana Sayfa ───
         case '':
             Response::basarili([

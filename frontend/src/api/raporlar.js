@@ -21,6 +21,10 @@ export const raporlarApi = {
   genelOzet: () =>
     axios.get('/raporlar/genel-ozet'),
 
+  // Hesaplamalar (DSO, tahsilat oranı, risk, net30, dayanma, konsantrasyon)
+  hesaplamalar: () =>
+    axios.get('/raporlar/hesaplamalar'),
+
   // Rapor geçmişi
   gecmis: (params = {}) =>
     axios.get('/raporlar/gecmis', { params }),

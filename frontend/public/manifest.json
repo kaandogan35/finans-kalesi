@@ -1,0 +1,26 @@
+{
+  "name": "ParamGo — KOBİ Finans Yönetimi",
+  "short_name": "ParamGo",
+  "description": "Çek, kasa ve cari takibini kolaylaştıran KOBİ finans uygulaması",
+  "start_url": "/dashboard",
+  "display": "standalone",
+  "background_color": "#F8F9FA",
+  "theme_color": "#10B981",
+  "orientation": "any",
+  "categories": ["finance", "business"],
+  "lang": "tr",
+  "icons": [
+    {
+      "src": "/icons/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/icons/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}

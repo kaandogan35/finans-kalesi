@@ -4,7 +4,7 @@
 // Finans Kalesi SaaS
 //
 // Sadece 'sahip' rolüne sahip kullanıcılar erişebilir.
-// Plan limiti:  ucretsiz=1, standart=2, kurumsal=10
+// Plan limiti:  deneme=2, standart=2, kurumsal=10
 //
 // GET    /api/kullanicilar          → listele()
 // POST   /api/kullanicilar          → olustur()

@@ -119,7 +119,12 @@
     │   ├── MailHelper.php
     │   ├── MailSablonlar.php
     │   ├── TOTPHelper.php
-    │   └── BildirimOlusturucu.php
+    │   ├── BildirimOlusturucu.php
+    │   └── WhatsappHelper.php
+    │
+    ├── cron/                                 ← Otomatik zamanlı görevler
+    │   ├── .htaccess                         ← HTTP erişimi engellendi (Deny from all)
+    │   └── vade-uyari-cron.php               ← Her gün 10:00 çalışır (cPanel Cron Jobs)
     │
     ├── .env                                  ← Canlı şifreler (ASLA üzerine yazma!)
     │
@@ -165,6 +170,7 @@ define('BASE_PATH', dirname(__DIR__));
 | `models/` | `/home/goparam/repositories/finans-kalesi/models/` |
 | `routes/` | `/home/goparam/repositories/finans-kalesi/routes/` |
 | `utils/` | `/home/goparam/repositories/finans-kalesi/utils/` |
+| `cron/` | `/home/goparam/repositories/finans-kalesi/cron/` |
 
 ### B) public/ → İKİ YERE yüklenir
 | Lokal | Sunucu Hedef 1 (çalışan) | Sunucu Hedef 2 (repo kopyası) |
@@ -217,7 +223,7 @@ define('BASE_PATH', dirname(__DIR__));
 | `.env` | Canlıda ayrı .env var (şifreler farklı) |
 | `frontend/src/` | Kaynak kod — build çıktısı yüklenir |
 | `frontend/node_modules/` | Sunucuda yok, gerekmez |
-| `database/` | Migration'lar elle çalıştırılır |
+| `database/` | Migration'lar phpMyAdmin'de elle çalıştırılır (`migration_vade_uyari.sql` dahil) |
 | `CLAUDE.md` | Geliştirme notu |
 | `PROJE.md` | Geliştirme notu |
 | `CANLI-DEPLOY.md` | Bu dosya — geliştirme notu |

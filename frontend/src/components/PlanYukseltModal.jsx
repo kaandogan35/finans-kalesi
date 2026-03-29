@@ -5,21 +5,19 @@
  *   goster      (bool)     — modal görünür mü
  *   kapat       (function) — kapatma callback'i
  *   ozellikAdi  (string)   — "PDF Rapor" gibi kısıtlanan özellik
- *   kampanyaAktif (bool)   — lansman kampanyası devam ediyor mu
- *   mevcutPlan  (string)   — 'ucretsiz' | 'standart' | 'kurumsal'
+ *   mevcutPlan  (string)   — 'deneme' | 'standart' | 'kurumsal'
  */
 
 import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 const FIYATLAR = {
-  standart: { aylik: 399.90, yillik: 3499.00 },
-  kurumsal: { aylik: 749.90, yillik: 6490.00 },
+  standart: { aylik: 290, yillik: 2900 },
+  kurumsal: { aylik: 490, yillik: 4900 },
 }
-const KAMPANYA_FIYAT = 99.90
 
 const fmt = (n) => new Intl.NumberFormat('tr-TR', { minimumFractionDigits: 2 }).format(n)
 
-export default function PlanYukseltModal({ goster, kapat, ozellikAdi = 'Bu özellik', kampanyaAktif = false, mevcutPlan = 'ucretsiz' }) {
+export default function PlanYukseltModal({ goster, kapat, ozellikAdi = 'Bu özellik', mevcutPlan = 'deneme' }) {
   const navigate = useNavigate()
   const p = 'p'
 
@@ -36,8 +34,8 @@ export default function PlanYukseltModal({ goster, kapat, ozellikAdi = 'Bu özel
   if (!goster) return null
 
   const standartFiyat = yillik
-    ? (kampanyaAktif ? KAMPANYA_FIYAT : Math.round(FIYATLAR.standart.yillik / 12 * 100) / 100)
-    : (kampanyaAktif ? KAMPANYA_FIYAT : FIYATLAR.standart.aylik)
+    ? Math.round(FIYATLAR.standart.yillik / 12 * 100) / 100
+    : FIYATLAR.standart.aylik
 
   const kurumFiyat = yillik
     ? Math.round(FIYATLAR.kurumsal.yillik / 12 * 100) / 100
@@ -48,13 +46,13 @@ export default function PlanYukseltModal({ goster, kapat, ozellikAdi = 'Bu özel
 
   const planlar = [
     {
-      id: 'ucretsiz',
-      ad: 'Ücretsiz',
-      ikon: 'bi-gift',
+      id: 'deneme',
+      ad: '30 Gün Deneme',
+      ikon: 'bi-clock-history',
       fiyat: 0,
-      birim: 'sonsuza kadar',
-      ozellikler: ['30 cari hesap', 'Çek/Senet takibi', 'Kasa yönetimi', 'Ödeme takibi', 'Vade hesaplayıcı'],
-      kisit: ['PDF/Excel rapor yok', 'Tek kullanıcı', 'Veri dışa aktarma yok'],
+      birim: '30 gün',
+      ozellikler: ['Sınırsız cari hesap', 'Çek/Senet takibi (50)', 'Kasa yönetimi', 'Ödeme takibi', 'Vade hesaplayıcı'],
+      kisit: ['PDF/Excel rapor yok', '2 kullanıcıya kadar', 'Veri dışa aktarma yok'],
       renk: '#9CA3AF',
     },
     {
@@ -64,9 +62,8 @@ export default function PlanYukseltModal({ goster, kapat, ozellikAdi = 'Bu özel
       fiyat: standartFiyat,
       fiyatYillik: FIYATLAR.standart.yillik,
       birim: '/ay',
-      ozellikler: ['Her şey ücretsizde', 'Sınırsız cari hesap', 'PDF ve Excel raporlar', 'Veri dışa aktarma', '2 kullanıcıya kadar', 'WhatsApp desteği'],
+      ozellikler: ['Denemede olan her şey', 'Sınırsız cari hesap', 'PDF ve Excel raporlar', 'Veri dışa aktarma', '2 kullanıcıya kadar', 'WhatsApp desteği'],
       renk: '#10B981',
-      kampanya: kampanyaAktif,
       tasarruf: standartTasarruf,
       onerilen: true,
     },
@@ -149,9 +146,6 @@ export default function PlanYukseltModal({ goster, kapat, ozellikAdi = 'Bu özel
                             </span>
                           )}
                         </div>
-                        {plan.kampanya && !yillik && (
-                          <span className="abn-kampanya-rozet">🎉 Kampanya</span>
-                        )}
                       </div>
 
                       {/* Plan adı + ikon */}
@@ -169,15 +163,10 @@ export default function PlanYukseltModal({ goster, kapat, ozellikAdi = 'Bu özel
 
                       {/* Fiyat */}
                       <div className="mb-1">
-                        {plan.id === 'ucretsiz' ? (
+                        {plan.id === 'deneme' ? (
                           <div className="abn-plan-price-val">Ücretsiz</div>
                         ) : (
                           <>
-                            {plan.kampanya && !yillik && (
-                              <div style={{ fontSize: 11, color: '#9CA3AF', textDecoration: 'line-through', fontFamily: 'Inter' }}>
-                                {fmt(FIYATLAR.standart.aylik)}₺/ay
-                              </div>
-                            )}
                             <div className="d-flex align-items-baseline gap-1">
                               <span className="abn-plan-price-val">{fmt(plan.fiyat)}</span>
                               <span style={{ fontSize: 13, color: '#6B7280', fontWeight: 600 }}>₺{plan.birim}</span>
@@ -210,9 +199,9 @@ export default function PlanYukseltModal({ goster, kapat, ozellikAdi = 'Bu özel
                       </div>
 
                       {/* Buton */}
-                      {plan.id === 'ucretsiz' ? (
+                      {plan.id === 'deneme' ? (
                         <button className="abn-btn-abone pasif" disabled>
-                          {aktif ? 'Mevcut Planınız' : 'Ücretsiz'}
+                          {aktif ? 'Mevcut Planınız' : 'Deneme'}
                         </button>
                       ) : plan.id === 'standart' ? (
                         <button
@@ -258,5 +247,3 @@ export default function PlanYukseltModal({ goster, kapat, ozellikAdi = 'Bu özel
       </div>
   )
 }
-
-

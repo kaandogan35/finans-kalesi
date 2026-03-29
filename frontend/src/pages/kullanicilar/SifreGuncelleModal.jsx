@@ -32,8 +32,8 @@ export default function SifreGuncelleModal({ hedef, onKapat }) {
   }
 
   const modal = (
-    <div className="sgm-overlay" onClick={onKapat}>
-      <div className="sgm-box" onClick={e => e.stopPropagation()}>
+    <div className="sgm-overlay">
+      <div className="sgm-box">
 
         {/* Başlık (mh-default) */}
         <div className="sgm-header mh-default">
@@ -57,10 +57,11 @@ export default function SifreGuncelleModal({ hedef, onKapat }) {
               </div>
             </div>
             <button onClick={onKapat} style={{
-              width: 28, height: 28, borderRadius: 7,
+              width: 44, height: 44, borderRadius: 12,
               border: '1px solid #E5E7EB', background: '#F9FAFB',
-              color: '#6B7280', cursor: 'pointer', fontSize: 11,
+              color: '#6B7280', cursor: 'pointer', fontSize: 14,
               display: 'flex', alignItems: 'center', justifyContent: 'center',
+              flexShrink: 0,
             }}>
               <i className="bi bi-x-lg" />
             </button>

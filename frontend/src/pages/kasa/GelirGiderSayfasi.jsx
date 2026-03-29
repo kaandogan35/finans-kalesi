@@ -18,8 +18,10 @@ ChartJS.register(ArcElement, Tooltip, Legend, CategoryScale, LinearScale, BarEle
 import useTemaStore from '../../stores/temaStore'
 import { temaRenkleri, hexRgba } from '../../lib/temaRenkleri'
 import useAuthStore from '../../stores/authStore'
+import SwipeCard from '../../components/SwipeCard'
 import { hareketleriGetir, hareketEkle, hareketSil } from '../../api/kasa'
 import { kategorileriGetir } from '../../api/kategori'
+import { DateInput } from '../../components/ui/DateInput'
 
 // ─── Yardımcılar ─────────────────────────────────────────────────────────────
 const TL = (n) =>
@@ -89,8 +91,25 @@ const GIRIS_CORE  = ['Nakit Satış', 'Açık Hesap Tahsilat', 'Havale / EFT', '
 const CIKIS_GIZLE = ['Çek/Senet Ödemesi', 'Çekmece Kapanış', 'Nakit Satış (Çekmece)']
 const CIKIS_CORE  = ['Tedarikçi Ödemesi', 'Günlük İşletme Gideri', 'Personel Maaşı']
 
+// ─── Esnaf Dili: Ekranda gösterilecek kategori adları ────────────────────────
+// DB'deki teknik isimler değişmez, sadece arayüzde esnaf diline çevrilir
+const GIRIS_GORUNUM_ADI = {
+  'Açık Hesap Tahsilat':          'Müşteri Borç Tahsilatı',
+  'Hizmet / İşçilik Bedeli':      'Hizmet / İş Bedeli',
+  'Taksit / Vade Tahsilatı':      'Taksitli Tahsilat',
+  'Komisyon / Aracılık Geliri':   'Komisyon Geliri',
+  'Kaparo / Avans Alındı':        'Kaparo / Avans',
+  'Sübvansiyon / Devlet Desteği': 'Devlet Desteği',
+  'Faiz / Repo Geliri':           'Faiz Geliri',
+}
+
 const CIKIS_GORUNUM_ADI = {
   'Kredi / Taksit Ödemesi': 'Kredi Kartı Ödemesi',
+  'Tedarikçi Ödemesi':      'Mal / Malzeme Alımı',
+  'Günlük İşletme Gideri':  'Günlük Masraf',
+  'Personel SGK / Prim':    'SGK & Sigorta',
+  'Faturalar':              'Elektrik / Su / Fatura',
+  'Personel Yemek':         'Personel Yemek & Yol',
 }
 
 const _STD3 = [
@@ -194,12 +213,14 @@ function KategoriGrafik({ dagilim, toplam, isGiris, ay, yil, p, renkler, onKateg
     responsive: true,
     maintainAspectRatio: false,
     cutout: '62%',
+    animation: { duration: 600, easing: 'easeInOutQuart' },
     plugins: {
       legend: { display: false },
+      datalabels: { display: false },
       tooltip: {
         backgroundColor: 'rgba(17,24,39,0.92)',
-        titleFont: { family: 'Inter', size: 12, weight: 600 },
-        bodyFont: { family: 'Inter', size: 12 },
+        titleFont: { family: 'Plus Jakarta Sans', size: 12, weight: 600 },
+        bodyFont: { family: 'Plus Jakarta Sans', size: 12 },
         padding: 10,
         cornerRadius: 10,
         callbacks: {
@@ -228,13 +249,15 @@ function KategoriGrafik({ dagilim, toplam, isGiris, ay, yil, p, renkler, onKateg
   const barOpts = useMemo(() => ({
     responsive: true,
     maintainAspectRatio: false,
+    animation: { duration: 600, easing: 'easeInOutQuart' },
     indexAxis: 'y',
     plugins: {
       legend: { display: false },
+      datalabels: { display: false },
       tooltip: {
         backgroundColor: 'rgba(17,24,39,0.92)',
-        titleFont: { family: 'Inter', size: 12, weight: 600 },
-        bodyFont: { family: 'Inter', size: 12 },
+        titleFont: { family: 'Plus Jakarta Sans', size: 12, weight: 600 },
+        bodyFont: { family: 'Plus Jakarta Sans', size: 12 },
         padding: 10,
         cornerRadius: 10,
         callbacks: {
@@ -248,11 +271,11 @@ function KategoriGrafik({ dagilim, toplam, isGiris, ay, yil, p, renkler, onKateg
     scales: {
       x: {
         grid: { color: 'rgba(0,0,0,0.04)' },
-        ticks: { font: { family: 'Inter', size: 11 }, callback: (v) => v >= 1000 ? (v / 1000).toFixed(0) + 'K' : v },
+        ticks: { font: { family: 'Plus Jakarta Sans', size: 11 }, callback: (v) => v >= 1000 ? (v / 1000).toFixed(0) + 'K' : v },
       },
       y: {
         grid: { display: false },
-        ticks: { font: { family: 'Inter', size: 11, weight: 500 }, color: '#6B7280' },
+        ticks: { font: { family: 'Plus Jakarta Sans', size: 11, weight: 500 }, color: '#6B7280' },
       },
     },
   }), [])
@@ -331,7 +354,7 @@ function KategoriGrafik({ dagilim, toplam, isGiris, ay, yil, p, renkler, onKateg
                     }}>
                       %{d.yuzde}
                     </span>
-                    <i className="bi bi-chevron-right" style={{ fontSize: 9, color: 'var(--p-text-muted)' }} />
+                    <i className="bi bi-chevron-right" style={{ fontSize: 12, color: 'var(--p-text-muted)' }} />
                   </div>
                 </button>
               ))}
@@ -369,21 +392,21 @@ function KaynakRozeti({ kaynak, p }) {
   if (!kaynak || kaynak === 'manuel' || kaynak === '') {
     return (
       <span className={`${p}-kasa-badge ${p}-kasa-badge-accent`}>
-        <i className="bi bi-pencil-fill" style={{ fontSize: 9 }} /> Manuel
+        <i className="bi bi-pencil-fill" style={{ fontSize: 12 }} /> Manuel
       </span>
     )
   }
   if (kaynak === 'cek_senet') {
     return (
       <span className={`${p}-badge ${p}-badge-warning`}>
-        <i className="bi bi-lightning-fill" style={{ fontSize: 9 }} /> Çek/Senet
+        <i className="bi bi-lightning-fill" style={{ fontSize: 12 }} /> Çek/Senet
       </span>
     )
   }
   if (kaynak === 'tekrarlayan') {
     return (
       <span className={`${p}-badge-repeat`}>
-        <i className="bi bi-arrow-repeat" style={{ fontSize: 9 }} /> Tekrarlayan
+        <i className="bi bi-arrow-repeat" style={{ fontSize: 12 }} /> Tekrarlayan
       </span>
     )
   }
@@ -418,42 +441,30 @@ function OdemeKaynakGoster({ kaynak, baglanti }) {
 }
 
 // ─── Kategori Kartı Butonu ────────────────────────────────────────────────────
-function KatKarti({ kat, secili, onClick, accentColor, gorunumAd, variant }) {
+function KatKarti({ kat, secili, onClick, accentColor, gorunumAd }) {
+  const r = parseInt(accentColor.slice(1, 3), 16)
+  const g = parseInt(accentColor.slice(3, 5), 16)
+  const b = parseInt(accentColor.slice(5, 7), 16)
   return (
-    <div className="col-6 col-sm-4">
+    <div className="col-6 col-sm-3">
       <button
         type="button"
         onClick={() => onClick(kat)}
+        className="p-kat-karti"
+        data-secili={secili ? 'true' : 'false'}
         style={{
-          width: '100%',
-          display: 'flex',
-          flexDirection: 'column',
-          alignItems: 'center',
-          justifyContent: 'center',
-          gap: 8,
-          padding: '14px 10px',
-          borderRadius: 14,
-          border: secili ? `2px solid ${accentColor}` : '1.5px solid var(--p-border)',
-          background: secili ? hexRgba(accentColor, 0.06) : 'var(--p-bg-card)',
-          cursor: 'pointer',
-          transition: 'all var(--p-transition)',
-          boxShadow: secili ? `var(--p-shadow-ring-${variant || 'success'})` : 'none',
-          minHeight: 80,
+          '--kat-accent':    accentColor,
+          '--kat-accent-08': `rgba(${r},${g},${b},0.08)`,
+          '--kat-accent-18': `rgba(${r},${g},${b},0.18)`,
         }}
       >
-        <i
-          className={`bi ${kat.ikon || 'bi-tag'}`}
-          style={{ fontSize: 22, color: secili ? accentColor : 'var(--p-text-muted)', flexShrink: 0 }}
-        />
-        <span style={{
-          fontSize: 11,
-          fontWeight: secili ? 700 : 500,
-          lineHeight: 1.3,
-          color: secili ? accentColor : 'var(--p-text)',
-          textAlign: 'center',
-        }}>
-          {gorunumAd ?? kat.ad}
-        </span>
+        {secili && (
+          <span className="p-kat-check" aria-hidden="true">
+            <i className="bi bi-check-lg" />
+          </span>
+        )}
+        <i className={`bi ${kat.ikon || 'bi-tag'} p-kat-ikon`} aria-hidden="true" />
+        <span className="p-kat-label">{gorunumAd ?? kat.ad}</span>
       </button>
     </div>
   )
@@ -491,20 +502,11 @@ function OdemeBtn({ secenek, aktif, onClick, accentColor }) {
 }
 
 // ─── Adım Başlığı ─────────────────────────────────────────────────────────────
-function AdimBaslik({ numara, baslik, p }) {
+function AdimBaslik({ numara, baslik }) {
   return (
-    <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 10 }}>
-      <span style={{
-        display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
-        width: 22, height: 22, borderRadius: 20,
-        background: 'var(--p-color-primary)', color: '#fff',
-        fontSize: 11, fontWeight: 800, flexShrink: 0,
-      }}>
-        {numara}
-      </span>
-      <span className={`${p}-kasa-input-label`} style={{ marginBottom: 0, fontWeight: 700, fontSize: 13 }}>
-        {baslik}
-      </span>
+    <div className="p-adim-baslik">
+      <span className="p-adim-numara" aria-hidden="true">{numara}</span>
+      <span className="p-adim-metin">{baslik}</span>
     </div>
   )
 }
@@ -651,15 +653,15 @@ function GelirEkleModal({ open, onClose, kategoriler, onKaydet, p, renkler }) {
         <div style={{ maxWidth: 680, margin: '0 auto' }}>
 
           {/* Adım 1 — Gelir Türü */}
-          <AdimBaslik numara={1} baslik="Gelir Türü" p={p} />
-          <div className="row g-2 mb-2">
+          <AdimBaslik numara={1} baslik="Kasaya ne girdi?" />
+          <div className={`row g-2 mb-2${seciliKat ? ' p-kat-grid--secimli' : ''}`}>
             {coreKats.map(kat => (
               <KatKarti
                 key={kat.id} kat={kat}
                 secili={seciliKat?.id === kat.id}
                 onClick={setSeciliKat}
                 accentColor={renkler.success}
-                variant="success"
+                gorunumAd={GIRIS_GORUNUM_ADI[kat.ad]}
               />
             ))}
           </div>
@@ -669,18 +671,18 @@ function GelirEkleModal({ open, onClose, kategoriler, onKaydet, p, renkler }) {
               <div style={{ display: 'flex', alignItems: 'center', gap: 8, margin: '12px 0 8px' }}>
                 <div style={{ flex: 1, height: 1, background: 'var(--p-border)' }} />
                 <span style={{ fontSize: 11, fontWeight: 600, color: 'var(--p-text-muted)', whiteSpace: 'nowrap' }}>
-                  Diğer Tahsilat Türleri
+                  Diğer Gelir Türleri
                 </span>
                 <div style={{ flex: 1, height: 1, background: 'var(--p-border)' }} />
               </div>
-              <div className="row g-2 mb-2">
+              <div className={`row g-2 mb-2${seciliKat ? ' p-kat-grid--secimli' : ''}`}>
                 {extraKats.map(kat => (
                   <KatKarti
                     key={kat.id} kat={kat}
                     secili={seciliKat?.id === kat.id}
                     onClick={setSeciliKat}
                     accentColor={renkler.success}
-                    variant="success"
+                    gorunumAd={GIRIS_GORUNUM_ADI[kat.ad]}
                   />
                 ))}
               </div>
@@ -690,7 +692,7 @@ function GelirEkleModal({ open, onClose, kategoriler, onKaydet, p, renkler }) {
           {/* Adım 2 — Tahsilat Yöntemi (varsa) */}
           {altSecimGerekli && (
             <div className="mt-3 mb-2">
-              <AdimBaslik numara={adimTahsilat} baslik="Tahsilat Nasıl Yapıldı?" p={p} />
+              <AdimBaslik numara={adimTahsilat} baslik="Tahsilat Nasıl Yapıldı?" />
               <div className="row g-2">
                 {katKaynak.secenekler.map(sec => (
                   <OdemeBtn
@@ -713,7 +715,7 @@ function GelirEkleModal({ open, onClose, kategoriler, onKaydet, p, renkler }) {
 
           {/* Adım — Tutar + Tarih */}
           <div className="mt-3">
-            <AdimBaslik numara={adimDetaylar} baslik="Tutar ve Tarih" p={p} />
+            <AdimBaslik numara={adimDetaylar} baslik="Tutar ve Tarih" />
             <div className="row g-3 mb-3">
               <div className="col-12 col-sm-7">
                 <label className={`${p}-kasa-input-label`}>Tutar (₺)</label>
@@ -722,19 +724,13 @@ function GelirEkleModal({ open, onClose, kategoriler, onKaydet, p, renkler }) {
                   value={tutar}
                   onChange={e => setTutar(formatParaInput(e.target.value))}
                   placeholder="0,00"
-                  className={`${p}-kasa-input`}
-                  style={{ color: renkler.success, fontWeight: 700, fontSize: 16, borderRadius: 10 }}
+                  className={`${p}-kasa-input p-tutar-input`}
+                  style={{ color: renkler.success, borderRadius: 10 }}
                 />
               </div>
               <div className="col-12 col-sm-5">
                 <label className={`${p}-kasa-input-label`}>Tarih</label>
-                <input
-                  type="date"
-                  value={tarih}
-                  onChange={e => setTarih(e.target.value)}
-                  className={`${p}-kasa-input`}
-                  style={{ borderRadius: 10 }}
-                />
+                <DateInput value={tarih} onChange={val => setTarih(val)} placeholder="Tarih seçin" />
               </div>
             </div>
 
@@ -766,12 +762,12 @@ function GelirEkleModal({ open, onClose, kategoriler, onKaydet, p, renkler }) {
           İptal
         </button>
         <button
-          className={`${p}-btn-save ${p}-btn-save-default`}
+          className={`${p}-btn-save ${p}-btn-save-default${kaydediyor ? ' p-btn-loading' : ''}`}
           onClick={kaydet}
           disabled={kaydediyor || !hazirMi}
         >
           {kaydediyor
-            ? <><i className="bi bi-hourglass-split me-2" />Kaydediliyor...</>
+            ? <><span className="p-btn-spinner" />Kaydediliyor...</>
             : <><i className="bi bi-shield-lock-fill me-2" />Kaydet & Şifrele</>}
         </button>
       </div>
@@ -907,8 +903,8 @@ function GiderEkleModal({ open, onClose, kategoriler, onKaydet, p, renkler }) {
           <div className={`${p}-modal-body`}>
 
             {/* Adım 1 — Gider Türü */}
-            <AdimBaslik numara={1} baslik="Gider Türü" p={p} />
-            <div className="row g-2 mb-2">
+            <AdimBaslik numara={1} baslik="Ne için ödeme yaptınız?" />
+            <div className={`row g-2 mb-2${seciliKat ? ' p-kat-grid--secimli' : ''}`}>
               {coreKatlar.map(kat => (
                 <KatKarti
                   key={kat.id} kat={kat}
@@ -916,7 +912,6 @@ function GiderEkleModal({ open, onClose, kategoriler, onKaydet, p, renkler }) {
                   onClick={setSeciliKat}
                   accentColor={renkler.danger}
                   gorunumAd={CIKIS_GORUNUM_ADI[kat.ad]}
-                  variant="danger"
                 />
               ))}
             </div>
@@ -930,7 +925,7 @@ function GiderEkleModal({ open, onClose, kategoriler, onKaydet, p, renkler }) {
                   </span>
                   <div style={{ flex: 1, height: 1, background: 'var(--p-border)' }} />
                 </div>
-                <div className="row g-2 mb-2">
+                <div className={`row g-2 mb-2${seciliKat ? ' p-kat-grid--secimli' : ''}`}>
                   {extraKatlar.map(kat => (
                     <KatKarti
                       key={kat.id} kat={kat}
@@ -938,7 +933,6 @@ function GiderEkleModal({ open, onClose, kategoriler, onKaydet, p, renkler }) {
                       onClick={setSeciliKat}
                       accentColor={renkler.danger}
                       gorunumAd={CIKIS_GORUNUM_ADI[kat.ad]}
-                      variant="danger"
                     />
                   ))}
                 </div>
@@ -948,7 +942,7 @@ function GiderEkleModal({ open, onClose, kategoriler, onKaydet, p, renkler }) {
             {/* Adım 2 — Ödeme Kaynağı */}
             {altSecimGerekli && (
               <div className="mt-3 mb-2">
-                <AdimBaslik numara={adimNereden} baslik="Nereden Ödendi?" p={p} />
+                <AdimBaslik numara={adimNereden} baslik="Nereden Ödendi?" />
                 <div className="row g-2">
                   {katKaynak.secenekler.map(sec => (
                     <OdemeBtn
@@ -965,7 +959,7 @@ function GiderEkleModal({ open, onClose, kategoriler, onKaydet, p, renkler }) {
             {/* Adım 3 — Mail Order Detay (opsiyonel) */}
             {detaySecimGerekli && (
               <div className="mt-3 mb-2">
-                <AdimBaslik numara={adimDetay} baslik="Hesap Türü" p={p} />
+                <AdimBaslik numara={adimDetay} baslik="Hesap Türü" />
                 <div className="row g-2">
                   {seciliAltSecenek.detaylar.map(det => {
                     const aktif = detaySecim === det.key
@@ -1004,7 +998,7 @@ function GiderEkleModal({ open, onClose, kategoriler, onKaydet, p, renkler }) {
 
             {/* Tutar + Tarih */}
             <div className="mt-3">
-              <AdimBaslik numara={adimDetaylar} baslik="Tutar ve Tarih" p={p} />
+              <AdimBaslik numara={adimDetaylar} baslik="Tutar ve Tarih" />
               <div className="row g-3 mb-3">
                 <div className="col-12 col-sm-7">
                   <label className={`${p}-kasa-input-label`}>Tutar (₺)</label>
@@ -1013,19 +1007,13 @@ function GiderEkleModal({ open, onClose, kategoriler, onKaydet, p, renkler }) {
                     value={tutar}
                     onChange={e => setTutar(formatParaInput(e.target.value))}
                     placeholder="0,00"
-                    className={`${p}-kasa-input`}
-                    style={{ color: renkler.danger, fontWeight: 700, fontSize: 16, borderRadius: 10 }}
+                    className={`${p}-kasa-input p-tutar-input`}
+                    style={{ color: renkler.danger, borderRadius: 10 }}
                   />
                 </div>
                 <div className="col-12 col-sm-5">
                   <label className={`${p}-kasa-input-label`}>Tarih</label>
-                  <input
-                    type="date"
-                    value={tarih}
-                    onChange={e => setTarih(e.target.value)}
-                    className={`${p}-kasa-input`}
-                    style={{ borderRadius: 10 }}
-                  />
+                  <DateInput value={tarih} onChange={val => setTarih(val)} placeholder="Tarih seçin" />
                 </div>
               </div>
 
@@ -1050,12 +1038,12 @@ function GiderEkleModal({ open, onClose, kategoriler, onKaydet, p, renkler }) {
               İptal
             </button>
             <button
-              className={`${p}-btn-save ${p}-btn-save-red`}
+              className={`${p}-btn-save ${p}-btn-save-red${kaydediyor ? ' p-btn-loading' : ''}`}
               onClick={kaydet}
               disabled={kaydediyor || !hazirMi}
             >
               {kaydediyor
-                ? <><i className="bi bi-hourglass-split me-2" />Kaydediliyor...</>
+                ? <><span className="p-btn-spinner" />Kaydediliyor...</>
                 : <><i className="bi bi-shield-lock-fill me-2" />Kaydet & Şifrele</>}
             </button>
           </div>
@@ -1759,8 +1747,17 @@ export default function GelirGiderSayfasi({ islemTipi }) {
 
         {/* İçerik */}
         {yukleniyor ? (
-          <div className="d-flex justify-content-center align-items-center py-5">
-            <div className={`${p}-kasa-spinner`} />
+          <div style={{ padding: '8px 0' }}>
+            {[1,2,3,4,5].map(i => (
+              <div key={i} className="p-gg-skeleton-row">
+                <div className="p-gg-sk" style={{ width: 36, height: 36, borderRadius: 10, flexShrink: 0 }} />
+                <div style={{ flex: 1 }}>
+                  <div className="p-gg-sk" style={{ width: '55%', height: 13, marginBottom: 6 }} />
+                  <div className="p-gg-sk" style={{ width: '35%', height: 10 }} />
+                </div>
+                <div className="p-gg-sk" style={{ width: 80, height: 16, marginLeft: 'auto' }} />
+              </div>
+            ))}
           </div>
         ) : siraliHareketler.length === 0 ? (
           <div className={`${p}-empty-state`} style={{ padding: '48px 24px' }}>
@@ -1779,7 +1776,9 @@ export default function GelirGiderSayfasi({ islemTipi }) {
             </button>
           </div>
         ) : (
-          <div className="table-responsive">
+          <>
+          {/* Desktop Tablo */}
+          <div className="table-responsive d-none d-md-block">
             <table className={`${p}-cym-table`} style={{ marginBottom: 0 }}>
               <thead>
                 <tr>
@@ -1840,6 +1839,39 @@ export default function GelirGiderSayfasi({ islemTipi }) {
               </tbody>
             </table>
           </div>
+
+          {/* Mobil Kart Listesi */}
+          <div className="d-md-none">
+            <div className="p-swipe-hint"><i className="bi bi-arrow-left-right" /> Sola kaydırarak silebilirsiniz</div>
+            {siraliHareketler.map((h) => {
+              const manuelMi = !h.kaynak_modul || h.kaynak_modul === 'manuel' || h.kaynak_modul === ''
+              const aksiyonlar = manuelMi
+                ? [{ icon: 'bi-trash3', label: 'Sil', renk: 'danger', onClick: () => { setSilHareket(h); setSilModalAcik(true) } }]
+                : []
+              return (
+                <SwipeCard key={h.id} aksiyonlar={aksiyonlar}>
+                  <div className="p-gg-mcard">
+                    <div className="p-gg-mcard-top">
+                      <div className="p-gg-mcard-kat">
+                        <span style={{ fontWeight: 700, fontSize: 13, color: 'var(--p-text)' }}>{h.kategori}</span>
+                        <KaynakRozeti kaynak={h.kaynak_modul} p={p} />
+                      </div>
+                      {isGiris
+                        ? <span className="p-gg-mcard-tutar financial-num" style={{ color: 'var(--p-color-success)' }}>+{TL(h.tutar)} ₺</span>
+                        : <span className="p-gg-mcard-tutar financial-num" style={{ color: 'var(--p-color-danger)' }}>−{TL(h.tutar)} ₺</span>
+                      }
+                    </div>
+                    {h.aciklama && <div className="p-gg-mcard-aciklama">{h.aciklama}</div>}
+                    <div className="p-gg-mcard-alt">
+                      <span className="p-gg-mcard-tarih"><i className="bi bi-calendar3" /> {tarihFmt(h.tarih)}</span>
+                      <OdemeKaynakGoster kaynak={h.odeme_kaynagi} baglanti={h.baglanti_turu} />
+                    </div>
+                  </div>
+                </SwipeCard>
+              )
+            })}
+          </div>
+          </>
         )}
 
       </div>
@@ -1850,7 +1882,7 @@ export default function GelirGiderSayfasi({ islemTipi }) {
         className={`${p}-${isGiris ? 'cym-btn-new' : 'cym-btn-danger'} d-md-none`}
         aria-label={isGiris ? 'Gelir Ekle' : 'Gider Ekle'}
         style={{
-          position: 'fixed', bottom: 20, right: 20, zIndex: 90,
+          position: 'fixed', bottom: 88, right: 20, zIndex: 1040,
           width: 56, height: 56, borderRadius: 10,
           display: 'flex', alignItems: 'center', justifyContent: 'center',
           boxShadow: isGiris ? 'var(--p-shadow-fab-success)' : 'var(--p-shadow-fab-danger)',
@@ -1894,7 +1926,7 @@ export default function GelirGiderSayfasi({ islemTipi }) {
       {silModalAcik && createPortal(
         <>
           <div className={`${p}-modal-overlay`} />
-          <div className={`${p}-modal-center`} role="dialog" aria-modal="true">
+          <div className={`${p}-modal-center ${p}-modal-confirm`} role="dialog" aria-modal="true">
             <div className={`${p}-modal-box`} style={{ maxWidth: 420 }}>
               <div className={`${p}-modal-header ${p}-mh-danger`}>
                 <h2 className={`${p}-modal-title`}>

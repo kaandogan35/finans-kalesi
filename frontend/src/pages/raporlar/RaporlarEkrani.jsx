@@ -15,12 +15,12 @@ import RaporGecmisi from './RaporGecmisi'
 const p = 'p'
 
 const TABLAR = [
-  { id: 'genel',       ikon: 'bi-bar-chart-line-fill', etiket: 'Genel Özet' },
-  { id: 'cari',        ikon: 'bi-people-fill',         etiket: 'Cari Yaşlandırma' },
-  { id: 'nakit',       ikon: 'bi-graph-up-arrow',      etiket: 'Nakit Akış' },
-  { id: 'cek',         ikon: 'bi-file-earmark-text-fill', etiket: 'Çek/Senet Portföy' },
-  { id: 'odeme',       ikon: 'bi-credit-card-2-front-fill', etiket: 'Ödeme Özet' },
-  { id: 'gecmis',      ikon: 'bi-clock-history',       etiket: 'Rapor Geçmişi' },
+  { id: 'genel',       ikon: 'bi-bar-chart-line-fill',       etiket: 'Genel Özet'          },
+  { id: 'cari',        ikon: 'bi-people-fill',               etiket: 'Alacak Durumu'       },
+  { id: 'nakit',       ikon: 'bi-graph-up-arrow',            etiket: 'Para Akışım'         },
+  { id: 'cek',         ikon: 'bi-file-earmark-text-fill',    etiket: 'Çek & Senet Durumu'  },
+  { id: 'odeme',       ikon: 'bi-credit-card-2-front-fill',  etiket: 'Tahsilat Özeti'      },
+  { id: 'gecmis',      ikon: 'bi-clock-history',             etiket: 'Rapor Geçmişi'       },
 ]
 
 export default function RaporlarEkrani() {

@@ -30,8 +30,34 @@ tmp/
 .vscode/
 .env
 
-# (Eğer varsa) Klasik Node.js gereksizleri
+# Node Modules
 node_modules/
+frontend/node_modules/
+
+# Build çıktıları (büyük dosyalar)
+frontend/dist/
+public/frontend-build/
+
+# iOS/Android build klasörleri (çok büyük)
+frontend/ios/
+frontend/android/
+
+# Apple Sertifikaları — Hassas
+apple-certs/
+
+# Geçici dosyalar
+*.log
+*.tmp
+listele-temp.txt
+
+# OS dosyaları
+.DS_Store
+Thumbs.db
+
+# Deploy scriptleri (şifre içerir)
+deploy-frontend.txt
+deploy-frontend.sh
+deploy-frontend.bat
 
 # Gereksiz dosyalar
 frontend.zip

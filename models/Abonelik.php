@@ -3,6 +3,7 @@
  * Finans Kalesi — Abonelik Modeli
  *
  * Abonelik ve ödeme geçmişi veritabanı işlemleri.
+ * v2: 30 gün deneme + Standart/Kurumsal ücretli planlar
  */
 
 class Abonelik {
@@ -12,17 +13,17 @@ class Abonelik {
     // Plan fiyatları (TL)
     public const FIYATLAR = [
         'standart' => [
-            'aylik'  => 399.90,
-            'yillik' => 3499.00,
+            'aylik'  => 290.00,
+            'yillik' => 2900.00,
         ],
         'kurumsal' => [
-            'aylik'  => 749.90,
-            'yillik' => 6490.00,
+            'aylik'  => 490.00,
+            'yillik' => 4900.00,
         ],
     ];
 
-    // Lansman kampanya fiyatı (aylık, sabit)
-    public const KAMPANYA_FIYAT = 99.90;
+    // Deneme süresi (gün)
+    public const DENEME_SURESI_GUN = 30;
 
     public function __construct(PDO $db) {
         $this->db = $db;
@@ -37,13 +38,27 @@ class Abonelik {
      */
     public function guncelPlan(int $sirket_id): ?array {
         $stmt = $this->db->prepare("
-            SELECT a.*, s.abonelik_plani, s.abonelik_bitis, s.kampanya_kullanici
+            SELECT a.*, s.abonelik_plani, s.abonelik_bitis, s.deneme_bitis
             FROM abonelikler a
             JOIN sirketler s ON s.id = a.sirket_id
             WHERE a.sirket_id = :sirket_id
               AND a.durum = 'aktif'
             ORDER BY a.olusturma_tarihi DESC
             LIMIT 1
+        ");
+        $stmt->execute([':sirket_id' => $sirket_id]);
+        return $stmt->fetch() ?: null;
+    }
+
+    /**
+     * Sirketler tablosundan doğrudan plan bilgisini oku
+     * guncelPlan() null döndürdüğünde fallback olarak kullanılır
+     */
+    public function sirketPlanBilgisi(int $sirket_id): ?array {
+        $stmt = $this->db->prepare("
+            SELECT abonelik_plani, abonelik_bitis, deneme_bitis
+            FROM sirketler
+            WHERE id = :sirket_id
         ");
         $stmt->execute([':sirket_id' => $sirket_id]);
         return $stmt->fetch() ?: null;
@@ -58,8 +73,7 @@ class Abonelik {
         string  $plan_adi,
         ?string $odeme_donemi,
         ?string $odeme_kanali,
-        ?string $bitis_tarihi,
-        bool    $kampanya = false
+        ?string $bitis_tarihi
     ): int {
         // Eski aktif aboneliği pasife çek
         $stmt = $this->db->prepare("
@@ -69,48 +83,126 @@ class Abonelik {
         ");
         $stmt->execute([':sirket_id' => $sirket_id]);
 
-        // Kampanya fiyatını belirle
-        $kampanya_fiyat = null;
-        if ($kampanya && $plan_adi === 'standart' && $odeme_donemi === 'aylik') {
-            $kampanya_fiyat = self::KAMPANYA_FIYAT;
-        }
-
         // Yeni abonelik kaydı oluştur
         $stmt = $this->db->prepare("
             INSERT INTO abonelikler
-                (sirket_id, plan_adi, odeme_donemi, odeme_kanali, baslangic_tarihi, bitis_tarihi,
-                 kampanya_kullanici, kampanya_fiyat, durum)
+                (sirket_id, plan_adi, odeme_donemi, odeme_kanali, baslangic_tarihi, bitis_tarihi, durum)
             VALUES
-                (:sirket_id, :plan_adi, :odeme_donemi, :odeme_kanali, NOW(), :bitis_tarihi,
-                 :kampanya, :kampanya_fiyat, 'aktif')
+                (:sirket_id, :plan_adi, :odeme_donemi, :odeme_kanali, NOW(), :bitis_tarihi, 'aktif')
         ");
         $stmt->execute([
-            ':sirket_id'      => $sirket_id,
-            ':plan_adi'       => $plan_adi,
-            ':odeme_donemi'   => $odeme_donemi,
-            ':odeme_kanali'   => $odeme_kanali,
-            ':bitis_tarihi'   => $bitis_tarihi,
-            ':kampanya'       => $kampanya ? 1 : 0,
-            ':kampanya_fiyat' => $kampanya_fiyat,
+            ':sirket_id'    => $sirket_id,
+            ':plan_adi'     => $plan_adi,
+            ':odeme_donemi' => $odeme_donemi,
+            ':odeme_kanali' => $odeme_kanali,
+            ':bitis_tarihi' => $bitis_tarihi,
         ]);
         $abonelik_id = (int) $this->db->lastInsertId();
 
         // sirketler tablosunu da güncelle (hızlı erişim için)
         $stmt = $this->db->prepare("
             UPDATE sirketler
-            SET abonelik_plani   = :plan_adi,
-                abonelik_bitis   = :bitis_tarihi,
-                kampanya_kullanici = :kampanya
+            SET abonelik_plani = :plan_adi,
+                abonelik_bitis = :bitis_tarihi
             WHERE id = :sirket_id
         ");
         $stmt->execute([
-            ':plan_adi'    => $plan_adi,
-            ':bitis_tarihi'=> $bitis_tarihi,
-            ':kampanya'    => $kampanya ? 1 : 0,
-            ':sirket_id'   => $sirket_id,
+            ':plan_adi'     => $plan_adi,
+            ':bitis_tarihi' => $bitis_tarihi,
+            ':sirket_id'    => $sirket_id,
         ]);
 
         return $abonelik_id;
+    }
+
+    /**
+     * Yeni kayıt için deneme planı oluştur
+     * sirketler tablosuna deneme_bitis yazar
+     */
+    public function denemeBaslat(int $sirket_id): int {
+        $bitis = date('Y-m-d H:i:s', strtotime('+' . self::DENEME_SURESI_GUN . ' days'));
+
+        // sirketler tablosuna deneme bitiş tarihi yaz
+        $stmt = $this->db->prepare("
+            UPDATE sirketler
+            SET deneme_bitis = :bitis
+            WHERE id = :sirket_id
+        ");
+        $stmt->execute([
+            ':bitis'     => $bitis,
+            ':sirket_id' => $sirket_id,
+        ]);
+
+        // Abonelik kaydı oluştur
+        return $this->planGuncelle($sirket_id, 'deneme', null, null, $bitis);
+    }
+
+    // ─────────────────────────────────────────
+    // DENEME SÜRESİ KONTROL
+    // ─────────────────────────────────────────
+
+    /**
+     * Şirketin deneme süresi dolmuş mu?
+     * Deneme planında değilse false döner
+     */
+    public function denemeSuresiDolduMu(int $sirket_id): bool {
+        $stmt = $this->db->prepare("
+            SELECT abonelik_plani, deneme_bitis
+            FROM sirketler
+            WHERE id = :sirket_id
+        ");
+        $stmt->execute([':sirket_id' => $sirket_id]);
+        $sirket = $stmt->fetch();
+
+        if (!$sirket) {
+            return false;
+        }
+
+        // Ücretli aktif plan varsa süresi dolmamış demektir
+        $plan = $sirket['abonelik_plani'] ?? 'deneme';
+        if (in_array($plan, ['standart', 'kurumsal'], true)) {
+            // Ücretli plan var — abonelik_bitis kontrolü yap
+            $stmt2 = $this->db->prepare("
+                SELECT COUNT(*) FROM abonelikler
+                WHERE sirket_id = :sirket_id AND durum = 'aktif'
+                  AND plan_adi IN ('standart','kurumsal')
+            ");
+            $stmt2->execute([':sirket_id' => $sirket_id]);
+            if ((int) $stmt2->fetchColumn() > 0) {
+                return false; // Aktif ücretli abonelik var
+            }
+            // Aktif abonelik kaydı yok ama sirketler'de ücretli plan yazıyor
+            // Veri tutarsızlığı — dolmamış say (admin incelemeli)
+            return false;
+        }
+
+        // Deneme planı — bitis tarihine bak
+        if (!$sirket['deneme_bitis']) {
+            return true; // deneme_bitis yoksa süresi dolmuş kabul et
+        }
+
+        return strtotime($sirket['deneme_bitis']) < time();
+    }
+
+    /**
+     * Deneme süresinden kalan gün sayısı
+     * Deneme planında değilse veya süre dolmuşsa 0 döner
+     */
+    public function denemeKalanGun(int $sirket_id): int {
+        $stmt = $this->db->prepare("
+            SELECT abonelik_plani, deneme_bitis
+            FROM sirketler
+            WHERE id = :sirket_id
+        ");
+        $stmt->execute([':sirket_id' => $sirket_id]);
+        $sirket = $stmt->fetch();
+
+        if (!$sirket || $sirket['abonelik_plani'] !== 'deneme' || !$sirket['deneme_bitis']) {
+            return 0;
+        }
+
+        $kalan = (strtotime($sirket['deneme_bitis']) - time()) / 86400;
+        return max(0, (int) ceil($kalan));
     }
 
     // ─────────────────────────────────────────
@@ -160,59 +252,30 @@ class Abonelik {
     }
 
     // ─────────────────────────────────────────
-    // KAMPANYA
-    // ─────────────────────────────────────────
-
-    /**
-     * Lansman kampanyası hâlâ aktif mi?
-     * .env'deki LANSMAN_BITIS_TARIHI değerine bakar.
-     */
-    public function kampanyaAktifMi(): bool {
-        $bitis = env('LANSMAN_BITIS_TARIHI', null);
-        if (!$bitis) {
-            return false;
-        }
-        return strtotime($bitis) > time();
-    }
-
-    /**
-     * Kampanyadan yararlanan şirket sayısı (super admin için)
-     */
-    public function kampanyaKullanicilariSay(): int {
-        $stmt = $this->db->query("SELECT COUNT(*) FROM sirketler WHERE kampanya_kullanici = 1");
-        return (int) $stmt->fetchColumn();
-    }
-
-    // ─────────────────────────────────────────
     // PLAN LİSTESİ (statik)
     // ─────────────────────────────────────────
 
     /**
      * Tüm planları fiyatlarıyla döndür
-     * Kampanya aktifse Standart plan için kampanya fiyatı eklenir
      */
     public function planListesi(): array {
-        $kampanya = $this->kampanyaAktifMi();
-
         return [
             [
-                'id'         => 'ucretsiz',
-                'ad'         => 'Başlangıç',
-                'aciklama'   => 'Yeni başlayanlar için temel özellikler',
+                'id'         => 'deneme',
+                'ad'         => '30 Gün Ücretsiz Deneme',
+                'aciklama'   => 'Tüm özellikleri 30 gün boyunca ücretsiz deneyin',
                 'fiyat'      => ['aylik' => 0, 'yillik' => 0],
                 'ozellikler' => [
-                    '1 kullanıcı',
-                    '30 cari hesap',
-                    '10 çek/senet kaydı (aylık, sıfırlanır)',
-                    'Kasa yönetimi (1 yıl ücretsiz deneme)',
-                    'Ödeme takibi',
-                    'Vade hesaplayıcı',
+                    '30 gün tüm özellikler açık',
+                    '2 kullanıcıya kadar',
+                    'Sınırsız cari hesap',
+                    '50 çek/senet kaydı (aylık)',
+                    'Sınırsız kasa yönetimi',
+                    'PDF & Excel rapor',
                 ],
                 'kisitlamalar' => [
-                    "PDF & Excel rapor (Standart'ta mevcut)",
-                    "Çoklu kullanıcı (Standart'ta mevcut)",
+                    '30 gün sonra plan seçimi gerekir',
                 ],
-                'kampanya' => false,
             ],
             [
                 'id'         => 'standart',
@@ -234,9 +297,6 @@ class Abonelik {
                     'Veri dışa aktarma',
                     'WhatsApp desteği',
                 ],
-                'kampanya'        => $kampanya,
-                'kampanya_fiyat'  => $kampanya ? self::KAMPANYA_FIYAT : null,
-                'kampanya_mesaj'  => $kampanya ? 'İlk 3 Ay 99,90₺ — Sonsuza Kadar Sabit' : null,
             ],
             [
                 'id'         => 'kurumsal',
@@ -256,7 +316,6 @@ class Abonelik {
                     'Şirket bazlı yetkilendirme',
                     'Öncelikli 7/24 destek',
                 ],
-                'kampanya' => false,
             ],
         ];
     }

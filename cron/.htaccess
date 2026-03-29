@@ -1,0 +1,4 @@
+# Bu klasöre web üzerinden erişim tamamen kapalıdır.
+# Cron scriptleri yalnızca sunucu komut satırından (CLI) çalıştırılır.
+Order deny,allow
+Deny from all

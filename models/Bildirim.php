@@ -25,7 +25,7 @@ class Bildirim {
     public function listele(int $sirket_id, int $kullanici_id, int $sayfa = 1, int $limit = 20, array $filtreler = []): array {
         $offset = ($sayfa - 1) * $limit;
 
-        $where = "WHERE b.sirket_id = :sirket_id AND b.kullanici_id = :kullanici_id";
+        $where = "WHERE b.sirket_id = :sirket_id AND b.kullanici_id = :kullanici_id AND b.silindi_mi = 0";
         $params = [':sirket_id' => $sirket_id, ':kullanici_id' => $kullanici_id];
 
         if (isset($filtreler['okundu_mu'])) {
@@ -73,7 +73,7 @@ class Bildirim {
      */
     public function okunmamis_sayisi(int $sirket_id, int $kullanici_id): int {
         $sql = "SELECT COUNT(*) as sayi FROM bildirimler
-                WHERE sirket_id = :sirket_id AND kullanici_id = :kullanici_id AND okundu_mu = 0";
+                WHERE sirket_id = :sirket_id AND kullanici_id = :kullanici_id AND okundu_mu = 0 AND silindi_mi = 0";
         $stmt = $this->db->prepare($sql);
         $stmt->execute([':sirket_id' => $sirket_id, ':kullanici_id' => $kullanici_id]);
         return (int)$stmt->fetch()['sayi'];
@@ -136,8 +136,10 @@ class Bildirim {
      * Tek bildirimi sil
      */
     public function sil(int $id, int $sirket_id, int $kullanici_id): bool {
-        $sql = "DELETE FROM bildirimler
-                WHERE id = :id AND sirket_id = :sirket_id AND kullanici_id = :kullanici_id";
+        // Soft delete — fiziksel silme yerine silindi_mi = 1
+        $sql = "UPDATE bildirimler
+                SET silindi_mi = 1
+                WHERE id = :id AND sirket_id = :sirket_id AND kullanici_id = :kullanici_id AND silindi_mi = 0";
         $stmt = $this->db->prepare($sql);
         $stmt->execute([':id' => $id, ':sirket_id' => $sirket_id, ':kullanici_id' => $kullanici_id]);
         return $stmt->rowCount() > 0;
@@ -163,6 +165,8 @@ class Bildirim {
                 'email'        => (int)$k['email'],
                 'sms'          => (int)$k['sms'],
                 'telefon'      => (int)$k['telefon'],
+                'whatsapp'     => (int)($k['whatsapp'] ?? 0),
+                'push'         => (int)($k['push'] ?? 0),
             ];
         }
 
@@ -175,6 +179,8 @@ class Bildirim {
                     'email'        => 1,
                     'sms'          => 0,
                     'telefon'      => 0,
+                    'whatsapp'     => 0,
+                    'push'         => 0,
                 ];
             }
         }
@@ -187,13 +193,15 @@ class Bildirim {
      */
     public function tercihleri_kaydet(int $sirket_id, int $kullanici_id, array $tercihler): void {
         $sql = "INSERT INTO bildirim_tercihleri
-                    (sirket_id, kullanici_id, bildirim_tipi, uygulama_ici, email, sms, telefon)
-                VALUES (:sirket_id, :kullanici_id, :tip, :uygulama_ici, :email, :sms, :telefon)
+                    (sirket_id, kullanici_id, bildirim_tipi, uygulama_ici, email, sms, telefon, whatsapp, push)
+                VALUES (:sirket_id, :kullanici_id, :tip, :uygulama_ici, :email, :sms, :telefon, :whatsapp, :push)
                 ON DUPLICATE KEY UPDATE
                     uygulama_ici = VALUES(uygulama_ici),
                     email        = VALUES(email),
                     sms          = VALUES(sms),
-                    telefon      = VALUES(telefon)";
+                    telefon      = VALUES(telefon),
+                    whatsapp     = VALUES(whatsapp),
+                    push         = VALUES(push)";
 
         $stmt = $this->db->prepare($sql);
 
@@ -206,6 +214,8 @@ class Bildirim {
                 ':email'         => (int)($ayar['email'] ?? 1),
                 ':sms'           => (int)($ayar['sms'] ?? 0),
                 ':telefon'       => (int)($ayar['telefon'] ?? 0),
+                ':whatsapp'      => (int)($ayar['whatsapp'] ?? 0),
+                ':push'          => (int)($ayar['push'] ?? 0),
             ]);
         }
     }
@@ -224,6 +234,7 @@ class Bildirim {
                   AND tip = :tip
                   AND kaynak_turu = :kaynak_turu
                   AND kaynak_id = :kaynak_id
+                  AND silindi_mi = 0
                   AND olusturma_tarihi > DATE_SUB(NOW(), INTERVAL 24 HOUR)";
         $stmt = $this->db->prepare($sql);
         $stmt->execute([

@@ -23,6 +23,20 @@ elseif ($parca_sayisi === 2 && $yol_parcalari[1] === 'tumunu-oku' && $metod === 
     $ctrl->tumunuOkunduYap($payload);
 }
 
+// ─── /api/bildirimler/push-token ────────────────────────────
+elseif ($parca_sayisi === 2 && $yol_parcalari[1] === 'push-token') {
+    switch ($metod) {
+        case 'POST':
+            $ctrl->pushTokenKaydet($payload, $girdi);
+            break;
+        case 'DELETE':
+            $ctrl->pushTokenSil($payload, $girdi);
+            break;
+        default:
+            Response::hata('Bu HTTP metodu desteklenmiyor', 405);
+    }
+}
+
 // ─── /api/bildirimler/tercihler ─────────────────────────────
 elseif ($parca_sayisi === 2 && $yol_parcalari[1] === 'tercihler') {
     switch ($metod) {

@@ -10,6 +10,8 @@ import tekrarlayanIslemApi from '../../api/tekrarlayanIslem'
 import useTemaStore from '../../stores/temaStore'
 import { temaRenkleri, hexRgba } from '../../lib/temaRenkleri'
 import { createPortal } from 'react-dom'
+import SwipeCard from '../../components/SwipeCard'
+import { DateInput } from '../../components/ui/DateInput'
 
 /* ═══ YARDIMCI FONKSİYONLAR ═══ */
 
@@ -135,7 +137,7 @@ const GELIR_GRUPLARI = [
     key: 'tahsilat', label: 'Müşteri Tahsilatları', ikon: 'bi-people-fill',
     altlar: [
       { value: 'Taksitli Satış Tahsilatı',    ikon: 'bi-cash-coin' },
-      { value: 'Cari Hesap Tahsilatı',         ikon: 'bi-person-check' },
+      { value: 'Müşteri Borç Tahsilatı',        ikon: 'bi-person-check' },
       { value: 'Abonelik / Üyelik Tahsilatı', ikon: 'bi-collection' },
       { value: 'E-ticaret Tahsilatı',          ikon: 'bi-cart-check' },
       { value: 'Sipariş Avansı / Kaparo',      ikon: 'bi-cash-stack' },
@@ -507,13 +509,9 @@ function TekrarlayanModal({
                   <label className={`${p}-kasa-input-label`}>
                     Başlangıç <span style={{ color: 'var(--p-color-danger)' }}>*</span>
                   </label>
-                  <input
-                    type="date" required
-                    value={form.baslangic_tarihi}
-                    onChange={(e) => setForm({ ...form, baslangic_tarihi: e.target.value })}
-                    className={`${p}-kasa-input`}
-                    style={{ borderRadius: 10 }}
-                  />
+                  <DateInput value={form.baslangic_tarihi}
+                    onChange={(val) => setForm({ ...form, baslangic_tarihi: val })}
+                    placeholder="Başlangıç tarihi" />
                 </div>
               </div>
 
@@ -523,13 +521,9 @@ function TekrarlayanModal({
                   <label className={`${p}-kasa-input-label`}>
                     Bitiş <span style={{ color: 'var(--p-text-muted)', fontWeight: 400, fontSize: 11 }}>(opsiyonel)</span>
                   </label>
-                  <input
-                    type="date"
-                    value={form.bitis_tarihi}
-                    onChange={(e) => setForm({ ...form, bitis_tarihi: e.target.value })}
-                    className={`${p}-kasa-input`}
-                    style={{ borderRadius: 10 }}
-                  />
+                  <DateInput value={form.bitis_tarihi}
+                    onChange={(val) => setForm({ ...form, bitis_tarihi: val })}
+                    placeholder="Bitiş tarihi" />
                 </div>
                 <div className="col-6">
                   <label className={`${p}-kasa-input-label`}>Açıklama</label>
@@ -586,7 +580,7 @@ function SilOnayModal({ silId, onSil, onIptal, yukleniyor, isGider, p }) {
   return (
     <>
       <div className={`${p}-modal-overlay`} />
-      <div className={`${p}-modal-center`} role="dialog" aria-modal="true">
+      <div className={`${p}-modal-center ${p}-modal-confirm`} role="dialog" aria-modal="true">
         <div className={`${p}-modal-box`} style={{ maxWidth: 420 }}>
           <div className={`${p}-modal-header ${p}-mh-danger`}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
@@ -985,26 +979,28 @@ export default function TekrarlayanIslemler() {
             </button>
           </div>
         ) : filtrelenmis.length === 0 ? (
-          <div className={`${p}-empty-state`} style={{ padding: '48px 24px' }}>
-            <i className="bi bi-arrow-repeat"
-              style={{ fontSize: 40, color: 'var(--p-text-muted)', opacity: 0.35 }} />
-            <p style={{ fontSize: 14, fontWeight: 600, color: 'var(--p-text)', marginTop: 12, marginBottom: 4 }}>
+          <div className={`${p}-empty-state`}>
+            <i className="bi bi-arrow-repeat" />
+            <h6>
               {arama
                 ? 'Arama sonucu bulunamadı'
                 : isGider
                   ? 'Henüz tekrarlayan gider tanımlanmamış'
                   : 'Henüz tekrarlayan gelir tanımlanmamış'
               }
-            </p>
+            </h6>
+            <p>{arama ? 'Farklı bir arama deneyin' : 'Otomatik tekrarlanan işlemlerinizi buradan yönetin'}</p>
             {!arama && (
-              <button onClick={yeniAc} className={`${p}-${isGider ? 'cym-btn-danger' : 'cym-btn-new'}`} style={{ marginTop: 12 }}>
+              <button onClick={yeniAc} className="p-empty-cta">
                 <i className="bi bi-plus-lg" />
                 <span>{isGider ? 'İlk Gideri Tanımla' : 'İlk Geliri Tanımla'}</span>
               </button>
             )}
           </div>
         ) : (
-          <div className="table-responsive">
+          <>
+          {/* Desktop Tablo */}
+          <div className="table-responsive d-none d-md-block">
             <table className={`${p}-cym-table`} style={{ marginBottom: 0 }}>
               <thead>
                 <tr>
@@ -1071,6 +1067,46 @@ export default function TekrarlayanIslemler() {
               </tbody>
             </table>
           </div>
+
+          {/* Mobil Kart Listesi */}
+          <div className="d-md-none">
+            <div className="p-swipe-hint"><i className="bi bi-arrow-left-right" /> Sola kaydırarak işlem yapabilirsiniz</div>
+            {filtrelenmis.map((item) => (
+              <SwipeCard key={item.id} aksiyonlar={[
+                { icon: item.aktif_mi ? 'bi-pause-circle' : 'bi-play-circle', label: item.aktif_mi ? 'Duraklat' : 'Aktif', renk: item.aktif_mi ? 'warning' : 'success', onClick: () => durumDegistir(item) },
+                { icon: 'bi-pencil', label: 'Düzenle', renk: 'info', onClick: () => duzenleAc(item) },
+                { icon: 'bi-trash3', label: 'Sil', renk: 'danger', onClick: () => setSilId(item.id) },
+              ]}>
+                <div className="p-gg-mcard" style={{ opacity: item.aktif_mi ? 1 : 0.55 }}>
+                  <div className="p-gg-mcard-top">
+                    <div className="p-gg-mcard-kat" style={{ flexDirection: 'column', alignItems: 'flex-start', gap: 2 }}>
+                      <span style={{ fontWeight: 700, fontSize: 14, color: 'var(--p-text)' }}>{item.baslik}</span>
+                      <span style={{ fontSize: 11, color: 'var(--p-text-muted)' }}>{item.kategori || '—'}</span>
+                    </div>
+                    {isGider
+                      ? <span className="p-gg-mcard-tutar financial-num" style={{ color: 'var(--p-color-danger)' }}>−{TL(item.tutar)} ₺</span>
+                      : <span className="p-gg-mcard-tutar financial-num" style={{ color: 'var(--p-color-success)' }}>+{TL(item.tutar)} ₺</span>
+                    }
+                  </div>
+                  <div className="p-gg-mcard-alt">
+                    {periyotBadge(item.periyot)}
+                    {sonrakiBadge(item.sonraki_calistirma, item.aktif_mi)}
+                    <span style={{ marginLeft: 'auto' }}>
+                      <button
+                        onClick={(e) => { e.stopPropagation(); durumDegistir(item) }}
+                        className={`${p}-kasa-badge ${item.aktif_mi ? `${p}-kasa-badge-giris` : `${p}-kasa-badge-cikis`}`}
+                        style={{ border: 'none', cursor: 'pointer', minHeight: 26, fontSize: 10, fontWeight: 600, padding: '2px 8px' }}
+                      >
+                        <i className={`bi ${item.aktif_mi ? 'bi-check-circle-fill' : 'bi-pause-circle'} me-1`} />
+                        {item.aktif_mi ? 'Aktif' : 'Pasif'}
+                      </button>
+                    </span>
+                  </div>
+                </div>
+              </SwipeCard>
+            ))}
+          </div>
+          </>
         )}
 
       </div>
@@ -1080,7 +1116,7 @@ export default function TekrarlayanIslemler() {
         onClick={yeniAc}
         className={`${p}-${isGider ? 'cym-btn-danger' : 'cym-btn-new'} d-md-none`}
         style={{
-          position: 'fixed', bottom: 20, right: 20, zIndex: 90,
+          position: 'fixed', bottom: 88, right: 20, zIndex: 1040,
           width: 56, height: 56, borderRadius: 14,
           display: 'flex', alignItems: 'center', justifyContent: 'center',
           boxShadow: isGider ? '0 4px 14px rgba(239,68,68,0.3)' : '0 4px 14px rgba(16,185,129,0.3)',

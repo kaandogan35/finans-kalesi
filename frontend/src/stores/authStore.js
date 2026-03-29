@@ -4,14 +4,32 @@
  * Kullanıcı oturum bilgisi burada saklanır.
  * Uygulama genelinde useAuthStore() hook'u ile erişilir.
  *
- * Token'lar sessionStorage'da persist edilir — sayfa yenilemesinde
- * oturum korunur, sekme kapanınca otomatik temizlenir.
+ * Token'lar @capacitor/preferences ile persist edilir:
+ *   - Native (iOS): iOS Keychain (şifreli, sistem korumalı)
+ *   - Native (Android): EncryptedSharedPreferences (AES-256 şifreli)
+ *   - Web (tarayıcı): localStorage (geliştirme ortamı fallback)
  */
 
 import { create } from 'zustand'
-import { persist } from 'zustand/middleware'
+import { persist, createJSONStorage } from 'zustand/middleware'
+import { Preferences } from '@capacitor/preferences'
 import { authApi } from '../api/auth'
 import useTemaStore from './temaStore'
+
+// Capacitor Preferences tabanlı güvenli storage adapter
+// Native'de şifreli depolama, web'de localStorage fallback kullanır
+const guvenliStorage = createJSONStorage(() => ({
+  getItem: async (name) => {
+    const { value } = await Preferences.get({ key: name })
+    return value ?? null
+  },
+  setItem: async (name, value) => {
+    await Preferences.set({ key: name, value })
+  },
+  removeItem: async (name) => {
+    await Preferences.remove({ key: name })
+  },
+}))
 
 const useAuthStore = create(
   persist(
@@ -75,6 +93,16 @@ const useAuthStore = create(
       },
 
       /**
+       * Onboarding tamamlandığında kullanici state'ini güncelle
+       */
+      onboardingTamamla: () => {
+        const { kullanici } = get()
+        if (kullanici) {
+          set({ kullanici: { ...kullanici, onboarding_tamamlandi: 1 } })
+        }
+      },
+
+      /**
        * Çıkış yap
        */
       cikisYap: async () => {
@@ -92,18 +120,7 @@ const useAuthStore = create(
     }),
     {
       name: 'fk-auth',
-      storage: {
-        getItem: (name) => {
-          const str = sessionStorage.getItem(name)
-          return str ? JSON.parse(str) : null
-        },
-        setItem: (name, value) => {
-          sessionStorage.setItem(name, JSON.stringify(value))
-        },
-        removeItem: (name) => {
-          sessionStorage.removeItem(name)
-        },
-      },
+      storage: guvenliStorage,
       // Sadece token'ları persist et — kullanıcı bilgisi baslat() ile yeniden yüklenir
       partialize: (state) => ({
         accessToken: state.accessToken,

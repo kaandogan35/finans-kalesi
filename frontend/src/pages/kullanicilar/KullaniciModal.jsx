@@ -105,8 +105,8 @@ export default function KullaniciModal({ mod, hedef = null, onKaydet, onKapat })
   }
 
   const modal = (
-    <div className="kum-overlay" onClick={onKapat}>
-      <div className="kum-box" onClick={e => e.stopPropagation()}>
+    <div className="kum-overlay">
+      <div className="kum-box">
 
         {/* ── Başlık (mh-default) ── */}
         <div className="kum-header mh-default">
@@ -133,10 +133,11 @@ export default function KullaniciModal({ mod, hedef = null, onKaydet, onKapat })
               </div>
             </div>
             <button onClick={onKapat} style={{
-              width: 30, height: 30, borderRadius: 8,
+              width: 44, height: 44, borderRadius: 12,
               border: '1px solid #E5E7EB', background: '#F9FAFB',
-              color: '#6B7280', cursor: 'pointer', fontSize: 12,
+              color: '#6B7280', cursor: 'pointer', fontSize: 14,
               display: 'flex', alignItems: 'center', justifyContent: 'center',
+              flexShrink: 0,
             }}>
               <i className="bi bi-x-lg" />
             </button>
@@ -207,7 +208,6 @@ export default function KullaniciModal({ mod, hedef = null, onKaydet, onKapat })
                   key={r.value}
                   className={`kum-rol-btn${form.rol === r.value ? ' active' : ''}`}
                   onClick={() => handleInput('rol', r.value)}
-                  style={{ minWidth: 140 }}
                 >
                   <div style={{ fontSize: 12, fontWeight: 700, color: '#111827', marginBottom: 1 }}>{r.label}</div>
                   <div style={{ fontSize: 10.5, color: '#6B7280', lineHeight: 1.3 }}>{r.desc}</div>

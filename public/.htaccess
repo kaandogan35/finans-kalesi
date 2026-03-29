@@ -46,10 +46,31 @@ RewriteCond %{REQUEST_FILENAME} !-d
 RewriteRule ^ frontend-build/index.html [QSA,L]
 
 # Güvenlik: .env ve gizli dosyalara erişimi engelle
+# NOT: .well-known/ iOS Universal Links ve Android App Links için herkese açık olmalı
 <FilesMatch "^\.">
     Require all denied
 </FilesMatch>
 
+# .well-known dizinini aç — App Links/Universal Links için zorunlu
+<IfModule mod_rewrite.c>
+    RewriteCond %{REQUEST_URI} ^/\.well-known/
+    RewriteRule ^ - [L]
+</IfModule>
+
 # PHP hata gösterimini kapat (production güvenliği)
-php_flag display_errors Off
-php_flag log_errors On
+# Not: php_flag sadece mod_php ile çalışır, CGI/FastCGI'da 500 hatası verir
+<IfModule mod_php.c>
+    php_flag display_errors Off
+    php_flag log_errors On
+    php_value error_log /home/goparam/logs/php_error.log
+</IfModule>
+
+# CGI/FastCGI için error_log yolu (mod_php yoksa bu geçerli)
+<IfModule !mod_php.c>
+    SetEnv PHP_VALUE "error_log=/home/goparam/logs/php_error.log"
+</IfModule>
+
+# error_log dosyasına dışarıdan erişimi engelle (ek güvenlik)
+<Files "error_log">
+    Require all denied
+</Files>

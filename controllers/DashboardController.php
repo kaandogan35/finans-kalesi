@@ -86,7 +86,7 @@ class DashboardController
     //   yaklasan_vadeler  → bugünden 30 gün içinde vadesi gelen, portföydeki/tahsildeki 5 kayıt
     private function cek_senet_ozet(int $sirket_id): array
     {
-        // Portföy toplamı + alacak/borç ayrımı
+        // Portföy toplamı + alacak/borç ayrımı + gecikmiş çekler
         $stmt = $this->db->prepare(
             "SELECT
                 COALESCE(SUM(CASE WHEN durum = 'portfoyde' THEN tutar_tl ELSE 0 END), 0) AS portfoyde_toplam,
@@ -94,7 +94,17 @@ class DashboardController
                 COALESCE(SUM(CASE WHEN tur IN ('alacak_ceki','alacak_senedi')
                     AND durum IN ('portfoyde','tahsile_verildi') THEN tutar_tl ELSE 0 END), 0) AS alacak_toplam,
                 COALESCE(SUM(CASE WHEN tur IN ('borc_ceki','borc_senedi')
-                    AND durum = 'portfoyde' THEN tutar_tl ELSE 0 END), 0) AS borc_toplam
+                    AND durum = 'portfoyde' THEN tutar_tl ELSE 0 END), 0) AS borc_toplam,
+                COUNT(CASE WHEN durum = 'tahsile_verildi'
+                    AND vade_tarihi < CURDATE() THEN 1 END) AS geciken_tahsil_adet,
+                COALESCE(SUM(CASE WHEN durum = 'tahsile_verildi'
+                    AND vade_tarihi < CURDATE() THEN tutar_tl ELSE 0 END), 0) AS geciken_tahsil_toplam,
+                COUNT(CASE WHEN tur IN ('borc_ceki','borc_senedi')
+                    AND durum = 'portfoyde'
+                    AND vade_tarihi < CURDATE() THEN 1 END) AS geciken_kendi_adet,
+                COALESCE(SUM(CASE WHEN tur IN ('borc_ceki','borc_senedi')
+                    AND durum = 'portfoyde'
+                    AND vade_tarihi < CURDATE() THEN tutar_tl ELSE 0 END), 0) AS geciken_kendi_toplam
              FROM cek_senetler
              WHERE sirket_id = :sirket_id AND silindi_mi = 0"
         );
