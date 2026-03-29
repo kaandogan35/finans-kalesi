@@ -26,6 +26,7 @@ workflows:
       - name: Capacitor sync iOS
         script: |
           cd frontend
+          npx cap add ios
           npx cap sync ios
 
       - name: Install CocoaPods
