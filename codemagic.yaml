@@ -8,6 +8,7 @@ workflows:
       ios_signing:
         distribution_type: app_store
         bundle_identifier: com.paramgo.app
+        provisioning_profile: $FCI_PROVISIONING_PROFILE
       vars:
         XCODE_WORKSPACE: "frontend/ios/App/App.xcworkspace"
         XCODE_SCHEME: "App"
