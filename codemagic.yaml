@@ -37,7 +37,7 @@ workflows:
           echo "$CM_CERTIFICATE" | base64 --decode > /tmp/distribution.p12
           keychain add-certificates \
             --certificate /tmp/distribution.p12 \
-            --certificate-password ""
+            --certificate-password "$CM_CERTIFICATE_PASSWORD"
           echo "Certificate installed to keychain"
 
           # 3. Provisioning profile'ı yükle
