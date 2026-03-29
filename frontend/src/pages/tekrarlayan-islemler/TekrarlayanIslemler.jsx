@@ -468,6 +468,7 @@ function TekrarlayanModal({
                   </label>
                   <input
                     type="text" required
+                    inputMode="decimal"
                     placeholder="0,00"
                     value={form.tutarStr}
                     onChange={(e) => setForm({ ...form, tutarStr: formatParaInput(e.target.value) })}

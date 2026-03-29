@@ -1,6 +1,38 @@
 @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap');
 
 /* ============================================================
+   MOBİL GLOBAL — Safe Area + Zoom Engelleme
+   ============================================================ */
+:root {
+  --sat: env(safe-area-inset-top);
+  --sab: env(safe-area-inset-bottom);
+  --sal: env(safe-area-inset-left);
+  --sar: env(safe-area-inset-right);
+}
+
+/* iOS zoom engelleme — tüm inputlar minimum 16px */
+input, select, textarea {
+  font-size: 16px !important;
+}
+
+/* Overscroll engelleme — web havası vermemesi için */
+html, body {
+  overscroll-behavior: none;
+  -webkit-overflow-scrolling: touch;
+}
+
+/* Safe area padding — ana içerik alanı */
+body {
+  padding-top: env(safe-area-inset-top);
+  padding-bottom: env(safe-area-inset-bottom);
+}
+
+/* Bottom navigation bar safe area */
+.p-mobil-nav {
+  padding-bottom: env(safe-area-inset-bottom);
+}
+
+/* ============================================================
    TEMA 4 — PARAMGO  |  Modern Fintech · Inter
    Prefix: .p-  (tüm renkler bu dosyadaki değişkenlerden)
    Açık sidebar/topbar, yeşil ana renk
@@ -4855,6 +4887,34 @@
 @media (max-width: 480px) {
   .p-giris-kart-ic { padding: 28px 22px 24px; }
   .p-giris-kart { border-radius: 8px; }
+}
+
+/* ============================================================
+   LOADING SCREEN — Uygulama açılış ekranı
+   ============================================================ */
+.pm-loading-screen {
+  position: fixed;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  background: #ffffff;
+  z-index: 99999;
+  gap: 32px;
+}
+
+.pm-loading-spinner {
+  width: 32px;
+  height: 32px;
+  border: 3px solid #E5E7EB;
+  border-top-color: #10B981;
+  border-radius: 50%;
+  animation: pm-loading-spin 0.8s linear infinite;
+}
+
+@keyframes pm-loading-spin {
+  to { transform: rotate(360deg); }
 }
 
 /* ============================================================

@@ -144,7 +144,7 @@ function YatirimModal({ open, onClose, onKaydet, duzenlenen, p, renkler }) {
             <div className="row g-3 mb-4">
               <div className="col-12 col-sm-4">
                 <label className={`${p}-kasa-input-label`}>Miktar</label>
-                <input type="number" className={`${p}-kasa-input`} placeholder="0" min="0"
+                <input type="text" inputMode="decimal" className={`${p}-kasa-input`} placeholder="0"
                   value={form.miktar} onChange={e => set('miktar', e.target.value)} />
               </div>
               <div className="col-12 col-sm-4">
@@ -270,7 +270,7 @@ function FiyatGuncelleModal({ open, onClose, yatirimlar, onGuncelle, p, renkler 
                       </div>
                     </div>
                     <div style={{ width:160 }}>
-                      <input type="text" className={`${p}-kasa-input ${p}-kasa-fin-num`} placeholder="Güncel fiyat (₺)"
+                      <input type="text" inputMode="decimal" className={`${p}-kasa-input ${p}-kasa-fin-num`} placeholder="Güncel fiyat (₺)"
                         value={fiyatlar[y.tur] || ''}
                         onChange={e => setFiyatlar(prev => ({ ...prev, [y.tur]: formatParaInput(e.target.value) }))}
                         style={{ textAlign:'right' }} />

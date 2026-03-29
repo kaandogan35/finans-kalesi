@@ -2363,7 +2363,7 @@ export default function CekSenet() {
             <div className="col-12">
               <FG label="Tutar" zorunlu p={p} renkler={renkler}>
                 <div className="input-group">
-                  <input className="form-control p-tutar-input" placeholder="0,00"
+                  <input className="form-control p-tutar-input" placeholder="0,00" inputMode="decimal"
                     value={portfoyForm.tutarStr}
                     onChange={(e) => setPortfoyForm({ ...portfoyForm, tutarStr: formatParaInput(e.target.value) })} />
                   <span className="input-group-text">₺</span>
@@ -2383,7 +2383,7 @@ export default function CekSenet() {
       </Modal>
 
       {/* ─── Tahsile Ver Modalı ─────────────────────────────────────────────── */}
-      <Modal open={tahsileModal} onClose={() => setTahsileModal(false)} size="sm" p={p} ariaId="cek-tahsile-modal-title">
+      <Modal open={tahsileModal} onClose={() => setTahsileModal(false)} size="sm" confirm p={p} ariaId="cek-tahsile-modal-title">
         <div className={`${p}-modal-header ${p}-mh-green`}>
           <div className="d-flex align-items-center gap-3">
             <div className={`${p}-modal-icon ${p}-modal-icon-green`}>
@@ -2418,7 +2418,7 @@ export default function CekSenet() {
       </Modal>
 
       {/* ─── Cirola Modalı ──────────────────────────────────────────────────── */}
-      <Modal open={cirolaModal} onClose={() => setCirolaModal(false)} size="sm" p={p} ariaId="cek-cirola-modal-title">
+      <Modal open={cirolaModal} onClose={() => setCirolaModal(false)} size="sm" confirm p={p} ariaId="cek-cirola-modal-title">
         <div className={`${p}-modal-header ${p}-mh-warning-alt`}>
           <div className="d-flex align-items-center gap-3">
             <div className={`${p}-modal-icon ${p}-modal-icon-warning-alt`}>
@@ -2538,7 +2538,7 @@ export default function CekSenet() {
             <div className="col-12">
               <FG label="Tutar" zorunlu p={p} renkler={renkler}>
                 <div className="input-group">
-                  <input className="form-control p-tutar-input" placeholder="0,00"
+                  <input className="form-control p-tutar-input" placeholder="0,00" inputMode="decimal"
                     value={kendiForm.tutarStr}
                     onChange={(e) => setKendiForm({ ...kendiForm, tutarStr: formatParaInput(e.target.value) })} />
                   <span className="input-group-text">₺</span>
@@ -2617,7 +2617,7 @@ export default function CekSenet() {
             <div className="col-12">
               <FG label="Tutar" zorunlu p={p} renkler={renkler}>
                 <div className="input-group">
-                  <input className="form-control p-tutar-input" placeholder="0,00"
+                  <input className="form-control p-tutar-input" placeholder="0,00" inputMode="decimal"
                     value={tahsilDzlForm.tutarStr || ''}
                     onChange={(e) => setTahsilDzlForm({ ...tahsilDzlForm, tutarStr: formatParaInput(e.target.value) })} />
                   <span className="input-group-text">₺</span>
@@ -2699,7 +2699,7 @@ export default function CekSenet() {
             <div className="col-12">
               <FG label="Tutar" zorunlu p={p} renkler={renkler}>
                 <div className="input-group">
-                  <input className="form-control p-tutar-input" placeholder="0,00"
+                  <input className="form-control p-tutar-input" placeholder="0,00" inputMode="decimal"
                     value={ciroDzlForm.tutarStr || ''}
                     onChange={(e) => setCiroDzlForm({ ...ciroDzlForm, tutarStr: formatParaInput(e.target.value) })} />
                   <span className="input-group-text">₺</span>

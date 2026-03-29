@@ -249,7 +249,7 @@ function AyKapanisModal({ open, onClose, kapanislar, onKaydet, yatirimGuncelDege
                 </div>
                 <div className="col-12 col-sm-6">
                   {lbl('Dönem Başı Devreden Stok (₺)', 'bi-box-seam')}
-                  <input type="text" value={form.devredenStok} onChange={setP('devredenStok')}
+                  <input type="text" inputMode="decimal" value={form.devredenStok} onChange={setP('devredenStok')}
                     placeholder="0,00" className={`${p}-kasa-input`} />
                 </div>
               </div>
@@ -264,17 +264,17 @@ function AyKapanisModal({ open, onClose, kapanislar, onKaydet, yatirimGuncelDege
               <div className="row g-3">
                 <div className="col-12 col-sm-4">
                   {lbl('Kestiğimiz Fatura (₺)', 'bi-receipt')}
-                  <input type="text" value={form.kesilenFatura} onChange={setP('kesilenFatura')}
+                  <input type="text" inputMode="decimal" value={form.kesilenFatura} onChange={setP('kesilenFatura')}
                     placeholder="0,00" className={`${p}-kasa-input`} />
                 </div>
                 <div className="col-12 col-sm-4">
                   {lbl('Kâr Marjı (%)', 'bi-percent')}
-                  <input type="number" value={form.karMarji} onChange={e => set('karMarji', e.target.value)}
-                    min="0" max="100" step="0.5" className={`${p}-kasa-input`} />
+                  <input type="text" inputMode="decimal" value={form.karMarji} onChange={e => set('karMarji', e.target.value)}
+                    placeholder="0" className={`${p}-kasa-input`} />
                 </div>
                 <div className="col-12 col-sm-4">
                   {lbl('Gelen Alış Faturaları (₺)', 'bi-truck')}
-                  <input type="text" value={form.gelenAlis} onChange={setP('gelenAlis')}
+                  <input type="text" inputMode="decimal" value={form.gelenAlis} onChange={setP('gelenAlis')}
                     placeholder="0,00" className={`${p}-kasa-input`} />
                 </div>
               </div>
@@ -289,17 +289,17 @@ function AyKapanisModal({ open, onClose, kapanislar, onKaydet, yatirimGuncelDege
               <div className="row g-3">
                 <div className="col-12 col-sm-4">
                   {lbl('Toplam Alacağımız (₺)', 'bi-arrow-down-circle')}
-                  <input type="text" value={form.alacaklar} onChange={setP('alacaklar')}
+                  <input type="text" inputMode="decimal" value={form.alacaklar} onChange={setP('alacaklar')}
                     placeholder="0,00" className={`${p}-kasa-input`} style={{ color:renkler.success }} />
                 </div>
                 <div className="col-12 col-sm-4">
                   {lbl('Toplam Borcumuz (₺)', 'bi-arrow-up-circle')}
-                  <input type="text" value={form.borclar} onChange={setP('borclar')}
+                  <input type="text" inputMode="decimal" value={form.borclar} onChange={setP('borclar')}
                     placeholder="0,00" className={`${p}-kasa-input`} style={{ color:renkler.danger }} />
                 </div>
                 <div className="col-12 col-sm-4">
                   {lbl('Banka Ticari Nakdi (₺)', 'bi-bank')}
-                  <input type="text" value={form.bankaKasaNakdi} onChange={setP('bankaKasaNakdi')}
+                  <input type="text" inputMode="decimal" value={form.bankaKasaNakdi} onChange={setP('bankaKasaNakdi')}
                     placeholder="0,00" className={`${p}-kasa-input`} />
                 </div>
               </div>

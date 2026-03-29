@@ -123,7 +123,7 @@ function OrtakModal({ open, onClose, mevcutOrtaklar, onKaydet, p, renkler }) {
               </div>
               <div className="col-12 col-sm-6">
                 <label className={`${p}-kasa-input-label`}>Tutar (₺)</label>
-                <input type="text" value={tutar} onChange={e => setTutar(formatParaInput(e.target.value))}
+                <input type="text" inputMode="decimal" value={tutar} onChange={e => setTutar(formatParaInput(e.target.value))}
                   placeholder="0,00" className={`${p}-kasa-input ${p}-kasa-fin-num`} style={{ color:acikRenk, fontWeight:700 }} />
               </div>
             </div>

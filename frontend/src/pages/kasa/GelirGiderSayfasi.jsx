@@ -721,6 +721,7 @@ function GelirEkleModal({ open, onClose, kategoriler, onKaydet, p, renkler }) {
                 <label className={`${p}-kasa-input-label`}>Tutar (₺)</label>
                 <input
                   type="text"
+                  inputMode="decimal"
                   value={tutar}
                   onChange={e => setTutar(formatParaInput(e.target.value))}
                   placeholder="0,00"
@@ -1004,6 +1005,7 @@ function GiderEkleModal({ open, onClose, kategoriler, onKaydet, p, renkler }) {
                   <label className={`${p}-kasa-input-label`}>Tutar (₺)</label>
                   <input
                     type="text"
+                    inputMode="decimal"
                     value={tutar}
                     onChange={e => setTutar(formatParaInput(e.target.value))}
                     placeholder="0,00"
