@@ -31,7 +31,16 @@ workflows:
 
       - name: Install CocoaPods
         script: |
-          cd frontend/ios/App
+          echo "=== iOS directory structure ==="
+          find frontend/ios -name "Podfile" 2>/dev/null || echo "No Podfile found anywhere"
+          ls frontend/ios/ 2>/dev/null || echo "frontend/ios not found"
+          POD_DIR=$(find frontend/ios -name "Podfile" -exec dirname {} \; 2>/dev/null | head -1)
+          if [ -z "$POD_DIR" ]; then
+            echo "ERROR: Podfile not found"
+            exit 1
+          fi
+          echo "Running pod install in: $POD_DIR"
+          cd "$POD_DIR"
           pod install
 
       - name: Set up code signing
