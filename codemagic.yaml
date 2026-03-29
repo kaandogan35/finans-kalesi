@@ -50,11 +50,40 @@ workflows:
           security find-identity -v -p codesigning
           ls -la "$PROFILES_DIR/"
 
+      - name: Create export options
+        script: |
+          cat > /Users/builder/export_options.plist << 'PLIST'
+          <?xml version="1.0" encoding="UTF-8"?>
+          <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+          <plist version="1.0">
+          <dict>
+            <key>method</key>
+            <string>app-store</string>
+            <key>teamID</key>
+            <string>CM3BW9X6Z2</string>
+            <key>signingStyle</key>
+            <string>manual</string>
+            <key>provisioningProfiles</key>
+            <dict>
+              <key>com.paramgo.app</key>
+              <string>ParamGo AppStore</string>
+            </dict>
+            <key>signingCertificate</key>
+            <string>Apple Distribution</string>
+            <key>uploadBitcode</key>
+            <false/>
+            <key>uploadSymbols</key>
+            <true/>
+          </dict>
+          </plist>
+          PLIST
+
       - name: Build iOS IPA
         script: |
           xcode-project build-ipa \
             --project "$XCODE_PROJECT" \
             --scheme "$XCODE_SCHEME" \
+            --export-options-plist /Users/builder/export_options.plist \
             --archive-flags="-destination 'generic/platform=iOS' DEVELOPMENT_TEAM='CM3BW9X6Z2' CODE_SIGN_IDENTITY='Apple Distribution' 'PROVISIONING_PROFILE=e205b272-0b9d-4d34-aa1c-754f7e6f5a3a'"
 
     artifacts:
