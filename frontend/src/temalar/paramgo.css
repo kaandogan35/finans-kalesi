@@ -21,15 +21,12 @@ html, body {
   -webkit-overflow-scrolling: touch;
 }
 
-/* Safe area padding — ana içerik alanı */
-body {
-  padding-top: env(safe-area-inset-top);
-  padding-bottom: env(safe-area-inset-bottom);
-}
-
-/* Bottom navigation bar safe area */
-.p-mobil-nav {
-  padding-bottom: env(safe-area-inset-bottom);
+/* Safe area — body'ye DEĞİL, bileşenlere ayrı ayrı verilecek */
+/* Klavye açılınca input'u görünür alana kaydır */
+@supports (padding-top: env(safe-area-inset-top)) {
+  input:focus, textarea:focus, select:focus {
+    scroll-margin-bottom: 300px;
+  }
 }
 
 /* ============================================================
@@ -162,6 +159,7 @@ body {
   flex-direction: column;
   transition: width 0.22s cubic-bezier(0.4, 0, 0.2, 1);
   overflow: hidden;
+  padding-top: env(safe-area-inset-top, 0px);
 }
 
 /* Collapsible sidebar */
@@ -471,6 +469,7 @@ body {
   box-shadow: var(--p-shadow-topbar);
   display: flex; align-items: center; justify-content: space-between;
   padding: 0 32px;
+  padding-top: env(safe-area-inset-top, 0px);
   z-index: 50;
 }
 
@@ -1540,9 +1539,14 @@ body {
 /* ─── CekSenet Responsive ─── */
 @media (max-width: 767px) {
   .p-modal-center { align-items: flex-end; padding: 0; }
-  .p-modal-box { border-radius: 20px 20px 0 0 !important; max-height: 88vh; }
+  .p-modal-box {
+    border-radius: 20px 20px 0 0 !important;
+    max-height: 88vh;
+    max-height: 88dvh;
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+  }
   .p-modal-confirm { align-items: center !important; padding: 16px !important; }
-  .p-modal-confirm .p-modal-box { border-radius: 14px !important; max-height: none; }
+  .p-modal-confirm .p-modal-box { border-radius: 14px !important; max-height: none; padding-bottom: 0; }
   .p-modal-confirm .p-modal-box::before { display: none; }
   .p-cek-header { padding: 16px; gap: 12px; }
   .p-cek-header::before { display: none; }
@@ -1687,14 +1691,20 @@ body {
   .p-table thead th,
   .p-table tbody td { padding: 9px 10px; }
 
-  /* Content: alt menü boşluğu */
+  /* Content: alt menü boşluğu (64px nav + safe area) */
   .p-content {
-    padding-bottom: 80px;
+    padding-bottom: calc(80px + env(safe-area-inset-bottom, 0px));
   }
 
   /* Hamburger artık gizli — alt menüdeki "Daha Fazla" ile değişti */
   .p-hamburger {
     display: none !important;
+  }
+
+  /* Topbar: mobilde safe area */
+  .p-topbar {
+    padding-top: env(safe-area-inset-top, 0px);
+    height: calc(var(--p-topbar-height) + env(safe-area-inset-top, 0px));
   }
 }
 

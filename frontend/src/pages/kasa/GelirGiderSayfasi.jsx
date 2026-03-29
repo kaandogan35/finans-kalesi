@@ -1120,7 +1120,7 @@ function KategoriDetayModal({ open, onClose, kategori, hareketler, isGiris, p })
   return createPortal(
     <>
       <div className={`${p}-modal-overlay`} onClick={onClose} />
-      <div className={`${p}-modal-center`} role="dialog" aria-modal="true">
+      <div className={`${p}-modal-center ${p}-modal-confirm`} role="dialog" aria-modal="true">
         <div className={`${p}-modal-box`} style={{ maxWidth: 720 }}>
 
           {/* ─── Başlık ─── */}
