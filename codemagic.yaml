@@ -32,8 +32,7 @@ workflows:
         script: |
           keychain initialize
           xcode-project use-profiles \
-            --project "$XCODE_PROJECT" \
-            --scheme "$XCODE_SCHEME"
+            --project "$XCODE_PROJECT"
 
       - name: Build iOS IPA
         script: |
