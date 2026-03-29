@@ -31,15 +31,22 @@ workflows:
       - name: Set up code signing
         script: |
           keychain initialize
-          xcode-project use-profiles \
-            --project "$XCODE_PROJECT"
+
+          # Install certificate from Code Signing Identities
+          xcode-project use-profiles --project "$XCODE_PROJECT" || true
+
+          # Manually install provisioning profile
+          PROFILES_DIR="$HOME/Library/MobileDevice/Provisioning Profiles"
+          mkdir -p "$PROFILES_DIR"
+          echo "$CM_PROVISIONING_PROFILE" | base64 --decode > "$PROFILES_DIR/e205b272-0b9d-4d34-aa1c-754f7e6f5a3a.mobileprovision"
+          echo "Profile installed: $(ls -la "$PROFILES_DIR/")"
 
       - name: Build iOS IPA
         script: |
           xcode-project build-ipa \
             --project "$XCODE_PROJECT" \
             --scheme "$XCODE_SCHEME" \
-            --archive-flags="-destination 'generic/platform=iOS' DEVELOPMENT_TEAM='CM3BW9X6Z2' CODE_SIGN_IDENTITY='Apple Distribution' PROVISIONING_PROFILE_SPECIFIER='ParamGo AppStore'"
+            --archive-flags="-destination 'generic/platform=iOS' DEVELOPMENT_TEAM='CM3BW9X6Z2' CODE_SIGN_IDENTITY='Apple Distribution' 'PROVISIONING_PROFILE=e205b272-0b9d-4d34-aa1c-754f7e6f5a3a'"
 
     artifacts:
       - build/ios/ipa/*.ipa
