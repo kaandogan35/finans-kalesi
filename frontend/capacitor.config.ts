@@ -5,7 +5,6 @@ const config: CapacitorConfig = {
   appName: 'ParamGo',
   webDir: '../public/frontend-build',
   server: {
-    // iOS'ta CORS sorunlarını önlemek için hostname ayarla
     hostname: 'localhost',
     androidScheme: 'https',
     iosScheme: 'capacitor',
@@ -15,21 +14,22 @@ const config: CapacitorConfig = {
     SplashScreen: {
       launchAutoHide: true,
       launchShowDuration: 2000,
-      backgroundColor: '#F8F9FA',
+      backgroundColor: '#0B1120',
       showSpinner: false,
     },
     StatusBar: {
       style: 'LIGHT',
-      backgroundColor: '#10B981',
+      backgroundColor: '#FFFFFF',
+      overlaysWebView: false,
     },
     Keyboard: {
       resize: 'body',
-      resizeOnFullScreen: true,
+      resizeOnFullScreen: false,
     },
   },
   ios: {
     scheme: 'ParamGo',
-    contentInset: 'automatic',
+    contentInset: 'always',
   },
   android: {
     allowMixedContent: false,

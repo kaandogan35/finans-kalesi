@@ -1,7 +1,7 @@
 /**
  * KayitOl — Ücretsiz Hesap Oluşturma
- * Mobilde: Native tam ekran form
- * Web'de: Mevcut split-screen banking teması
+ * Mobilde: Dark native ekran
+ * Web'de: Mevcut split-screen
  */
 
 import { useState } from 'react'
@@ -11,7 +11,6 @@ import { Capacitor } from '@capacitor/core'
 import { authApi } from '../../api/auth'
 import useAuthStore from '../../stores/authStore'
 import useTemaStore from '../../stores/temaStore'
-
 import ParamGoLogo from '../../logo/ParamGoLogo'
 
 const isNative = Capacitor.isNativePlatform() || new URLSearchParams(window.location.search).has('native')
@@ -31,11 +30,7 @@ export default function KayitOl() {
   const p = prefixMap[aktifTema] || 'p'
 
   const [form, setForm] = useState({
-    firma_adi:    '',
-    ad_soyad:     '',
-    email:        '',
-    sifre:        '',
-    sifre_tekrar: '',
+    firma_adi: '', ad_soyad: '', email: '', sifre: '', sifre_tekrar: '',
   })
   const [sifreGoster, setSifreGoster] = useState(false)
   const [yukleniyor, setYukleniyor]   = useState(false)
@@ -55,63 +50,53 @@ export default function KayitOl() {
     return true
   }
 
-  const ilerle = () => {
-    if (adim1Gecerli()) { setHata(''); setAdim(2) }
-  }
+  const ilerle = () => { if (adim1Gecerli()) { setHata(''); setAdim(2) } }
 
   const handleSubmit = async (e) => {
     e.preventDefault()
     if (adim === 1) { ilerle(); return }
-
-    if (form.sifre.length < 8)               { setHata('Şifre en az 8 karakter olmalıdır.'); return }
-    if (form.sifre !== form.sifre_tekrar)     { setHata('Şifreler eşleşmiyor.');              return }
-
-    setYukleniyor(true)
-    setHata('')
+    if (form.sifre.length < 8)           { setHata('Şifre en az 8 karakter olmalıdır.'); return }
+    if (form.sifre !== form.sifre_tekrar) { setHata('Şifreler eşleşmiyor.'); return }
+    setYukleniyor(true); setHata('')
     try {
-      await authApi.kayit({
-        firma_adi: form.firma_adi,
-        ad_soyad:  form.ad_soyad,
-        email:     form.email,
-        sifre:     form.sifre,
-      })
+      await authApi.kayit({ firma_adi: form.firma_adi, ad_soyad: form.ad_soyad, email: form.email, sifre: form.sifre })
       await girisYap(form.email, form.sifre)
       toast.success('Hesabınız oluşturuldu! Hoş geldiniz.')
       navigate('/dashboard')
     } catch (err) {
       const status = err.response?.status
       const mesaj  = err.response?.data?.hata
-      if      (status === 409) { setAdim(1); setHata('Bu e-posta adresi zaten kayıtlı. Giriş yapmayı deneyin.') }
+      if      (status === 409) { setAdim(1); setHata('Bu e-posta adresi zaten kayıtlı.') }
       else if (status === 429) setHata(mesaj || 'Çok fazla deneme. Lütfen bekleyin.')
       else if (status === 422) setHata(mesaj || 'Lütfen tüm alanları doğru doldurun.')
       else                     setHata('Hesap oluşturulamadı. Lütfen tekrar deneyin.')
     } finally { setYukleniyor(false) }
   }
 
-  /* ═══════ MOBİL — Native kayıt ekranı ═══════ */
+  /* ═══════ MOBİL — Dark native kayıt ═══════ */
   if (isNative) {
     return (
-      <div className="pm-reg-root">
-        <div className="pm-reg-header">
-          <div style={{ marginBottom: 20 }}>
-            <ParamGoLogo size="sm" />
-          </div>
-          <h1 className="pm-reg-title">Ücretsiz Hesap Oluşturun</h1>
-          <p className="pm-reg-subtitle">
+      <div className="pm-auth-screen">
+        <div className="pm-auth-bg-glow" />
+        <div className="pm-auth-bg-glow2" />
+
+        <div className="pm-auth-hero">
+          <ParamGoLogo size="md" variant="dark" />
+          <h1 className="pm-auth-title">Ücretsiz Başlayın</h1>
+          <p className="pm-auth-desc">
             {adim === 1 ? 'Firma ve iletişim bilgileriniz' : 'Hesap şifrenizi belirleyin'}
           </p>
         </div>
 
-        {/* Adım göstergesi */}
-        <div className="pm-reg-steps">
+        <div className="pm-auth-steps">
           {[1, 2].map((a) => (
-            <div key={a} className={`pm-reg-step-dot${a === adim ? ' active' : ''}`} />
+            <div key={a} className={`pm-auth-step-dot${a === adim ? ' active' : ''}`} />
           ))}
         </div>
 
-        <div className="pm-reg-form-area">
+        <div className="pm-auth-card">
           {hata && (
-            <div className="pm-login-error">
+            <div className="pm-auth-error">
               <i className="bi bi-exclamation-circle-fill" />
               <span>{hata}</span>
             </div>
@@ -120,146 +105,107 @@ export default function KayitOl() {
           <form onSubmit={handleSubmit} noValidate>
             {adim === 1 ? (
               <>
-                <div className="pm-login-field">
-                  <label className="pm-login-label">Firma / İşletme Adı</label>
-                  <div className="pm-login-input-wrap">
-                    <i className="bi bi-building pm-login-input-icon" />
-                    <input
-                      type="text" name="firma_adi" value={form.firma_adi}
-                      onChange={handleChange} placeholder="Örn: ABC Hırdavat Ltd."
-                      autoComplete="organization" autoFocus
-                      className="pm-login-input"
-                    />
+                <div className="pm-auth-field">
+                  <div className="pm-auth-input-wrap">
+                    <i className="bi bi-building pm-auth-input-icon" />
+                    <input type="text" name="firma_adi" value={form.firma_adi}
+                      onChange={handleChange} placeholder="Firma / İşletme adı"
+                      autoComplete="organization" autoFocus className="pm-auth-input" />
                   </div>
                 </div>
-
-                <div className="pm-login-field">
-                  <label className="pm-login-label">Ad Soyad</label>
-                  <div className="pm-login-input-wrap">
-                    <i className="bi bi-person pm-login-input-icon" />
-                    <input
-                      type="text" name="ad_soyad" value={form.ad_soyad}
-                      onChange={handleChange} placeholder="Ahmet Yılmaz"
-                      autoComplete="name"
-                      className="pm-login-input"
-                    />
+                <div className="pm-auth-field">
+                  <div className="pm-auth-input-wrap">
+                    <i className="bi bi-person pm-auth-input-icon" />
+                    <input type="text" name="ad_soyad" value={form.ad_soyad}
+                      onChange={handleChange} placeholder="Ad Soyad"
+                      autoComplete="name" className="pm-auth-input" />
                   </div>
                 </div>
-
-                <div className="pm-login-field">
-                  <label className="pm-login-label">E-posta Adresi</label>
-                  <div className="pm-login-input-wrap">
-                    <i className="bi bi-envelope pm-login-input-icon" />
-                    <input
-                      type="email" name="email" value={form.email}
-                      onChange={handleChange} placeholder="ornek@firma.com"
-                      autoComplete="email"
-                      className="pm-login-input"
-                    />
+                <div className="pm-auth-field">
+                  <div className="pm-auth-input-wrap">
+                    <i className="bi bi-envelope pm-auth-input-icon" />
+                    <input type="email" name="email" value={form.email}
+                      onChange={handleChange} placeholder="E-posta adresi"
+                      autoComplete="email" className="pm-auth-input" />
                   </div>
                 </div>
-
-                <button type="button" className="pm-login-btn" onClick={ilerle}>
+                <button type="button" className="pm-auth-btn-primary" onClick={ilerle}>
                   Devam Et
                 </button>
               </>
             ) : (
               <>
-                <div className="pm-login-field">
-                  <label className="pm-login-label">Şifre Oluşturun</label>
-                  <div className="pm-login-input-wrap">
-                    <i className="bi bi-lock pm-login-input-icon" />
-                    <input
-                      type={sifreGoster ? 'text' : 'password'}
+                <div className="pm-auth-field">
+                  <div className="pm-auth-input-wrap">
+                    <i className="bi bi-lock pm-auth-input-icon" />
+                    <input type={sifreGoster ? 'text' : 'password'}
                       name="sifre" value={form.sifre}
-                      onChange={handleChange} placeholder="En az 8 karakter"
+                      onChange={handleChange} placeholder="Şifre (en az 8 karakter)"
                       autoComplete="new-password" autoFocus
-                      className="pm-login-input pm-login-input-pwd"
-                    />
-                    <button
-                      type="button" tabIndex={-1}
-                      onClick={() => setSifreGoster(v => !v)}
-                      className="pm-login-eye"
-                    >
+                      className="pm-auth-input pm-auth-input-pwd" />
+                    <button type="button" tabIndex={-1}
+                      onClick={() => setSifreGoster(v => !v)} className="pm-auth-eye">
                       <i className={`bi ${sifreGoster ? 'bi-eye-slash' : 'bi-eye'}`} />
                     </button>
                   </div>
                 </div>
-
-                <div className="pm-login-field">
-                  <label className="pm-login-label">Şifre Tekrarı</label>
-                  <div className="pm-login-input-wrap">
-                    <i className="bi bi-lock-fill pm-login-input-icon" />
-                    <input
-                      type="password" name="sifre_tekrar" value={form.sifre_tekrar}
-                      onChange={handleChange} placeholder="Şifreyi tekrar girin"
-                      autoComplete="new-password"
-                      className="pm-login-input"
-                    />
+                <div className="pm-auth-field">
+                  <div className="pm-auth-input-wrap">
+                    <i className="bi bi-lock-fill pm-auth-input-icon" />
+                    <input type="password" name="sifre_tekrar" value={form.sifre_tekrar}
+                      onChange={handleChange} placeholder="Şifre tekrarı"
+                      autoComplete="new-password" className="pm-auth-input" />
                   </div>
                 </div>
-
-                <div className="pm-reg-btn-row">
-                  <button
-                    type="button"
-                    onClick={() => { setAdim(1); setHata('') }}
-                    className="pm-reg-back-btn"
-                  >
+                <div className="pm-auth-btn-row">
+                  <button type="button" onClick={() => { setAdim(1); setHata('') }} className="pm-auth-back-btn">
                     <i className="bi bi-arrow-left" />
                   </button>
-                  <button type="submit" className="pm-login-btn" disabled={yukleniyor} style={{ flex: 1 }}>
-                    {yukleniyor ? (
-                      <><i className="bi bi-arrow-repeat pm-spin me-2" />Oluşturuluyor...</>
-                    ) : (
-                      'Hesabı Oluştur'
-                    )}
+                  <button type="submit" className="pm-auth-btn-primary" disabled={yukleniyor} style={{ flex: 1 }}>
+                    {yukleniyor ? <><i className="bi bi-arrow-repeat pm-spin" style={{marginRight:8}} />Oluşturuluyor...</> : 'Hesabı Oluştur'}
                   </button>
                 </div>
               </>
             )}
           </form>
 
-          <p className="pm-reg-login-text">
-            Zaten hesabınız var mı?{' '}
-            <Link to="/giris" className="pm-reg-login-link">Giriş yapın</Link>
-          </p>
+          <div className="pm-auth-divider"><span>veya</span></div>
+
+          <Link to="/giris" className="pm-auth-btn-ghost">
+            Zaten hesabım var — Giriş Yap
+          </Link>
         </div>
 
-        <div className="pm-reg-footer">
-          <i className="bi bi-shield-check" />
-          <span>AES-256-GCM şifreli &middot; Kart bilgisi gerekmez</span>
+        <div className="pm-auth-footer">
+          <i className="bi bi-shield-lock-fill" />
+          <span>Kart bilgisi gerekmez &middot; 256-bit şifreli</span>
         </div>
       </div>
     )
   }
 
-  /* ═══════ WEB — Mevcut split-screen banking teması ═══════ */
+  /* ═══════ WEB — Mevcut split-screen ═══════ */
   return (
     <div className={`${p}-giris-root`}>
-
-      {/* ───── Sol Panel ─────────────────────────────────── */}
       <div className={`${p}-giris-sol`}>
         <div className={`${p}-giris-sol-cizgi`} />
-
         {[
-          { s: 4, l: '15%', t: '20%', dur: '10s', del: '0s'  },
-          { s: 3, l: '72%', t: '30%', dur: '13s', del: '2s'  },
-          { s: 5, l: '40%', t: '58%', dur: '9s',  del: '1s'  },
-          { s: 3, l: '85%', t: '68%', dur: '15s', del: '4s'  },
-          { s: 4, l: '25%', t: '80%', dur: '11s', del: '3s'  },
+          { s: 4, l: '15%', t: '20%', dur: '10s', del: '0s' },
+          { s: 3, l: '72%', t: '30%', dur: '13s', del: '2s' },
+          { s: 5, l: '40%', t: '58%', dur: '9s',  del: '1s' },
+          { s: 3, l: '85%', t: '68%', dur: '15s', del: '4s' },
+          { s: 4, l: '25%', t: '80%', dur: '11s', del: '3s' },
         ].map((d, i) => (
           <div key={i} className={`${p}-giris-nokta`} style={{
             width: d.s, height: d.s, left: d.l, top: d.t,
             animationDuration: d.dur, animationDelay: d.del,
           }} />
         ))}
-
         <div className={`${p}-giris-sol-anim-1`}>
           <a href="https://paramgo.com" className={`${p}-giris-marka-wrap`}>
             <ParamGoLogo size="md" variant="white" />
           </a>
         </div>
-
         <div className={`${p}-giris-sol-anim-2`}>
           <div className={`${p}-giris-buyuk-ikon`}>
             <div className={`${p}-giris-halka-1`} />
@@ -271,18 +217,14 @@ export default function KayitOl() {
             <span className={`${p}-giris-vizyon-vurgu`}>Büyüyünce</span> Yükseltin
           </h2>
           <p className={`${p}-giris-vizyon-aciklama`}>
-            Kart veya kredi bilgisi gerekmez. Hemen başlayın,
-            işletmeniz büyüdükçe planınızı genişletin.
+            Kart veya kredi bilgisi gerekmez. Hemen başlayın, işletmeniz büyüdükçe planınızı genişletin.
           </p>
         </div>
-
         <div className={`${p}-giris-ozellik-wrap`}>
           <div className={`${p}-giris-ozellik-liste`}>
             {AVANTAJLAR.map((o, i) => (
               <div key={i} className={`${p}-giris-ozellik`} style={{ animationDelay: `${0.3 + i * 0.1}s` }}>
-                <div className={`${p}-giris-ozellik-ikon`}>
-                  <i className={`bi ${o.ikon}`} />
-                </div>
+                <div className={`${p}-giris-ozellik-ikon`}><i className={`bi ${o.ikon}`} /></div>
                 <div className={`${p}-giris-ozellik-metin`}>
                   <div className={`${p}-giris-ozellik-baslik`}>{o.baslik}</div>
                   <div className={`${p}-giris-ozellik-aciklama`}>{o.aciklama}</div>
@@ -291,40 +233,24 @@ export default function KayitOl() {
               </div>
             ))}
           </div>
-          <p className={`${p}-giris-copyright`}>
-            &copy; 2026 ParamGo &middot; Tüm hakları saklıdır
-          </p>
+          <p className={`${p}-giris-copyright`}>&copy; 2026 ParamGo &middot; Tüm hakları saklıdır</p>
         </div>
       </div>
 
-      {/* ───── Sağ Form Paneli ─────────────────────────── */}
       <div className={`${p}-giris-sag`}>
         <div className={`${p}-giris-sag-ic`}>
           <div className={`${p}-giris-kart`}>
             <div className={`${p}-giris-kart-serit`} />
             <div className={`${p}-giris-kart-ic`}>
-
-              <a href="https://paramgo.com" className={`${p}-giris-anasayfa-link`}>
-                <i className="bi bi-arrow-left me-1" />
-                Ana Sayfa
-              </a>
-
-              <div className="d-flex d-lg-none align-items-center justify-content-center mb-4">
-                <ParamGoLogo size="sm" />
-              </div>
-
+              <a href="https://paramgo.com" className={`${p}-giris-anasayfa-link`}><i className="bi bi-arrow-left me-1" />Ana Sayfa</a>
+              <div className="d-flex d-lg-none align-items-center justify-content-center mb-4"><ParamGoLogo size="sm" /></div>
               <div className={`${p}-giris-form-baslik-wrap`}>
-                <div className={`${p}-giris-form-ikon`}>
-                  <i className="bi bi-person-plus" />
-                </div>
-                <h1 className={`${p}-giris-form-baslik`}>
-                  Ücretsiz Hesap Oluşturun
-                </h1>
+                <div className={`${p}-giris-form-ikon`}><i className="bi bi-person-plus" /></div>
+                <h1 className={`${p}-giris-form-baslik`}>Ücretsiz Hesap Oluşturun</h1>
                 <p className={`${p}-giris-form-altbaslik`}>
                   {adim === 1 ? 'Firma ve iletişim bilgileriniz' : 'Hesap şifrenizi belirleyin'}
                 </p>
               </div>
-
               <div className="d-flex align-items-center justify-content-center gap-2 mb-4">
                 {[1, 2].map((a) => (
                   <div key={a} style={{
@@ -334,14 +260,12 @@ export default function KayitOl() {
                   }} />
                 ))}
               </div>
-
               {hata && (
                 <div className={`${p}-giris-hata d-flex align-items-center gap-2 mb-4 p-3`}>
                   <i className={`bi bi-exclamation-triangle-fill ${p}-giris-hata-ikon`} />
                   <span className={`${p}-giris-hata-metin`}>{hata}</span>
                 </div>
               )}
-
               <form onSubmit={handleSubmit} noValidate>
                 {adim === 1 ? (
                   <>
@@ -382,13 +306,11 @@ export default function KayitOl() {
                       <label className={`${p}-giris-label`}>Şifre Oluşturun</label>
                       <div className={`${p}-giris-alan`} style={{ position: 'relative' }}>
                         <span className={`${p}-giris-alan-ikon`}><i className="bi bi-lock" /></span>
-                        <input type={sifreGoster ? 'text' : 'password'}
-                          name="sifre" value={form.sifre}
+                        <input type={sifreGoster ? 'text' : 'password'} name="sifre" value={form.sifre}
                           onChange={handleChange} placeholder="En az 8 karakter"
                           autoComplete="new-password" autoFocus
                           className={`${p}-giris-input ${p}-giris-input-sifre`} />
-                        <button type="button" tabIndex={-1}
-                          onClick={() => setSifreGoster(v => !v)}
+                        <button type="button" tabIndex={-1} onClick={() => setSifreGoster(v => !v)}
                           className={`${p}-giris-sifre-toggle`}>
                           <i className={`bi ${sifreGoster ? 'bi-eye-slash' : 'bi-eye'}`} />
                         </button>
@@ -420,28 +342,19 @@ export default function KayitOl() {
                   </>
                 )}
               </form>
-
               <p className={`${p}-giris-kayit-text text-center mt-4 mb-3`}>
                 Zaten hesabınız var mı?{' '}
                 <Link to="/giris" className={`${p}-giris-kayit-link`}>Giriş yapın</Link>
               </p>
-
               <div className={`${p}-giris-guvenlik d-flex align-items-center justify-content-center gap-2`}>
                 <i className={`bi bi-shield-check ${p}-giris-guvenlik-ikon`} />
-                <span className={`${p}-giris-guvenlik-metin`}>
-                  AES-256-GCM şifreli &middot; Kart bilgisi gerekmez
-                </span>
+                <span className={`${p}-giris-guvenlik-metin`}>AES-256-GCM şifreli &middot; Kart bilgisi gerekmez</span>
               </div>
-
             </div>
           </div>
-
-          <p className={`${p}-giris-mobil-copyright d-lg-none text-center mt-4`}>
-            &copy; 2026 ParamGo &middot; Tüm hakları saklıdır
-          </p>
+          <p className={`${p}-giris-mobil-copyright d-lg-none text-center mt-4`}>&copy; 2026 ParamGo &middot; Tüm hakları saklıdır</p>
         </div>
       </div>
-
     </div>
   )
 }

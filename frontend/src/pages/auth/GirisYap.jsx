@@ -56,88 +56,95 @@ export default function GirisYap() {
     } finally { setYukleniyor(false) }
   }
 
-  /* ═══════ MOBİL — Papara tarzı native ekran ═══════ */
+  /* ═══════ MOBİL — Dark native giriş ekranı ═══════ */
   if (isNative) {
     return (
-      <div className="pm-login-root">
-        {/* Üst: Logo + Slogan */}
-        <div className="pm-login-header">
-          <div className="pm-login-logo-wrap">
-            <ParamGoLogo size="md" />
-          </div>
-          <h1 className="pm-login-title">Hoş Geldiniz</h1>
-          <p className="pm-login-subtitle">E-posta ve şifrenizle giriş yapın</p>
+      <div className="pm-auth-screen">
+        {/* Dekoratif arka plan */}
+        <div className="pm-auth-bg-glow" />
+        <div className="pm-auth-bg-glow2" />
+
+        {/* Üst alan — Logo + Karşılama */}
+        <div className="pm-auth-hero">
+          <ParamGoLogo size="lg" variant="dark" />
+          <h1 className="pm-auth-title">Hoş Geldiniz</h1>
+          <p className="pm-auth-desc">Finansal kontrolünüz burada başlıyor</p>
         </div>
 
-        {/* Form */}
-        <div className="pm-login-form-area">
+        {/* Form kartı */}
+        <div className="pm-auth-card">
           {hata && (
-            <div className="pm-login-error">
+            <div className="pm-auth-error">
               <i className="bi bi-exclamation-circle-fill" />
               <span>{hata}</span>
             </div>
           )}
 
           <form onSubmit={handleSubmit} noValidate>
-            <div className="pm-login-field">
-              <label className="pm-login-label">E-posta Adresi</label>
-              <div className="pm-login-input-wrap">
-                <i className="bi bi-envelope pm-login-input-icon" />
+            <div className="pm-auth-field">
+              <div className="pm-auth-input-wrap">
+                <i className="bi bi-envelope pm-auth-input-icon" />
                 <input
                   type="email"
                   name="email"
                   value={form.email}
                   onChange={handleChange}
-                  placeholder="ornek@firma.com"
+                  placeholder="E-posta adresi"
                   autoComplete="email"
-                  className="pm-login-input"
+                  className="pm-auth-input"
                 />
               </div>
             </div>
 
-            <div className="pm-login-field">
-              <label className="pm-login-label">Şifre</label>
-              <div className="pm-login-input-wrap">
-                <i className="bi bi-lock pm-login-input-icon" />
+            <div className="pm-auth-field">
+              <div className="pm-auth-input-wrap">
+                <i className="bi bi-lock pm-auth-input-icon" />
                 <input
                   type={sifreGoster ? 'text' : 'password'}
                   name="sifre"
                   value={form.sifre}
                   onChange={handleChange}
-                  placeholder="Şifrenizi girin"
+                  placeholder="Şifre"
                   autoComplete="current-password"
-                  className="pm-login-input pm-login-input-pwd"
+                  className="pm-auth-input pm-auth-input-pwd"
                 />
                 <button
                   type="button"
                   tabIndex={-1}
                   onClick={() => setSifreGoster(v => !v)}
-                  className="pm-login-eye"
+                  className="pm-auth-eye"
                 >
                   <i className={`bi ${sifreGoster ? 'bi-eye-slash' : 'bi-eye'}`} />
                 </button>
               </div>
-              <Link to="/sifre-sifirla" className="pm-login-forgot-link">Şifremi unuttum</Link>
             </div>
 
-            <button type="submit" className="pm-login-btn" disabled={yukleniyor}>
+            <div className="pm-auth-actions-row">
+              <Link to="/sifre-sifirla" className="pm-auth-forgot">Şifremi unuttum</Link>
+            </div>
+
+            <button type="submit" className="pm-auth-btn-primary" disabled={yukleniyor}>
               {yukleniyor ? (
-                <><i className="bi bi-arrow-repeat pm-spin me-2" />Giriş yapılıyor...</>
+                <><i className="bi bi-arrow-repeat pm-spin" style={{marginRight:8}} />Giriş yapılıyor...</>
               ) : (
                 'Giriş Yap'
               )}
             </button>
           </form>
 
-          <Link to="/kayit" className="pm-login-btn-secondary">
-            Hesap Oluştur
+          <div className="pm-auth-divider">
+            <span>veya</span>
+          </div>
+
+          <Link to="/kayit" className="pm-auth-btn-ghost">
+            Yeni Hesap Oluştur
           </Link>
         </div>
 
         {/* Alt güvenlik notu */}
-        <div className="pm-login-footer">
-          <i className="bi bi-shield-check" />
-          <span>256-bit şifreli güvenli bağlantı</span>
+        <div className="pm-auth-footer">
+          <i className="bi bi-shield-lock-fill" />
+          <span>256-bit AES şifreli bağlantı</span>
         </div>
       </div>
     )
