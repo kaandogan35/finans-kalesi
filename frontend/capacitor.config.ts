@@ -5,10 +5,11 @@ const config: CapacitorConfig = {
   appName: 'ParamGo',
   webDir: '../public/frontend-build',
   server: {
-    // Production'da webDir kullanılır
-    // Development'ta aşağıyı aktif et:
-    // url: 'http://localhost:3000',
-    // cleartext: true,
+    // iOS'ta CORS sorunlarını önlemek için hostname ayarla
+    hostname: 'localhost',
+    androidScheme: 'https',
+    iosScheme: 'capacitor',
+    allowNavigation: ['paramgo.com', 'kaandogan.com.tr'],
   },
   plugins: {
     SplashScreen: {

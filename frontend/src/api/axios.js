@@ -9,9 +9,10 @@ import axios from 'axios'
 import { Capacitor } from '@capacitor/core'
 import useAuthStore from '../stores/authStore'
 
-// Mobilde tam URL gerekli — web'de Vite proxy /api yönlendirir
-const baseURL = Capacitor.isNativePlatform()
-  ? 'https://kaandogan.com.tr/api'
+// Mobilde tam URL gerekli — web'de relative /api yeterli
+const isNative = Capacitor.isNativePlatform()
+const baseURL = isNative
+  ? 'https://paramgo.com/api'
   : '/api'
 
 const api = axios.create({
