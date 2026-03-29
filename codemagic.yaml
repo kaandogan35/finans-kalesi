@@ -6,12 +6,11 @@ workflows:
       groups:
         - default
       vars:
-        XCODE_WORKSPACE: "frontend/ios/App/App.xcworkspace"
+        XCODE_PROJECT: "frontend/ios/App/App.xcodeproj"
         XCODE_SCHEME: "App"
         BUNDLE_ID: "com.paramgo.app"
       node: v22.13.0
       xcode: latest
-      cocoapods: default
     scripts:
       - name: Install frontend dependencies
         script: |
@@ -29,31 +28,17 @@ workflows:
           npx cap add ios
           npx cap sync ios
 
-      - name: Install CocoaPods
-        script: |
-          echo "=== iOS directory structure ==="
-          find frontend/ios -name "Podfile" 2>/dev/null || echo "No Podfile found anywhere"
-          ls frontend/ios/ 2>/dev/null || echo "frontend/ios not found"
-          POD_DIR=$(find frontend/ios -name "Podfile" -exec dirname {} \; 2>/dev/null | head -1)
-          if [ -z "$POD_DIR" ]; then
-            echo "ERROR: Podfile not found"
-            exit 1
-          fi
-          echo "Running pod install in: $POD_DIR"
-          cd "$POD_DIR"
-          pod install
-
       - name: Set up code signing
         script: |
           keychain initialize
           xcode-project use-profiles \
-            --workspace "$XCODE_WORKSPACE" \
+            --project "$XCODE_PROJECT" \
             --scheme "$XCODE_SCHEME"
 
       - name: Build iOS IPA
         script: |
           xcode-project build-ipa \
-            --workspace "$XCODE_WORKSPACE" \
+            --project "$XCODE_PROJECT" \
             --scheme "$XCODE_SCHEME" \
             --archive-flags="-destination 'generic/platform=iOS'"
 
