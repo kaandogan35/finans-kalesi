@@ -9,7 +9,7 @@ workflows:
         XCODE_WORKSPACE: "frontend/ios/App/App.xcworkspace"
         XCODE_SCHEME: "App"
         BUNDLE_ID: "com.paramgo.app"
-      node: v20.11.0
+      node: v22.13.0
       xcode: latest
       cocoapods: default
     scripts:
