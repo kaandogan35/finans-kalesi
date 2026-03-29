@@ -30,16 +30,25 @@ workflows:
 
       - name: Set up code signing
         script: |
+          # 1. Keychain oluştur
           keychain initialize
 
-          # Install certificate from Code Signing Identities
-          xcode-project use-profiles --project "$XCODE_PROJECT" || true
+          # 2. Sertifikayı keychain'e ekle
+          echo "$CM_CERTIFICATE" | base64 --decode > /tmp/distribution.p12
+          keychain add-certificates \
+            --certificate /tmp/distribution.p12 \
+            --certificate-password ""
+          echo "Certificate installed to keychain"
 
-          # Manually install provisioning profile
+          # 3. Provisioning profile'ı yükle
           PROFILES_DIR="$HOME/Library/MobileDevice/Provisioning Profiles"
           mkdir -p "$PROFILES_DIR"
           echo "$CM_PROVISIONING_PROFILE" | base64 --decode > "$PROFILES_DIR/e205b272-0b9d-4d34-aa1c-754f7e6f5a3a.mobileprovision"
-          echo "Profile installed: $(ls -la "$PROFILES_DIR/")"
+          echo "Profile installed to: $PROFILES_DIR"
+
+          # 4. Doğrulama
+          security find-identity -v -p codesigning
+          ls -la "$PROFILES_DIR/"
 
       - name: Build iOS IPA
         script: |
