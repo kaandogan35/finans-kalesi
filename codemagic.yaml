@@ -28,6 +28,12 @@ workflows:
           npx cap add ios
           npx cap sync ios
 
+      - name: Increment build number
+        script: |
+          cd frontend/ios/App
+          agvtool new-version -all $PROJECT_BUILD_NUMBER
+          echo "Build number set to: $PROJECT_BUILD_NUMBER"
+
       - name: Set up code signing
         script: |
           # 1. Keychain oluştur

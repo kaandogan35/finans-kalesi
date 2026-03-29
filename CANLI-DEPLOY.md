@@ -198,12 +198,36 @@ define('BASE_PATH', dirname(__DIR__));
 
 ---
 
-## DEPLOY ADIMLARI
+## DEPLOY HARİTASI — HER DEĞİŞİKLİKTE KONTROL ET
 
+### Hangi dosya değişti → Nereye deploy edilmeli?
+
+| Değişen Dosya | Web (Hosting) | Mobil (Codemagic) | Nasıl? |
+|---------------|:---:|:---:|--------|
+| `controllers/`, `models/`, `routes/`, `middleware/`, `utils/`, `cron/` | ✅ | ❌ | SFTP otomatik |
+| `frontend/src/**` (React kodu) | ✅ | ✅ | Build → WinSCP + GitHub push |
+| `public/index-canli.php` | ✅ | ❌ | WinSCP → `public_html/index.php` |
+| `public/.htaccess` | ✅ | ❌ | WinSCP → `public_html/.htaccess` |
+| `codemagic.yaml` | ❌ | ✅ | GitHub push yeterli |
+| Landing page (`paramgo-landing/`) | ✅ | ❌ | WinSCP → `public_html/` |
+
+### ⚠️ EN ÖNEMLİ KURAL:
+**Frontend kodu değiştiyse HEM web HEM mobil deploy yapılmalıdır!**
+Birini unutursan web ile mobil farklı sürüm gösterir.
+
+---
+
+## DEPLOY ADIMLARI (3 AŞAMALI)
+
+### Aşama 1: Build & Commit
 ```
 1. git add . && git commit -m "açıklama"
 2. Frontend değiştiyse → cd frontend && npm run build
 3. index.php değiştiyse → public/index-canli.php güncelle (BASE_PATH = canlı yol)
+```
+
+### Aşama 2: Web Deploy (Hosting)
+```
 4. Git Bash'te:  bash deploy-check.sh   (ne yükleneceğini gösterir)
 5. WinSCP'de dosyaları yükle (yukarıdaki tablolara bak)
 6. Frontend build yükleniyorsa → eski hash'li asset dosyalarını sunucudan sil
@@ -213,6 +237,48 @@ define('BASE_PATH', dirname(__DIR__));
    - Uygulamaya giriş yap, modülleri kontrol et
 8. Başarılıysa:  git tag -f deploy-last
 ```
+
+### Aşama 3: Mobil Deploy (Codemagic → TestFlight)
+```
+9.  Frontend değiştiyse → git push paramgo master:main
+10. Codemagic otomatik build başlar (veya manuel: Start new build)
+11. Build başarılı → TestFlight'a otomatik yüklenir
+12. iPhone'da TestFlight → ParamGo güncelle
+```
+
+### SADECE Backend değiştiyse: Aşama 1 + 2 yeterli (Aşama 3 atla)
+### SADECE codemagic.yaml değiştiyse: Aşama 1 + 3 yeterli (Aşama 2 atla)
+### Frontend değiştiyse: Aşama 1 + 2 + 3 HEPSİ gerekli!
+
+---
+
+## MOBİL (CODEMAGIC) BİLGİLERİ
+
+- **GitHub Repo:** github.com/kaandogan35/paramgo (remote: `paramgo`)
+- **CI/CD:** Codemagic — codemagic.io
+- **Workflow:** ParamGo iOS Release
+- **Branch:** `main` (lokalde `master`, push sırasında `master:main`)
+- **Build süresi:** ~2-3 dakika
+- **Çıktı:** App.ipa → TestFlight'a otomatik yüklenir
+
+### Codemagic Ortam Değişkenleri (default group)
+| Değişken | Açıklama |
+|----------|----------|
+| `APP_STORE_CONNECT_PRIVATE_KEY` | App Store API anahtarı (base64) |
+| `APP_STORE_CONNECT_KEY_IDENTIFIER` | API Key ID |
+| `APP_STORE_CONNECT_ISSUER_ID` | Issuer ID |
+| `CM_CERTIFICATE` | distribution_pwd.p12 (base64) |
+| `CM_CERTIFICATE_PASSWORD` | p12 şifresi |
+| `CM_PROVISIONING_PROFILE` | ParamGo_AppStore.mobileprovision (base64) |
+
+### Mobilde API URL
+Mobil uygulama `https://kaandogan.com.tr/api` adresini kullanır (axios.js'de Capacitor.isNativePlatform() ile belirlenir). Backend'de değişiklik yapıldığında mobil de otomatik yansır — sadece frontend değişiklikleri yeni build gerektirir.
+
+### Git Push Komutu (Mobil Deploy İçin)
+```bash
+git push paramgo master:main
+```
+NOT: `origin` hosting repo'sudur, `paramgo` Codemagic repo'sudur. İkisi farklı!
 
 ---
 
