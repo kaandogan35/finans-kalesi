@@ -78,36 +78,20 @@ workflows:
           # 1. Keychain oluştur
           keychain initialize
 
-          # 2. Mevcut .p12 sertifikadan private key çıkar
-          echo -n "$CM_CERTIFICATE" | base64 --decode > /tmp/distribution.p12
-          openssl pkcs12 -in /tmp/distribution.p12 -nodes -nocerts \
-            -passin "pass:$CM_CERTIFICATE_PASSWORD" 2>/dev/null | \
-            openssl rsa 2>/dev/null > /tmp/cert_key.pem
-
-          KEY_SIZE=$(wc -c < /tmp/cert_key.pem | tr -d ' ')
-          echo "Extracted private key: $KEY_SIZE bytes"
-
-          if [ "$KEY_SIZE" -lt 100 ]; then
-            echo "ERROR: Private key extraction failed!"
-            cat /tmp/cert_key.pem
-            exit 1
-          fi
-
-          export CERTIFICATE_PRIVATE_KEY="$(cat /tmp/cert_key.pem)"
-
-          # 3. App Store Connect API ile sertifika ve profili indir
+          # 2. App Store Connect API ile sertifika ve profili indir/oluştur
+          # CERTIFICATE_PRIVATE_KEY yoksa --create yeni sertifika oluşturur
           app-store-connect fetch-signing-files "$BUNDLE_ID" \
             --type IOS_APP_STORE \
             --platform IOS \
             --create
 
-          # 4. Sertifikaları keychain'e ekle
+          # 3. Sertifikaları keychain'e ekle
           keychain add-certificates
 
-          # 5. Xcode projesine imzalama ayarlarını uygula
+          # 4. Xcode projesine imzalama ayarlarını uygula
           xcode-project use-profiles
 
-          # 6. Doğrulama
+          # 5. Doğrulama
           echo "=== Profiles (old path) ==="
           ls -la "$HOME/Library/MobileDevice/Provisioning Profiles/" 2>/dev/null || echo "Empty"
           echo "=== Profiles (new path) ==="
