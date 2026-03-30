@@ -116,6 +116,49 @@ sed -i '' "s/PROVISIONING_PROFILE_SPECIFIER = \"[^\"]*\"/PROVISIONING_PROFILE_SP
 
 ---
 
+## OTURUM 6 — 2026-03-30 (Status Bar + OpenSSL + Dropdown)
+
+### HATA 11 — OpenSSL 3.x `-legacy` Flag Eksik
+**Belirti:** `Private key extracted: (boş)` → `app-store-connect: error: argument --certificate-key: Provided value "" is not valid`
+**Neden:** macOS Codemagic ortamında OpenSSL 3.x kurulu. OpenSSL 3.x, eski araçlarla üretilmiş `.p12` dosyalarını okumak için `-legacy` flag zorunlu kılar. `2>/dev/null` hataları susturduğu için boş çıktı sessizce geçiyordu.
+**Çözüm:** `-legacy` flag ekle, fallback olarak standart mode dene:
+```bash
+EXTRACTED_KEY="$(openssl pkcs12 -legacy -in /tmp/dist_cert.p12 -nocerts -nodes -passin pass:"$CM_CERTIFICATE_PASSWORD" 2>/dev/null | sed -n '/-----BEGIN/,/-----END/p')"
+if [ -z "$EXTRACTED_KEY" ]; then
+  EXTRACTED_KEY="$(openssl pkcs12 -in /tmp/dist_cert.p12 -nocerts -nodes -passin pass:"$CM_CERTIFICATE_PASSWORD" 2>/dev/null | sed -n '/-----BEGIN/,/-----END/p')"
+fi
+```
+**Not:** `grep -A 100 'BEGIN'` yerine `sed -n '/-----BEGIN/,/-----END/p'` kullan — çok satırlı PEM bloklarını doğru çeker.
+**Dosya:** codemagic.yaml
+
+---
+
+### HATA 12 — Capacitor StatusBar Style Enum Tersine Anlaşıldı
+**Belirti:** Login'de siyah ikonlar (koyu bg'da görünmüyor), Dashboard'da beyaz ikonlar (beyaz bg'da görünmüyor)
+**Neden:** Capacitor `Style.Dark` ve `Style.Light` isimleri sezgisel değil:
+- `Style.Dark` = **beyaz/açık ikonlar** → koyu arka plan için
+- `Style.Light` = **siyah/koyu ikonlar** → açık arka plan için
+**Çözüm:**
+- Login/auth sayfaları (koyu bg) → `window.__statusBarSetDark?.()` (beyaz ikonlar)
+- Dashboard/AppLayout (beyaz bg) → `window.__statusBarSetLight?.()` (siyah ikonlar)
+- Sidebar açık (koyu bg) → `window.__statusBarSetDark?.()`
+**Dosyalar:** GirisYap.jsx, KayitOl.jsx, SifreSifirla.jsx, AppLayoutParamGo.jsx
+**KESİN KURAL:** "Dark" = koyu arka plan için beyaz ikon, "Light" = açık arka plan için siyah ikon.
+
+---
+
+### HATA 13 — AutoComplete Dropdown Klavye Altında Kalıyor
+**Belirti:** Çek/senet modalında "Banka Seç" dropdown'ı klavye açıkken görünmüyor
+**Neden:** `.p-autocomplete-list` `position: absolute; top: 100%` ile input'un altına açılıyor. Klavye açıkken o alan klavyenin altında kalıyor.
+**Çözüm:** CSS ile klavye açıkken dropdown'ı yukarı çevir:
+```css
+body.keyboard-open .p-autocomplete-list { top: auto; bottom: 100%; }
+```
+**Dosya:** paramgo.css
+**Not:** Bu fix tüm autocomplete dropdown'larını kapsar (banka seç, cari seç vb.)
+
+---
+
 ## GENEL KURALLAR (Her Build'de Uygula)
 
 1. **İki remote:** `git push paramgo master:main && git push origin master`
