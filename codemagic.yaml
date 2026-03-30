@@ -62,12 +62,19 @@ workflows:
           fi
           echo "API key format check: $(echo "$APP_STORE_CONNECT_PRIVATE_KEY" | head -1)"
 
-          # 3. Sertifika için private key oluştur (CERTIFICATE_PRIVATE_KEY yoksa)
+          # 3. CERTIFICATE_PRIVATE_KEY: CM_CERTIFICATE (.p12) içinden çıkar
+          # Her build'de yeni key üretmek Apple 409 hatasına yol açıyor (sertifika limiti)
           if [ -z "$CERTIFICATE_PRIVATE_KEY" ]; then
-            echo "Generating new certificate private key..."
-            openssl genrsa -out /tmp/cert_private_key.pem 2048 2>/dev/null
-            export CERTIFICATE_PRIVATE_KEY="$(cat /tmp/cert_private_key.pem)"
-            echo "Generated RSA 2048 key: $(wc -c < /tmp/cert_private_key.pem) bytes"
+            if [ -n "$CM_CERTIFICATE" ] && [ -n "$CM_CERTIFICATE_PASSWORD" ]; then
+              echo "Extracting private key from CM_CERTIFICATE (.p12)..."
+              echo "$CM_CERTIFICATE" | base64 --decode > /tmp/dist_cert.p12
+              export CERTIFICATE_PRIVATE_KEY="$(openssl pkcs12 -in /tmp/dist_cert.p12 -nocerts -nodes -passin pass:"$CM_CERTIFICATE_PASSWORD" 2>/dev/null | grep -A 100 'BEGIN')"
+              echo "Private key extracted: $(echo "$CERTIFICATE_PRIVATE_KEY" | head -1)"
+            else
+              echo "WARNING: CM_CERTIFICATE bulunamadı, yeni key üretiliyor (409 riski var)"
+              openssl genrsa -out /tmp/cert_private_key.pem 2048 2>/dev/null
+              export CERTIFICATE_PRIVATE_KEY="$(cat /tmp/cert_private_key.pem)"
+            fi
           fi
 
           # 4. App Store Connect API ile sertifika ve profili indir/oluştur
