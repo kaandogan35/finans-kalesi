@@ -8,6 +8,7 @@
 import { useState, useEffect, useRef, useCallback } from 'react'
 import { createPortal } from 'react-dom'
 import { bildirim as toast } from '../../components/ui/CenterAlert'
+import { lockScroll, unlockScroll } from '../../lib/overflowLock'
 import cekSenetApi from '../../api/cekSenet'
 import { carilerApi } from '../../api/cariler'
 import useTemaStore from '../../stores/temaStore'
@@ -136,12 +137,10 @@ const kendiBosluk = () => ({
 // ─────────────────────────────────────────────────────────────────────────────
 
 function Modal({ open, onClose, children, size = '', scrollable = false, p = 'b', ariaId = '', confirm = false }) {
-  const boxRef = useRef(null)
-
   useEffect(() => {
     if (!open) return
-    document.body.style.overflow = 'hidden'
-    return () => { document.body.style.overflow = '' }
+    lockScroll()
+    return () => unlockScroll()
   }, [open])
 
   useEffect(() => {
@@ -151,19 +150,6 @@ function Modal({ open, onClose, children, size = '', scrollable = false, p = 'b'
     return () => document.removeEventListener('keydown', fn)
   }, [open, onClose])
 
-  // Klavye açıldığında aktif input'u görünür alana kaydır (focusin ile — resize yerine)
-  useEffect(() => {
-    if (!open || !boxRef.current) return
-    const box = boxRef.current
-    const onFocus = (e) => {
-      if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') {
-        setTimeout(() => e.target.scrollIntoView({ behavior: 'smooth', block: 'center' }), 400)
-      }
-    }
-    box.addEventListener('focusin', onFocus)
-    return () => box.removeEventListener('focusin', onFocus)
-  }, [open])
-
   if (!open) return null
 
   const maxW = size === 'lg' ? 800 : size === 'sm' ? 420 : 560
@@ -172,7 +158,7 @@ function Modal({ open, onClose, children, size = '', scrollable = false, p = 'b'
     <>
       <div className={`${p}-modal-overlay`} />
       <div className={`${p}-modal-center${confirm ? ` ${p}-modal-confirm` : ''}`}>
-        <div ref={boxRef} className={`${p}-modal-box`} role="dialog" aria-labelledby={ariaId || undefined} aria-modal="true" style={{
+        <div className={`${p}-modal-box`} role="dialog" aria-labelledby={ariaId || undefined} aria-modal="true" style={{
           maxWidth: maxW,
           maxHeight: scrollable ? '90vh' : 'auto',
           overflow: scrollable ? 'auto' : 'hidden',

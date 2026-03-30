@@ -1,14 +1,12 @@
-import { useState, useEffect, useCallback, useRef } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { createPortal } from 'react-dom'
 
-/* ── Kuyruk ve gösterim state'i ───────────────────────────────── */
+/* ── Kuyruk ve gösterim ───────────────────────────────────────── */
 let showFn = null
 const queue = []
 
 function processQueue() {
-  if (queue.length && showFn) {
-    showFn(queue.shift())
-  }
+  if (queue.length && showFn) showFn(queue.shift())
 }
 
 /* ── Dışarıdan çağrılan API (toast.success/error yerine) ──── */
@@ -26,31 +24,30 @@ export const bildirim = {
 
 /* ── İkon + renk haritası ──────────────────────────────────── */
 const CONF = {
-  success: { ikon: 'bi-check-circle-fill', bg: '#ECFDF5', renk: '#059669', ring: '#10B981' },
-  error:   { ikon: 'bi-exclamation-circle-fill', bg: '#FEF2F2', renk: '#DC2626', ring: '#EF4444' },
-  info:    { ikon: 'bi-info-circle-fill', bg: '#EFF6FF', renk: '#2563EB', ring: '#3B82F6' },
-  warning: { ikon: 'bi-exclamation-triangle-fill', bg: '#FFFBEB', renk: '#D97706', ring: '#F59E0B' },
+  success: { ikon: 'bi-check-circle-fill', bg: '#ECFDF5', renk: '#059669' },
+  error:   { ikon: 'bi-exclamation-circle-fill', bg: '#FEF2F2', renk: '#DC2626' },
+  info:    { ikon: 'bi-info-circle-fill', bg: '#EFF6FF', renk: '#2563EB' },
+  warning: { ikon: 'bi-exclamation-triangle-fill', bg: '#FFFBEB', renk: '#D97706' },
 }
 
-/* ── React bileşeni — App seviyesinde bir kez mount edilir ── */
+/* ── React bileşeni — bir kez mount edilir ─────────────────── */
 export default function CenterAlert() {
   const [item, setItem] = useState(null)
   const timerRef = useRef(null)
 
-  const show = useCallback((data) => {
-    setItem(data)
-    clearTimeout(timerRef.current)
-    timerRef.current = setTimeout(() => {
-      setItem(null)
-      setTimeout(processQueue, 100)
-    }, 2200)
-  }, [])
-
+  // showFn'i bir kez kaydet, ref üzerinden — re-render tetiklemez
   useEffect(() => {
-    showFn = show
+    showFn = (data) => {
+      setItem(data)
+      clearTimeout(timerRef.current)
+      timerRef.current = setTimeout(() => {
+        setItem(null)
+        setTimeout(processQueue, 100)
+      }, 2200)
+    }
     processQueue()
-    return () => { showFn = null }
-  }, [show])
+    return () => { showFn = null; clearTimeout(timerRef.current) }
+  }, [])
 
   if (!item) return null
   const c = CONF[item.tip] || CONF.info

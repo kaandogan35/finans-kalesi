@@ -2,6 +2,7 @@ import { useState, useEffect, useMemo, useRef } from 'react'
 import { Outlet, NavLink, Link, useNavigate, useLocation } from 'react-router-dom'
 import { Capacitor } from '@capacitor/core'
 import useAuthStore from '../../stores/authStore'
+import { lockScroll, unlockScroll, forceUnlockScroll } from '../../lib/overflowLock'
 import useBildirimStore from '../../stores/bildirimStore'
 import '../../temalar/paramgo.css'
 import ParamGoLogo from '../../logo/ParamGoLogo'
@@ -92,8 +93,8 @@ export default function AppLayoutParamGo() {
   const kasaAktif = location.pathname.startsWith('/kasa')
   useEffect(() => { setKasaAccOpen(kasaAktif) }, [kasaAktif])
 
-  // Sayfa değiştiğinde body overflow temizle (modal cleanup güvenlik ağı)
-  useEffect(() => { document.body.style.overflow = '' }, [location.pathname])
+  // Sayfa değiştiğinde tüm scroll lock'ları temizle (güvenlik ağı)
+  useEffect(() => { forceUnlockScroll() }, [location.pathname])
 
   // Collapsible sidebar localStorage'a kaydet
   useEffect(() => {
@@ -130,11 +131,11 @@ export default function AppLayoutParamGo() {
   }, [])
 
   useEffect(() => {
-    document.body.style.overflow = sidebarOpen ? 'hidden' : ''
+    if (sidebarOpen) lockScroll()
     // Koyu sidebar: Style.Dark = beyaz ikonlar | Açık bg: Style.Light = siyah ikonlar
     if (sidebarOpen) window.__statusBarSetDark?.()
     else window.__statusBarSetLight?.()
-    return () => { document.body.style.overflow = '' }
+    return () => { if (sidebarOpen) unlockScroll() }
   }, [sidebarOpen])
 
   // User dropdown dışı tıklamada kapat

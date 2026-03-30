@@ -1,0 +1,1 @@
+import{a as t}from"./index-T9e6GCwg.js";const n={listele:e=>t.get("/cek-senet",{params:e}),ozet:e=>t.get("/cek-senet/ozet",{params:e}),ekle:e=>t.post("/cek-senet",e),detay:e=>t.get(`/cek-senet/${e}`),guncelle:(e,s)=>t.put(`/cek-senet/${e}`,s),sil:e=>t.delete(`/cek-senet/${e}`),durumGuncelle:(e,s)=>t.put(`/cek-senet/${e}/durum`,s)};export{n as c};

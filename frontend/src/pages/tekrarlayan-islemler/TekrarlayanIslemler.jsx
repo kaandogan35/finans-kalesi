@@ -6,6 +6,7 @@
  */
 
 import { useState, useEffect, useCallback, useMemo } from 'react'
+import { lockScroll, unlockScroll } from '../../lib/overflowLock'
 import tekrarlayanIslemApi from '../../api/tekrarlayanIslem'
 import useTemaStore from '../../stores/temaStore'
 import { temaRenkleri, hexRgba } from '../../lib/temaRenkleri'
@@ -241,8 +242,8 @@ function TekrarlayanModal({
 
   useEffect(() => {
     if (!open) return
-    document.body.style.overflow = 'hidden'
-    return () => { document.body.style.overflow = '' }
+    lockScroll()
+    return () => { unlockScroll() }
   }, [open])
 
   if (!open) return null

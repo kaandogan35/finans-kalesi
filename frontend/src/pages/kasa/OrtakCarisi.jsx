@@ -4,6 +4,7 @@
  * İçerir: OrtakModal, OrtakCarisi
  */
 import { useState, useMemo, useEffect } from 'react'
+import { lockScroll, unlockScroll } from '../../lib/overflowLock'
 import { createPortal } from 'react-dom'
 import { bildirim as toast } from '../../components/ui/CenterAlert'
 import { hexRgba } from '../../lib/temaRenkleri'
@@ -34,8 +35,8 @@ function OrtakModal({ open, onClose, mevcutOrtaklar, onKaydet, p, renkler }) {
 
   useEffect(() => {
     if (!open) return
-    document.body.style.overflow = 'hidden'
-    return () => { document.body.style.overflow = '' }
+    lockScroll()
+    return () => { unlockScroll() }
   }, [open])
 
   if (!open) return null
