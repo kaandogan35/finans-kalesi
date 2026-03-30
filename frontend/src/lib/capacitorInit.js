@@ -61,6 +61,23 @@ export async function capacitorBaslat() {
     })
   } catch {}
 
+  // ─── Push Notifications ───────────────────────────────
+  // İzin ve kayıt — giriş sonrası window.registerPushToken tetiklenir
+  try {
+    const { PushNotifications } = await import('@capacitor/push-notifications')
+    const permResult = await PushNotifications.requestPermissions()
+    if (permResult.receive === 'granted') {
+      await PushNotifications.register()
+    }
+    PushNotifications.addListener('registration', ({ value: token }) => {
+      // Token'ı global'e yaz — authStore girisYap/sosyalGiris sonrası okur
+      window.__pushToken = token
+      // Zaten giriş yapılmışsa anında gönder
+      if (window.__pushTokenGonder) window.__pushTokenGonder(token)
+    })
+    PushNotifications.addListener('registrationError', () => {})
+  } catch {}
+
   // ─── Android Back Button + App State ──────────────────
   try {
     const { App: CapApp } = await import('@capacitor/app')

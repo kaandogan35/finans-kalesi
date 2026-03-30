@@ -648,6 +648,367 @@ class AuthController {
     }
 
     /**
+     * APPLE İLE GİRİŞ
+     * POST /api/auth/apple-giris
+     */
+    public function appleGiris($girdi) {
+        if (empty($girdi['identity_token'])) {
+            Response::dogrulama_hatasi(['identity_token' => 'Apple identity token zorunludur']);
+            return;
+        }
+
+        // 1. Apple identity token'ı doğrula
+        $payload = $this->appleTokenDogrula($girdi['identity_token']);
+        if (!$payload) {
+            Response::hata('Geçersiz Apple token', 401);
+            return;
+        }
+
+        $apple_user_id = $payload['sub'];
+        $email = $payload['email'] ?? ($girdi['email'] ?? null);
+        $ad = trim($girdi['ad'] ?? '');
+        $soyad = trim($girdi['soyad'] ?? '');
+        $ad_soyad = trim("$ad $soyad") ?: 'Apple Kullanıcısı';
+
+        try {
+            $db = Database::baglan();
+
+            // 2. Mevcut kullanıcıyı apple_user_id ile ara
+            $stmt = $db->prepare("SELECT * FROM kullanicilar WHERE apple_user_id = :auid AND aktif_mi = 1 LIMIT 1");
+            $stmt->execute([':auid' => $apple_user_id]);
+            $kullanici = $stmt->fetch();
+
+            // 3. Yoksa email ile ara
+            if (!$kullanici && $email) {
+                $kullanici = $this->kullanici_model->eposta_ile_bul($email);
+                if ($kullanici && $kullanici['aktif_mi']) {
+                    // apple_user_id bağla
+                    $stmt2 = $db->prepare("UPDATE kullanicilar SET apple_user_id = :auid WHERE id = :id");
+                    $stmt2->execute([':auid' => $apple_user_id, ':id' => $kullanici['id']]);
+                } elseif ($kullanici && !$kullanici['aktif_mi']) {
+                    Response::hata('Hesabınız askıya alınmış', 403);
+                    return;
+                } else {
+                    $kullanici = null;
+                }
+            }
+
+            // 4. Yeni kullanıcı — şirket + kullanıcı oluştur
+            if (!$kullanici) {
+                if (!$email) {
+                    Response::hata('E-posta adresi alınamadı. Apple hesabınızdan e-posta paylaşımına izin verin.', 400);
+                    return;
+                }
+
+                $sirket_id = $this->sirket_model->olustur([
+                    'firma_adi' => $ad_soyad . ' İşletmesi',
+                    'email'     => $email,
+                ]);
+
+                $kullanici_id = $this->kullanici_model->olustur([
+                    'sirket_id'      => $sirket_id,
+                    'ad_soyad'       => $ad_soyad,
+                    'email'          => $email,
+                    'sifre'          => bin2hex(random_bytes(16)),
+                    'rol'            => 'sahip',
+                    'apple_user_id'  => $apple_user_id,
+                    'sosyal_giris'   => 1,
+                ]);
+
+                $this->abonelik_model->denemeBaslat((int)$sirket_id);
+
+                $kullanici = [
+                    'id'        => $kullanici_id,
+                    'sirket_id' => $sirket_id,
+                    'ad_soyad'  => $ad_soyad,
+                    'email'     => $email,
+                    'rol'       => 'sahip',
+                    'tema_adi'  => 'paramgo',
+                    'plan'      => 'deneme',
+                    'onboarding_tamamlandi' => 0,
+                ];
+
+                $kullanici_bilgi = [
+                    'id'        => $kullanici_id,
+                    'sirket_id' => $sirket_id,
+                    'rol'       => 'sahip',
+                    'tema_adi'  => 'paramgo',
+                    'plan'      => 'deneme',
+                ];
+            } else {
+                $sirket = $this->sirket_model->id_ile_bul($kullanici['sirket_id']);
+                $kullanici_bilgi = [
+                    'id'        => (int)$kullanici['id'],
+                    'sirket_id' => (int)$kullanici['sirket_id'],
+                    'rol'       => $kullanici['rol'],
+                    'tema_adi'  => $sirket['tema_adi'] ?? 'paramgo',
+                    'plan'      => $sirket['abonelik_plani'] ?? 'deneme',
+                    'yetkiler'  => $kullanici['yetkiler'] ?? null,
+                ];
+                $kullanici['tema_adi']             = $kullanici_bilgi['tema_adi'];
+                $kullanici['plan']                 = $kullanici_bilgi['plan'];
+                $kullanici['onboarding_tamamlandi'] = (int)($sirket['onboarding_tamamlandi'] ?? 0);
+            }
+
+            $access_token = JWTHelper::access_token_olustur($kullanici_bilgi);
+            $refresh = JWTHelper::refresh_token_olustur($kullanici_bilgi);
+            $this->kullanici_model->refresh_token_kaydet((int)$kullanici['id'], $refresh['token'], $refresh['son_kullanim']);
+
+            Response::basarili([
+                'kullanici' => [
+                    'id'                    => (int)$kullanici['id'],
+                    'sirket_id'             => (int)$kullanici['sirket_id'],
+                    'ad_soyad'              => $kullanici['ad_soyad'],
+                    'email'                 => $kullanici['email'],
+                    'rol'                   => $kullanici['rol'],
+                    'tema_adi'              => $kullanici['tema_adi'],
+                    'plan'                  => $kullanici['plan'],
+                    'onboarding_tamamlandi' => $kullanici['onboarding_tamamlandi'],
+                ],
+                'tokenlar' => [
+                    'access_token'  => $access_token,
+                    'refresh_token' => $refresh['token'],
+                    'token_tipi'    => 'Bearer',
+                    'suresi'        => 900,
+                ],
+            ], 'Giriş başarılı');
+
+        } catch (Exception $e) {
+            error_log('Apple giriş hatası: ' . $e->getMessage());
+            Response::sunucu_hatasi('Giriş işlemi başarısız');
+        }
+    }
+
+    /**
+     * GOOGLE İLE GİRİŞ
+     * POST /api/auth/google-giris
+     */
+    public function googleGiris($girdi) {
+        if (empty($girdi['id_token'])) {
+            Response::dogrulama_hatasi(['id_token' => 'Google ID token zorunludur']);
+            return;
+        }
+
+        // Google tokeninfo endpoint ile doğrula
+        $url = 'https://oauth2.googleapis.com/tokeninfo?id_token=' . urlencode($girdi['id_token']);
+        $context = stream_context_create(['http' => ['timeout' => 10, 'ignore_errors' => true]]);
+        $response = @file_get_contents($url, false, $context);
+
+        if (!$response) {
+            Response::hata('Google doğrulaması başarısız', 400);
+            return;
+        }
+
+        $data = json_decode($response, true);
+
+        if (isset($data['error']) || empty($data['sub'])) {
+            Response::hata('Geçersiz Google token', 401);
+            return;
+        }
+
+        $google_user_id = $data['sub'];
+        $email = $data['email'] ?? null;
+        $ad_soyad = trim(($data['given_name'] ?? '') . ' ' . ($data['family_name'] ?? '')) ?: 'Google Kullanıcısı';
+
+        try {
+            $db = Database::baglan();
+
+            // Mevcut kullanıcıyı google_user_id ile ara
+            $stmt = $db->prepare("SELECT * FROM kullanicilar WHERE google_user_id = :guid AND aktif_mi = 1 LIMIT 1");
+            $stmt->execute([':guid' => $google_user_id]);
+            $kullanici = $stmt->fetch();
+
+            // Yoksa email ile ara
+            if (!$kullanici && $email) {
+                $kullanici = $this->kullanici_model->eposta_ile_bul($email);
+                if ($kullanici && $kullanici['aktif_mi']) {
+                    $stmt2 = $db->prepare("UPDATE kullanicilar SET google_user_id = :guid WHERE id = :id");
+                    $stmt2->execute([':guid' => $google_user_id, ':id' => $kullanici['id']]);
+                } elseif ($kullanici && !$kullanici['aktif_mi']) {
+                    Response::hata('Hesabınız askıya alınmış', 403);
+                    return;
+                } else {
+                    $kullanici = null;
+                }
+            }
+
+            // Yeni kullanıcı oluştur
+            if (!$kullanici) {
+                if (!$email) {
+                    Response::hata('Google hesabınızdan e-posta bilgisi alınamadı', 400);
+                    return;
+                }
+
+                $sirket_id = $this->sirket_model->olustur([
+                    'firma_adi' => $ad_soyad . ' İşletmesi',
+                    'email'     => $email,
+                ]);
+
+                $kullanici_id = $this->kullanici_model->olustur([
+                    'sirket_id'      => $sirket_id,
+                    'ad_soyad'       => $ad_soyad,
+                    'email'          => $email,
+                    'sifre'          => bin2hex(random_bytes(16)),
+                    'rol'            => 'sahip',
+                    'google_user_id' => $google_user_id,
+                    'sosyal_giris'   => 1,
+                ]);
+
+                $this->abonelik_model->denemeBaslat((int)$sirket_id);
+
+                $kullanici = [
+                    'id'        => $kullanici_id,
+                    'sirket_id' => $sirket_id,
+                    'ad_soyad'  => $ad_soyad,
+                    'email'     => $email,
+                    'rol'       => 'sahip',
+                    'tema_adi'  => 'paramgo',
+                    'plan'      => 'deneme',
+                    'onboarding_tamamlandi' => 0,
+                ];
+
+                $kullanici_bilgi = [
+                    'id'        => $kullanici_id,
+                    'sirket_id' => $sirket_id,
+                    'rol'       => 'sahip',
+                    'tema_adi'  => 'paramgo',
+                    'plan'      => 'deneme',
+                ];
+            } else {
+                $sirket = $this->sirket_model->id_ile_bul($kullanici['sirket_id']);
+                $kullanici_bilgi = [
+                    'id'        => (int)$kullanici['id'],
+                    'sirket_id' => (int)$kullanici['sirket_id'],
+                    'rol'       => $kullanici['rol'],
+                    'tema_adi'  => $sirket['tema_adi'] ?? 'paramgo',
+                    'plan'      => $sirket['abonelik_plani'] ?? 'deneme',
+                    'yetkiler'  => $kullanici['yetkiler'] ?? null,
+                ];
+                $kullanici['tema_adi']             = $kullanici_bilgi['tema_adi'];
+                $kullanici['plan']                 = $kullanici_bilgi['plan'];
+                $kullanici['onboarding_tamamlandi'] = (int)($sirket['onboarding_tamamlandi'] ?? 0);
+            }
+
+            $access_token = JWTHelper::access_token_olustur($kullanici_bilgi);
+            $refresh = JWTHelper::refresh_token_olustur($kullanici_bilgi);
+            $this->kullanici_model->refresh_token_kaydet((int)$kullanici['id'], $refresh['token'], $refresh['son_kullanim']);
+
+            Response::basarili([
+                'kullanici' => [
+                    'id'                    => (int)$kullanici['id'],
+                    'sirket_id'             => (int)$kullanici['sirket_id'],
+                    'ad_soyad'              => $kullanici['ad_soyad'],
+                    'email'                 => $kullanici['email'],
+                    'rol'                   => $kullanici['rol'],
+                    'tema_adi'              => $kullanici['tema_adi'],
+                    'plan'                  => $kullanici['plan'],
+                    'onboarding_tamamlandi' => $kullanici['onboarding_tamamlandi'],
+                ],
+                'tokenlar' => [
+                    'access_token'  => $access_token,
+                    'refresh_token' => $refresh['token'],
+                    'token_tipi'    => 'Bearer',
+                    'suresi'        => 900,
+                ],
+            ], 'Giriş başarılı');
+
+        } catch (Exception $e) {
+            error_log('Google giriş hatası: ' . $e->getMessage());
+            Response::sunucu_hatasi('Giriş işlemi başarısız');
+        }
+    }
+
+    // ─── Apple JWT Doğrulama Yardımcıları ─────────────────────────────────
+
+    private function appleTokenDogrula($identity_token) {
+        $parcalar = explode('.', $identity_token);
+        if (count($parcalar) !== 3) return null;
+
+        [$header_b64, $payload_b64, $signature_b64] = $parcalar;
+
+        $header = json_decode($this->base64url_decode($header_b64), true);
+        if (!$header || empty($header['kid'])) return null;
+
+        // Apple public key'leri çek
+        $context = stream_context_create(['http' => ['timeout' => 10]]);
+        $jwks_raw = @file_get_contents('https://appleid.apple.com/auth/keys', false, $context);
+        if (!$jwks_raw) return null;
+        $jwks = json_decode($jwks_raw, true);
+        if (!isset($jwks['keys'])) return null;
+
+        // Doğru kid'li key'i bul
+        $key = null;
+        foreach ($jwks['keys'] as $k) {
+            if ($k['kid'] === $header['kid']) { $key = $k; break; }
+        }
+        if (!$key) return null;
+
+        // JWK → PEM
+        $pem = $this->jwkToPem($key);
+        if (!$pem) return null;
+
+        // İmza doğrula
+        $data = $header_b64 . '.' . $payload_b64;
+        $signature = $this->base64url_decode($signature_b64);
+        $pub_key = openssl_pkey_get_public($pem);
+        if (!$pub_key) return null;
+        $verified = openssl_verify($data, $signature, $pub_key, OPENSSL_ALGO_SHA256);
+        if ($verified !== 1) return null;
+
+        $payload = json_decode($this->base64url_decode($payload_b64), true);
+        if (!$payload) return null;
+
+        // Claims doğrula
+        if (($payload['iss'] ?? '') !== 'https://appleid.apple.com') return null;
+        if (($payload['aud'] ?? '') !== 'com.paramgo.app') return null;
+        if (($payload['exp'] ?? 0) < time()) return null;
+
+        return $payload;
+    }
+
+    private function jwkToPem($key) {
+        if (($key['kty'] ?? '') !== 'RSA') return null;
+
+        $n = $this->base64url_decode($key['n']);
+        $e = $this->base64url_decode($key['e']);
+
+        $n_asn = $this->asn1Integer($n);
+        $e_asn = $this->asn1Integer($e);
+        $rsa_seq = $this->asn1Sequence($n_asn . $e_asn);
+
+        $alg = $this->asn1Sequence(
+            "\x06\x09\x2a\x86\x48\x86\xf7\x0d\x01\x01\x01\x05\x00"
+        );
+
+        $bit_string = "\x03" . $this->asn1Length(strlen($rsa_seq) + 1) . "\x00" . $rsa_seq;
+        $spki = $this->asn1Sequence($alg . $bit_string);
+
+        return "-----BEGIN PUBLIC KEY-----\n" .
+            chunk_split(base64_encode($spki), 64, "\n") .
+            "-----END PUBLIC KEY-----\n";
+    }
+
+    private function base64url_decode($data) {
+        $pad = (4 - strlen($data) % 4) % 4;
+        return base64_decode(strtr($data, '-_', '+/') . str_repeat('=', $pad));
+    }
+
+    private function asn1Integer($data) {
+        if (ord($data[0]) & 0x80) $data = "\x00" . $data;
+        return "\x02" . $this->asn1Length(strlen($data)) . $data;
+    }
+
+    private function asn1Sequence($data) {
+        return "\x30" . $this->asn1Length(strlen($data)) . $data;
+    }
+
+    private function asn1Length($len) {
+        if ($len < 128)  return chr($len);
+        if ($len < 256)  return "\x81" . chr($len);
+        return "\x82" . chr($len >> 8) . chr($len & 0xff);
+    }
+
+    /**
      * HESAP SİL
      * DELETE /api/auth/hesap-sil
      *

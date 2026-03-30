@@ -12,9 +12,25 @@
 
 import { create } from 'zustand'
 import { persist, createJSONStorage } from 'zustand/middleware'
+import { Capacitor } from '@capacitor/core'
 import { Preferences } from '@capacitor/preferences'
 import { authApi } from '../api/auth'
 import useTemaStore from './temaStore'
+
+// Giriş sonrası push token kaydet
+function pushTokenKaydet() {
+  if (!Capacitor.isNativePlatform()) return
+  const gonder = (token) => {
+    import('../api/auth').then(({ authApi: api }) => {
+      api.pushTokenKaydet?.(token, Capacitor.getPlatform()).catch(() => {})
+    }).catch(() => {})
+  }
+  if (window.__pushToken) {
+    gonder(window.__pushToken)
+  } else {
+    window.__pushTokenGonder = gonder
+  }
+}
 
 // Capacitor Preferences tabanlı güvenli storage adapter
 // Native'de şifreli depolama, web'de localStorage fallback kullanır
@@ -87,8 +103,19 @@ const useAuthStore = create(
 
         get().tokenlariAyarla(tokenlar.access_token, tokenlar.refresh_token)
         set({ kullanici, girisYapildi: true })
-        // Tema store'u güncelle
         useTemaStore.getState().temaAyarla(kullanici.tema_adi || 'paramgo')
+        pushTokenKaydet()
+        return kullanici
+      },
+
+      /**
+       * Apple / Google ile giriş — backend zaten tokenları döner
+       */
+      sosyalGiris: (kullanici, tokenlar) => {
+        get().tokenlariAyarla(tokenlar.access_token, tokenlar.refresh_token)
+        set({ kullanici, girisYapildi: true })
+        useTemaStore.getState().temaAyarla(kullanici.tema_adi || 'paramgo')
+        pushTokenKaydet()
         return kullanici
       },
 

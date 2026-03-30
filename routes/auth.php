@@ -85,6 +85,22 @@ switch ($islem) {
         $auth->hesapSil($girdi);
         break;
 
+    case 'apple-giris':
+        if ($metod !== 'POST') {
+            Response::hata('Bu endpoint sadece POST kabul eder', 405);
+            break;
+        }
+        $auth->appleGiris($girdi);
+        break;
+
+    case 'google-giris':
+        if ($metod !== 'POST') {
+            Response::hata('Bu endpoint sadece POST kabul eder', 405);
+            break;
+        }
+        $auth->googleGiris($girdi);
+        break;
+
     default:
         Response::bulunamadi("Auth endpoint'i bulunamadi: " . htmlspecialchars($islem, ENT_QUOTES, 'UTF-8'));
         break;

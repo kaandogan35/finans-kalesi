@@ -20,6 +20,8 @@
   },
   "dependencies": {
     "@aparajita/capacitor-biometric-auth": "^10.0.0",
+    "@capacitor-community/apple-sign-in": "^7.0.0",
+    "@codetrix-studio/capacitor-google-auth": "^4.0.0",
     "@basecom-gmbh/capacitor-jailbreak-root-detection": "^7.0.4",
     "@capacitor/android": "^8.3.0",
     "@capacitor/app": "^8.1.0",

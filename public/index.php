@@ -61,6 +61,7 @@ require_once BASE_PATH . '/middleware/PlanKontrol.php';
 require_once BASE_PATH . '/middleware/SinirKontrol.php';
 require_once BASE_PATH . '/middleware/YetkiKontrol.php';
 require_once BASE_PATH . '/controllers/AuthController.php';
+require_once BASE_PATH . '/controllers/PushTokenController.php';
 require_once BASE_PATH . '/utils/SmtpHelper.php';
 require_once BASE_PATH . '/utils/MailHelper.php';
 require_once BASE_PATH . '/utils/MailSablonlar.php';
@@ -241,6 +242,11 @@ try {
         // ─── Onboarding Sihirbazı ───
         case 'onboarding':
             require_once BASE_PATH . '/routes/onboarding.php';
+            break;
+
+        // ─── Push Token (Mobil Bildirim) ───
+        case 'push-tokens':
+            require_once BASE_PATH . '/routes/push_token.php';
             break;
 
         // ─── API Ana Sayfa ───

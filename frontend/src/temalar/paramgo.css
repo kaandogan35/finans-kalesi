@@ -5290,6 +5290,43 @@ body:has(.pm-auth-screen) {
   gap: 12px;
 }
 
+/* -- Sosyal Giriş Butonları -- */
+.pm-auth-social-row {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.pm-auth-btn-social {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  width: 100%;
+  height: 48px;
+  border: none;
+  border-radius: 14px;
+  font-size: 15px;
+  font-weight: 600;
+  font-family: 'Plus Jakarta Sans', sans-serif;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.pm-auth-btn-social:disabled { opacity: 0.5; cursor: not-allowed; }
+.pm-auth-btn-social:active:not(:disabled) { transform: scale(0.98); }
+
+.pm-auth-btn-apple {
+  background: #FFFFFF;
+  color: #000000;
+}
+.pm-auth-btn-apple i { font-size: 18px; }
+
+.pm-auth-btn-google {
+  background: rgba(255,255,255,0.06);
+  color: rgba(255,255,255,0.85);
+  border: 1.5px solid rgba(255,255,255,0.1);
+}
+
 /* -- Animations -- */
 .pm-spin {
   display: inline-block;

@@ -18,4 +18,13 @@ export const authApi = {
 
   sifreSifirla: (token, yeni_sifre) =>
     api.post('/auth/sifre-sifirla', { token, yeni_sifre }),
+
+  appleGiris: (identity_token, ad, soyad, email) =>
+    api.post('/auth/apple-giris', { identity_token, ad, soyad, email }),
+
+  googleGiris: (id_token) =>
+    api.post('/auth/google-giris', { id_token }),
+
+  pushTokenKaydet: (token, platform) =>
+    api.post('/push-tokens/kaydet', { token, platform }),
 }
