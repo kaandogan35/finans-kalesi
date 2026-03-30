@@ -13,7 +13,7 @@ workflows:
       events:
         - push
       branch_patterns:
-        - pattern: 'main'
+        - pattern: 'master'
           include: true
       cancel_previous_builds: true
     environment:
@@ -46,7 +46,6 @@ workflows:
         script: |
           ENTITLEMENTS_FILE="frontend/ios/App/App/App.entitlements"
 
-          # Entitlements dosyasını oluştur
           cat > "$ENTITLEMENTS_FILE" << 'EOF'
           <?xml version="1.0" encoding="UTF-8"?>
           <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
@@ -60,13 +59,13 @@ workflows:
           </plist>
           EOF
 
-          # project.pbxproj'a CODE_SIGN_ENTITLEMENTS ekle (her iki config için)
           PBXPROJ="frontend/ios/App/App.xcodeproj/project.pbxproj"
           sed -i '' 's/ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;/ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;\n\t\t\t\tCODE_SIGN_ENTITLEMENTS = App\/App.entitlements;/g' "$PBXPROJ"
 
-          echo "Entitlements added:"
+          echo "Entitlements file:"
           cat "$ENTITLEMENTS_FILE"
-          grep "CODE_SIGN_ENTITLEMENTS" "$PBXPROJ"
+          echo "CODE_SIGN_ENTITLEMENTS in project:"
+          grep "CODE_SIGN_ENTITLEMENTS" "$PBXPROJ" || echo "WARNING: Not found!"
 
       - name: Increment build number
         script: |
@@ -79,82 +78,48 @@ workflows:
           # 1. Keychain oluştur
           keychain initialize
 
-          # 2. Sertifikayı keychain'e ekle
-          echo "$CM_CERTIFICATE" | base64 --decode > /tmp/distribution.p12
-          keychain add-certificates \
-            --certificate /tmp/distribution.p12 \
-            --certificate-password "$CM_CERTIFICATE_PASSWORD"
-          echo "Certificate installed to keychain"
+          # 2. Mevcut .p12 sertifikadan private key çıkar
+          echo -n "$CM_CERTIFICATE" | base64 --decode > /tmp/distribution.p12
+          openssl pkcs12 -in /tmp/distribution.p12 -nodes -nocerts \
+            -passin "pass:$CM_CERTIFICATE_PASSWORD" 2>/dev/null | \
+            openssl rsa 2>/dev/null > /tmp/cert_key.pem
 
-          # 3. Provisioning profile'ı yükle ve UUID'yi al
-          PROFILES_DIR="$HOME/Library/MobileDevice/Provisioning Profiles"
-          mkdir -p "$PROFILES_DIR"
-          echo "$CM_PROVISIONING_PROFILE" | base64 --decode > /tmp/profile.mobileprovision
+          KEY_SIZE=$(wc -c < /tmp/cert_key.pem | tr -d ' ')
+          echo "Extracted private key: $KEY_SIZE bytes"
 
-          # UUID'yi profil içinden çıkar
-          PROFILE_UUID=$(security cms -D -i /tmp/profile.mobileprovision 2>/dev/null | plutil -extract UUID raw - 2>/dev/null)
-          echo "Profile UUID: $PROFILE_UUID"
-
-          cp /tmp/profile.mobileprovision "$PROFILES_DIR/${PROFILE_UUID}.mobileprovision"
-          echo "Profile installed to: $PROFILES_DIR"
-
-          # UUID'yi sonraki adımlar için sakla
-          echo "PROFILE_UUID=$PROFILE_UUID" >> $CM_ENV
-
-          # 4. Doğrulama
-          security find-identity -v -p codesigning
-          ls -la "$PROFILES_DIR/"
-
-          # 5. Profil içeriği kontrol (Sign In with Apple var mı?)
-          echo "=== PROFILE ENTITLEMENTS ==="
-          security cms -D -i /tmp/profile.mobileprovision 2>/dev/null | plutil -p - | grep -A 20 "Entitlements"
-          echo "=== Sign In with Apple check ==="
-          security cms -D -i /tmp/profile.mobileprovision 2>/dev/null | grep -c "applesignin" && echo "HAS Sign In with Apple" || echo "NO Sign In with Apple"
-
-      - name: Create export options
-        script: |
-          cat > /Users/builder/export_options.plist << 'PLIST'
-          <?xml version="1.0" encoding="UTF-8"?>
-          <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
-          <plist version="1.0">
-          <dict>
-            <key>method</key>
-            <string>app-store</string>
-            <key>teamID</key>
-            <string>CM3BW9X6Z2</string>
-            <key>signingStyle</key>
-            <string>manual</string>
-            <key>provisioningProfiles</key>
-            <dict>
-              <key>com.paramgo.app</key>
-              <string>ParamGo AppStore</string>
-            </dict>
-            <key>signingCertificate</key>
-            <string>Apple Distribution</string>
-            <key>uploadBitcode</key>
-            <false/>
-            <key>uploadSymbols</key>
-            <true/>
-          </dict>
-          </plist>
-          PLIST
-
-      - name: Build iOS IPA
-        script: |
-          # UUID'yi /tmp/profile.mobileprovision'dan taze çıkar (CM_ENV'e bağımlı değil)
-          PROFILE_UUID=$(security cms -D -i /tmp/profile.mobileprovision 2>/dev/null | plutil -extract UUID raw - 2>/dev/null)
-          echo "Using provisioning profile UUID: $PROFILE_UUID"
-
-          if [ -z "$PROFILE_UUID" ]; then
-            echo "ERROR: Could not extract profile UUID!"
+          if [ "$KEY_SIZE" -lt 100 ]; then
+            echo "ERROR: Private key extraction failed!"
+            cat /tmp/cert_key.pem
             exit 1
           fi
 
+          export CERTIFICATE_PRIVATE_KEY="$(cat /tmp/cert_key.pem)"
+
+          # 3. App Store Connect API ile sertifika ve profili indir
+          app-store-connect fetch-signing-files "$BUNDLE_ID" \
+            --type IOS_APP_STORE \
+            --platform IOS \
+            --create
+
+          # 4. Sertifikaları keychain'e ekle
+          keychain add-certificates
+
+          # 5. Xcode projesine imzalama ayarlarını uygula
+          xcode-project use-profiles
+
+          # 6. Doğrulama
+          echo "=== Profiles (old path) ==="
+          ls -la "$HOME/Library/MobileDevice/Provisioning Profiles/" 2>/dev/null || echo "Empty"
+          echo "=== Profiles (new path) ==="
+          ls -la "$HOME/Library/Developer/Xcode/UserData/Provisioning Profiles/" 2>/dev/null || echo "Empty"
+          echo "=== Code Signing Identities ==="
+          security find-identity -v -p codesigning
+
+      - name: Build iOS IPA
+        script: |
           xcode-project build-ipa \
             --project "$XCODE_PROJECT" \
-            --scheme "$XCODE_SCHEME" \
-            --export-options-plist /Users/builder/export_options.plist \
-            --archive-flags="-destination 'generic/platform=iOS' DEVELOPMENT_TEAM='CM3BW9X6Z2' CODE_SIGN_IDENTITY='Apple Distribution' PROVISIONING_PROFILE='$PROFILE_UUID'"
+            --scheme "$XCODE_SCHEME"
 
     artifacts:
       - build/ios/ipa/*.ipa
