@@ -61,9 +61,36 @@
 
 ## AKTIF YOL HARİTASI
 
-### AŞAMA A — Uygulama İçi Hatalar (ŞUAN)
-> Öncelik: TestFlight'ta test et, hataları topla, tek seferde düzelt
+### AŞAMA A — TestFlight Mobil Hata Düzeltmeleri (ÖNCELİKLİ)
+> 2026-03-29 oturumunda toplanan hatalar — yarın düzeltilecek
 
+#### GRUP 1 — STATUS BAR / BEYAZ ŞERİT (3 hata) — En Kritik
+| # | Hata | Çözüm | Dosya |
+|---|------|-------|-------|
+| S1 | Giriş üstte beyaz şerit, ikonlar görünmüyor | `contentInset: 'never'` + route bazlı StatusBar style | capacitor.config.ts + capacitorInit.js |
+| S2 | Giriş altta beyaz şerit | Aynı kök neden | capacitor.config.ts |
+| S3 | Dashboard üstte boşluk | Aynı kök neden | capacitor.config.ts |
+
+#### GRUP 2 — SCROLL + ALT MENÜ (2 hata)
+| # | Hata | Çözüm | Dosya |
+|---|------|-------|-------|
+| SC1 | Sağda scroll bar görünüyor | p-content: scrollbar gizle | paramgo.css |
+| SC2 | Alt menü boşluğu + rubber band yok | html/body overscroll kapalı, p-content elastic açık | paramgo.css |
+> NOT: Rubber band (elastik scroll) TEB/büyük uygulamalar gibi çalışacak — p-content bounce açık, body bounce kapalı, scrollbar görünmez
+
+#### GRUP 3 — KLAVYE / MODAL ALAN SIRASI (büyük iş)
+| # | Hata | Çözüm | Kapsam |
+|---|------|-------|--------|
+| M1 | Tarih+Tutar modal altında, klavye kapatıyor | Tüm büyük modüllerdeki modallarda tarih/tutar alanlarını ortaya taşı | Çek/Senet, Cari, Kasa, Gelir, Gider, Ödeme, Veresiye, Tekrarlayan |
+
+#### GRUP 4 — TARİH SEÇİCİ ✅
+| # | Hata | Durum |
+|---|------|-------|
+| T1 | iOS wheel picker | type="date" eklendi, çalışıyor ✅ |
+
+---
+
+### AŞAMA A-Eski — Fonksiyonel Test
 | # | Test Konusu | Durum | Not |
 |---|---|---|---|
 | A1 | Giriş yapabilme (API bağlantısı) | 🔄 Test ediliyor | API URL düzeltildi |

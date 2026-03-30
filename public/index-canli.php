@@ -61,6 +61,7 @@ require_once BASE_PATH . '/middleware/PlanKontrol.php';
 require_once BASE_PATH . '/middleware/SinirKontrol.php';
 require_once BASE_PATH . '/middleware/YetkiKontrol.php';
 require_once BASE_PATH . '/controllers/AuthController.php';
+require_once BASE_PATH . '/controllers/PushTokenController.php';
 require_once BASE_PATH . '/utils/SmtpHelper.php';
 require_once BASE_PATH . '/utils/MailHelper.php';
 require_once BASE_PATH . '/utils/MailSablonlar.php';
@@ -124,10 +125,7 @@ try {
     switch ($modul) {
 
         // ─── Sağlık Kontrolü ───
-        // GET /api/health
-        // İlk test endpoint'imiz — API çalışıyor mu diye kontrol
         case 'health':
-            // Veritabanı bağlantısını dahili olarak test et — sonuç dışarıya sızdırılmaz
             try {
                 $db = Database::baglan();
                 $db->query('SELECT 1');
@@ -136,7 +134,6 @@ try {
                 Response::sunucu_hatasi('Servis geçici olarak kullanılamıyor');
                 break;
             }
-
             Response::basarili([
                 'durum' => 'aktif',
                 'zaman' => date('Y-m-d H:i:s'),
@@ -148,42 +145,42 @@ try {
             require_once BASE_PATH . '/routes/auth.php';
             break;
 
-        // ─── Cariler (Aşama 1.3) ───
+        // ─── Cariler ───
         case 'cariler':
             require_once BASE_PATH . '/routes/cari.php';
             break;
 
-        // ─── Çek/Senet (Aşama 1.4) ───
+        // ─── Çek/Senet ───
         case 'cek-senet':
             require_once BASE_PATH . '/routes/cek_senet.php';
             break;
 
-        // ─── Ödeme Takip (Aşama 1.5) ───
+        // ─── Ödeme Takip ───
         case 'odemeler':
             require_once BASE_PATH . '/routes/odeme.php';
             break;
 
-        // ─── Varlık & Kasa (Aşama 1.9) ───
+        // ─── Kasa ───
         case 'kasa':
             require_once BASE_PATH . '/routes/kasa.php';
             break;
 
-        // ─── Dashboard Özet (Sprint 2A-3) ───
+        // ─── Dashboard ───
         case 'dashboard':
             require_once BASE_PATH . '/routes/dashboard.php';
             break;
 
-        // ─── Ayarlar (Tema seçimi vb.) ───
+        // ─── Ayarlar ───
         case 'ayarlar':
             require_once BASE_PATH . '/routes/ayarlar.php';
             break;
 
-        // ─── Abonelik (Plan yönetimi) ───
+        // ─── Abonelik ───
         case 'abonelik':
             require_once BASE_PATH . '/routes/abonelik.php';
             break;
 
-        // ─── Webhook (Ödeme sağlayıcı bildirimleri) ───
+        // ─── Webhook ───
         case 'webhook':
             require_once BASE_PATH . '/routes/abonelik.php';
             break;
@@ -193,7 +190,7 @@ try {
             require_once BASE_PATH . '/routes/sinir.php';
             break;
 
-        // ─── Cron (Zamanlı mail gönderimleri) ───
+        // ─── Cron ───
         case 'cron':
             require_once BASE_PATH . '/routes/cron.php';
             break;
@@ -203,7 +200,7 @@ try {
             require_once BASE_PATH . '/routes/tur.php';
             break;
 
-        // ─── Veresiye Defteri ───
+        // ─── Veresiye ───
         case 'veresiye':
             require_once BASE_PATH . '/routes/veresiye.php';
             break;
@@ -238,9 +235,14 @@ try {
             require_once BASE_PATH . '/routes/kategoriler.php';
             break;
 
-        // ─── Onboarding Sihirbazı ───
+        // ─── Onboarding ───
         case 'onboarding':
             require_once BASE_PATH . '/routes/onboarding.php';
+            break;
+
+        // ─── Push Token (Mobil Bildirim) ───
+        case 'push-tokens':
+            require_once BASE_PATH . '/routes/push_token.php';
             break;
 
         // ─── API Ana Sayfa ───
@@ -259,11 +261,7 @@ try {
     }
 
 } catch (Exception $e) {
-    // Hata yakalama — production'da detay gosterme
     $hata_mesaj = 'Beklenmeyen bir hata olustu';
-
-    // Hatayi logla (error_log sunucu loguna yazar)
     error_log('Finans Kalesi HATA: ' . $e->getMessage() . ' | ' . $e->getFile() . ':' . $e->getLine());
-
     Response::sunucu_hatasi($hata_mesaj);
 }
