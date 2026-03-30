@@ -15,15 +15,19 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Outfit:wght@300;400;500;600;700;800&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
     <title>ParamGo</title>
-    <script type="module" crossorigin src="/assets/index-B6eZa_uv.js"></script>
-    <link rel="stylesheet" crossorigin href="/assets/index-BL7yMjPt.css">
+    <script type="module" crossorigin src="/assets/index-vp4_-lTG.js"></script>
+    <link rel="stylesheet" crossorigin href="/assets/index-D093nRhM.css">
   </head>
   <body>
     <div id="root"></div>
     <script>
+      // Service Worker kaldırıldı — varsa temizle
       if ('serviceWorker' in navigator) {
-        window.addEventListener('load', () => {
-          navigator.serviceWorker.register('/sw.js').catch(() => {})
+        navigator.serviceWorker.getRegistrations().then(function(regs) {
+          regs.forEach(function(r) { r.unregister() })
+        })
+        caches.keys().then(function(keys) {
+          keys.forEach(function(k) { caches.delete(k) })
         })
       }
     </script>
