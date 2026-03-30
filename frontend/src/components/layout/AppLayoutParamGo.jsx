@@ -112,9 +112,10 @@ export default function AppLayoutParamGo() {
   }, [])
 
   // Ana uygulama açıkken status bar ikonları koyu (açık arka plan)
+  // Style.Light = siyah ikonlar (beyaz bg için doğru)
   useEffect(() => {
     if (!Capacitor.isNativePlatform()) return
-    window.__statusBarSetDark?.()
+    window.__statusBarSetLight?.()
   }, [])
 
   useEffect(() => {
@@ -127,9 +128,9 @@ export default function AppLayoutParamGo() {
 
   useEffect(() => {
     document.body.style.overflow = sidebarOpen ? 'hidden' : ''
-    // F — Koyu sidebar açıkken status bar ikonları beyaz olsun
-    if (sidebarOpen) window.__statusBarSetLight?.()
-    else window.__statusBarSetDark?.()
+    // Koyu sidebar: Style.Dark = beyaz ikonlar | Açık bg: Style.Light = siyah ikonlar
+    if (sidebarOpen) window.__statusBarSetDark?.()
+    else window.__statusBarSetLight?.()
     return () => { document.body.style.overflow = '' }
   }, [sidebarOpen])
 

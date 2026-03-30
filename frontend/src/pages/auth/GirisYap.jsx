@@ -39,7 +39,7 @@ export default function GirisYap() {
   // Auth ekranı koyu (#0B1120) — status bar ikonları beyaz olmalı
   useEffect(() => {
     if (!Capacitor.isNativePlatform()) return
-    window.__statusBarSetLight?.()
+    window.__statusBarSetDark?.()
   }, [])
 
   const handleChange = (e) => {
