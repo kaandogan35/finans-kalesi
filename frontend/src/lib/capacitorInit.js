@@ -16,9 +16,9 @@ export async function capacitorBaslat() {
   try {
     const { StatusBar, Style } = await import('@capacitor/status-bar')
     await StatusBar.setOverlaysWebView({ overlay: true })
-    // Başlangıç: LIGHT (beyaz ikonlar) — auth ekranı koyu (#0B1120)
-    // AppLayout mount'ta __statusBarSetDark çağırır (açık ekranlar için siyah ikonlar)
-    await StatusBar.setStyle({ style: Style.Light })
+    // Başlangıç: DARK (koyu ikonlar) — dashboard ve ana ekranlar açık arka planli
+    // Auth ekranları (GirisYap, KayitOl, SifreSifirla) kendi useEffect'lerinde Style.Light yapar
+    await StatusBar.setStyle({ style: Style.Dark })
     window.__statusBarSetDark  = () => StatusBar.setStyle({ style: Style.Dark })
     window.__statusBarSetLight = () => StatusBar.setStyle({ style: Style.Light })
   } catch {}
