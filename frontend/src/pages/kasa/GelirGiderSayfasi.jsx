@@ -9,7 +9,7 @@
 
 import { useState, useEffect, useMemo, useCallback, useRef } from 'react'
 import { createPortal } from 'react-dom'
-import { toast } from 'sonner'
+import { bildirim as toast } from '../../components/ui/CenterAlert'
 import { useNavigate } from 'react-router-dom'
 import { Chart as ChartJS, ArcElement, Tooltip, Legend, CategoryScale, LinearScale, BarElement } from 'chart.js'
 import { Doughnut, Bar } from 'react-chartjs-2'
@@ -94,7 +94,7 @@ const CIKIS_CORE  = ['Tedarikçi Ödemesi', 'Günlük İşletme Gideri', 'Person
 // ─── Esnaf Dili: Ekranda gösterilecek kategori adları ────────────────────────
 // DB'deki teknik isimler değişmez, sadece arayüzde esnaf diline çevrilir
 const GIRIS_GORUNUM_ADI = {
-  'Açık Hesap Tahsilat':          'Müşteri Borç Tahsilatı',
+  'Açık Hesap Tahsilat':          'Nakit Giriş',
   'Hizmet / İşçilik Bedeli':      'Hizmet / İş Bedeli',
   'Taksit / Vade Tahsilatı':      'Taksitli Tahsilat',
   'Komisyon / Aracılık Geliri':   'Komisyon Geliri',
@@ -123,13 +123,7 @@ const CIKIS_KATEGORI_KAYNAK = {
     secenekler: [
       { key: 'banka',       label: 'Banka Havalesi', ikon: 'bi-bank',       odeme: 'banka',       baglanti: 'Banka / Havale' },
       { key: 'merkez_kasa', label: 'Merkez Kasa',    ikon: 'bi-safe2',      odeme: 'merkez_kasa', baglanti: 'Merkez Kasa' },
-      { key: 'mail_order',  label: 'Mail Order',     ikon: 'bi-envelope',   odeme: 'banka',       baglanti: 'Mail Order',
-        detaySecim: true,
-        detaylar: [
-          { key: 'acik_hesap',  label: 'Açık Hesap',  ikon: 'bi-journal-text',      baglanti: 'Mail Order / Açık Hesap' },
-          { key: 'resmi_hesap', label: 'Resmi Hesap', ikon: 'bi-file-earmark-text', baglanti: 'Mail Order / Resmi Hesap' },
-        ],
-      },
+      { key: 'mail_order',  label: 'Mail Order',     ikon: 'bi-envelope',   odeme: 'banka',       baglanti: 'Mail Order' },
     ],
   },
   'Günlük İşletme Gideri': { altSecim: true, secenekler: _STD3 },
@@ -560,6 +554,21 @@ function GelirEkleModal({ open, onClose, kategoriler, onKaydet, p, renkler }) {
     return () => { document.body.style.overflow = '' }
   }, [open])
 
+  // Klavye açıldığında aktif input'u görünür alana kaydır
+  useEffect(() => {
+    if (!open) return
+    const scrollToFocused = () => {
+      setTimeout(() => {
+        const el = document.activeElement
+        if (el && (el.tagName === 'INPUT' || el.tagName === 'TEXTAREA')) {
+          el.scrollIntoView({ behavior: 'smooth', block: 'center' })
+        }
+      }, 300)
+    }
+    window.addEventListener('resize', scrollToFocused)
+    return () => window.removeEventListener('resize', scrollToFocused)
+  }, [open])
+
   if (!open) return null
 
   const gorunurKategoriler = kategoriler.filter(k => !GIRIS_GIZLE.includes(k.ad))
@@ -813,6 +822,21 @@ function GiderEkleModal({ open, onClose, kategoriler, onKaydet, p, renkler }) {
     if (!open) return
     document.body.style.overflow = 'hidden'
     return () => { document.body.style.overflow = '' }
+  }, [open])
+
+  // Klavye açıldığında aktif input'u görünür alana kaydır
+  useEffect(() => {
+    if (!open) return
+    const scrollToFocused = () => {
+      setTimeout(() => {
+        const el = document.activeElement
+        if (el && (el.tagName === 'INPUT' || el.tagName === 'TEXTAREA')) {
+          el.scrollIntoView({ behavior: 'smooth', block: 'center' })
+        }
+      }, 300)
+    }
+    window.addEventListener('resize', scrollToFocused)
+    return () => window.removeEventListener('resize', scrollToFocused)
   }, [open])
 
   if (!open) return null
@@ -1566,7 +1590,7 @@ export default function GelirGiderSayfasi({ islemTipi }) {
             className={`${p}-kasa-donem-select`}
             style={{ minWidth: 72 }}
           >
-            {[2024, 2025, 2026, 2027].map(y => <option key={y} value={y}>{y}</option>)}
+            {Array.from({ length: 6 }, (_, i) => new Date().getFullYear() - 2 + i).map(y => <option key={y} value={y}>{y}</option>)}
           </select>
         </div>
 

@@ -7,7 +7,7 @@
 import { useState, useEffect, useCallback } from 'react'
 import { createPortal } from 'react-dom'
 import { useParams, useNavigate } from 'react-router-dom'
-import { toast } from 'sonner'
+import { bildirim as toast } from '../../components/ui/CenterAlert'
 import { veresiyeApi } from '../../api/veresiye'
 import useTemaStore from '../../stores/temaStore'
 import SwipeCard from '../../components/SwipeCard'

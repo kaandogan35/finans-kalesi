@@ -7,7 +7,7 @@
 
 import { useState, useEffect, useRef, useCallback } from 'react'
 import { createPortal } from 'react-dom'
-import { toast } from 'sonner'
+import { bildirim as toast } from '../../components/ui/CenterAlert'
 import cekSenetApi from '../../api/cekSenet'
 import { carilerApi } from '../../api/cariler'
 import useTemaStore from '../../stores/temaStore'
@@ -136,6 +136,8 @@ const kendiBosluk = () => ({
 // ─────────────────────────────────────────────────────────────────────────────
 
 function Modal({ open, onClose, children, size = '', scrollable = false, p = 'b', ariaId = '', confirm = false }) {
+  const boxRef = useRef(null)
+
   useEffect(() => {
     if (!open) return
     document.body.style.overflow = 'hidden'
@@ -149,6 +151,21 @@ function Modal({ open, onClose, children, size = '', scrollable = false, p = 'b'
     return () => document.removeEventListener('keydown', fn)
   }, [open, onClose])
 
+  // Klavye açıldığında aktif input'u görünür alana kaydır
+  useEffect(() => {
+    if (!open) return
+    const scrollToFocused = () => {
+      setTimeout(() => {
+        const el = document.activeElement
+        if (el && boxRef.current && (el.tagName === 'INPUT' || el.tagName === 'TEXTAREA' || el.tagName === 'SELECT')) {
+          el.scrollIntoView({ behavior: 'smooth', block: 'center' })
+        }
+      }, 300)
+    }
+    window.addEventListener('resize', scrollToFocused)
+    return () => window.removeEventListener('resize', scrollToFocused)
+  }, [open])
+
   if (!open) return null
 
   const maxW = size === 'lg' ? 800 : size === 'sm' ? 420 : 560
@@ -157,7 +174,7 @@ function Modal({ open, onClose, children, size = '', scrollable = false, p = 'b'
     <>
       <div className={`${p}-modal-overlay`} />
       <div className={`${p}-modal-center${confirm ? ` ${p}-modal-confirm` : ''}`}>
-        <div className={`${p}-modal-box`} role="dialog" aria-labelledby={ariaId || undefined} aria-modal="true" style={{
+        <div ref={boxRef} className={`${p}-modal-box`} role="dialog" aria-labelledby={ariaId || undefined} aria-modal="true" style={{
           maxWidth: maxW,
           maxHeight: scrollable ? '90vh' : 'auto',
           overflow: scrollable ? 'auto' : 'hidden',
@@ -414,7 +431,8 @@ function AutoComplete({ value, onChange, options, placeholder, id, required, p =
 
 function FiltreSatiri({ filtre, setFiltre, p = 'b' }) {
   const AYLAR = ['Ocak','Şubat','Mart','Nisan','Mayıs','Haziran','Temmuz','Ağustos','Eylül','Ekim','Kasım','Aralık']
-  const YILLAR = [2024, 2025, 2026, 2027]
+  const suankiYil = new Date().getFullYear()
+  const YILLAR = Array.from({ length: 6 }, (_, i) => suankiYil - 2 + i)
   return (
     <div className="d-flex gap-2 align-items-center flex-wrap">
       <select
@@ -649,6 +667,10 @@ export default function CekSenet() {
   const [ciroDzlModal,    setCiroDzlModal]    = useState(false)
   const [ciroDzlForm,     setCiroDzlForm]     = useState({})
   const [ciroDzlId,       setCiroDzlId]       = useState(null)
+
+  // ─ Çek Detay Modalı ─────────────────────────────────────────────────────────
+  const [detayItem, setDetayItem] = useState(null)
+  const [detayTab, setDetayTab]   = useState(null) // hangi tab'dan açıldı
 
   // ─ Karşılıksız Modal ─────────────────────────────────────────────────────────
   const [karsiliksizModal,      setKarsiliksizModal]      = useState(false)
@@ -1584,7 +1606,7 @@ export default function CekSenet() {
                       { icon: 'bi-pencil', label: 'Düzenle', renk: 'info', onClick: () => portfoyDzlAc(item) },
                       { icon: 'bi-trash', label: 'Sil', renk: 'danger', onClick: () => portfoySil(item.id) },
                     ]}>
-                      <div className="p-cek-mk">
+                      <div className="p-cek-mk" onClick={() => { setDetayItem(item); setDetayTab('portfoy') }}>
                         <div className="p-cek-mk-ust">
                           <DynamicAvatar isim={item.firma_adi} boyut={36} />
                           <div style={{ flex: 1, minWidth: 0 }}>
@@ -1721,7 +1743,7 @@ export default function CekSenet() {
                       { icon: 'bi-exclamation-triangle', label: 'Karşılıksız', renk: 'danger', onClick: () => tahsilKarsiliksiz(item.id) },
                       { icon: 'bi-pencil', label: 'Düzenle', renk: 'warning', onClick: () => tahsilDzlAc(item) },
                     ]}>
-                      <div className="p-cek-mk">
+                      <div className="p-cek-mk" onClick={() => { setDetayItem(item); setDetayTab('bankada') }}>
                         <div className="p-cek-mk-ust">
                           <DynamicAvatar isim={item.firma_adi} boyut={36} />
                           <div style={{ flex: 1, minWidth: 0 }}>
@@ -1878,7 +1900,7 @@ export default function CekSenet() {
                       { icon: 'bi-pencil', label: 'Düzenle', renk: 'info', onClick: () => kendiDzlAc(item) },
                       { icon: 'bi-trash', label: 'Sil', renk: 'danger', onClick: () => kendiSil(item.id) },
                     ]}>
-                      <div className="p-cek-mk">
+                      <div className="p-cek-mk" onClick={() => { setDetayItem(item); setDetayTab('kendi') }}>
                         <div className="p-cek-mk-ust">
                           <DynamicAvatar isim={item.firma_adi} boyut={36} />
                           <div style={{ flex: 1, minWidth: 0 }}>
@@ -2016,7 +2038,7 @@ export default function CekSenet() {
                       { icon: 'bi-pencil', label: 'Düzenle', renk: 'warning', onClick: () => ciroDzlAc(item) },
                       { icon: 'bi-trash', label: 'Sil', renk: 'danger', onClick: () => ciroSil(item.id) },
                     ]}>
-                      <div className="p-cek-mk">
+                      <div className="p-cek-mk" onClick={() => { setDetayItem(item); setDetayTab('cirolanan') }}>
                         <div className="p-cek-mk-ust">
                           <DynamicAvatar isim={item.asil_firma} boyut={36} />
                           <div style={{ flex: 1, minWidth: 0 }}>
@@ -2383,7 +2405,7 @@ export default function CekSenet() {
       </Modal>
 
       {/* ─── Tahsile Ver Modalı ─────────────────────────────────────────────── */}
-      <Modal open={tahsileModal} onClose={() => setTahsileModal(false)} size="sm" confirm p={p} ariaId="cek-tahsile-modal-title">
+      <Modal open={tahsileModal} onClose={() => setTahsileModal(false)} scrollable p={p} ariaId="cek-tahsile-modal-title">
         <div className={`${p}-modal-header ${p}-mh-green`}>
           <div className="d-flex align-items-center gap-3">
             <div className={`${p}-modal-icon ${p}-modal-icon-green`}>
@@ -2715,6 +2737,97 @@ export default function CekSenet() {
             {kaydediyor ? <><span className="p-btn-spinner" />Kaydediliyor...</> : <><i className="bi bi-floppy me-2" />Güncelle</>}
           </button>
         </div>
+      </Modal>
+
+      {/* ─── Çek Detay Modalı ──────────────────────────────────────────── */}
+      <Modal open={!!detayItem} onClose={() => setDetayItem(null)} scrollable p={p} ariaId="cek-detay-modal-title">
+        {detayItem && <>
+          <div className={`${p}-modal-header ${p}-mh-default`}>
+            <div className="d-flex align-items-center gap-3">
+              <div className={`${p}-modal-icon ${p}-modal-icon-default`}>
+                <i className="bi bi-file-earmark-text" />
+              </div>
+              <div>
+                <h2 id="cek-detay-modal-title" className={`${p}-modal-title`}>Evrak Detayı</h2>
+                <div className={`${p}-modal-sub`}>{detayItem.tur || 'Çek'} — {detayItem.evrak_no || 'No yok'}</div>
+              </div>
+            </div>
+            <button className={`${p}-modal-close`} onClick={() => setDetayItem(null)}>
+              <i className="bi bi-x-lg" />
+            </button>
+          </div>
+          <div className={`${p}-modal-body`}>
+            <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 16 }}>
+              <span className="financial-num" style={{ fontSize: 28, fontWeight: 800, color: 'var(--p-primary)' }}>{TL(detayItem.tutar)}</span>
+            </div>
+            <div className="row g-2" style={{ fontSize: 14 }}>
+              <div className="col-6"><strong>Firma:</strong></div>
+              <div className="col-6">{detayItem.firma_adi || detayItem.asil_firma || '-'}</div>
+              {detayItem.banka && <><div className="col-6"><strong>Banka:</strong></div><div className="col-6">{detayItem.banka}</div></>}
+              {detayItem.evrak_no && <><div className="col-6"><strong>Evrak No:</strong></div><div className="col-6">{detayItem.evrak_no}</div></>}
+              <div className="col-6"><strong>Vade Tarihi:</strong></div>
+              <div className="col-6">{detayItem.vade_tarihi ? new Date(detayItem.vade_tarihi).toLocaleDateString('tr-TR') : '-'}</div>
+              {detayItem.teslim_yeri && <><div className="col-6"><strong>Teslim Yeri:</strong></div><div className="col-6">{detayItem.teslim_yeri}</div></>}
+              {detayItem.asil_borclu && <><div className="col-6"><strong>Asıl Borçlu:</strong></div><div className="col-6">{detayItem.asil_borclu}</div></>}
+            </div>
+            <hr style={{ margin: '16px 0' }} />
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+              {detayTab === 'portfoy' && <>
+                <button className="btn btn-outline-success btn-sm d-flex align-items-center gap-2" onClick={() => { setDetayItem(null); setTahsileId(detayItem.id); setTahsileForm({ banka: '', tarih: bugunStr() }); setTahsileModal(true) }}>
+                  <i className="bi bi-bank" /> Tahsile Ver
+                </button>
+                <button className="btn btn-outline-warning btn-sm d-flex align-items-center gap-2" onClick={() => { setDetayItem(null); setCirolaId(detayItem.id); setCirolaForm({ firma: '', tarih: bugunStr() }); setCirolaModal(true) }}>
+                  <i className="bi bi-arrow-left-right" /> Cirola
+                </button>
+                <button className="btn btn-outline-info btn-sm d-flex align-items-center gap-2" onClick={() => { setDetayItem(null); portfoyDzlAc(detayItem) }}>
+                  <i className="bi bi-pencil" /> Düzenle
+                </button>
+                <button className="btn btn-outline-danger btn-sm d-flex align-items-center gap-2" onClick={() => { setDetayItem(null); portfoySil(detayItem.id) }}>
+                  <i className="bi bi-trash" /> Sil
+                </button>
+              </>}
+              {detayTab === 'bankada' && <>
+                <button className="btn btn-outline-success btn-sm d-flex align-items-center gap-2" onClick={() => { setDetayItem(null); tahsilOdendi(detayItem.id) }}>
+                  <i className="bi bi-check-lg" /> Ödendi Olarak Kapat
+                </button>
+                <button className="btn btn-outline-info btn-sm d-flex align-items-center gap-2" onClick={() => { setDetayItem(null); tahsilIade(detayItem.id) }}>
+                  <i className="bi bi-arrow-counterclockwise" /> Portföye İade
+                </button>
+                <button className="btn btn-outline-danger btn-sm d-flex align-items-center gap-2" onClick={() => { setDetayItem(null); tahsilKarsiliksiz(detayItem.id) }}>
+                  <i className="bi bi-exclamation-triangle" /> Karşılıksız
+                </button>
+                <button className="btn btn-outline-warning btn-sm d-flex align-items-center gap-2" onClick={() => { setDetayItem(null); tahsilDzlAc(detayItem) }}>
+                  <i className="bi bi-pencil" /> Düzenle
+                </button>
+              </>}
+              {detayTab === 'kendi' && <>
+                <button className="btn btn-outline-success btn-sm d-flex align-items-center gap-2" onClick={() => { setDetayItem(null); kendiOdendi(detayItem.id) }}>
+                  <i className="bi bi-check-lg" /> Ödendi Olarak Kapat
+                </button>
+                <button className="btn btn-outline-info btn-sm d-flex align-items-center gap-2" onClick={() => { setDetayItem(null); kendiDzlAc(detayItem) }}>
+                  <i className="bi bi-pencil" /> Düzenle
+                </button>
+                <button className="btn btn-outline-danger btn-sm d-flex align-items-center gap-2" onClick={() => { setDetayItem(null); kendiSil(detayItem.id) }}>
+                  <i className="bi bi-trash" /> Sil
+                </button>
+              </>}
+              {detayTab === 'cirolanan' && <>
+                <button className="btn btn-outline-success btn-sm d-flex align-items-center gap-2" onClick={() => { setDetayItem(null); ciroTamamlandi(detayItem.id) }}>
+                  <i className="bi bi-check-lg" /> Ciro Tamamlandı
+                </button>
+                <button className="btn btn-outline-info btn-sm d-flex align-items-center gap-2" onClick={() => { setDetayItem(null); ciroIade(detayItem.id) }}>
+                  <i className="bi bi-arrow-counterclockwise" /> Portföye İade
+                </button>
+                <button className="btn btn-outline-warning btn-sm d-flex align-items-center gap-2" onClick={() => { setDetayItem(null); ciroDzlAc(detayItem) }}>
+                  <i className="bi bi-pencil" /> Düzenle
+                </button>
+                <button className="btn btn-outline-danger btn-sm d-flex align-items-center gap-2" onClick={() => { setDetayItem(null); ciroSil(detayItem.id) }}>
+                  <i className="bi bi-trash" /> Sil
+                </button>
+              </>}
+            </div>
+          </div>
+        </>}
       </Modal>
 
       {/* ─── FAB — Hızlı İşlem ──────────────────────────────────────────── */}

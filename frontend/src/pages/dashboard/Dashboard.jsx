@@ -342,6 +342,12 @@ export default function Dashboard() {
   const [showHizliIslem, setShowHizliIslem] = useState(false)
   const navigate = useNavigate()
 
+  // ─ Pull to refresh ──────────────────────────────────────────────────────
+  const [pullY, setPullY] = useState(0)
+  const [refreshing, setRefreshing] = useState(false)
+  const touchStartY = useRef(0)
+  const pageRef = useRef(null)
+
   // Hızlı işlem seçenekleri
   const hizliIslemler = [
     { icon: 'bi-receipt',           label: 'Yeni Çek / Senet',   path: '/cek-senet' },
@@ -395,6 +401,29 @@ export default function Dashboard() {
   }, [])
 
   useEffect(() => { verileriYukle() }, [verileriYukle])
+
+  // Pull-to-refresh handlers (verileriYukle tanımlandıktan sonra)
+  const handleTouchStart = useCallback((e) => {
+    const scrollTop = pageRef.current ? pageRef.current.scrollTop : (document.documentElement.scrollTop || document.body.scrollTop)
+    touchStartY.current = scrollTop <= 0 ? e.touches[0].clientY : 0
+  }, [])
+
+  const handleTouchMove = useCallback((e) => {
+    if (!touchStartY.current || refreshing) return
+    const diff = e.touches[0].clientY - touchStartY.current
+    if (diff > 0 && diff < 140) setPullY(diff)
+  }, [refreshing])
+
+  const handleTouchEnd = useCallback(async () => {
+    if (pullY > 70 && !refreshing) {
+      setRefreshing(true)
+      setPullY(70)
+      await verileriYukle(true)
+      setRefreshing(false)
+    }
+    setPullY(0)
+    touchStartY.current = 0
+  }, [pullY, refreshing, verileriYukle])
 
   // ─── Türetilen Metrikler ──────────────────────────────────────────────────
   // Cari
@@ -507,7 +536,17 @@ export default function Dashboard() {
 
   // ─── Render ───────────────────────────────────────────────────────────────
   return (
-    <div className={`${p}-page-root`}>
+    <div className={`${p}-page-root`} ref={pageRef}
+      onTouchStart={handleTouchStart} onTouchMove={handleTouchMove} onTouchEnd={handleTouchEnd}>
+      {/* Pull to refresh indicator */}
+      {(pullY > 0 || refreshing) && (
+        <div style={{ display: 'flex', justifyContent: 'center', padding: `${Math.min(pullY, 70) / 2}px 0`,
+          transition: pullY === 0 ? 'padding 0.3s' : 'none', overflow: 'hidden' }}>
+          <i className={`bi bi-arrow-clockwise${refreshing ? ' p-spin' : ''}`}
+            style={{ fontSize: 22, color: 'var(--p-primary)', opacity: Math.min(pullY / 70, 1),
+              transform: `rotate(${pullY * 3}deg)`, transition: refreshing ? 'none' : 'transform 0.1s' }} />
+        </div>
+      )}
       {/* ─── Başlık ────────────────────────────────────────────────────────── */}
       <div className={`${p}-page-header ${p}-greeting`}>
         <div className={`${p}-page-header-left`}>
@@ -527,14 +566,6 @@ export default function Dashboard() {
           </div>
         </div>
         <div className={`${p}-page-header-right`}>
-          <button
-            className={`${p}-btn-accent`}
-            onClick={() => verileriYukle(true)}
-            disabled={yukl}
-          >
-            <i className={`bi bi-arrow-clockwise${donuyor ? ` ${p}-spin` : ''}`} style={{ fontSize: 14 }} />
-            Yenile
-          </button>
           <button
             data-tur="hizli-islem"
             className={`${p}-btn-accent`}
