@@ -68,8 +68,27 @@ workflows:
             if [ -n "$CM_CERTIFICATE" ] && [ -n "$CM_CERTIFICATE_PASSWORD" ]; then
               echo "Extracting private key from CM_CERTIFICATE (.p12)..."
               echo "$CM_CERTIFICATE" | base64 --decode > /tmp/dist_cert.p12
-              export CERTIFICATE_PRIVATE_KEY="$(openssl pkcs12 -in /tmp/dist_cert.p12 -nocerts -nodes -passin pass:"$CM_CERTIFICATE_PASSWORD" 2>/dev/null | grep -A 100 'BEGIN')"
-              echo "Private key extracted: $(echo "$CERTIFICATE_PRIVATE_KEY" | head -1)"
+              echo "P12 file size: $(wc -c < /tmp/dist_cert.p12) bytes"
+
+              # OpenSSL 3.x'te .p12 (legacy şifreli) için -legacy flag gerekli
+              EXTRACTED_KEY="$(openssl pkcs12 -legacy -in /tmp/dist_cert.p12 -nocerts -nodes -passin pass:"$CM_CERTIFICATE_PASSWORD" 2>/dev/null | sed -n '/-----BEGIN/,/-----END/p')"
+
+              # -legacy çalışmadıysa (OpenSSL 1.x veya farklı format) standart dene
+              if [ -z "$EXTRACTED_KEY" ]; then
+                echo "Legacy mode failed, trying standard OpenSSL..."
+                EXTRACTED_KEY="$(openssl pkcs12 -in /tmp/dist_cert.p12 -nocerts -nodes -passin pass:"$CM_CERTIFICATE_PASSWORD" 2>/dev/null | sed -n '/-----BEGIN/,/-----END/p')"
+              fi
+
+              if [ -n "$EXTRACTED_KEY" ]; then
+                export CERTIFICATE_PRIVATE_KEY="$EXTRACTED_KEY"
+                echo "Private key extracted successfully ($(echo "$EXTRACTED_KEY" | wc -l) lines)"
+              else
+                echo "ERROR: Private key extraction failed from .p12"
+                echo "OpenSSL version: $(openssl version)"
+                echo "Trying verbose output for diagnostics..."
+                openssl pkcs12 -legacy -in /tmp/dist_cert.p12 -nocerts -nodes -passin pass:"$CM_CERTIFICATE_PASSWORD" -info 2>&1 | head -20 || true
+                exit 1
+              fi
             else
               echo "WARNING: CM_CERTIFICATE bulunamadı, yeni key üretiliyor (409 riski var)"
               openssl genrsa -out /tmp/cert_private_key.pem 2048 2>/dev/null
