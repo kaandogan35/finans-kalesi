@@ -105,6 +105,12 @@ workflows:
           security find-identity -v -p codesigning
           ls -la "$PROFILES_DIR/"
 
+          # 5. Profil içeriği kontrol (Sign In with Apple var mı?)
+          echo "=== PROFILE ENTITLEMENTS ==="
+          security cms -D -i /tmp/profile.mobileprovision 2>/dev/null | plutil -p - | grep -A 20 "Entitlements"
+          echo "=== Sign In with Apple check ==="
+          security cms -D -i /tmp/profile.mobileprovision 2>/dev/null | grep -c "applesignin" && echo "HAS Sign In with Apple" || echo "NO Sign In with Apple"
+
       - name: Create export options
         script: |
           cat > /Users/builder/export_options.plist << 'PLIST'
