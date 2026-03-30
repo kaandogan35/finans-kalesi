@@ -1500,6 +1500,8 @@ body.keyboard-open .p-modal-center {
 }
 .p-autocomplete-item { padding: 9px 14px; cursor: pointer; font-size: 13px; color: var(--p-text); }
 .p-autocomplete-item:hover { background: #f0f2f5; }
+/* Klavye açıkken dropdown yukarı açılır (klavye altında kalmaz) */
+body.keyboard-open .p-autocomplete-list { top: auto; bottom: 100%; border-radius: 8px; }
 
 /* ─── Table Overrides for CekSenet ─── */
 .p-td-muted { color: var(--p-text-sec); font-size: 13px; }
