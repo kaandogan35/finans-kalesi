@@ -55,8 +55,14 @@ workflows:
           # 1. Keychain oluştur
           keychain initialize
 
-          # 2. App Store Connect API ile sertifika ve profili indir/oluştur
-          # CERTIFICATE_PRIVATE_KEY yoksa --create yeni sertifika oluşturur
+          # 2. API key base64 ise decode et (PEM formatına çevir)
+          if ! echo "$APP_STORE_CONNECT_PRIVATE_KEY" | grep -q "BEGIN"; then
+            echo "API key is base64, decoding to PEM..."
+            export APP_STORE_CONNECT_PRIVATE_KEY="$(echo "$APP_STORE_CONNECT_PRIVATE_KEY" | base64 --decode)"
+          fi
+          echo "API key format check: $(echo "$APP_STORE_CONNECT_PRIVATE_KEY" | head -1)"
+
+          # 3. App Store Connect API ile sertifika ve profili indir/oluştur
           app-store-connect fetch-signing-files "$BUNDLE_ID" \
             --type IOS_APP_STORE \
             --platform IOS \
