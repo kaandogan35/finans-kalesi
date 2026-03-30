@@ -3,7 +3,6 @@
  * BilancoGrafik + AyKapanisModal + AylikBilanco
  */
 import { useState, useEffect, useRef } from 'react'
-import { lockScroll, unlockScroll } from '../../lib/overflowLock'
 import { createPortal } from 'react-dom'
 import { bildirim as toast } from '../../components/ui/CenterAlert'
 import { hexRgba } from '../../lib/temaRenkleri'
@@ -150,8 +149,8 @@ function AyKapanisModal({ open, onClose, kapanislar, onKaydet, yatirimGuncelDege
 
   useEffect(() => {
     if (!open) return
-    lockScroll()
-    return () => { unlockScroll() }
+    document.body.style.overflow = 'hidden'
+    return () => { document.body.style.overflow = '' }
   }, [open])
 
   if (!open) return null

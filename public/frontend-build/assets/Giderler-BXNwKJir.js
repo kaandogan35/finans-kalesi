@@ -1,0 +1,1 @@
+import{j as i}from"./index-BMzQT-nv.js";import{G as r}from"./GelirGiderSayfasi-ClmaN4iE.js";import"./index-B316O-An.js";import"./temaRenkleri-D9SD9TYM.js";import"./SwipeCard-DgeOPBlV.js";import"./kasa-DmhAkEp7.js";import"./DateInput-DhSBYpmi.js";import"./style-C3QEha61.js";function l(){return i.jsx(r,{islemTipi:"cikis"})}export{l as default};

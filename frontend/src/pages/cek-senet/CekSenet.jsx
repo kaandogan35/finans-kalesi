@@ -8,7 +8,6 @@
 import { useState, useEffect, useRef, useCallback } from 'react'
 import { createPortal } from 'react-dom'
 import { bildirim as toast } from '../../components/ui/CenterAlert'
-import { lockScroll, unlockScroll } from '../../lib/overflowLock'
 import cekSenetApi from '../../api/cekSenet'
 import { carilerApi } from '../../api/cariler'
 import useTemaStore from '../../stores/temaStore'
@@ -139,8 +138,8 @@ const kendiBosluk = () => ({
 function Modal({ open, onClose, children, size = '', scrollable = false, p = 'b', ariaId = '', confirm = false }) {
   useEffect(() => {
     if (!open) return
-    lockScroll()
-    return () => unlockScroll()
+    document.body.style.overflow = 'hidden'
+    return () => document.body.style.overflow = ''
   }, [open])
 
   useEffect(() => {

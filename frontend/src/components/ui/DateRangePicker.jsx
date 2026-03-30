@@ -95,10 +95,10 @@ export function DateRangePicker({ from, to, onApply }) {
     if (!open) return
     calcPos()
     const update = () => calcPos()
-    window.addEventListener('scroll', update, true)
-    window.addEventListener('resize', update)
+    window.addEventListener('scroll', update, { capture: true, passive: true })
+    window.addEventListener('resize', update, { passive: true })
     return () => {
-      window.removeEventListener('scroll', update, true)
+      window.removeEventListener('scroll', update, { capture: true })
       window.removeEventListener('resize', update)
     }
   }, [open, calcPos])

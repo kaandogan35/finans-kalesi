@@ -10,7 +10,6 @@
 import { useState, useEffect, useMemo, useCallback, useRef } from 'react'
 import { createPortal } from 'react-dom'
 import { bildirim as toast } from '../../components/ui/CenterAlert'
-import { lockScroll, unlockScroll } from '../../lib/overflowLock'
 import { useNavigate } from 'react-router-dom'
 import { Chart as ChartJS, ArcElement, Tooltip, Legend, CategoryScale, LinearScale, BarElement } from 'chart.js'
 import { Doughnut, Bar } from 'react-chartjs-2'
@@ -551,8 +550,8 @@ function GelirEkleModal({ open, onClose, kategoriler, onKaydet, p, renkler }) {
 
   useEffect(() => {
     if (!open) return
-    lockScroll()
-    return () => { unlockScroll() }
+    document.body.style.overflow = 'hidden'
+    return () => { document.body.style.overflow = '' }
   }, [open])
 
   if (!open) return null
@@ -806,8 +805,8 @@ function GiderEkleModal({ open, onClose, kategoriler, onKaydet, p, renkler }) {
 
   useEffect(() => {
     if (!open) return
-    lockScroll()
-    return () => { unlockScroll() }
+    document.body.style.overflow = 'hidden'
+    return () => { document.body.style.overflow = '' }
   }, [open])
 
   if (!open) return null
@@ -1067,8 +1066,8 @@ function KategoriDetayModal({ open, onClose, kategori, hareketler, isGiris, p })
 
   useEffect(() => {
     if (!open) return
-    lockScroll()
-    return () => { unlockScroll() }
+    document.body.style.overflow = 'hidden'
+    return () => { document.body.style.overflow = '' }
   }, [open])
 
   useEffect(() => { if (!open) setSecilenGun(null) }, [open])

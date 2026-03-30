@@ -5,7 +5,6 @@
  */
 
 import { useState, useEffect, useCallback } from 'react'
-import { lockScroll, unlockScroll } from '../../lib/overflowLock'
 import { createPortal } from 'react-dom'
 import { useParams, useNavigate } from 'react-router-dom'
 import { bildirim as toast } from '../../components/ui/CenterAlert'
@@ -250,9 +249,8 @@ export default function VeresiyeDetay() {
 
   // Modal açıkken body scroll kilitle
   useEffect(() => {
-    if (islemModal || silModal) lockScroll()
-    else unlockScroll()
-    return () => unlockScroll()
+    document.body.style.overflow = (islemModal || silModal) ? 'hidden' : ''
+    return () => { document.body.style.overflow = '' }
   }, [islemModal, silModal])
 
   // ─── İşlem Kaydet ────────────────────────────────────────────────────────────

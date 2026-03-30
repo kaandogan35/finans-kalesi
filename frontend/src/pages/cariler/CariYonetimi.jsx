@@ -7,7 +7,6 @@
  */
 
 import { useState, useEffect, useCallback } from 'react'
-import { lockScroll, unlockScroll } from '../../lib/overflowLock'
 import { createPortal } from 'react-dom'
 import { useNavigate } from 'react-router-dom'
 import { bildirim as toast } from '../../components/ui/CenterAlert'
@@ -272,9 +271,9 @@ export default function CariYonetimi() {
   // ─── Modal body overflow yönetimi ─────────────────────────────────────────
   const acikModalSayisi = [cariModalAcik, islemModalAcik, kartModalAcik, silModalAcik, topluModalAcik].filter(Boolean).length
   useEffect(() => {
-    if (acikModalSayisi > 0) lockScroll()
-    else unlockScroll()
-    return () => { unlockScroll() }
+    if (acikModalSayisi > 0) document.body.style.overflow = 'hidden'
+    else document.body.style.overflow = ''
+    return () => { document.body.style.overflow = '' }
   }, [acikModalSayisi])
 
   // ─── ESC tuşu ile modal kapatma ──────────────────────────────────────────

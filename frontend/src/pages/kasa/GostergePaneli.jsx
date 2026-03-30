@@ -4,7 +4,6 @@
  * 6 KPI Kart: Merkez Kasa | Giriş | Çıkış | Banka | Net Değer | Hazır Param
  */
 import { useState, useMemo, useEffect } from 'react'
-import { lockScroll, unlockScroll } from '../../lib/overflowLock'
 import { createPortal } from 'react-dom'
 import { Link } from 'react-router-dom'
 import { hexRgba } from '../../lib/temaRenkleri'
@@ -25,8 +24,8 @@ export function KategoriDetayModal({ show, onClose, kategori, tip, hareketler, p
 
   useEffect(() => {
     if (!show) return
-    lockScroll()
-    return () => { unlockScroll() }
+    document.body.style.overflow = 'hidden'
+    return () => { document.body.style.overflow = '' }
   }, [show])
 
   if (!show || !kategori) return null

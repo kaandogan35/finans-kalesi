@@ -4,7 +4,6 @@
  * İçerir: YatirimModal, FiyatGuncelleModal, YatirimKalesi
  */
 import { useState, useMemo, useEffect } from 'react'
-import { lockScroll, unlockScroll } from '../../lib/overflowLock'
 import { createPortal } from 'react-dom'
 import { bildirim as toast } from '../../components/ui/CenterAlert'
 import useTemaStore from '../../stores/temaStore'
@@ -51,8 +50,8 @@ function YatirimModal({ open, onClose, onKaydet, duzenlenen, p, renkler }) {
     if (!open) return
     const h = (e) => { if (e.key === 'Escape') onClose() }
     document.addEventListener('keydown', h)
-    lockScroll()
-    return () => { document.removeEventListener('keydown', h); unlockScroll() }
+    document.body.style.overflow = 'hidden'
+    return () => { document.removeEventListener('keydown', h); document.body.style.overflow = '' }
   }, [open, onClose])
 
   if (!open) return null
@@ -221,8 +220,8 @@ function FiyatGuncelleModal({ open, onClose, yatirimlar, onGuncelle, p, renkler 
     if (!open) return
     const h = (e) => { if (e.key === 'Escape') onClose() }
     document.addEventListener('keydown', h)
-    lockScroll()
-    return () => { document.removeEventListener('keydown', h); unlockScroll() }
+    document.body.style.overflow = 'hidden'
+    return () => { document.removeEventListener('keydown', h); document.body.style.overflow = '' }
   }, [open, onClose])
 
   if (!open) return null
