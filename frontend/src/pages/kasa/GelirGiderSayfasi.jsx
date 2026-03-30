@@ -554,21 +554,6 @@ function GelirEkleModal({ open, onClose, kategoriler, onKaydet, p, renkler }) {
     return () => { document.body.style.overflow = '' }
   }, [open])
 
-  // Klavye açıldığında aktif input'u görünür alana kaydır
-  useEffect(() => {
-    if (!open) return
-    const scrollToFocused = () => {
-      setTimeout(() => {
-        const el = document.activeElement
-        if (el && (el.tagName === 'INPUT' || el.tagName === 'TEXTAREA')) {
-          el.scrollIntoView({ behavior: 'smooth', block: 'center' })
-        }
-      }, 300)
-    }
-    window.addEventListener('resize', scrollToFocused)
-    return () => window.removeEventListener('resize', scrollToFocused)
-  }, [open])
-
   if (!open) return null
 
   const gorunurKategoriler = kategoriler.filter(k => !GIRIS_GIZLE.includes(k.ad))
@@ -822,21 +807,6 @@ function GiderEkleModal({ open, onClose, kategoriler, onKaydet, p, renkler }) {
     if (!open) return
     document.body.style.overflow = 'hidden'
     return () => { document.body.style.overflow = '' }
-  }, [open])
-
-  // Klavye açıldığında aktif input'u görünür alana kaydır
-  useEffect(() => {
-    if (!open) return
-    const scrollToFocused = () => {
-      setTimeout(() => {
-        const el = document.activeElement
-        if (el && (el.tagName === 'INPUT' || el.tagName === 'TEXTAREA')) {
-          el.scrollIntoView({ behavior: 'smooth', block: 'center' })
-        }
-      }, 300)
-    }
-    window.addEventListener('resize', scrollToFocused)
-    return () => window.removeEventListener('resize', scrollToFocused)
   }, [open])
 
   if (!open) return null

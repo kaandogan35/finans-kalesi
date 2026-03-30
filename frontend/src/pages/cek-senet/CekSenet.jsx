@@ -151,19 +151,17 @@ function Modal({ open, onClose, children, size = '', scrollable = false, p = 'b'
     return () => document.removeEventListener('keydown', fn)
   }, [open, onClose])
 
-  // Klavye açıldığında aktif input'u görünür alana kaydır
+  // Klavye açıldığında aktif input'u görünür alana kaydır (focusin ile — resize yerine)
   useEffect(() => {
-    if (!open) return
-    const scrollToFocused = () => {
-      setTimeout(() => {
-        const el = document.activeElement
-        if (el && boxRef.current && (el.tagName === 'INPUT' || el.tagName === 'TEXTAREA' || el.tagName === 'SELECT')) {
-          el.scrollIntoView({ behavior: 'smooth', block: 'center' })
-        }
-      }, 300)
+    if (!open || !boxRef.current) return
+    const box = boxRef.current
+    const onFocus = (e) => {
+      if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') {
+        setTimeout(() => e.target.scrollIntoView({ behavior: 'smooth', block: 'center' }), 400)
+      }
     }
-    window.addEventListener('resize', scrollToFocused)
-    return () => window.removeEventListener('resize', scrollToFocused)
+    box.addEventListener('focusin', onFocus)
+    return () => box.removeEventListener('focusin', onFocus)
   }, [open])
 
   if (!open) return null

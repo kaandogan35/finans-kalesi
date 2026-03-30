@@ -343,9 +343,10 @@ export default function Dashboard() {
   const navigate = useNavigate()
 
   // ─ Pull to refresh ──────────────────────────────────────────────────────
-  const [pullY, setPullY] = useState(0)
   const [refreshing, setRefreshing] = useState(false)
   const touchStartY = useRef(0)
+  const pullYRef = useRef(0)
+  const pullIndicatorRef = useRef(null)
   const pageRef = useRef(null)
 
   // Hızlı işlem seçenekleri
@@ -402,28 +403,39 @@ export default function Dashboard() {
 
   useEffect(() => { verileriYukle() }, [verileriYukle])
 
-  // Pull-to-refresh handlers (verileriYukle tanımlandıktan sonra)
+  // Pull-to-refresh handlers — DOM manipülasyonu ile (setState yok, re-render yok)
   const handleTouchStart = useCallback((e) => {
-    const scrollTop = pageRef.current ? pageRef.current.scrollTop : (document.documentElement.scrollTop || document.body.scrollTop)
-    touchStartY.current = scrollTop <= 0 ? e.touches[0].clientY : 0
+    const scrollTop = document.documentElement.scrollTop || document.body.scrollTop || 0
+    touchStartY.current = scrollTop <= 5 ? e.touches[0].clientY : 0
+    pullYRef.current = 0
   }, [])
 
   const handleTouchMove = useCallback((e) => {
     if (!touchStartY.current || refreshing) return
     const diff = e.touches[0].clientY - touchStartY.current
-    if (diff > 0 && diff < 140) setPullY(diff)
+    if (diff > 0 && diff < 140) {
+      pullYRef.current = diff
+      // DOM direkt güncelleme — setState yok, re-render yok
+      if (pullIndicatorRef.current) {
+        pullIndicatorRef.current.style.height = `${diff / 2}px`
+        pullIndicatorRef.current.style.opacity = Math.min(diff / 70, 1)
+      }
+    }
   }, [refreshing])
 
   const handleTouchEnd = useCallback(async () => {
-    if (pullY > 70 && !refreshing) {
+    if (pullYRef.current > 70 && !refreshing) {
       setRefreshing(true)
-      setPullY(70)
       await verileriYukle(true)
       setRefreshing(false)
     }
-    setPullY(0)
+    pullYRef.current = 0
+    if (pullIndicatorRef.current) {
+      pullIndicatorRef.current.style.height = '0px'
+      pullIndicatorRef.current.style.opacity = '0'
+    }
     touchStartY.current = 0
-  }, [pullY, refreshing, verileriYukle])
+  }, [refreshing, verileriYukle])
 
   // ─── Türetilen Metrikler ──────────────────────────────────────────────────
   // Cari
@@ -538,15 +550,12 @@ export default function Dashboard() {
   return (
     <div className={`${p}-page-root`} ref={pageRef}
       onTouchStart={handleTouchStart} onTouchMove={handleTouchMove} onTouchEnd={handleTouchEnd}>
-      {/* Pull to refresh indicator */}
-      {(pullY > 0 || refreshing) && (
-        <div style={{ display: 'flex', justifyContent: 'center', padding: `${Math.min(pullY, 70) / 2}px 0`,
-          transition: pullY === 0 ? 'padding 0.3s' : 'none', overflow: 'hidden' }}>
-          <i className={`bi bi-arrow-clockwise${refreshing ? ' p-spin' : ''}`}
-            style={{ fontSize: 22, color: 'var(--p-primary)', opacity: Math.min(pullY / 70, 1),
-              transform: `rotate(${pullY * 3}deg)`, transition: refreshing ? 'none' : 'transform 0.1s' }} />
-        </div>
-      )}
+      {/* Pull to refresh indicator — DOM ref ile güncellenir, re-render yok */}
+      <div ref={pullIndicatorRef} style={{ display: 'flex', justifyContent: 'center', alignItems: 'center',
+        height: 0, opacity: 0, overflow: 'hidden', transition: 'height 0.2s, opacity 0.2s' }}>
+        <i className={`bi bi-arrow-clockwise${refreshing ? ' p-spin' : ''}`}
+          style={{ fontSize: 22, color: 'var(--p-primary)' }} />
+      </div>
       {/* ─── Başlık ────────────────────────────────────────────────────────── */}
       <div className={`${p}-page-header ${p}-greeting`}>
         <div className={`${p}-page-header-left`}>
