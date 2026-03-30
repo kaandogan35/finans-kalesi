@@ -68,31 +68,8 @@ export default function GirisYap() {
     } finally { setYukleniyor(false) }
   }
 
-  const handleAppleGiris = async () => {
-    setSosyalYukleniyor('apple')
-    setHata('')
-    try {
-      const { SignInWithApple } = await import('@capacitor-community/apple-sign-in')
-      const result = await SignInWithApple.authorize({
-        clientId: 'com.paramgo.app',
-        redirectURI: 'https://paramgo.com',
-        scopes: 'email name',
-        state: '',
-        nonce: '',
-      })
-      const r = result.response
-      const yanit = await authApi.appleGiris(r.identityToken, r.givenName || '', r.familyName || '', r.email || '')
-      const { kullanici, tokenlar } = yanit.data.veri
-      sosyalGiris(kullanici, tokenlar)
-      toast.success('Hoş geldiniz!')
-      navigate('/dashboard')
-    } catch (err) {
-      if (err?.message?.includes('cancel') || err?.message?.includes('1001')) return
-      setHata('Apple ile giriş yapılamadı. Tekrar deneyin.')
-    } finally {
-      setSosyalYukleniyor('')
-    }
-  }
+  // Apple Sign-In — Capacitor 8 uyumlu çözüm build sonrası eklenecek
+  // Backend hazır (AuthController.php appleGiris), sadece frontend plugin gerekiyor
 
   // Google Sign-In — Capacitor 8 uyumlu paket çıkınca eklenecek
   // const handleGoogleGiris = async () => { ... }
@@ -181,28 +158,7 @@ export default function GirisYap() {
             Yeni Hesap Oluştur
           </Link>
 
-          {/* Sosyal Giriş */}
-          <div className="pm-auth-divider" style={{ marginTop: 20 }}>
-            <span>veya sosyal ile giriş</span>
-          </div>
-
-          <div className="pm-auth-social-row">
-            <button
-              type="button"
-              className="pm-auth-btn-social pm-auth-btn-apple"
-              onClick={handleAppleGiris}
-              disabled={!!sosyalYukleniyor}
-            >
-              {sosyalYukleniyor === 'apple' ? (
-                <i className="bi bi-arrow-repeat pm-spin" />
-              ) : (
-                <i className="bi bi-apple" />
-              )}
-              <span>Apple ile Giriş</span>
-            </button>
-
-            {/* Google Sign-In — Capacitor 8 uyumlu paket çıkınca eklenecek */}
-          </div>
+          {/* Sosyal Giriş — Build geçtikten sonra Capacitor 8 uyumlu Apple/Google Sign-In eklenecek */}
         </div>
 
         {/* Alt güvenlik notu */}
