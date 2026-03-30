@@ -76,19 +76,43 @@ workflows:
             --platform IOS \
             --create
 
-          # 3. Sertifikaları keychain'e ekle
+          # 5. Sertifikaları keychain'e ekle
           keychain add-certificates
 
-          # 4. Xcode projesine imzalama ayarlarını uygula
+          # 6. Xcode projesine imzalama ayarlarını uygula
           xcode-project use-profiles
 
-          # 5. Doğrulama
+          # 7. Xcode 26+ fallback: use-profiles project.pbxproj'u güncellemediyse manuel yaz
+          PROFILE_FILE=$(ls "$HOME/Library/Developer/Xcode/UserData/Provisioning Profiles/"*.mobileprovision 2>/dev/null | head -1)
+          [ -z "$PROFILE_FILE" ] && PROFILE_FILE=$(ls "$HOME/Library/MobileDevice/Provisioning Profiles/"*.mobileprovision 2>/dev/null | head -1)
+
+          if [ -n "$PROFILE_FILE" ]; then
+            PROFILE_NAME=$(security cms -D -i "$PROFILE_FILE" 2>/dev/null | /usr/libexec/PlistBuddy -c "Print :Name" /dev/stdin 2>/dev/null)
+            echo "Bulunan profil: $PROFILE_NAME"
+            PBXPROJ="${XCODE_PROJECT}/project.pbxproj"
+            # CODE_SIGN_STYLE Automatic → Manual
+            sed -i '' 's/CODE_SIGN_STYLE = Automatic/CODE_SIGN_STYLE = Manual/g' "$PBXPROJ"
+            # PROVISIONING_PROFILE_SPECIFIER varsa güncelle, yoksa ekle
+            if grep -q "PROVISIONING_PROFILE_SPECIFIER" "$PBXPROJ"; then
+              sed -i '' "s/PROVISIONING_PROFILE_SPECIFIER = \"[^\"]*\"/PROVISIONING_PROFILE_SPECIFIER = \"$PROFILE_NAME\"/g" "$PBXPROJ"
+            else
+              sed -i '' "s/CODE_SIGN_STYLE = Manual;/CODE_SIGN_STYLE = Manual;\n\t\t\t\tPROVISIONING_PROFILE_SPECIFIER = \"$PROFILE_NAME\";/g" "$PBXPROJ"
+            fi
+            echo "pbxproj güncellendi (Xcode 26 fallback)"
+          else
+            echo "HATA: Hiç provisioning profile bulunamadı!"
+            exit 1
+          fi
+
+          # 8. Doğrulama
           echo "=== Profiles (old path) ==="
           ls -la "$HOME/Library/MobileDevice/Provisioning Profiles/" 2>/dev/null || echo "Empty"
           echo "=== Profiles (new path) ==="
           ls -la "$HOME/Library/Developer/Xcode/UserData/Provisioning Profiles/" 2>/dev/null || echo "Empty"
           echo "=== Code Signing Identities ==="
           security find-identity -v -p codesigning
+          echo "=== pbxproj CODE_SIGN kontrol ==="
+          grep -E "CODE_SIGN_STYLE|PROVISIONING_PROFILE_SPECIFIER|CODE_SIGN_IDENTITY" "${XCODE_PROJECT}/project.pbxproj" | head -10
 
       - name: Build iOS IPA
         script: |
