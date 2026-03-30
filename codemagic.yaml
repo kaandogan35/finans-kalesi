@@ -36,6 +36,15 @@ workflows:
           cd frontend
           npm run build
 
+      - name: Place GoogleService-Info.plist
+        script: |
+          if [ -n "$GOOGLE_SERVICE_INFO_PLIST" ]; then
+            echo "$GOOGLE_SERVICE_INFO_PLIST" | base64 --decode > frontend/ios/App/App/GoogleService-Info.plist
+            echo "GoogleService-Info.plist yerleştirildi."
+          else
+            echo "UYARI: GOOGLE_SERVICE_INFO_PLIST env var bulunamadı, Google Sign-In çalışmayabilir."
+          fi
+
       - name: Capacitor sync iOS
         script: |
           cd frontend
