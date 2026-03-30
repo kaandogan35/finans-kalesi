@@ -4,7 +4,7 @@
  * Web'de: Mevcut split-screen banking teması
  */
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useNavigate, Link } from 'react-router-dom'
 import { toast } from 'sonner'
 import { Capacitor } from '@capacitor/core'
