@@ -71,31 +71,11 @@ workflows:
       - name: Add Sign In with Apple entitlement
         script: |
           ENTITLEMENTS="frontend/ios/App/App/App.entitlements"
-          # Entitlements dosyası yoksa oluştur
-          if [ ! -f "$ENTITLEMENTS" ]; then
-            cat > "$ENTITLEMENTS" << 'ENTEOF'
-<?xml version="1.0" encoding="UTF-8"?>
-<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
-<plist version="1.0">
-<dict>
-    <key>com.apple.developer.applesignin</key>
-    <array>
-        <string>Default</string>
-    </array>
-</dict>
-</plist>
-ENTEOF
-            echo "App.entitlements oluşturuldu."
-          else
-            # Dosya var ama entitlement yoksa ekle
-            if ! grep -q "applesignin" "$ENTITLEMENTS"; then
-              /usr/libexec/PlistBuddy -c "Add :com.apple.developer.applesignin array" "$ENTITLEMENTS"
-              /usr/libexec/PlistBuddy -c "Add :com.apple.developer.applesignin:0 string Default" "$ENTITLEMENTS"
-              echo "Apple Sign-In entitlement eklendi."
-            else
-              echo "Apple Sign-In entitlement zaten mevcut."
-            fi
-          fi
+          # PlistBuddy ile sıfırdan oluştur (YAML-safe, heredoc yok)
+          /usr/libexec/PlistBuddy -c "Clear dict" "$ENTITLEMENTS" 2>/dev/null || /usr/libexec/PlistBuddy -c "Save" "$ENTITLEMENTS"
+          /usr/libexec/PlistBuddy -c "Add :com.apple.developer.applesignin array" "$ENTITLEMENTS"
+          /usr/libexec/PlistBuddy -c "Add :com.apple.developer.applesignin:0 string Default" "$ENTITLEMENTS"
+          echo "App.entitlements oluşturuldu (PlistBuddy ile)."
           # pbxproj'a entitlements referansı ekle
           PBXPROJ="frontend/ios/App/App.xcodeproj/project.pbxproj"
           if ! grep -q "App.entitlements" "$PBXPROJ"; then

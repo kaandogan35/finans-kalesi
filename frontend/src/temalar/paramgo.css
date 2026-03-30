@@ -8433,7 +8433,7 @@ tr:hover .p-row-actions,
 }
 /* Sonner toast — iOS status bar altında göster */
 [data-sonner-toaster][data-position^="top"] {
-  --offset: max(calc(env(safe-area-inset-top, 0px) + 10px), 16px) !important;
+  top: env(safe-area-inset-top, 0px) !important;
 }
 
 .p-toast-container {

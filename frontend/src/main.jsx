@@ -1,7 +1,6 @@
 import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
 import { Toaster } from 'sonner'
-import { Capacitor } from '@capacitor/core'
 import 'bootstrap/dist/css/bootstrap.min.css'
 import 'bootstrap-icons/font/bootstrap-icons.css'
 import './index.css'
@@ -28,7 +27,6 @@ async function uygulama() {
             border: 'none',
             boxShadow: '0 8px 24px rgba(0,0,0,0.12)',
             padding: '14px 18px',
-            marginTop: Capacitor.isNativePlatform() ? 'env(safe-area-inset-top, 0px)' : '0px',
           },
         }}
         richColors

@@ -1,0 +1,1 @@
+import{a as i}from"./index-BsqvY4H6.js";const r={listele:(e={})=>i.get("/veresiye",{params:e}),cariDetay:e=>i.get(`/veresiye/${e}`),islemEkle:(e,s)=>i.post(`/veresiye/${e}/islemler`,s),islemSil:(e,s)=>i.delete(`/veresiye/${e}/islemler/${s}`)};export{r as v};
