@@ -528,6 +528,14 @@ export default function Dashboard() {
         </div>
         <div className={`${p}-page-header-right`}>
           <button
+            className={`${p}-btn-accent`}
+            onClick={() => verileriYukle(true)}
+            disabled={yukl}
+          >
+            <i className={`bi bi-arrow-clockwise${donuyor ? ` ${p}-spin` : ''}`} style={{ fontSize: 14 }} />
+            Yenile
+          </button>
+          <button
             data-tur="hizli-islem"
             className={`${p}-btn-accent`}
             onClick={() => setShowHizliIslem(true)}

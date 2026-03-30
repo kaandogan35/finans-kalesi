@@ -1,15 +1,10 @@
 import { useState, useEffect, useRef } from 'react'
 import { createPortal } from 'react-dom'
 
-/* ── Kuyruk ve gösterim ───────────────────────────────────────── */
 let showFn = null
 const queue = []
+function processQueue() { if (queue.length && showFn) showFn(queue.shift()) }
 
-function processQueue() {
-  if (queue.length && showFn) showFn(queue.shift())
-}
-
-/* ── Dışarıdan çağrılan API (toast.success/error yerine) ──── */
 export const bildirim = {
   success: (mesaj) => bildirim._push('success', mesaj),
   error:   (mesaj) => bildirim._push('error', mesaj),
@@ -22,7 +17,6 @@ export const bildirim = {
   },
 }
 
-/* ── İkon + renk haritası ──────────────────────────────────── */
 const CONF = {
   success: { ikon: 'bi-check-circle-fill', bg: '#ECFDF5', renk: '#059669' },
   error:   { ikon: 'bi-exclamation-circle-fill', bg: '#FEF2F2', renk: '#DC2626' },
@@ -30,12 +24,10 @@ const CONF = {
   warning: { ikon: 'bi-exclamation-triangle-fill', bg: '#FFFBEB', renk: '#D97706' },
 }
 
-/* ── React bileşeni — bir kez mount edilir ─────────────────── */
 export default function CenterAlert() {
   const [item, setItem] = useState(null)
   const timerRef = useRef(null)
 
-  // showFn'i bir kez kaydet, ref üzerinden — re-render tetiklemez
   useEffect(() => {
     showFn = (data) => {
       setItem(data)

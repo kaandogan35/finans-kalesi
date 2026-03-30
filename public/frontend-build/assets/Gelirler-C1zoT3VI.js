@@ -1,0 +1,1 @@
+import{j as i}from"./index-DU9xCmV6.js";import{G as r}from"./GelirGiderSayfasi-B4ZDHLU4.js";import"./index-jjsP4uLw.js";import"./temaRenkleri-D9SD9TYM.js";import"./SwipeCard-l18Xsr2y.js";import"./kasa-D62AIOSh.js";import"./DateInput-BHeRHjLW.js";import"./style-CoOlhXCI.js";function l(){return i.jsx(r,{islemTipi:"giris"})}export{l as default};

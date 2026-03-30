@@ -94,7 +94,7 @@ const CIKIS_CORE  = ['Tedarikçi Ödemesi', 'Günlük İşletme Gideri', 'Person
 // ─── Esnaf Dili: Ekranda gösterilecek kategori adları ────────────────────────
 // DB'deki teknik isimler değişmez, sadece arayüzde esnaf diline çevrilir
 const GIRIS_GORUNUM_ADI = {
-  'Açık Hesap Tahsilat':          'Nakit Giriş',
+  'Açık Hesap Tahsilat':          'Müşteri Borç Tahsilatı',
   'Hizmet / İşçilik Bedeli':      'Hizmet / İş Bedeli',
   'Taksit / Vade Tahsilatı':      'Taksitli Tahsilat',
   'Komisyon / Aracılık Geliri':   'Komisyon Geliri',
@@ -123,7 +123,13 @@ const CIKIS_KATEGORI_KAYNAK = {
     secenekler: [
       { key: 'banka',       label: 'Banka Havalesi', ikon: 'bi-bank',       odeme: 'banka',       baglanti: 'Banka / Havale' },
       { key: 'merkez_kasa', label: 'Merkez Kasa',    ikon: 'bi-safe2',      odeme: 'merkez_kasa', baglanti: 'Merkez Kasa' },
-      { key: 'mail_order',  label: 'Mail Order',     ikon: 'bi-envelope',   odeme: 'banka',       baglanti: 'Mail Order' },
+      { key: 'mail_order',  label: 'Mail Order',     ikon: 'bi-envelope',   odeme: 'banka',       baglanti: 'Mail Order',
+        detaySecim: true,
+        detaylar: [
+          { key: 'acik_hesap',  label: 'Açık Hesap',  ikon: 'bi-journal-text',      baglanti: 'Mail Order / Açık Hesap' },
+          { key: 'resmi_hesap', label: 'Resmi Hesap', ikon: 'bi-file-earmark-text', baglanti: 'Mail Order / Resmi Hesap' },
+        ],
+      },
     ],
   },
   'Günlük İşletme Gideri': { altSecim: true, secenekler: _STD3 },
@@ -1560,7 +1566,7 @@ export default function GelirGiderSayfasi({ islemTipi }) {
             className={`${p}-kasa-donem-select`}
             style={{ minWidth: 72 }}
           >
-            {Array.from({ length: 6 }, (_, i) => new Date().getFullYear() - 2 + i).map(y => <option key={y} value={y}>{y}</option>)}
+            {[2024, 2025, 2026, 2027].map(y => <option key={y} value={y}>{y}</option>)}
           </select>
         </div>
 

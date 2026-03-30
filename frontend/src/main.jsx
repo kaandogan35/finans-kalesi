@@ -7,7 +7,6 @@ import App from './App.jsx'
 import CenterAlert from './components/ui/CenterAlert.jsx'
 import { capacitorBaslat } from './lib/capacitorInit.js'
 
-// Native platform entegrasyonu tamamlandıktan sonra React başlar
 async function uygulama() {
   await capacitorBaslat()
 
