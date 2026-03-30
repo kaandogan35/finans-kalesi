@@ -5337,10 +5337,11 @@ body:has(.pm-auth-screen) {
 .pm-auth-btn-apple i { font-size: 18px; }
 
 .pm-auth-btn-google {
-  background: rgba(255,255,255,0.06);
-  color: rgba(255,255,255,0.85);
-  border: 1.5px solid rgba(255,255,255,0.1);
+  background: #FFFFFF;
+  color: #3c4043;
+  border: none;
 }
+.pm-auth-btn-google i { font-size: 18px; color: #4285F4; }
 
 /* -- Animations -- */
 .pm-spin {

@@ -15,6 +15,7 @@ import ParamGoLogo from '../../logo/ParamGoLogo'
 
 const isNative = Capacitor.isNativePlatform() || new URLSearchParams(window.location.search).has('native')
 const prefixMap = { paramgo: 'p' }
+const GOOGLE_CLIENT_ID = '505947540272-fuvn80vu0q2bjcgbihea1sm7b4jininv.apps.googleusercontent.com'
 
 const AVANTAJLAR = [
   { ikon: 'bi-people-fill',            baslik: 'Cari Hesaplar',     aciklama: '25 cari — ücretsiz sonsuza kadar' },
@@ -25,7 +26,7 @@ const AVANTAJLAR = [
 
 export default function KayitOl() {
   const navigate = useNavigate()
-  const { girisYap } = useAuthStore()
+  const { girisYap, sosyalGiris } = useAuthStore()
   const aktifTema = useTemaStore((s) => s.aktifTema)
   const p = prefixMap[aktifTema] || 'p'
 
@@ -34,6 +35,51 @@ export default function KayitOl() {
     if (!Capacitor.isNativePlatform()) return
     window.__statusBarSetDark?.()
   }, [])
+
+  const [sosyalYukleniyor, setSosyalYukleniyor] = useState('')
+
+  useEffect(() => {
+    if (!Capacitor.isNativePlatform()) return
+    import('@capgo/capacitor-social-login').then(({ SocialLogin }) => {
+      SocialLogin.initialize({ google: { iOSClientId: GOOGLE_CLIENT_ID }, apple: {} }).catch(() => {})
+    })
+  }, [])
+
+  const handleAppleGiris = async () => {
+    if (sosyalYukleniyor) return
+    setSosyalYukleniyor('apple')
+    try {
+      const { SocialLogin } = await import('@capgo/capacitor-social-login')
+      const result = await SocialLogin.login({ provider: 'apple', options: { scopes: ['email', 'name'] } })
+      const { idToken, profile } = result.result
+      const res = await authApi.appleGiris(idToken, profile?.givenName || '', profile?.familyName || '', profile?.email || '')
+      if (res.data?.basarili) {
+        sosyalGiris(res.data.veri.kullanici, res.data.veri.tokenlar)
+        toast.success('Apple ile giriş yapıldı!')
+        navigate('/dashboard')
+      } else { toast.error(res.data?.hata || 'Apple ile giriş başarısız.') }
+    } catch (err) {
+      if (err?.message !== 'USER_CANCELLED') toast.error('Apple ile giriş yapılamadı.')
+    } finally { setSosyalYukleniyor('') }
+  }
+
+  const handleGoogleGiris = async () => {
+    if (sosyalYukleniyor) return
+    setSosyalYukleniyor('google')
+    try {
+      const { SocialLogin } = await import('@capgo/capacitor-social-login')
+      const result = await SocialLogin.login({ provider: 'google', options: { scopes: ['email', 'profile'] } })
+      const { idToken } = result.result
+      const res = await authApi.googleGiris(idToken)
+      if (res.data?.basarili) {
+        sosyalGiris(res.data.veri.kullanici, res.data.veri.tokenlar)
+        toast.success('Google ile giriş yapıldı!')
+        navigate('/dashboard')
+      } else { toast.error(res.data?.hata || 'Google ile giriş başarısız.') }
+    } catch (err) {
+      if (err?.message !== 'USER_CANCELLED') toast.error('Google ile giriş yapılamadı.')
+    } finally { setSosyalYukleniyor('') }
+  }
 
   const [form, setForm] = useState({
     firma_adi: '', ad_soyad: '', email: '', sifre: '', sifre_tekrar: '',
@@ -180,6 +226,23 @@ export default function KayitOl() {
           <Link to="/giris" className="pm-auth-btn-ghost">
             Zaten hesabım var — Giriş Yap
           </Link>
+
+          <div className="pm-auth-divider"><span>sosyal giriş</span></div>
+
+          <div className="pm-auth-social-row">
+            <button type="button" className="pm-auth-btn-social pm-auth-btn-apple"
+              onClick={handleAppleGiris} disabled={!!sosyalYukleniyor}>
+              {sosyalYukleniyor === 'apple'
+                ? <><i className="bi bi-arrow-repeat pm-spin" /> Bekleniyor...</>
+                : <><i className="bi bi-apple" /> Apple ile Devam Et</>}
+            </button>
+            <button type="button" className="pm-auth-btn-social pm-auth-btn-google"
+              onClick={handleGoogleGiris} disabled={!!sosyalYukleniyor}>
+              {sosyalYukleniyor === 'google'
+                ? <><i className="bi bi-arrow-repeat pm-spin" /> Bekleniyor...</>
+                : <><i className="bi bi-google" /> Google ile Devam Et</>}
+            </button>
+          </div>
         </div>
 
         <div className="pm-auth-footer">
