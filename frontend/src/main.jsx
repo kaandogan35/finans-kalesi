@@ -17,13 +17,17 @@ async function uygulama() {
       <App />
       {/* Toast bildirimleri — tüm uygulama genelinde */}
       <Toaster
-        position="top-right"
+        position="top-center"
         toastOptions={{
+          duration: 3500,
           style: {
             fontFamily: 'Inter, system-ui, sans-serif',
-            fontSize: '13px',
-            borderRadius: '12px',
-            border: '1px solid #e2e8f0',
+            fontSize: '14px',
+            fontWeight: '500',
+            borderRadius: '14px',
+            border: 'none',
+            boxShadow: '0 8px 24px rgba(0,0,0,0.12)',
+            padding: '14px 18px',
           },
         }}
         richColors

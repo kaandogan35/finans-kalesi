@@ -55,8 +55,12 @@ export default function GirisYap() {
     setYukleniyor(true)
     setHata('')
     try {
-      await girisYap(form.email, form.sifre)
-      toast.success('Hoş geldiniz!')
+      const kullanici = await girisYap(form.email, form.sifre)
+      const ad = kullanici?.ad ? `${kullanici.ad}!` : ''
+      toast.success(`Hoş geldiniz${ad ? ', ' + ad : '!'}`, {
+        description: 'ParamGo\'ya başarıyla giriş yaptınız.',
+        icon: '👋',
+      })
       navigate('/dashboard')
     } catch (err) {
       const status = err.response?.status

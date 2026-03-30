@@ -8418,6 +8418,11 @@ tr:hover .p-row-actions,
   from { transform: translateX(0); opacity: 1; }
   to   { transform: translateX(calc(100% + 24px)); opacity: 0; }
 }
+/* Sonner toast — iOS status bar altında göster */
+[data-sonner-toaster][data-position^="top"] {
+  --offset: max(calc(env(safe-area-inset-top, 0px) + 10px), 16px) !important;
+}
+
 .p-toast-container {
   position: fixed;
   top: 20px; right: 20px;
