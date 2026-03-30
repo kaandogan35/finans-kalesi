@@ -32,6 +32,11 @@ export default function GirisYap() {
   const [yukleniyor, setYukleniyor]   = useState(false)
   const [hata, setHata]               = useState('')
 
+  // Auth ekranı koyu (#0B1120) — status bar ikonları beyaz olmalı
+  useEffect(() => {
+    window.__statusBarSetLight?.()
+  }, [])
+
   const handleChange = (e) => {
     setForm((prev) => ({ ...prev, [e.target.name]: e.target.value }))
     if (hata) setHata('')

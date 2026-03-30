@@ -16,8 +16,9 @@ export async function capacitorBaslat() {
   try {
     const { StatusBar, Style } = await import('@capacitor/status-bar')
     await StatusBar.setOverlaysWebView({ overlay: true })
-    await StatusBar.setStyle({ style: Style.Dark })
-    // F, I — Sidebar/koyu ekranlar bu fonksiyonları window üzerinden çağırır
+    // Başlangıç: LIGHT (beyaz ikonlar) — auth ekranı koyu (#0B1120)
+    // AppLayout mount'ta __statusBarSetDark çağırır (açık ekranlar için siyah ikonlar)
+    await StatusBar.setStyle({ style: Style.Light })
     window.__statusBarSetDark  = () => StatusBar.setStyle({ style: Style.Dark })
     window.__statusBarSetLight = () => StatusBar.setStyle({ style: Style.Light })
   } catch {}
@@ -32,13 +33,25 @@ export async function capacitorBaslat() {
   try {
     const { Keyboard } = await import('@capacitor/keyboard')
 
-    Keyboard.addListener('keyboardWillShow', () => {
+    Keyboard.addListener('keyboardWillShow', ({ keyboardHeight }) => {
       document.body.classList.add('keyboard-open')
-      // D, E — Aktif input'u görünür alana kaydır (300ms: klavye tam açılana kadar bekle)
+      // resize:'none' olduğu için viewport küçülmez.
+      // keyboardHeight kullanarak input klavye arkasında kalıyorsa scroll yap.
       setTimeout(() => {
         const el = document.activeElement
-        if (el && (el.tagName === 'INPUT' || el.tagName === 'TEXTAREA' || el.tagName === 'SELECT')) {
-          el.scrollIntoView({ behavior: 'smooth', block: 'nearest' })
+        if (!el || !['INPUT', 'TEXTAREA', 'SELECT'].includes(el.tagName)) return
+
+        const rect = el.getBoundingClientRect()
+        const viewportHeight = window.innerHeight
+        const keyboardTop = viewportHeight - keyboardHeight
+        const inputBottom = rect.bottom + 16 // 16px nefes boşluğu
+
+        if (inputBottom > keyboardTop) {
+          // Modal içindeyse modal-body scroll edilir, yoksa p-content
+          const scrollParent = encontrarScrollParent(el)
+          if (scrollParent) {
+            scrollParent.scrollTop += (inputBottom - keyboardTop)
+          }
         }
       }, 300)
     })
@@ -59,6 +72,19 @@ export async function capacitorBaslat() {
       if (isActive) window.dispatchEvent(new CustomEvent('app:resume'))
     })
   } catch {}
+}
+
+// En yakın scroll edilebilir üst elementi bulur (modal-body, p-content, vb.)
+function encontrarScrollParent(el) {
+  let node = el.parentElement
+  while (node) {
+    const { overflowY } = window.getComputedStyle(node)
+    if ((overflowY === 'auto' || overflowY === 'scroll') && node.scrollHeight > node.clientHeight) {
+      return node
+    }
+    node = node.parentElement
+  }
+  return document.documentElement
 }
 
 export function platformBilgi() {

@@ -4,7 +4,7 @@
  * Web'de: Mevcut split-screen
  */
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useNavigate, Link } from 'react-router-dom'
 import { toast } from 'sonner'
 import { Capacitor } from '@capacitor/core'
@@ -28,6 +28,11 @@ export default function KayitOl() {
   const { girisYap } = useAuthStore()
   const aktifTema = useTemaStore((s) => s.aktifTema)
   const p = prefixMap[aktifTema] || 'p'
+
+  // Auth ekranı koyu (#0B1120) — status bar ikonları beyaz olmalı
+  useEffect(() => {
+    window.__statusBarSetLight?.()
+  }, [])
 
   const [form, setForm] = useState({
     firma_adi: '', ad_soyad: '', email: '', sifre: '', sifre_tekrar: '',

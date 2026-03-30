@@ -609,7 +609,13 @@ body.keyboard-open .p-modal-center {
 .p-content {
   flex: 1; padding: 28px 32px;
   background: var(--p-bg-content);
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
 }
+.p-content::-webkit-scrollbar { display: none; }
 
 /* ── KPI Grid ─────────────────────────────────────── */
 .p-kpi-grid {
@@ -1683,6 +1689,7 @@ body.keyboard-open .p-modal-center {
   /* Content padding küçült */
   .p-content {
     padding: 16px;
+    height: calc(100vh - var(--p-topbar-height) - env(safe-area-inset-top, 0px));
   }
 
   /* KPI grid: 2'li */

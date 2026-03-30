@@ -19,17 +19,17 @@ const config: CapacitorConfig = {
     },
     StatusBar: {
       overlaysWebView: true,
-      style: 'DARK',
+      style: 'LIGHT',
     },
     Keyboard: {
-      resize: 'body',
+      resize: 'none',
       resizeOnFullScreen: false,
     },
   },
   ios: {
     scheme: 'ParamGo',
-    contentInset: 'automatic',
-    backgroundColor: '#F8FAFC',
+    contentInset: 'never',
+    backgroundColor: '#0B1120',
   },
   android: {
     allowMixedContent: false,

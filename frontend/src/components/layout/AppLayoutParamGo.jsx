@@ -110,6 +110,11 @@ export default function AppLayoutParamGo() {
     return () => { document.title = 'ParamGo' }
   }, [])
 
+  // Ana uygulama açıkken status bar ikonları koyu (açık arka plan)
+  useEffect(() => {
+    window.__statusBarSetDark?.()
+  }, [])
+
   useEffect(() => {
     const handleEsc = (e) => {
       if (e.key === 'Escape') { setSidebarOpen(false); setUserDropdownOpen(false) }

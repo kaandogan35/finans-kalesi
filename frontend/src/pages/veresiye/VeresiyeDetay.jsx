@@ -108,8 +108,16 @@ function IslemModal({ goster, tur, cariAdi, onKapat, onKaydet, yukleniyor, p }) 
               </div>
             </div>
 
-            {/* Açıklama */}
+            {/* Tarih */}
             <div className="mb-3">
+              <label className={`${p}-vry-form-label`}>İşlem Tarihi</label>
+              <DateInput value={form.tarih}
+                onChange={(val) => setForm(f => ({ ...f, tarih: val }))}
+                placeholder="İşlem tarihi" />
+            </div>
+
+            {/* Açıklama */}
+            <div>
               <label className={`${p}-vry-form-label`}>
                 {isSatis ? 'Ürün / Hizmet Açıklaması' : 'Ödeme Notu'}
               </label>
@@ -121,14 +129,6 @@ function IslemModal({ goster, tur, cariAdi, onKapat, onKaydet, yukleniyor, p }) 
                 onChange={(e) => setForm(f => ({ ...f, aciklama: e.target.value }))}
                 maxLength={200}
               />
-            </div>
-
-            {/* Tarih */}
-            <div>
-              <label className={`${p}-vry-form-label`}>İşlem Tarihi</label>
-              <DateInput value={form.tarih}
-                onChange={(val) => setForm(f => ({ ...f, tarih: val }))}
-                placeholder="İşlem tarihi" />
             </div>
 
           </div>

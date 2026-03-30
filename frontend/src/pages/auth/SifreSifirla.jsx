@@ -4,7 +4,7 @@
  * Web'de: Mevcut split-screen
  */
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useNavigate, useSearchParams, Link } from 'react-router-dom'
 import { Capacitor } from '@capacitor/core'
 import useTemaStore from '../../stores/temaStore'
@@ -20,6 +20,11 @@ export default function SifreSifirla() {
   const navigate           = useNavigate()
   const [searchParams]     = useSearchParams()
   const token              = searchParams.get('token')
+
+  // Auth ekranı koyu (#0B1120) — status bar ikonları beyaz olmalı
+  useEffect(() => {
+    window.__statusBarSetLight?.()
+  }, [])
 
   const [email, setEmail]       = useState('')
   const [gonderildi, setGonderildi] = useState(false)
