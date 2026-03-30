@@ -13,6 +13,8 @@ import useTemaStore from '../../stores/temaStore'
 import ParamGoLogo from '../../logo/ParamGoLogo'
 import { authApi } from '../../api/auth'
 
+const GOOGLE_CLIENT_ID = '505947540272-fuvn80vu0q2bjcgbihea1sm7b4jininv.apps.googleusercontent.com'
+
 const isNative = Capacitor.isNativePlatform() || new URLSearchParams(window.location.search).has('native')
 const prefixMap = { paramgo: 'p' }
 
@@ -66,11 +68,62 @@ export default function GirisYap() {
     } finally { setYukleniyor(false) }
   }
 
-  // Apple Sign-In — Capacitor 8 uyumlu çözüm build sonrası eklenecek
-  // Backend hazır (AuthController.php appleGiris), sadece frontend plugin gerekiyor
+  // Social Login — @capgo/capacitor-social-login (Cap 8 uyumlu)
+  useEffect(() => {
+    if (!Capacitor.isNativePlatform()) return
+    import('@capgo/capacitor-social-login').then(({ SocialLogin }) => {
+      SocialLogin.initialize({
+        google: { iOSClientId: GOOGLE_CLIENT_ID },
+        apple: {},
+      }).catch(() => {})
+    })
+  }, [])
 
-  // Google Sign-In — Capacitor 8 uyumlu paket çıkınca eklenecek
-  // const handleGoogleGiris = async () => { ... }
+  const handleAppleGiris = async () => {
+    if (sosyalYukleniyor) return
+    setSosyalYukleniyor('apple')
+    try {
+      const { SocialLogin } = await import('@capgo/capacitor-social-login')
+      const result = await SocialLogin.login({
+        provider: 'apple',
+        options: { scopes: ['email', 'name'] },
+      })
+      const { identityToken, givenName, familyName, email } = result.result
+      const res = await authApi.appleGiris(identityToken, givenName || '', familyName || '', email || '')
+      if (res.data?.basarili) {
+        sosyalGiris(res.data.veri.kullanici, res.data.veri.tokenlar)
+        toast.success('Apple ile giriş yapıldı!')
+        navigate('/dashboard')
+      } else {
+        toast.error(res.data?.hata || 'Apple ile giriş başarısız.')
+      }
+    } catch (err) {
+      if (err?.message !== 'USER_CANCELLED') toast.error('Apple ile giriş yapılamadı.')
+    } finally { setSosyalYukleniyor('') }
+  }
+
+  const handleGoogleGiris = async () => {
+    if (sosyalYukleniyor) return
+    setSosyalYukleniyor('google')
+    try {
+      const { SocialLogin } = await import('@capgo/capacitor-social-login')
+      const result = await SocialLogin.login({
+        provider: 'google',
+        options: { scopes: ['email', 'profile'] },
+      })
+      const { idToken } = result.result
+      const res = await authApi.googleGiris(idToken)
+      if (res.data?.basarili) {
+        sosyalGiris(res.data.veri.kullanici, res.data.veri.tokenlar)
+        toast.success('Google ile giriş yapıldı!')
+        navigate('/dashboard')
+      } else {
+        toast.error(res.data?.hata || 'Google ile giriş başarısız.')
+      }
+    } catch (err) {
+      if (err?.message !== 'USER_CANCELLED') toast.error('Google ile giriş yapılamadı.')
+    } finally { setSosyalYukleniyor('') }
+  }
 
   /* ═══════ MOBİL — Dark native giriş ekranı ═══════ */
   if (isNative) {
@@ -156,7 +209,32 @@ export default function GirisYap() {
             Yeni Hesap Oluştur
           </Link>
 
-          {/* Sosyal Giriş — Build geçtikten sonra Capacitor 8 uyumlu Apple/Google Sign-In eklenecek */}
+          <div className="pm-auth-divider"><span>sosyal giriş</span></div>
+
+          <div className="pm-auth-social-row">
+            <button
+              type="button"
+              className="pm-auth-btn-social pm-auth-btn-apple"
+              onClick={handleAppleGiris}
+              disabled={!!sosyalYukleniyor}
+            >
+              {sosyalYukleniyor === 'apple'
+                ? <><i className="bi bi-arrow-repeat pm-spin" /> Bekleniyor...</>
+                : <><i className="bi bi-apple" /> Apple ile Giriş Yap</>
+              }
+            </button>
+            <button
+              type="button"
+              className="pm-auth-btn-social pm-auth-btn-google"
+              onClick={handleGoogleGiris}
+              disabled={!!sosyalYukleniyor}
+            >
+              {sosyalYukleniyor === 'google'
+                ? <><i className="bi bi-arrow-repeat pm-spin" /> Bekleniyor...</>
+                : <><i className="bi bi-google" /> Google ile Giriş Yap</>
+              }
+            </button>
+          </div>
         </div>
 
         {/* Alt güvenlik notu */}
