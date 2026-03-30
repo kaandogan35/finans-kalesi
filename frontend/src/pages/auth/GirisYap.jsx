@@ -92,8 +92,13 @@ export default function GirisYap() {
         provider: 'apple',
         options: { scopes: ['email', 'name'] },
       })
-      const { identityToken, givenName, familyName, email } = result.result
-      const res = await authApi.appleGiris(identityToken, givenName || '', familyName || '', email || '')
+      const { idToken, profile } = result.result
+      const res = await authApi.appleGiris(
+        idToken,
+        profile?.givenName || '',
+        profile?.familyName || '',
+        profile?.email || ''
+      )
       if (res.data?.basarili) {
         sosyalGiris(res.data.veri.kullanici, res.data.veri.tokenlar)
         toast.success('Apple ile giriş yapıldı!')

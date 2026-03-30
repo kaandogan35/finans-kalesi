@@ -45,6 +45,22 @@ workflows:
             echo "UYARI: GOOGLE_SERVICE_INFO_PLIST env var bulunamadı, Google Sign-In çalışmayabilir."
           fi
 
+      - name: Add Google Sign-In URL scheme to Info.plist
+        script: |
+          PLIST="frontend/ios/App/App/Info.plist"
+          REVERSED_ID="com.googleusercontent.apps.505947540272-fuvn80vu0q2bjcgbihea1sm7b4jininv"
+          # Daha önce eklenmemişse ekle
+          if ! grep -q "$REVERSED_ID" "$PLIST"; then
+            /usr/libexec/PlistBuddy -c "Add :CFBundleURLTypes array" "$PLIST" 2>/dev/null || true
+            /usr/libexec/PlistBuddy -c "Add :CFBundleURLTypes:0 dict" "$PLIST" 2>/dev/null || true
+            /usr/libexec/PlistBuddy -c "Add :CFBundleURLTypes:0:CFBundleTypeRole string Editor" "$PLIST" 2>/dev/null || true
+            /usr/libexec/PlistBuddy -c "Add :CFBundleURLTypes:0:CFBundleURLSchemes array" "$PLIST" 2>/dev/null || true
+            /usr/libexec/PlistBuddy -c "Add :CFBundleURLTypes:0:CFBundleURLSchemes:0 string $REVERSED_ID" "$PLIST"
+            echo "Google URL scheme eklendi: $REVERSED_ID"
+          else
+            echo "Google URL scheme zaten mevcut."
+          fi
+
       - name: Capacitor sync iOS
         script: |
           cd frontend

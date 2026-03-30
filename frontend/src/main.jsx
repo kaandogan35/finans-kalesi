@@ -1,23 +1,40 @@
 import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
 import { Toaster } from 'sonner'
+import { Capacitor } from '@capacitor/core'
 import 'bootstrap/dist/css/bootstrap.min.css'
 import 'bootstrap-icons/font/bootstrap-icons.css'
 import './index.css'
 import App from './App.jsx'
 import { capacitorBaslat } from './lib/capacitorInit.js'
 
+// env(safe-area-inset-top) değerini JS'te oku
+function getSafeAreaTop() {
+  const el = document.createElement('div')
+  el.style.position = 'fixed'
+  el.style.paddingTop = 'env(safe-area-inset-top, 0px)'
+  el.style.visibility = 'hidden'
+  document.body.appendChild(el)
+  const val = parseFloat(getComputedStyle(el).paddingTop) || 0
+  document.body.removeChild(el)
+  return val
+}
+
 // Native platform entegrasyonu tamamlandıktan sonra React başlar
-// (window.__statusBarSetLight/Dark hazır olsun — splash sırasında beklenir)
 async function uygulama() {
   await capacitorBaslat()
+
+  // iOS'ta toast status bar altında çıksın
+  const toastOffset = Capacitor.isNativePlatform()
+    ? Math.max(getSafeAreaTop() + 10, 16)
+    : 16
 
   createRoot(document.getElementById('root')).render(
     <StrictMode>
       <App />
-      {/* Toast bildirimleri — tüm uygulama genelinde */}
       <Toaster
         position="top-center"
+        offset={toastOffset}
         toastOptions={{
           duration: 3500,
           style: {
