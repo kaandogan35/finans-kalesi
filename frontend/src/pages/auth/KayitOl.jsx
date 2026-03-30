@@ -29,12 +29,10 @@ export default function KayitOl() {
   const aktifTema = useTemaStore((s) => s.aktifTema)
   const p = prefixMap[aktifTema] || 'p'
 
-  // Auth ekranı koyu (#0B1120) — status bar ikonları beyaz olmalı (doğrudan import)
+  // Auth ekranı koyu (#0B1120) — status bar ikonları beyaz olmalı
   useEffect(() => {
     if (!Capacitor.isNativePlatform()) return
-    import('@capacitor/status-bar').then(({ StatusBar, Style }) => {
-      StatusBar.setStyle({ style: Style.Light }).catch(() => {})
-    }).catch(() => {})
+    window.__statusBarSetLight?.()
   }, [])
 
   const [form, setForm] = useState({

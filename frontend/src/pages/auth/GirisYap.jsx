@@ -36,12 +36,10 @@ export default function GirisYap() {
   const [hata, setHata]               = useState('')
   const [sosyalYukleniyor, setSosyalYukleniyor] = useState('')
 
-  // Auth ekranı koyu (#0B1120) — status bar ikonları beyaz olmalı (doğrudan import)
+  // Auth ekranı koyu (#0B1120) — status bar ikonları beyaz olmalı
   useEffect(() => {
     if (!Capacitor.isNativePlatform()) return
-    import('@capacitor/status-bar').then(({ StatusBar, Style }) => {
-      StatusBar.setStyle({ style: Style.Light }).catch(() => {})
-    }).catch(() => {})
+    window.__statusBarSetLight?.()
   }, [])
 
   const handleChange = (e) => {

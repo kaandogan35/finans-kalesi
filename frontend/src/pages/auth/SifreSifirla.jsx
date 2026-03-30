@@ -21,12 +21,10 @@ export default function SifreSifirla() {
   const [searchParams]     = useSearchParams()
   const token              = searchParams.get('token')
 
-  // Auth ekranı koyu (#0B1120) — status bar ikonları beyaz olmalı (doğrudan import)
+  // Auth ekranı koyu (#0B1120) — status bar ikonları beyaz olmalı
   useEffect(() => {
     if (!Capacitor.isNativePlatform()) return
-    import('@capacitor/status-bar').then(({ StatusBar, Style }) => {
-      StatusBar.setStyle({ style: Style.Light }).catch(() => {})
-    }).catch(() => {})
+    window.__statusBarSetLight?.()
   }, [])
 
   const [email, setEmail]       = useState('')

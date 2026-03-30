@@ -111,12 +111,10 @@ export default function AppLayoutParamGo() {
     return () => { document.title = 'ParamGo' }
   }, [])
 
-  // Ana uygulama açıkken status bar ikonları koyu (açık arka plan — doğrudan import)
+  // Ana uygulama açıkken status bar ikonları koyu (açık arka plan)
   useEffect(() => {
     if (!Capacitor.isNativePlatform()) return
-    import('@capacitor/status-bar').then(({ StatusBar, Style }) => {
-      StatusBar.setStyle({ style: Style.Dark }).catch(() => {})
-    }).catch(() => {})
+    window.__statusBarSetDark?.()
   }, [])
 
   useEffect(() => {

@@ -7,24 +7,29 @@ import './index.css'
 import App from './App.jsx'
 import { capacitorBaslat } from './lib/capacitorInit.js'
 
-// Native platform entegrasyonu (iOS/Android)
-capacitorBaslat()
+// Native platform entegrasyonu tamamlandıktan sonra React başlar
+// (window.__statusBarSetLight/Dark hazır olsun — splash sırasında beklenir)
+async function uygulama() {
+  await capacitorBaslat()
 
-createRoot(document.getElementById('root')).render(
-  <StrictMode>
-    <App />
-    {/* Toast bildirimleri — tüm uygulama genelinde */}
-    <Toaster
-      position="top-right"
-      toastOptions={{
-        style: {
-          fontFamily: 'Inter, system-ui, sans-serif',
-          fontSize: '13px',
-          borderRadius: '12px',
-          border: '1px solid #e2e8f0',
-        },
-      }}
-      richColors
-    />
-  </StrictMode>
-)
+  createRoot(document.getElementById('root')).render(
+    <StrictMode>
+      <App />
+      {/* Toast bildirimleri — tüm uygulama genelinde */}
+      <Toaster
+        position="top-right"
+        toastOptions={{
+          style: {
+            fontFamily: 'Inter, system-ui, sans-serif',
+            fontSize: '13px',
+            borderRadius: '12px',
+            border: '1px solid #e2e8f0',
+          },
+        }}
+        richColors
+      />
+    </StrictMode>
+  )
+}
+
+uygulama()
