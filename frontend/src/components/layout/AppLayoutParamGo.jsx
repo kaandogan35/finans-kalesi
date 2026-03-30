@@ -1,5 +1,6 @@
 import { useState, useEffect, useMemo, useRef } from 'react'
 import { Outlet, NavLink, Link, useNavigate, useLocation } from 'react-router-dom'
+import { Capacitor } from '@capacitor/core'
 import useAuthStore from '../../stores/authStore'
 import useBildirimStore from '../../stores/bildirimStore'
 import '../../temalar/paramgo.css'
@@ -110,9 +111,12 @@ export default function AppLayoutParamGo() {
     return () => { document.title = 'ParamGo' }
   }, [])
 
-  // Ana uygulama açıkken status bar ikonları koyu (açık arka plan)
+  // Ana uygulama açıkken status bar ikonları koyu (açık arka plan — doğrudan import)
   useEffect(() => {
-    window.__statusBarSetDark?.()
+    if (!Capacitor.isNativePlatform()) return
+    import('@capacitor/status-bar').then(({ StatusBar, Style }) => {
+      StatusBar.setStyle({ style: Style.Dark }).catch(() => {})
+    }).catch(() => {})
   }, [])
 
   useEffect(() => {

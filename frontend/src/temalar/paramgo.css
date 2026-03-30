@@ -6831,6 +6831,7 @@ body:has(.pm-auth-screen) {
     box-shadow: 0 12px 40px rgba(0,0,0,0.15);
     animation: bld-drop-down 0.3s cubic-bezier(0.16, 1, 0.3, 1);
     transform-origin: top center;
+    padding-top: env(safe-area-inset-top, 0px);
   }
   @keyframes bld-drop-down {
     0% { opacity: 0; transform: translateY(-100%); }
