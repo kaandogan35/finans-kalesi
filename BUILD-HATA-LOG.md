@@ -102,6 +102,20 @@ app-store-connect fetch-signing-files "$BUNDLE_ID" \
 
 ---
 
+### HATA 10 — Xcode 26.2 ile use-profiles Çalışmıyor
+**Belirti:** Step 8 (Build iOS IPA) hata: `"App" requires a provisioning profile` — status code 65
+**Neden:** `xcode-project use-profiles` Xcode 26.2'de `project.pbxproj`'u güncellemedi. `CODE_SIGN_STYLE = Automatic` + `CODE_SIGN_IDENTITY = iPhone Developer` olarak kaldı. `build-ipa` `CODE_SIGN_STYLE=Manual` ile çağırıyor ama profil ataması boş.
+**Çözüm:** `use-profiles` sonrası sed ile `project.pbxproj`'a elle yaz:
+```bash
+PROFILE_NAME=$(security cms -D -i "$PROFILE_FILE" | PlistBuddy -c "Print :Name" /dev/stdin)
+sed -i '' 's/CODE_SIGN_STYLE = Automatic/CODE_SIGN_STYLE = Manual/g' "$PBXPROJ"
+sed -i '' "s/PROVISIONING_PROFILE_SPECIFIER = \"[^\"]*\"/PROVISIONING_PROFILE_SPECIFIER = \"$PROFILE_NAME\"/g" "$PBXPROJ"
+```
+**Dosya:** codemagic.yaml (Set up code signing adımı)
+**Not:** Xcode 26+ için kalıcı kural — `use-profiles` artık güvenilir değil, fallback zorunlu
+
+---
+
 ## GENEL KURALLAR (Her Build'de Uygula)
 
 1. **İki remote:** `git push paramgo master:main && git push origin master`
