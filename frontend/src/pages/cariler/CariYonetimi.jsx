@@ -1984,7 +1984,7 @@ export default function CariYonetimi() {
       {/* ─── Floating Action Bar — Toplu Ödeme Takibe Al ─────────────────── */}
       {secilenCariler.size > 0 && (
         <div style={{
-          position: 'fixed', bottom: 88, left: '50%', transform: 'translateX(-50%)',
+          position: 'fixed', bottom: 'calc(88px + env(safe-area-inset-bottom, 0px))', left: '50%', transform: 'translateX(-50%)',
           background: '#0f172a', borderRadius: 14, padding: '12px 20px',
           display: 'flex', alignItems: 'center', gap: 16, zIndex: 1040,
           boxShadow: '0 8px 32px rgba(0,0,0,0.35)', minWidth: 320,

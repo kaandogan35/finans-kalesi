@@ -1884,7 +1884,7 @@ export default function GelirGiderSayfasi({ islemTipi }) {
         className={`${p}-${isGiris ? 'cym-btn-new' : 'cym-btn-danger'} d-md-none`}
         aria-label={isGiris ? 'Gelir Ekle' : 'Gider Ekle'}
         style={{
-          position: 'fixed', bottom: 88, right: 20, zIndex: 1040,
+          position: 'fixed', bottom: 'calc(88px + env(safe-area-inset-bottom, 0px))', right: 20, zIndex: 1040,
           width: 56, height: 56, borderRadius: 10,
           display: 'flex', alignItems: 'center', justifyContent: 'center',
           boxShadow: isGiris ? 'var(--p-shadow-fab-success)' : 'var(--p-shadow-fab-danger)',

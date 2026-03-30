@@ -1117,7 +1117,7 @@ export default function TekrarlayanIslemler() {
         onClick={yeniAc}
         className={`${p}-${isGider ? 'cym-btn-danger' : 'cym-btn-new'} d-md-none`}
         style={{
-          position: 'fixed', bottom: 88, right: 20, zIndex: 1040,
+          position: 'fixed', bottom: 'calc(88px + env(safe-area-inset-bottom, 0px))', right: 20, zIndex: 1040,
           width: 56, height: 56, borderRadius: 14,
           display: 'flex', alignItems: 'center', justifyContent: 'center',
           boxShadow: isGider ? '0 4px 14px rgba(239,68,68,0.3)' : '0 4px 14px rgba(16,185,129,0.3)',

@@ -34,29 +34,26 @@ export async function capacitorBaslat() {
 
     Keyboard.addListener('keyboardWillShow', ({ keyboardHeight }) => {
       document.body.classList.add('keyboard-open')
-      // resize:'none' olduğu için viewport küçülmez.
-      // keyboardHeight kullanarak input klavye arkasında kalıyorsa scroll yap.
+      // CSS değişkeni: modaller padding-bottom ile klavye üzerine kayar
+      document.documentElement.style.setProperty('--keyboard-h', `${keyboardHeight}px`)
+      // Ek: input doğrudan klavye arkasındaysa scroll et
       setTimeout(() => {
         const el = document.activeElement
         if (!el || !['INPUT', 'TEXTAREA', 'SELECT'].includes(el.tagName)) return
-
         const rect = el.getBoundingClientRect()
         const viewportHeight = window.innerHeight
         const keyboardTop = viewportHeight - keyboardHeight
-        const inputBottom = rect.bottom + 16 // 16px nefes boşluğu
-
+        const inputBottom = rect.bottom + 16
         if (inputBottom > keyboardTop) {
-          // Modal içindeyse modal-body scroll edilir, yoksa p-content
           const scrollParent = encontrarScrollParent(el)
-          if (scrollParent) {
-            scrollParent.scrollTop += (inputBottom - keyboardTop)
-          }
+          if (scrollParent) scrollParent.scrollTop += (inputBottom - keyboardTop)
         }
       }, 300)
     })
 
     Keyboard.addListener('keyboardWillHide', () => {
       document.body.classList.remove('keyboard-open')
+      document.documentElement.style.removeProperty('--keyboard-h')
     })
   } catch {}
 

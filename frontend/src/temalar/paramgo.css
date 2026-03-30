@@ -36,10 +36,11 @@ body.keyboard-open .pm-auth-screen {
   padding-top: max(env(safe-area-inset-top, 16px), 16px);
 }
 
-/* H — Klavye açıkken modal üstten hizalanır, scroll edilebilir */
+/* H — Klavye açıkken modal üstten hizalanır, klavye yüksekliği kadar boşluk bırakır */
 body.keyboard-open .p-modal-center {
   align-items: flex-start;
   padding-top: calc(env(safe-area-inset-top, 0px) + 8px);
+  padding-bottom: var(--keyboard-h, 0px);
   overflow-y: auto;
 }
 
