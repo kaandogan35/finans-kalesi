@@ -1,1 +1,0 @@
-import{a as o}from"./index-Dq6313iG.js";const r={listele:(e={})=>o.get("/odemeler",{params:e}),ozet:()=>o.get("/odemeler/ozet"),getir:e=>o.get(`/odemeler/${e}`),olustur:e=>o.post("/odemeler",e),guncelle:(e,t)=>o.put(`/odemeler/${e}`,t),aramaKaydi:(e,t)=>o.put(`/odemeler/${e}/arama-kaydi`,t),sil:e=>o.delete(`/odemeler/${e}`)};export{r as o};

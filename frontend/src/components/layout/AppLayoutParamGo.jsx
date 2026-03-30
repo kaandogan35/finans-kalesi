@@ -92,6 +92,9 @@ export default function AppLayoutParamGo() {
   const kasaAktif = location.pathname.startsWith('/kasa')
   useEffect(() => { setKasaAccOpen(kasaAktif) }, [kasaAktif])
 
+  // Sayfa değiştiğinde body overflow temizle (modal cleanup güvenlik ağı)
+  useEffect(() => { document.body.style.overflow = '' }, [location.pathname])
+
   // Collapsible sidebar localStorage'a kaydet
   useEffect(() => {
     try { localStorage.setItem('p-sidebar-collapsed', sidebarCollapsed) } catch {}
