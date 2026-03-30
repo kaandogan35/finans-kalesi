@@ -6,7 +6,7 @@
 
 import { useState, useEffect } from 'react'
 import { raporlarApi } from '../../api/raporlar'
-import { bildirim as toast } from '../../components/ui/CenterAlert'
+import { toast } from 'sonner'
 
 const TL = (n) =>
   new Intl.NumberFormat('tr-TR', { style: 'currency', currency: 'TRY', minimumFractionDigits: 2 }).format(n ?? 0)

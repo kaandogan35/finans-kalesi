@@ -6,7 +6,7 @@
 
 import { useState, useEffect } from 'react'
 import { useNavigate, Link } from 'react-router-dom'
-import { bildirim as toast } from '../../components/ui/CenterAlert'
+import { toast } from 'sonner'
 import { Capacitor } from '@capacitor/core'
 import useAuthStore from '../../stores/authStore'
 import useTemaStore from '../../stores/temaStore'

@@ -4,7 +4,7 @@
  */
 import { useState, useEffect, useRef } from 'react'
 import { createPortal } from 'react-dom'
-import { bildirim as toast } from '../../components/ui/CenterAlert'
+import { toast } from 'sonner'
 import { hexRgba } from '../../lib/temaRenkleri'
 import { bilancoKaydet, bilancoGuncelle, bilancoSil } from '../../api/kasa'
 import { TL, donemNormalize, donemFmt, formatParaInput, parseParaInput, bugunTarih } from './kasaUtils'

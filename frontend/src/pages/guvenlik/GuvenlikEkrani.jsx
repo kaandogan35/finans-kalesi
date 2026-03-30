@@ -7,7 +7,7 @@
  */
 
 import { useState, useEffect, useCallback } from 'react'
-import { bildirim as toast } from '../../components/ui/CenterAlert'
+import { toast } from 'sonner'
 import { useNavigate } from 'react-router-dom'
 import { guvenlikApi } from '../../api/guvenlik'
 import useAuthStore from '../../stores/authStore'

@@ -6,7 +6,7 @@
  */
 
 import { useState, useEffect } from 'react'
-import { bildirim as toast } from '../../components/ui/CenterAlert'
+import { toast } from 'sonner'
 import { useLocation } from 'react-router-dom'
 import useTemaStore from '../../stores/temaStore'
 import { temaRenkleri } from '../../lib/temaRenkleri'

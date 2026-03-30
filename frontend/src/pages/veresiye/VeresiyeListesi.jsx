@@ -6,7 +6,7 @@
 
 import { useState, useEffect, useCallback } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { bildirim as toast } from '../../components/ui/CenterAlert'
+import { toast } from 'sonner'
 import { veresiyeApi } from '../../api/veresiye'
 import useTemaStore from '../../stores/temaStore'
 import { DynamicAvatar } from '../../components/SwipeCard'

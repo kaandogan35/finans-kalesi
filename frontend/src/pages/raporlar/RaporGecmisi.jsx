@@ -6,7 +6,7 @@
 
 import { useState, useEffect } from 'react'
 import { raporlarApi } from '../../api/raporlar'
-import { bildirim as toast } from '../../components/ui/CenterAlert'
+import { toast } from 'sonner'
 import EmptyState from '../../components/EmptyState'
 
 const RAPOR_IKON = {

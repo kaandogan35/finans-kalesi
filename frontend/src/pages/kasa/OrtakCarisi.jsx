@@ -5,7 +5,7 @@
  */
 import { useState, useMemo, useEffect } from 'react'
 import { createPortal } from 'react-dom'
-import { bildirim as toast } from '../../components/ui/CenterAlert'
+import { toast } from 'sonner'
 import { hexRgba } from '../../lib/temaRenkleri'
 import { ortakHareketEkle, ortakHareketSil } from '../../api/kasa'
 import { TL, tarihFmt, bugunTarih, formatParaInput, parseParaInput, ORTAK_RENKLERI } from './kasaUtils'

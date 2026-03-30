@@ -3,7 +3,7 @@
  * Tum rapor dosyalarindaki tekrar eden PDF header kodunu birlestir
  */
 
-import { bildirim as toast } from '../components/ui/CenterAlert'
+import { toast } from 'sonner'
 
 const PDF_LOGO_SVG = `<svg width="36" height="36" viewBox="0 0 120 120" fill="none" xmlns="http://www.w3.org/2000/svg">
   <defs><linearGradient id="pg" x1="0" y1="0" x2="120" y2="120" gradientUnits="userSpaceOnUse"><stop offset="0%" stop-color="#10B981"/><stop offset="100%" stop-color="#059669"/></linearGradient></defs>

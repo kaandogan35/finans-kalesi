@@ -7,7 +7,7 @@
 
 import { useState, useEffect, useRef, useCallback } from 'react'
 import { createPortal } from 'react-dom'
-import { bildirim as toast } from '../../components/ui/CenterAlert'
+import { toast } from 'sonner'
 import cekSenetApi from '../../api/cekSenet'
 import { carilerApi } from '../../api/cariler'
 import useTemaStore from '../../stores/temaStore'

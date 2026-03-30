@@ -9,7 +9,7 @@
 import { useState, useEffect, useCallback } from 'react'
 import { createPortal } from 'react-dom'
 import { useNavigate } from 'react-router-dom'
-import { bildirim as toast } from '../../components/ui/CenterAlert'
+import { toast } from 'sonner'
 import { carilerApi } from '../../api/cariler'
 import SwipeCard, { DynamicAvatar } from '../../components/SwipeCard'
 import { odemeApi } from '../../api/odeme'

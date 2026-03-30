@@ -5,7 +5,7 @@
 
 import { useState } from 'react'
 import { createPortal } from 'react-dom'
-import { bildirim as toast } from '../../components/ui/CenterAlert'
+import { toast } from 'sonner'
 import { kullanicilarApi } from '../../api/kullanicilar'
 
 const MODULLER = [
