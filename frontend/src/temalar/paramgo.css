@@ -57,9 +57,9 @@ body.keyboard-open .p-modal-center {
     max-height: calc(92dvh - var(--keyboard-h, 0px));
     overflow-y: auto;
   }
-  /* H3 — Mobil fullscreen modal: klavye açıkken modal kutusu shrink, input görünür */
+  /* H3 — Mobil fullscreen modal: klavye açıkken kutu klavye alanı kadar küçülür, içerik scroll edilir */
   body.keyboard-open .p-modal-center.p-modal-fullscreen .p-modal-box {
-    max-height: calc(92dvh - var(--keyboard-h, 0px));
+    max-height: calc(100vh - var(--keyboard-h, 0px));
     overflow-y: auto;
   }
 }
