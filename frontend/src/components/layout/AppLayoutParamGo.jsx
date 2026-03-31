@@ -77,6 +77,7 @@ export default function AppLayoutParamGo() {
   const [kasaAccOpen, setKasaAccOpen] = useState(false)
   const [userDropdownOpen, setUserDropdownOpen] = useState(false)
   const userDropdownRef = useRef(null)
+  const contentRef = useRef(null)
 
   const kullanici = useAuthStore((s) => s.kullanici)
   const cikisYap  = useAuthStore((s) => s.cikisYap)
@@ -107,17 +108,43 @@ export default function AppLayoutParamGo() {
     return () => mq.removeEventListener('change', handler)
   }, [])
 
-  // FAB scroll davranışı — aşağı scroll: gizle, yukarı scroll: göster
+  // FAB scroll davranışı — touchmove yönüne göre gizle/göster
+  // scroll event yerine touchmove: Capacitor WKWebView'de her zaman çalışır
   useEffect(() => {
-    let sonY = window.scrollY
-    const onScroll = () => {
-      const simdiY = window.scrollY
-      if (simdiY > sonY && simdiY > 80) document.body.classList.add('fab-gizle')
-      else document.body.classList.remove('fab-gizle')
-      sonY = simdiY
+    let baslangicY = 0
+    let gizli = false
+    let timer = null
+
+    const onTouchStart = (e) => { baslangicY = e.touches[0].clientY }
+    const onTouchMove = (e) => {
+      const fark = baslangicY - e.touches[0].clientY
+      if (fark > 20 && !gizli) {
+        gizli = true
+        document.body.classList.add('fab-gizle')
+      } else if (fark < -10 && gizli) {
+        gizli = false
+        document.body.classList.remove('fab-gizle')
+      }
     }
-    window.addEventListener('scroll', onScroll, { passive: true })
-    return () => { window.removeEventListener('scroll', onScroll); document.body.classList.remove('fab-gizle') }
+    const onTouchEnd = () => {
+      // Scroll durduğunda 2sn sonra göster
+      clearTimeout(timer)
+      timer = setTimeout(() => {
+        gizli = false
+        document.body.classList.remove('fab-gizle')
+      }, 2000)
+    }
+
+    document.addEventListener('touchstart', onTouchStart, { passive: true })
+    document.addEventListener('touchmove', onTouchMove, { passive: true })
+    document.addEventListener('touchend', onTouchEnd, { passive: true })
+    return () => {
+      document.removeEventListener('touchstart', onTouchStart)
+      document.removeEventListener('touchmove', onTouchMove)
+      document.removeEventListener('touchend', onTouchEnd)
+      clearTimeout(timer)
+      document.body.classList.remove('fab-gizle')
+    }
   }, [])
 
   useEffect(() => {
@@ -407,7 +434,7 @@ export default function AppLayoutParamGo() {
         <UpgradeBildirim />
 
         {/* Sayfa içeriği */}
-        <main className="p-content">
+        <main className="p-content" ref={contentRef}>
           <Outlet />
         </main>
 
