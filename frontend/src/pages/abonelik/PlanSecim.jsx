@@ -5,10 +5,13 @@
  */
 
 import { useState, useEffect } from 'react'
+import { Capacitor } from '@capacitor/core'
 import { bildirim as toast } from '../../components/ui/CenterAlert'
 import useAuthStore from '../../stores/authStore'
 import { abonelikApi } from '../../api/abonelik'
 import { usePlanKontrol } from '../../hooks/usePlanKontrol'
+
+const IOS_MU = Capacitor.isNativePlatform()
 
 const FIYATLAR = {
   standart: { aylik: 290.00, yillik: 2900.00 },
@@ -235,136 +238,153 @@ export default function PlanSecim() {
         </div>
 
         {/* PLAN SEÇİMİ */}
-        <div className={`${p}-abn-section-title`}>Plan Seçin</div>
-
-        {/* Dönem toggle */}
-        <div className="d-flex align-items-center justify-content-center gap-3 mb-4">
-          <span
-            className={`${p}-abn-toggle-label ${!yillik ? 'aktif' : ''}`}
-            onClick={() => setYillik(false)}
-          >Aylık</span>
-          <div
-            className={`abn-toggle-switch ${p}-abn-toggle-sw ${yillik ? 'on' : ''}`}
-            onClick={() => setYillik(v => !v)}
-          >
-            <div className="abn-toggle-knob" />
+        {IOS_MU ? (
+          /* iOS: Apple App Store kuralı gereği abonelik satın alma UI gösterilmez.
+             Plan yönetimi için web arayüzü kullanılmalıdır. */
+          <div className={`${p}-abn-card`} style={{ textAlign: 'center', padding: '32px 20px' }}>
+            <i className="bi bi-laptop" style={{ fontSize: 36, color: 'var(--p-color-primary)', display: 'block', marginBottom: 12 }} />
+            <div style={{ fontSize: 15, fontWeight: 700, color: '#111827', marginBottom: 8 }}>
+              Abonelik Yönetimi
+            </div>
+            <div style={{ fontSize: 13, color: 'var(--p-text-muted)', lineHeight: 1.6 }}>
+              Plan yükseltme ve abonelik yönetimi için bilgisayarınızdan
+              <strong> paramgo.com</strong> adresini ziyaret edin.
+            </div>
           </div>
-          <span
-            className={`${p}-abn-toggle-label ${yillik ? 'aktif' : ''}`}
-            onClick={() => setYillik(true)}
-          >
-            Yıllık
-            <span className="abn-tasarruf-chip ms-2">%17 Tasarruf</span>
-          </span>
-        </div>
+        ) : (
+          <>
+            <div className={`${p}-abn-section-title`}>Plan Seçin</div>
 
-        <div className="row g-3 mb-4">
-          {planlar.map((pl) => {
-            const aktif = plan === pl.id
-            const iconBoxCls = pl.id === 'deneme'
-              ? `${p}-abn-icon-deneme`
-              : `p-abn-icon-${pl.id}`
-            const iconColor = pl.id === 'standart'
-              ? 'var(--p-color-primary)'
-              : pl.id === 'kurumsal'
-              ? 'var(--p-color-primary-dark)'
-              : undefined
-
-            return (
-              <div key={pl.id} className="col-12 col-md-4">
-                <div className={`${p}-abn-plan-card ${aktif ? 'aktif-plan' : ''} ${pl.onerilen && !aktif ? 'onerilen' : ''}`}>
-
-                  {/* Rozet satırı */}
-                  <div className="d-flex align-items-center justify-content-between mb-3" style={{ minHeight: 24 }}>
-                    <div className="d-flex gap-2">
-                      {aktif && <span className={`${p}-abn-badge-active`}>✓ Aktif Plan</span>}
-                      {pl.onerilen && !aktif && <span className={`${p}-abn-badge-rec`}>★ Önerilen</span>}
-                    </div>
-                  </div>
-
-                  {/* İkon + Ad */}
-                  <div className="d-flex align-items-center gap-2 mb-1">
-                    <div
-                      className={iconBoxCls}
-                      style={{ width: 34, height: 34, borderRadius: 9, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}
-                    >
-                      <i
-                        className={`bi ${pl.ikon}`}
-                        style={{ fontSize: 14, color: iconColor || 'var(--p-text-muted)' }}
-                      />
-                    </div>
-                    <span className={`${p}-abn-plan-name`}>{pl.ad}</span>
-                  </div>
-                  {pl.aciklama && (
-                    <div style={{ fontSize: 12, color: 'var(--p-text-muted)', marginBottom: 12 }}>{pl.aciklama}</div>
-                  )}
-
-                  {/* Fiyat */}
-                  <div className="mb-2">
-                    {pl.id === 'deneme' ? (
-                      <div className={`${p}-abn-plan-price`}>Ücretsiz</div>
-                    ) : (
-                      <>
-                        <div className="d-flex align-items-baseline gap-1">
-                          <span className={`${p}-abn-plan-price`}>{fmt(pl.fiyat)}</span>
-                          <span className={`${p}-abn-price-unit`}>₺/ay</span>
-                        </div>
-                        {yillik && pl.fiyatYillik && (
-                          <div className={`${p}-abn-yearly-note`}>
-                            Yılda {fmt(pl.fiyatYillik)}₺ —{' '}
-                            <span className={`${p}-abn-savings`}>{pl.tasarruf}₺ tasarruf</span>
-                          </div>
-                        )}
-                      </>
-                    )}
-                  </div>
-
-                  <div className={`${p}-abn-sep`} />
-
-                  {/* Özellikler */}
-                  <div>
-                    {pl.ozellikler.map((oz) => (
-                      <div key={oz} className={`${p}-abn-feature`}>
-                        <i className="bi bi-check-circle-fill" />
-                        <span>{oz}</span>
-                      </div>
-                    ))}
-                    {pl.kisitlamalar?.map((k) => (
-                      <div key={k} className={`${p}-abn-feature kisit`}>
-                        <i className="bi bi-x-circle-fill" />
-                        <span>{k}</span>
-                      </div>
-                    ))}
-                  </div>
-
-                  {/* Buton */}
-                  {aktif ? (
-                    <button className={`${p}-abn-btn-pasif`} disabled>✓ Mevcut Planınız</button>
-                  ) : pl.id === 'deneme' ? (
-                    <button className={`${p}-abn-btn-pasif`} disabled>Ücretsiz Deneme</button>
-                  ) : (
-                    <button
-                      className={`abn-btn ${pl.id === 'standart' ? 'yesil-standart' : 'yesil-kurumsal'}`}
-                      onClick={() => toast.info('Ödeme sistemi yakında entegre edilecek. Detaylar için bizimle iletişime geçin.')}
-                    >
-                      <i className="bi bi-arrow-up-circle me-2" />
-                      {pl.ad}&#39;a Geç
-                    </button>
-                  )}
-
-                </div>
+            {/* Dönem toggle */}
+            <div className="d-flex align-items-center justify-content-center gap-3 mb-4">
+              <span
+                className={`${p}-abn-toggle-label ${!yillik ? 'aktif' : ''}`}
+                onClick={() => setYillik(false)}
+              >Aylık</span>
+              <div
+                className={`abn-toggle-switch ${p}-abn-toggle-sw ${yillik ? 'on' : ''}`}
+                onClick={() => setYillik(v => !v)}
+              >
+                <div className="abn-toggle-knob" />
               </div>
-            )
-          })}
-        </div>
+              <span
+                className={`${p}-abn-toggle-label ${yillik ? 'aktif' : ''}`}
+                onClick={() => setYillik(true)}
+              >
+                Yıllık
+                <span className="abn-tasarruf-chip ms-2">%17 Tasarruf</span>
+              </span>
+            </div>
 
-        {/* iOS/Android notu */}
-        <div style={{ textAlign: 'center', marginBottom: 28 }}>
-          <span style={{ fontSize: 13, fontWeight: 600, color: 'var(--p-color-primary)' }}>
-            <i className="bi bi-phone-fill me-2" />
-            Web'den aldığınız abonelik iOS ve Android uygulamasında da geçerlidir.
-          </span>
-        </div>
+            <div className="row g-3 mb-4">
+              {planlar.map((pl) => {
+                const aktif = plan === pl.id
+                const iconBoxCls = pl.id === 'deneme'
+                  ? `${p}-abn-icon-deneme`
+                  : `p-abn-icon-${pl.id}`
+                const iconColor = pl.id === 'standart'
+                  ? 'var(--p-color-primary)'
+                  : pl.id === 'kurumsal'
+                  ? 'var(--p-color-primary-dark)'
+                  : undefined
+
+                return (
+                  <div key={pl.id} className="col-12 col-md-4">
+                    <div className={`${p}-abn-plan-card ${aktif ? 'aktif-plan' : ''} ${pl.onerilen && !aktif ? 'onerilen' : ''}`}>
+
+                      {/* Rozet satırı */}
+                      <div className="d-flex align-items-center justify-content-between mb-3" style={{ minHeight: 24 }}>
+                        <div className="d-flex gap-2">
+                          {aktif && <span className={`${p}-abn-badge-active`}>✓ Aktif Plan</span>}
+                          {pl.onerilen && !aktif && <span className={`${p}-abn-badge-rec`}>★ Önerilen</span>}
+                        </div>
+                      </div>
+
+                      {/* İkon + Ad */}
+                      <div className="d-flex align-items-center gap-2 mb-1">
+                        <div
+                          className={iconBoxCls}
+                          style={{ width: 34, height: 34, borderRadius: 9, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}
+                        >
+                          <i
+                            className={`bi ${pl.ikon}`}
+                            style={{ fontSize: 14, color: iconColor || 'var(--p-text-muted)' }}
+                          />
+                        </div>
+                        <span className={`${p}-abn-plan-name`}>{pl.ad}</span>
+                      </div>
+                      {pl.aciklama && (
+                        <div style={{ fontSize: 12, color: 'var(--p-text-muted)', marginBottom: 12 }}>{pl.aciklama}</div>
+                      )}
+
+                      {/* Fiyat */}
+                      <div className="mb-2">
+                        {pl.id === 'deneme' ? (
+                          <div className={`${p}-abn-plan-price`}>Ücretsiz</div>
+                        ) : (
+                          <>
+                            <div className="d-flex align-items-baseline gap-1">
+                              <span className={`${p}-abn-plan-price`}>{fmt(pl.fiyat)}</span>
+                              <span className={`${p}-abn-price-unit`}>₺/ay</span>
+                            </div>
+                            {yillik && pl.fiyatYillik && (
+                              <div className={`${p}-abn-yearly-note`}>
+                                Yılda {fmt(pl.fiyatYillik)}₺ —{' '}
+                                <span className={`${p}-abn-savings`}>{pl.tasarruf}₺ tasarruf</span>
+                              </div>
+                            )}
+                          </>
+                        )}
+                      </div>
+
+                      <div className={`${p}-abn-sep`} />
+
+                      {/* Özellikler */}
+                      <div>
+                        {pl.ozellikler.map((oz) => (
+                          <div key={oz} className={`${p}-abn-feature`}>
+                            <i className="bi bi-check-circle-fill" />
+                            <span>{oz}</span>
+                          </div>
+                        ))}
+                        {pl.kisitlamalar?.map((k) => (
+                          <div key={k} className={`${p}-abn-feature kisit`}>
+                            <i className="bi bi-x-circle-fill" />
+                            <span>{k}</span>
+                          </div>
+                        ))}
+                      </div>
+
+                      {/* Buton */}
+                      {aktif ? (
+                        <button className={`${p}-abn-btn-pasif`} disabled>✓ Mevcut Planınız</button>
+                      ) : pl.id === 'deneme' ? (
+                        <button className={`${p}-abn-btn-pasif`} disabled>Ücretsiz Deneme</button>
+                      ) : (
+                        <button
+                          className={`abn-btn ${pl.id === 'standart' ? 'yesil-standart' : 'yesil-kurumsal'}`}
+                          onClick={() => toast.info('Ödeme sistemi yakında entegre edilecek. Detaylar için bizimle iletişime geçin.')}
+                        >
+                          <i className="bi bi-arrow-up-circle me-2" />
+                          {pl.ad}&#39;a Geç
+                        </button>
+                      )}
+
+                    </div>
+                  </div>
+                )
+              })}
+            </div>
+
+            {/* Web notu */}
+            <div style={{ textAlign: 'center', marginBottom: 28 }}>
+              <span style={{ fontSize: 13, fontWeight: 600, color: 'var(--p-color-primary)' }}>
+                <i className="bi bi-phone-fill me-2" />
+                Web'den aldığınız abonelik mobil uygulamada da geçerlidir.
+              </span>
+            </div>
+          </>
+        )}
 
         {/* ÖDEME GEÇMİŞİ */}
         <div className={`${p}-abn-section-title mt-2`}>Ödeme Geçmişi</div>

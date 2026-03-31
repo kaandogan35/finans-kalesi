@@ -1,1 +1,0 @@
-const c={paramgo:{success:"#10B981",danger:"#EF4444",primary:"#10B981",accent:"#059669",warning:"#F59E0B",info:"#3B82F6",text:"#111827",textSec:"#6B7280",bg:"#F8F9FA"}};function g(n,s=1){const t=n.replace("#",""),r=parseInt(t.substring(0,2),16),e=parseInt(t.substring(2,4),16),a=parseInt(t.substring(4,6),16);return`rgba(${r},${e},${a},${s})`}export{g as h,c as t};
