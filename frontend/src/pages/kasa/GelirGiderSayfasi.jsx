@@ -1900,7 +1900,7 @@ export default function GelirGiderSayfasi({ islemTipi }) {
       {/* ─── Mobil FAB Buton ─────────────────────────────────────────────── */}
       <button
         onClick={() => setModalAcik(true)}
-        className={`${p}-${isGiris ? 'cym-btn-new' : 'cym-btn-danger'} d-md-none`}
+        className={`${p}-${isGiris ? 'cym-btn-new' : 'cym-btn-danger'} d-md-none p-fab-mobile`}
         aria-label={isGiris ? 'Gelir Ekle' : 'Gider Ekle'}
         style={{
           position: 'fixed', bottom: 'calc(88px + env(safe-area-inset-bottom, 0px))', right: 20, zIndex: 1040,

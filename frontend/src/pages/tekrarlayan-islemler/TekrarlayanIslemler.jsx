@@ -1115,7 +1115,7 @@ export default function TekrarlayanIslemler() {
       {/* ─── Mobil FAB Buton ─────────────────────────────────────────────── */}
       <button
         onClick={yeniAc}
-        className={`${p}-${isGider ? 'cym-btn-danger' : 'cym-btn-new'} d-md-none`}
+        className={`${p}-${isGider ? 'cym-btn-danger' : 'cym-btn-new'} d-md-none p-fab-mobile`}
         style={{
           position: 'fixed', bottom: 'calc(88px + env(safe-area-inset-bottom, 0px))', right: 20, zIndex: 1040,
           width: 56, height: 56, borderRadius: 14,

@@ -107,6 +107,19 @@ export default function AppLayoutParamGo() {
     return () => mq.removeEventListener('change', handler)
   }, [])
 
+  // FAB scroll davranışı — aşağı scroll: gizle, yukarı scroll: göster
+  useEffect(() => {
+    let sonY = window.scrollY
+    const onScroll = () => {
+      const simdiY = window.scrollY
+      if (simdiY > sonY && simdiY > 80) document.body.classList.add('fab-gizle')
+      else document.body.classList.remove('fab-gizle')
+      sonY = simdiY
+    }
+    window.addEventListener('scroll', onScroll, { passive: true })
+    return () => { window.removeEventListener('scroll', onScroll); document.body.classList.remove('fab-gizle') }
+  }, [])
+
   useEffect(() => {
     document.title = 'ParamGo'
     return () => { document.title = 'ParamGo' }

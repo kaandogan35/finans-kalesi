@@ -5645,6 +5645,18 @@ body:has(.pm-auth-screen) {
 }
 .p-fab-btn-icon.p-fab-open { transform: rotate(45deg); }
 
+/* ─── FAB scroll davranışı — aşağı scroll: gizle, yukarı: göster ─── */
+.p-fab-wrap,
+.p-fab-mobile {
+  transition: transform 0.25s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.25s ease;
+}
+body.fab-gizle .p-fab-wrap,
+body.fab-gizle .p-fab-mobile {
+  transform: translateY(16px) scale(0.85);
+  opacity: 0;
+  pointer-events: none;
+}
+
 /* ─── DATE INPUT — DateInput.jsx ──────────────────────────────────────────── */
 /* G — Native (iOS/Android) sistem tarih seçici */
 .p-date-input-native {
