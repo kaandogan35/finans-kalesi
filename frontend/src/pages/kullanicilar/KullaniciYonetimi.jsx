@@ -6,7 +6,7 @@
 
 import { useState, useEffect, useCallback } from 'react'
 import { createPortal } from 'react-dom'
-import { toast } from 'sonner'
+import { bildirim as toast } from '../../components/ui/CenterAlert'
 import { kullanicilarApi } from '../../api/kullanicilar'
 import { usePlanKontrol } from '../../hooks/usePlanKontrol'
 import { useSinirler } from '../../hooks/useSinirler'

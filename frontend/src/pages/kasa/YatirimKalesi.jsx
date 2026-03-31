@@ -5,7 +5,7 @@
  */
 import { useState, useMemo, useEffect } from 'react'
 import { createPortal } from 'react-dom'
-import { toast } from 'sonner'
+import { bildirim as toast } from '../../components/ui/CenterAlert'
 import useTemaStore from '../../stores/temaStore'
 import { temaRenkleri, hexRgba } from '../../lib/temaRenkleri'
 import {

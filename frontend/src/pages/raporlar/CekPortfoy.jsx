@@ -6,7 +6,7 @@
 
 import { useState, useEffect } from 'react'
 import { raporlarApi } from '../../api/raporlar'
-import { toast } from 'sonner'
+import { bildirim as toast } from '../../components/ui/CenterAlert'
 import { usePlanKontrol } from '../../hooks/usePlanKontrol'
 import PlanYukseltModal from '../../components/PlanYukseltModal'
 import {

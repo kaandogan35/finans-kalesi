@@ -5,7 +5,7 @@
  */
 
 import { useState, useEffect } from 'react'
-import { toast } from 'sonner'
+import { bildirim as toast } from '../../components/ui/CenterAlert'
 import useAuthStore from '../../stores/authStore'
 import { abonelikApi } from '../../api/abonelik'
 import { usePlanKontrol } from '../../hooks/usePlanKontrol'

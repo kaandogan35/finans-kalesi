@@ -18,37 +18,62 @@ export const bildirim = {
 }
 
 const CONF = {
-  success: { ikon: 'bi-check-circle-fill', bg: '#ECFDF5', renk: '#059669' },
-  error:   { ikon: 'bi-exclamation-circle-fill', bg: '#FEF2F2', renk: '#DC2626' },
-  info:    { ikon: 'bi-info-circle-fill', bg: '#EFF6FF', renk: '#2563EB' },
-  warning: { ikon: 'bi-exclamation-triangle-fill', bg: '#FFFBEB', renk: '#D97706' },
+  success: { ikon: 'bi-check-circle-fill' },
+  error:   { ikon: 'bi-exclamation-circle-fill' },
+  info:    { ikon: 'bi-info-circle-fill' },
+  warning: { ikon: 'bi-exclamation-triangle-fill' },
 }
 
 export default function CenterAlert() {
-  const [item, setItem] = useState(null)
-  const timerRef = useRef(null)
+  const [item, setItem]       = useState(null)
+  const [leaving, setLeaving] = useState(false)
+  const timerRef              = useRef(null)
+  const leaveRef              = useRef(null)
 
   useEffect(() => {
     showFn = (data) => {
-      setItem(data)
       clearTimeout(timerRef.current)
+      clearTimeout(leaveRef.current)
+      setLeaving(false)
+      setItem(data)
       timerRef.current = setTimeout(() => {
-        setItem(null)
-        setTimeout(processQueue, 100)
+        setLeaving(true)
+        leaveRef.current = setTimeout(() => {
+          setItem(null)
+          setLeaving(false)
+          setTimeout(processQueue, 60)
+        }, 220)
       }, 2200)
     }
     processQueue()
-    return () => { showFn = null; clearTimeout(timerRef.current) }
+    return () => {
+      showFn = null
+      clearTimeout(timerRef.current)
+      clearTimeout(leaveRef.current)
+    }
   }, [])
 
   if (!item) return null
   const c = CONF[item.tip] || CONF.info
 
+  function kapat() {
+    clearTimeout(timerRef.current)
+    clearTimeout(leaveRef.current)
+    setLeaving(true)
+    leaveRef.current = setTimeout(() => {
+      setItem(null)
+      setLeaving(false)
+    }, 220)
+  }
+
   return createPortal(
-    <div className="p-center-alert-overlay" onClick={() => { clearTimeout(timerRef.current); setItem(null) }}>
-      <div className="p-center-alert-box" onClick={e => e.stopPropagation()}>
-        <div className="p-center-alert-icon-wrap" style={{ background: c.bg }}>
-          <i className={`bi ${c.ikon}`} style={{ fontSize: 32, color: c.renk }} />
+    <div className="p-center-alert-overlay">
+      <div
+        className={`p-center-alert-box${leaving ? ' p-alert-leaving' : ''}`}
+        onClick={kapat}
+      >
+        <div className={`p-center-alert-icon ${item.tip}`}>
+          <i className={`bi ${c.ikon}`} />
         </div>
         <p className="p-center-alert-msg">{item.mesaj}</p>
       </div>
