@@ -75,17 +75,9 @@ export default function OturumUyari() {
       const simdi = Date.now()
       const hareketsizSaniye = Math.floor((simdi - sonAktiviteRef.current) / 1000)
 
-      // Token süresi de kontrol et — token biterse direkt çıkış
-      const payload = jwtPayloadOku(accessToken)
-      if (payload?.exp) {
-        const tokenKalan = payload.exp - Math.floor(simdi / 1000)
-        if (tokenKalan <= 0) {
-          setGoster(false)
-          tokenlarıTemizle()
-          window.dispatchEvent(new CustomEvent('auth:logout'))
-          return
-        }
-      }
+      // NOT: Access token süresi burada kontrol edilmez.
+      // Token dolunca axios interceptor 401'i yakalar ve refresh yapar.
+      // Burada logout yapmak refresh fırsatını engelliyor.
 
       // Hareketsizlik süresi eşiği geçtiyse — geri sayım göster
       if (hareketsizSaniye >= HAREKETSIZ_SURE) {

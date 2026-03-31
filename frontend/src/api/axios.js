@@ -60,7 +60,7 @@ api.interceptors.response.use(
         const { refreshToken, tokenlariAyarla } = useAuthStore.getState()
         if (!refreshToken) throw new Error('Refresh token yok')
 
-        const yanit = await axios.post('/api/auth/yenile', {
+        const yanit = await axios.post(`${baseURL}/auth/yenile`, {
           refresh_token: refreshToken,
         })
 
