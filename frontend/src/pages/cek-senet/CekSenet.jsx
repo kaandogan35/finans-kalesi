@@ -205,6 +205,109 @@ function OnayModal({ open, onClose, onOnayla, baslik, mesaj, ikon, btnRenk, btnY
   )
 }
 
+// ─── Çek Detay Modalı ────────────────────────────────────────────────────────
+function CekDetayModal({ detay, onKapat, renkler, p, onAksiyon }) {
+  if (!detay) return null
+  const { item, tab } = detay
+
+  const AKSIYONLAR = {
+    1: [
+      { icon: 'bi-bank',                label: 'Tahsile Ver',  renk: renkler.success, aksiyon: 'tahsile'       },
+      { icon: 'bi-arrow-left-right',    label: 'Cirola',       renk: renkler.accent,  aksiyon: 'cirola'        },
+      { icon: 'bi-pencil',              label: 'Düzenle',      renk: renkler.info,    aksiyon: 'portfoy_dzl'   },
+      { icon: 'bi-trash',               label: 'Sil',          renk: renkler.danger,  aksiyon: 'portfoy_sil'   },
+    ],
+    2: [
+      { icon: 'bi-check-lg',            label: 'Ödendi',       renk: renkler.success, aksiyon: 'tahsil_odendi' },
+      { icon: 'bi-arrow-counterclockwise', label: 'İade',      renk: renkler.info,    aksiyon: 'tahsil_iade'   },
+      { icon: 'bi-exclamation-triangle',label: 'Karşılıksız',  renk: renkler.danger,  aksiyon: 'karsiliksiz'   },
+      { icon: 'bi-pencil',              label: 'Düzenle',      renk: renkler.accent,  aksiyon: 'tahsil_dzl'    },
+    ],
+    3: [
+      { icon: 'bi-check-lg',            label: 'Ödendi',       renk: renkler.success, aksiyon: 'kendi_odendi'  },
+      { icon: 'bi-pencil',              label: 'Düzenle',      renk: renkler.info,    aksiyon: 'kendi_dzl'     },
+      { icon: 'bi-trash',               label: 'Sil',          renk: renkler.danger,  aksiyon: 'kendi_sil'     },
+    ],
+    4: [
+      { icon: 'bi-check-lg',            label: 'Tamam',        renk: renkler.success, aksiyon: 'ciro_tamam'    },
+      { icon: 'bi-arrow-counterclockwise', label: 'İade',      renk: renkler.info,    aksiyon: 'ciro_iade'     },
+      { icon: 'bi-pencil',              label: 'Düzenle',      renk: renkler.accent,  aksiyon: 'ciro_dzl'      },
+      { icon: 'bi-trash',               label: 'Sil',          renk: renkler.danger,  aksiyon: 'ciro_sil'      },
+    ],
+  }
+
+  const aksiyonlar = AKSIYONLAR[tab] || []
+
+  return createPortal(
+    <>
+      <div className={`${p}-modal-overlay`} onClick={onKapat} />
+      <div className={`${p}-modal-center`}>
+        <div className={`${p}-modal-box`} role="dialog" aria-modal="true" style={{ maxWidth: 400 }}>
+
+          <div className="p-cek-detay-header">
+            <button className="p-cek-detay-close" onClick={onKapat} aria-label="Kapat">
+              <i className="bi bi-x-lg" />
+            </button>
+            <div className="p-cek-detay-avatar-row">
+              <DynamicAvatar isim={item.firma_adi} boyut={44} />
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <div className="p-cek-detay-firma-ad">{item.firma_adi || '—'}</div>
+                <span className="p-cek-detay-tur-chip">
+                  <i className="bi bi-file-earmark-text" />{item.tur}
+                </span>
+              </div>
+            </div>
+            <div className="p-cek-detay-tutar-label">Tutar</div>
+            <div className="p-cek-detay-tutar financial-num">{TL(item.tutar)}</div>
+          </div>
+
+          <div className="p-cek-detay-body">
+            <div className="p-cek-detay-info-grid">
+              <div className="p-cek-detay-info-item">
+                <div className="p-cek-detay-info-label">Vade Tarihi</div>
+                <div className="p-cek-detay-info-val">{tarihFmt(item.vade_tarihi)}</div>
+              </div>
+              {item.banka && (
+                <div className="p-cek-detay-info-item">
+                  <div className="p-cek-detay-info-label">Banka</div>
+                  <div className="p-cek-detay-info-val">{item.banka}</div>
+                </div>
+              )}
+              {item.evrak_no && (
+                <div className="p-cek-detay-info-item">
+                  <div className="p-cek-detay-info-label">Evrak No</div>
+                  <div className="p-cek-detay-info-val">{item.evrak_no}</div>
+                </div>
+              )}
+              {item.islem_tarihi && (
+                <div className="p-cek-detay-info-item">
+                  <div className="p-cek-detay-info-label">İşlem Tarihi</div>
+                  <div className="p-cek-detay-info-val">{tarihFmt(item.islem_tarihi)}</div>
+                </div>
+              )}
+            </div>
+
+            <div className="p-cek-detay-actions">
+              {aksiyonlar.map((a, i) => (
+                <button
+                  key={i}
+                  className="p-cek-detay-action-btn"
+                  style={{ background: a.renk }}
+                  onClick={() => { onKapat(); onAksiyon(a.aksiyon, item) }}
+                >
+                  <i className={`bi ${a.icon}`} />{a.label}
+                </button>
+              ))}
+            </div>
+          </div>
+
+        </div>
+      </div>
+    </>,
+    document.body
+  )
+}
+
 // ─── Karşılıksız Çek Rehberlik Modalı ────────────────────────────────────────
 function KarsiliksizModal({ open, onClose, item, form, setForm, onKaydet, kayitIyor, p = 'b', renkler }) {
   if (!open || !item) return null
@@ -649,6 +752,9 @@ export default function CekSenet() {
   const [ciroDzlModal,    setCiroDzlModal]    = useState(false)
   const [ciroDzlForm,     setCiroDzlForm]     = useState({})
   const [ciroDzlId,       setCiroDzlId]       = useState(null)
+
+  // ─ Çek Detay Modalı ──────────────────────────────────────────────────────────
+  const [detayItem, setDetayItem] = useState(null)
 
   // ─ Karşılıksız Modal ─────────────────────────────────────────────────────────
   const [karsiliksizModal,      setKarsiliksizModal]      = useState(false)
@@ -1578,7 +1684,7 @@ export default function CekSenet() {
                 ) : <>
                   <div className="p-swipe-hint"><i className="bi bi-arrow-left-right" /> Sola kaydırarak işlem yapabilirsiniz</div>
                   {fP.map(item => (
-                    <SwipeCard key={item.id} aksiyonlar={[
+                    <SwipeCard key={item.id} onCardClick={() => setDetayItem({ item, tab: 1 })} aksiyonlar={[
                       { icon: 'bi-bank', label: 'Tahsil', renk: 'success', onClick: () => { setTahsileId(item.id); setTahsileForm({ banka: '', tarih: bugunStr() }); setTahsileModal(true) } },
                       { icon: 'bi-arrow-left-right', label: 'Cirola', renk: 'warning', onClick: () => { setCirolaId(item.id); setCirolaForm({ firma: '', tarih: bugunStr() }); setCirolaModal(true) } },
                       { icon: 'bi-pencil', label: 'Düzenle', renk: 'info', onClick: () => portfoyDzlAc(item) },
@@ -1715,7 +1821,7 @@ export default function CekSenet() {
                 ) : <>
                   <div className="p-swipe-hint"><i className="bi bi-arrow-left-right" /> Sola kaydırarak işlem yapabilirsiniz</div>
                   {fT.map(item => (
-                    <SwipeCard key={item.id} aksiyonlar={[
+                    <SwipeCard key={item.id} onCardClick={() => setDetayItem({ item, tab: 2 })} aksiyonlar={[
                       { icon: 'bi-check-lg', label: 'Ödendi', renk: 'success', onClick: () => tahsilOdendi(item.id) },
                       { icon: 'bi-arrow-counterclockwise', label: 'İade', renk: 'info', onClick: () => tahsilIade(item.id) },
                       { icon: 'bi-exclamation-triangle', label: 'Karşılıksız', renk: 'danger', onClick: () => tahsilKarsiliksiz(item.id) },
@@ -1873,7 +1979,7 @@ export default function CekSenet() {
                 ) : <>
                   <div className="p-swipe-hint"><i className="bi bi-arrow-left-right" /> Sola kaydırarak işlem yapabilirsiniz</div>
                   {fK.map(item => (
-                    <SwipeCard key={item.id} aksiyonlar={[
+                    <SwipeCard key={item.id} onCardClick={() => setDetayItem({ item, tab: 3 })} aksiyonlar={[
                       { icon: 'bi-check-lg', label: 'Ödendi', renk: 'success', onClick: () => kendiOdendi(item.id) },
                       { icon: 'bi-pencil', label: 'Düzenle', renk: 'info', onClick: () => kendiDzlAc(item) },
                       { icon: 'bi-trash', label: 'Sil', renk: 'danger', onClick: () => kendiSil(item.id) },
@@ -2010,7 +2116,7 @@ export default function CekSenet() {
                 ) : <>
                   <div className="p-swipe-hint"><i className="bi bi-arrow-left-right" /> Sola kaydırarak işlem yapabilirsiniz</div>
                   {fC.map(item => (
-                    <SwipeCard key={item.id} aksiyonlar={[
+                    <SwipeCard key={item.id} onCardClick={() => setDetayItem({ item, tab: 4 })} aksiyonlar={[
                       { icon: 'bi-check-lg', label: 'Tamam', renk: 'success', onClick: () => ciroTamamlandi(item.id) },
                       { icon: 'bi-arrow-counterclockwise', label: 'İade', renk: 'info', onClick: () => ciroIade(item.id) },
                       { icon: 'bi-pencil', label: 'Düzenle', renk: 'warning', onClick: () => ciroDzlAc(item) },
@@ -2276,6 +2382,33 @@ export default function CekSenet() {
         btnRenk={onay?.btnRenk}
         btnYazi={onay?.btnYazi}
         p={p}
+      />
+
+      {/* ─── Çek Detay Modalı ───────────────────────────────────────────────── */}
+      <CekDetayModal
+        detay={detayItem}
+        onKapat={() => setDetayItem(null)}
+        renkler={renkler}
+        p={p}
+        onAksiyon={(aksiyon, item) => {
+          switch (aksiyon) {
+            case 'tahsile':        setTahsileId(item.id); setTahsileForm({ banka: '', tarih: bugunStr() }); setTahsileModal(true); break
+            case 'cirola':         setCirolaId(item.id); setCirolaForm({ firma: '', cari_id: null, tarih: bugunStr() }); setCirolaModal(true); break
+            case 'portfoy_dzl':   portfoyDzlAc(item); break
+            case 'portfoy_sil':   portfoySil(item.id); break
+            case 'tahsil_odendi': tahsilOdendi(item.id); break
+            case 'tahsil_iade':   tahsilIade(item.id); break
+            case 'karsiliksiz':   tahsilKarsiliksiz(item.id); break
+            case 'tahsil_dzl':    tahsilDzlAc(item); break
+            case 'kendi_odendi':  kendiOdendi(item.id); break
+            case 'kendi_dzl':     kendiDzlAc(item); break
+            case 'kendi_sil':     kendiSil(item.id); break
+            case 'ciro_tamam':    ciroTamamlandi(item.id); break
+            case 'ciro_iade':     ciroIade(item.id); break
+            case 'ciro_dzl':      ciroDzlAc(item); break
+            case 'ciro_sil':      ciroSil(item.id); break
+          }
+        }}
       />
 
       {/* ─── Portföy: Yeni / Düzenle ────────────────────────────────────────── */}

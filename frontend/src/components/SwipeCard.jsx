@@ -69,7 +69,7 @@ const RENK_MAP = {
   accent:  '#d97706',
 }
 
-export default function SwipeCard({ aksiyonlar = [], children, className = '' }) {
+export default function SwipeCard({ aksiyonlar = [], children, className = '', onCardClick }) {
   const contentRef = useRef(null)
   const [acik, setAcik] = useState(false)
 
@@ -100,7 +100,7 @@ export default function SwipeCard({ aksiyonlar = [], children, className = '' })
           </button>
         ))}
       </div>
-      <div ref={contentRef} className="p-swipe-content" onClick={() => acik && kapat()}>
+      <div ref={contentRef} className="p-swipe-content" onClick={() => { if (acik) kapat(); else onCardClick?.() }}>
         {children}
       </div>
     </div>

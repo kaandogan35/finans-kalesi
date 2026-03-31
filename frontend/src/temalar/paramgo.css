@@ -8933,6 +8933,75 @@ tr:hover .p-row-actions,
 }
 
 /* ============================================================
+   Çek Detay Modalı
+   ============================================================ */
+
+.p-cek-detay-header {
+  background: linear-gradient(135deg, #10B981 0%, #059669 60%, #047857 100%);
+  padding: 22px 20px 18px;
+  border-radius: 14px 14px 0 0;
+  position: relative;
+}
+.p-cek-detay-close {
+  position: absolute; top: 14px; right: 14px;
+  background: rgba(255,255,255,0.18); border: 1px solid rgba(255,255,255,0.25);
+  border-radius: 50%; width: 32px; height: 32px;
+  display: flex; align-items: center; justify-content: center;
+  color: #fff; cursor: pointer; font-size: 13px; line-height: 1;
+}
+.p-cek-detay-avatar-row {
+  display: flex; align-items: center; gap: 12px;
+  margin-bottom: 14px; padding-right: 40px;
+}
+.p-cek-detay-firma-ad {
+  font-size: 16px; font-weight: 700; color: #fff; margin: 0 0 4px;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.p-cek-detay-tur-chip {
+  display: inline-flex; align-items: center; gap: 4px;
+  background: rgba(255,255,255,0.18); border-radius: 999px;
+  padding: 3px 10px; font-size: 11px; font-weight: 600;
+  color: rgba(255,255,255,0.9);
+}
+.p-cek-detay-tutar {
+  font-size: 30px; font-weight: 800; color: #fff; letter-spacing: -1px;
+  line-height: 1;
+}
+.p-cek-detay-tutar-label {
+  font-size: 11px; font-weight: 600; color: rgba(255,255,255,0.65);
+  text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 4px;
+}
+.p-cek-detay-body {
+  padding: 18px 20px 20px;
+}
+.p-cek-detay-info-grid {
+  display: grid; grid-template-columns: 1fr 1fr;
+  gap: 10px; margin-bottom: 18px;
+}
+.p-cek-detay-info-item {
+  background: #F8FAFB; border: 1px solid #EEF0F2;
+  border-radius: 10px; padding: 10px 12px;
+}
+.p-cek-detay-info-label {
+  font-size: 10px; font-weight: 700; color: #9CA3AF;
+  text-transform: uppercase; letter-spacing: 0.6px; margin-bottom: 3px;
+}
+.p-cek-detay-info-val {
+  font-size: 13px; font-weight: 600; color: #111827;
+}
+.p-cek-detay-actions {
+  display: grid; grid-template-columns: 1fr 1fr; gap: 8px;
+}
+.p-cek-detay-action-btn {
+  display: flex; align-items: center; justify-content: center;
+  gap: 7px; padding: 12px 8px; border: none; border-radius: 12px;
+  font-size: 13px; font-weight: 600; color: #fff; cursor: pointer;
+  transition: transform 0.12s, opacity 0.12s;
+}
+.p-cek-detay-action-btn:active { transform: scale(0.97); opacity: 0.85; }
+.p-cek-detay-action-btn i { font-size: 15px; }
+
+/* ============================================================
    CenterAlert — Modern floating notification (Sonner yerine)
    ============================================================ */
 
