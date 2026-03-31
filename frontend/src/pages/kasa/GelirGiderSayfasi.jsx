@@ -112,6 +112,10 @@ const CIKIS_GORUNUM_ADI = {
   'Personel Yemek':         'Personel Yemek & Yol',
 }
 
+// DB adını ekranda gösterilecek esnaf diline çevirir
+const katGorunum = (ad, isGiris) =>
+  isGiris ? (GIRIS_GORUNUM_ADI[ad] || ad) : (CIKIS_GORUNUM_ADI[ad] || ad)
+
 const _STD3 = [
   { key: 'banka',       label: 'Banka / Havale', ikon: 'bi-bank',       odeme: 'banka',       baglanti: 'Banka / Havale' },
   { key: 'merkez_kasa', label: 'Merkez Kasa',    ikon: 'bi-safe2',      odeme: 'merkez_kasa', baglanti: 'Merkez Kasa' },
@@ -191,7 +195,7 @@ function KategoriGrafik({ dagilim, toplam, isGiris, ay, yil, p, renkler, onKateg
 
   // Doughnut verisi
   const doughnutData = useMemo(() => ({
-    labels: dagilim.map(d => d.ad),
+    labels: dagilim.map(d => d.gorAd || d.ad),
     datasets: [{
       data: dagilim.map(d => d.tutar),
       backgroundColor: dagilim.map((_, i) => paletRenkler[i % paletRenkler.length]),
@@ -229,7 +233,7 @@ function KategoriGrafik({ dagilim, toplam, isGiris, ay, yil, p, renkler, onKateg
 
   // Bar verisi
   const barData = useMemo(() => ({
-    labels: dagilim.map(d => d.ad.length > 14 ? d.ad.slice(0, 14) + '…' : d.ad),
+    labels: dagilim.map(d => (d.gorAd || d.ad).length > 14 ? (d.gorAd || d.ad).slice(0, 14) + '…' : (d.gorAd || d.ad)),
     datasets: [{
       data: dagilim.map(d => d.tutar),
       backgroundColor: dagilim.map((_, i) => paletRenkler[i % paletRenkler.length] + 'CC'),
@@ -333,7 +337,7 @@ function KategoriGrafik({ dagilim, toplam, isGiris, ay, yil, p, renkler, onKateg
                       background: paletRenkler[i % paletRenkler.length],
                     }} />
                     <span style={{ fontSize: 12, fontWeight: 500, color: 'var(--p-text)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                      {d.ad}
+                      {d.gorAd || d.ad}
                     </span>
                   </div>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexShrink: 0 }}>
@@ -1127,7 +1131,7 @@ function KategoriDetayModal({ open, onClose, kategori, hareketler, isGiris, p })
                 <i className={`bi ${isGiris ? 'bi-arrow-down-circle-fill' : 'bi-arrow-up-circle-fill'}`} style={{ fontSize: 20 }} />
               </div>
               <div>
-                <h2 className={`${p}-modal-title`}>{kategori}</h2>
+                <h2 className={`${p}-modal-title`}>{katGorunum(kategori, isGiris)}</h2>
                 <p className={`${p}-modal-sub`} style={{ opacity: 0.9, marginTop: 2 }}>
                   Toplam <span className="financial-num" style={{ fontWeight: 800 }}>{TL(katToplam)} ₺</span> — {katHareketler.length} işlem
                 </p>
@@ -1468,7 +1472,7 @@ export default function GelirGiderSayfasi({ islemTipi }) {
     })
     const kategoriDagilimi = Object.entries(katMap)
       .sort((a, b) => b[1] - a[1])
-      .map(([ad, tutar]) => ({ ad, tutar, adet: katAdetMap[ad] || 0, yuzde: toplam > 0 ? Math.round((tutar / toplam) * 100) : 0 }))
+      .map(([ad, tutar]) => ({ ad, gorAd: katGorunum(ad, isGiris), tutar, adet: katAdetMap[ad] || 0, yuzde: toplam > 0 ? Math.round((tutar / toplam) * 100) : 0 }))
     // Günlük ortalama — seçili ay cari ay ise bugüne kadar geçen gün, değilse tam ay
     const _b = new Date()
     const gecenGunSayisi = (_b.getMonth() + 1 === secilenAy && _b.getFullYear() === secilenYil)
@@ -1796,7 +1800,7 @@ export default function GelirGiderSayfasi({ islemTipi }) {
                       </td>
                       <td className={`${p}-cym-td`}>
                         <span style={{ fontWeight: 600, fontSize: 13, color: 'var(--p-text)' }}>
-                          {h.kategori}
+                          {katGorunum(h.kategori, isGiris)}
                         </span>
                       </td>
                       <td className={`${p}-cym-td text-end`}>
@@ -1848,7 +1852,7 @@ export default function GelirGiderSayfasi({ islemTipi }) {
                   <div className="p-gg-mcard">
                     <div className="p-gg-mcard-top">
                       <div className="p-gg-mcard-kat">
-                        <span style={{ fontWeight: 700, fontSize: 13, color: 'var(--p-text)' }}>{h.kategori}</span>
+                        <span style={{ fontWeight: 700, fontSize: 13, color: 'var(--p-text)' }}>{katGorunum(h.kategori, isGiris)}</span>
                         <KaynakRozeti kaynak={h.kaynak_modul} p={p} />
                       </div>
                       {isGiris
