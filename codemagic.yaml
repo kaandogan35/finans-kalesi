@@ -44,17 +44,21 @@ workflows:
 
       # --- Aşağıdaki adımlar cap sync SONRASI çalışır (cap add ios her şeyi sıfırlar) ---
 
-      - name: Set App Icon
+      - name: Set App Icon (alpha removed)
         script: |
           ICON_SRC="frontend/resources/icon.png"
           ICON_DST="frontend/ios/App/App/Assets.xcassets/AppIcon.appiconset/AppIcon-512@2x.png"
           if [ -f "$ICON_SRC" ]; then
             cp "$ICON_SRC" "$ICON_DST"
-            # Apple Store alpha kanal hatasi icin: sips ile alpha kaldir
-            sips -s format png --setProperty formatOptions 100 "$ICON_DST" --out /tmp/icon_no_alpha.png
-            sips -s hasAlpha false /tmp/icon_no_alpha.png --out "$ICON_DST"
-            echo "App icon yerleştirildi (alpha kaldırıldı)."
+            # Apple Store alpha kanal hatasi onlemi
+            # JPEG uzerinden gecis — alpha kesin olarak kaldirilir
+            sips -s format jpeg -s formatOptions best "$ICON_DST" --out /tmp/icon_noalpha.jpg
+            sips -s format png /tmp/icon_noalpha.jpg --out "$ICON_DST"
+            rm -f /tmp/icon_noalpha.jpg
+            # Dogrulama
+            echo "=== App Icon Dogrulama ==="
             sips -g hasAlpha -g pixelWidth -g pixelHeight "$ICON_DST"
+            echo "App icon yerleştirildi (alpha kaldırıldı)."
           else
             echo "UYARI: frontend/resources/icon.png bulunamadı."
           fi
