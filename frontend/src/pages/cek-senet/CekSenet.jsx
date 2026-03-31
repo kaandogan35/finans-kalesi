@@ -532,7 +532,8 @@ function AutoComplete({ value, onChange, options, placeholder, id, required, p =
 
 function FiltreSatiri({ filtre, setFiltre, p = 'b' }) {
   const AYLAR = ['Ocak','Şubat','Mart','Nisan','Mayıs','Haziran','Temmuz','Ağustos','Eylül','Ekim','Kasım','Aralık']
-  const YILLAR = [2024, 2025, 2026, 2027]
+  const buYil = new Date().getFullYear()
+  const YILLAR = [buYil - 1, buYil, buYil + 1, buYil + 2]
   return (
     <div className="d-flex gap-2 align-items-center flex-wrap">
       <select
