@@ -1,4 +1,5 @@
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useRef } from 'react'
+import { createPortal } from 'react-dom'
 import { odemeApi } from '../../api/odeme'
 import { carilerApi } from '../../api/cariler'
 import useTemaStore from '../../stores/temaStore'
@@ -425,7 +426,7 @@ export default function OdemeTakip() {
       {/* ═══════════════════════════════════════════════════════════
           MODAL — ARAMA KAYDI
           ═══════════════════════════════════════════════════════════ */}
-      {aramaModalId && (
+      {aramaModalId && createPortal(
         <>
           <div
             className={`${p}-modal-overlay`}
@@ -646,13 +647,14 @@ export default function OdemeTakip() {
 
             </div>
           </div>
-        </>
+        </>,
+        document.body
       )}
 
       {/* ═══════════════════════════════════════════════════════════
           MODAL — SİLME ONAY
           ═══════════════════════════════════════════════════════════ */}
-      {silId && (
+      {silId && createPortal(
         <>
           <div className={`${p}-modal-overlay`} onClick={() => !silYukleniyor && setSilId(null)} />
           <div className={`${p}-modal-center ${p}-modal-confirm`}>
@@ -706,13 +708,14 @@ export default function OdemeTakip() {
               </div>
             </div>
           </div>
-        </>
+        </>,
+        document.body
       )}
 
       {/* ═══════════════════════════════════════════════════════════
           MODAL — YENİ TAKIBE AL
           ═══════════════════════════════════════════════════════════ */}
-      {showEkle && (
+      {showEkle && createPortal(
         <>
           <div className={`${p}-modal-overlay`} onClick={() => setShowEkle(false)} />
           <div className={`${p}-modal-center`}>
@@ -736,28 +739,13 @@ export default function OdemeTakip() {
                 </button>
               </div>
               <div className={`${p}-modal-body`}>
-                <div style={{ marginBottom: 14 }}>
-                  <label style={{ fontSize: 12, fontWeight: 600, color: 'var(--p-text-label)', display: 'block', marginBottom: 6 }}>
-                    Cari *
-                  </label>
-                  <select
-                    value={ekleForm.cari_id}
-                    onChange={e => setEkleForm(f => ({ ...f, cari_id: e.target.value }))}
-                    style={{
-                      width: '100%', height: 42, padding: '0 12px',
-                      border: '1px solid var(--p-border)', borderRadius: 10,
-                      background: 'var(--p-bg-input)', color: 'var(--p-text)',
-                      fontSize: 13, outline: 'none',
-                    }}
-                  >
-                    <option value="">— Cari seçin —</option>
-                    {cariListesi.map(c => (
-                      <option key={c.id} value={c.id}>
-                        {c.cari_adi} {c.bakiye > 0 ? `(${TL(c.bakiye)})` : ''}
-                      </option>
-                    ))}
-                  </select>
-                </div>
+                <CariSecici
+                  cariListesi={cariListesi}
+                  value={ekleForm.cari_id}
+                  onChange={(id) => setEkleForm(f => ({ ...f, cari_id: id }))}
+                  TL={TL}
+                  p={p}
+                />
 
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
                   <div>
@@ -834,7 +822,8 @@ export default function OdemeTakip() {
               </div>
             </div>
           </div>
-        </>
+        </>,
+        document.body
       )}
 
     </div>
@@ -1049,5 +1038,117 @@ function Spinner() {
       borderRadius: '50%',
       animation: 'spin 0.8s linear infinite',
     }} />
+  )
+}
+
+/* ═══ CARİ SEÇİCİ — Arama yapılabilir dropdown ═══ */
+function CariSecici({ cariListesi, value, onChange, TL, p }) {
+  const [acik, setAcik] = useState(false)
+  const [arama, setArama] = useState('')
+  const [pos, setPos] = useState({ bottom: 0, left: 0, width: 0 })
+  const wrapRef = useRef(null)
+  const triggerRef = useRef(null)
+  const inputRef = useRef(null)
+
+  const secili = cariListesi.find(c => String(c.id) === String(value))
+  const filtered = cariListesi.filter(c =>
+    c.cari_adi.toLowerCase().includes(arama.toLowerCase())
+  )
+
+  const acToggle = () => {
+    if (!acik && triggerRef.current) {
+      const r = triggerRef.current.getBoundingClientRect()
+      setPos({ bottom: window.innerHeight - r.top + 4, left: r.left, width: r.width })
+    }
+    setAcik(a => !a)
+    setArama('')
+  }
+
+  useEffect(() => {
+    if (!acik) return
+    const handler = (e) => {
+      if (wrapRef.current && !wrapRef.current.contains(e.target)) setAcik(false)
+    }
+    document.addEventListener('pointerdown', handler)
+    return () => document.removeEventListener('pointerdown', handler)
+  }, [acik])
+
+  useEffect(() => {
+    if (acik && inputRef.current) inputRef.current.focus()
+  }, [acik])
+
+  return (
+    <div ref={wrapRef} style={{ marginBottom: 14 }}>
+      <label style={{ fontSize: 12, fontWeight: 600, color: 'var(--p-text-label)', display: 'block', marginBottom: 6 }}>
+        Cari *
+      </label>
+      <div
+        ref={triggerRef}
+        onClick={acToggle}
+        style={{
+          width: '100%', minHeight: 42, padding: '0 12px',
+          border: `1px solid ${acik ? 'var(--p-primary)' : 'var(--p-border)'}`,
+          borderRadius: 10, background: 'var(--p-bg-input)', color: 'var(--p-text)',
+          fontSize: 13, display: 'flex', alignItems: 'center', cursor: 'pointer',
+          boxShadow: acik ? '0 0 0 3px rgba(16,185,129,0.08)' : 'none',
+        }}
+      >
+        <i className="bi bi-people" style={{ marginRight: 10, opacity: 0.4, fontSize: 15 }} />
+        <span style={{ flex: 1, opacity: secili ? 1 : 0.5 }}>
+          {secili ? secili.cari_adi : '— Cari seçin —'}
+        </span>
+        <i className={`bi bi-chevron-${acik ? 'up' : 'down'}`} style={{ opacity: 0.4, fontSize: 12 }} />
+      </div>
+      {acik && createPortal(
+        <div ref={wrapRef} style={{
+          position: 'fixed', bottom: pos.bottom, left: pos.left, width: pos.width, zIndex: 10000,
+          background: '#fff', borderRadius: 10,
+          border: '1px solid var(--p-border)',
+          boxShadow: '0 8px 24px rgba(0,0,0,0.12)',
+          overflow: 'hidden',
+        }}>
+          <div style={{ padding: '8px 10px', borderBottom: '1px solid var(--p-border)' }}>
+            <input
+              ref={inputRef}
+              type="text"
+              value={arama}
+              onChange={e => setArama(e.target.value)}
+              placeholder="Cari ara..."
+              style={{
+                width: '100%', height: 36, padding: '0 10px',
+                border: '1px solid var(--p-border)', borderRadius: 8,
+                fontSize: 13, outline: 'none', background: 'var(--p-bg-input)',
+                color: 'var(--p-text)',
+              }}
+            />
+          </div>
+          <ul style={{
+            listStyle: 'none', margin: 0, padding: 0,
+            maxHeight: 200, overflowY: 'auto', WebkitOverflowScrolling: 'touch',
+          }}>
+            {filtered.length === 0 && (
+              <li style={{ padding: '12px 14px', fontSize: 13, color: 'var(--p-text-sec)', textAlign: 'center' }}>
+                Sonuç bulunamadı
+              </li>
+            )}
+            {filtered.map(c => (
+              <li
+                key={c.id}
+                onPointerDown={(e) => { e.preventDefault(); onChange(String(c.id)); setAcik(false) }}
+                style={{
+                  padding: '10px 14px', fontSize: 13, cursor: 'pointer',
+                  display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+                  background: String(c.id) === String(value) ? 'rgba(16,185,129,0.06)' : 'transparent',
+                }}
+              >
+                <span style={{ fontWeight: String(c.id) === String(value) ? 700 : 400 }}>{c.cari_adi}</span>
+                {c.bakiye > 0 && <span style={{ fontSize: 11, color: 'var(--p-text-sec)' }}>{TL(c.bakiye)}</span>}
+              </li>
+            ))}
+          </ul>
+        </div>,
+        document.body
+      )}
+    </div>
   )
 }
