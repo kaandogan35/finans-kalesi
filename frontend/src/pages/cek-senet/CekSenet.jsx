@@ -479,23 +479,24 @@ function KarsiliksizModal({ open, onClose, item, form, setForm, onKaydet, kayitI
 
 function AutoComplete({ value, onChange, options, placeholder, id, required, p = 'b' }) {
   const [acik, setAcik] = useState(false)
+  const [pos, setPos] = useState({ bottom: 0, left: 0, width: 0 })
   const inputRef = useRef(null)
 
   const filtered = (options || []).filter(o => o.toLowerCase().includes((value || '').toLowerCase()))
 
-  // Dışarı tıklayınca kapat
-  useEffect(() => {
-    if (!acik) return
-    const fn = (e) => {
-      if (inputRef.current && !inputRef.current.contains(e.target)) setAcik(false)
+  const toggle = (e) => {
+    e.preventDefault()
+    if (!acik && inputRef.current) {
+      // readOnly → klavye açılmaz → getBoundingClientRect anında doğru
+      const r = inputRef.current.getBoundingClientRect()
+      setPos({
+        bottom: window.innerHeight - r.top + 4, // input'un tam üstü
+        left: r.left,
+        width: r.width,
+      })
     }
-    document.addEventListener('mousedown', fn)
-    document.addEventListener('touchstart', fn, { passive: true })
-    return () => {
-      document.removeEventListener('mousedown', fn)
-      document.removeEventListener('touchstart', fn)
-    }
-  }, [acik])
+    setAcik(a => !a)
+  }
 
   return (
     <div style={{ position: 'relative' }}>
@@ -509,9 +510,8 @@ function AutoComplete({ value, onChange, options, placeholder, id, required, p =
         autoComplete="off"
         readOnly
         style={{ minHeight: 44, cursor: 'pointer' }}
-        onPointerDown={(e) => { e.preventDefault(); setAcik(a => !a) }}
+        onPointerDown={toggle}
       />
-      {/* Dropdown: klavye açık değilse input altında, açıksa klavyenin üstünde sabit */}
       {acik && filtered.length > 0 && createPortal(
         <>
           <div
@@ -522,10 +522,9 @@ function AutoComplete({ value, onChange, options, placeholder, id, required, p =
             className={`${p}-autocomplete-list`}
             style={{
               position: 'fixed',
-              bottom: `calc(var(--keyboard-h, 0px) + 8px)`,
-              left: 12,
-              right: 12,
-              width: 'auto',
+              bottom: pos.bottom,
+              left: pos.left,
+              width: pos.width,
               zIndex: 9999,
               maxHeight: 240,
             }}
