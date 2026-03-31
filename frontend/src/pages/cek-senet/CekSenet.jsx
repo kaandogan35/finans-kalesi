@@ -241,7 +241,7 @@ function CekDetayModal({ detay, onKapat, renkler, p, onAksiyon }) {
   return createPortal(
     <>
       <div className={`${p}-modal-overlay`} onClick={onKapat} />
-      <div className={`${p}-modal-center`}>
+      <div className={`${p}-modal-center p-modal-confirm`}>
         <div className={`${p}-modal-box`} role="dialog" aria-modal="true" style={{ maxWidth: 400 }}>
 
           <div className="p-cek-detay-header">
