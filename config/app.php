@@ -65,7 +65,7 @@ return [
         'secret'         => env('JWT_SECRET'),
         'issuer'         => env('JWT_ISSUER', 'finans-kalesi-api'),
         'access_suresi'  => (int) env('JWT_ACCESS_SURESI', 900),      // 15 dakika
-        'refresh_suresi' => (int) env('JWT_REFRESH_SURESI', 604800),  // 7 gün
+        'refresh_suresi' => (int) env('JWT_REFRESH_SURESI', 2592000), // 30 gün
     ],
     
     // Uygulama

@@ -24,7 +24,7 @@ function jwtPayloadOku(token) {
   }
 }
 
-const HAREKETSIZ_SURE = 13 * 60 // 13 dakika hareketsizlik sonrası uyarı (saniye)
+const HAREKETSIZ_SURE = 30 * 60 // 30 dakika hareketsizlik sonrası uyarı (saniye)
 const UYARI_SURESI = 120        // Son 2 dakika geri sayım (saniye)
 const AKTIVITE_OLAYLARI = ['mousemove', 'mousedown', 'keydown', 'touchstart', 'scroll', 'click']
 
