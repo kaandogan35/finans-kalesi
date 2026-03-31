@@ -43,12 +43,12 @@ body.keyboard-open .p-modal-center {
   padding-bottom: var(--keyboard-h, 0px);
   overflow-y: auto;
 }
-/* H2 — Mobil bottom sheet: klavye açıkken modal klavyenin üstüne taşınır, içerik scroll edilir */
+/* H2 — Mobil bottom sheet: klavye açıkken modal kutusu küçülür, içerik scroll edilir */
 @media (max-width: 767px) {
   body.keyboard-open .p-modal-center {
     align-items: flex-end;
     padding-top: 0;
-    padding-bottom: var(--keyboard-h, 0px);
+    padding-bottom: 0;
   }
   body.keyboard-open .p-modal-center .p-modal-box {
     max-height: calc(92dvh - var(--keyboard-h, 0px));
