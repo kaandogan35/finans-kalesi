@@ -57,6 +57,11 @@ body.keyboard-open .p-modal-center {
     max-height: calc(92dvh - var(--keyboard-h, 0px));
     overflow-y: auto;
   }
+  /* H3 — Mobil fullscreen modal: klavye açıkken modal kutusu shrink, input görünür */
+  body.keyboard-open .p-modal-center.p-modal-fullscreen .p-modal-box {
+    max-height: calc(92dvh - var(--keyboard-h, 0px));
+    overflow-y: auto;
+  }
 }
 
 /* ============================================================
@@ -625,7 +630,7 @@ body.keyboard-open .p-modal-center {
 .p-content {
   flex: 1; padding: 28px 32px;
   background: var(--p-bg-content);
-  overflow-y: visible;
+  overflow-y: auto;
 }
 
 /* ── KPI Grid ─────────────────────────────────────── */
