@@ -492,7 +492,13 @@ function AutoComplete({ value, onChange, options, placeholder, id, required, p =
   const handleOpen = () => {
     if (inputRef.current) {
       const rect = inputRef.current.getBoundingClientRect()
-      setDropPos({ top: rect.bottom, left: rect.left, width: rect.width })
+      const openUp = window.innerHeight - rect.bottom < 200
+      setDropPos({
+        top: openUp ? undefined : rect.bottom,
+        bottom: openUp ? window.innerHeight - rect.top : undefined,
+        left: rect.left,
+        width: rect.width,
+      })
     }
     setAcik(true)
   }
@@ -516,7 +522,7 @@ function AutoComplete({ value, onChange, options, placeholder, id, required, p =
       {acik && filtered.length > 0 && createPortal(
         <ul
           className={`${p}-autocomplete-list`}
-          style={{ position: 'fixed', top: dropPos.top, left: dropPos.left, width: dropPos.width, zIndex: 9999 }}
+          style={{ position: 'fixed', top: dropPos.top, bottom: dropPos.bottom, left: dropPos.left, width: dropPos.width, zIndex: 9999 }}
         >
           {filtered.map(o => (
             <li key={o} className={`${p}-autocomplete-item`}
