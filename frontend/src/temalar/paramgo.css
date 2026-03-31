@@ -847,7 +847,8 @@ body.keyboard-open .p-modal-center {
 
 /* ── Sayfa Bileşenleri (Dashboard vb.) ────────────────── */
 
-.p-page-root { max-width: 100%; margin: 0 auto; overflow-x: hidden; }
+.p-page-root { max-width: 100%; margin: 0 auto; overflow-x: hidden; animation: pageEnter 0.15s ease-out both; }
+@keyframes pageEnter { from { opacity: 0; transform: translateY(6px) } to { opacity: 1; transform: translateY(0) } }
 
 .p-greeting { margin-bottom: 20px; }
 .p-greeting h1 {

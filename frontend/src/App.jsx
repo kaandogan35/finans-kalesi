@@ -29,12 +29,17 @@ import GirisYap     from './pages/auth/GirisYap'
 import KayitOl      from './pages/auth/KayitOl'
 import SifreSifirla from './pages/auth/SifreSifirla'
 
-// L — Uygulama sayfaları lazy loaded (WKWebView bellek tasarrufu)
-const Dashboard            = lazy(() => import('./pages/dashboard/Dashboard'))
-const CariYonetimi         = lazy(() => import('./pages/cariler/CariYonetimi'))
-const VarlikKasa           = lazy(() => import('./pages/kasa/VarlikKasa'))
-const CekSenet             = lazy(() => import('./pages/cek-senet/CekSenet'))
+// Sık kullanılan ana modüller — eager loaded (bundle'a gömülü, gecikme yok)
+import Dashboard           from './pages/dashboard/Dashboard'
+import CariYonetimi        from './pages/cariler/CariYonetimi'
+import CekSenet            from './pages/cek-senet/CekSenet'
+import VarlikKasa          from './pages/kasa/VarlikKasa'
+import Gelirler            from './pages/gelirler/Gelirler'
+import Giderler            from './pages/giderler/Giderler'
+
+// Daha az kullanılan modüller — lazy loaded (ilk açılışta yüklenir)
 const OdemeTakip           = lazy(() => import('./pages/odeme-takip/OdemeTakip'))
+const TekrarlayanIslemler  = lazy(() => import('./pages/tekrarlayan-islemler/TekrarlayanIslemler'))
 const VadeHesaplayici      = lazy(() => import('./pages/vade-hesaplayici/VadeHesaplayici'))
 const TemaSecimi           = lazy(() => import('./pages/ayarlar/TemaSecimi'))
 const PlanSecim            = lazy(() => import('./pages/abonelik/PlanSecim'))
@@ -44,9 +49,6 @@ const BildirimlerEkrani    = lazy(() => import('./pages/bildirimler/BildirimlerE
 const VeresiyeListesi      = lazy(() => import('./pages/veresiye/VeresiyeListesi'))
 const VeresiyeDetay        = lazy(() => import('./pages/veresiye/VeresiyeDetay'))
 const RaporlarEkrani       = lazy(() => import('./pages/raporlar/RaporlarEkrani'))
-const Gelirler             = lazy(() => import('./pages/gelirler/Gelirler'))
-const Giderler             = lazy(() => import('./pages/giderler/Giderler'))
-const TekrarlayanIslemler  = lazy(() => import('./pages/tekrarlayan-islemler/TekrarlayanIslemler'))
 const Onboarding           = lazy(() => import('./pages/onboarding/Onboarding'))
 
 // Lazy yükleme sırasında gösterilecek minimal yükleyici
