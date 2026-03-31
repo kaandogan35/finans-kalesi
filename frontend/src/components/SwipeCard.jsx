@@ -28,9 +28,9 @@ export function useSwipe(ref, { onSwipeLeft, threshold = 60 } = {}) {
       currentX.current = e.touches[0].clientX
       const diff = startX.current - currentX.current
       if (diff > 0) {
-        el.style.transform = `translateX(-${Math.min(diff, SWIPE_SNAP + 20)}px)`
+        el.style.transform = `translate3d(-${Math.min(diff, SWIPE_SNAP + 20)}px, 0, 0)`
       } else {
-        el.style.transform = 'translateX(0)'
+        el.style.transform = 'translate3d(0, 0, 0)'
       }
     }
     const onTouchEnd = () => {
@@ -38,10 +38,10 @@ export function useSwipe(ref, { onSwipeLeft, threshold = 60 } = {}) {
       const diff = startX.current - currentX.current
       el.style.transition = 'transform 0.25s cubic-bezier(0.25, 0.46, 0.45, 0.94)'
       if (diff > threshold) {
-        el.style.transform = `translateX(-${SWIPE_SNAP}px)`
+        el.style.transform = `translate3d(-${SWIPE_SNAP}px, 0, 0)`
         onSwipeLeft?.()
       } else {
-        el.style.transform = 'translateX(0)'
+        el.style.transform = 'translate3d(0, 0, 0)'
       }
     }
 
@@ -80,7 +80,7 @@ export default function SwipeCard({ aksiyonlar = [], children, className = '', o
   const kapat = () => {
     if (contentRef.current) {
       contentRef.current.style.transition = 'transform 0.25s cubic-bezier(0.25, 0.46, 0.45, 0.94)'
-      contentRef.current.style.transform = 'translateX(0)'
+      contentRef.current.style.transform = 'translate3d(0, 0, 0)'
     }
     setAcik(false)
   }

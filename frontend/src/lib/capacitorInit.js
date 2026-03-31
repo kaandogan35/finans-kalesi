@@ -36,7 +36,9 @@ export async function capacitorBaslat() {
       document.body.classList.add('keyboard-open')
       document.documentElement.style.setProperty('--keyboard-h', `${keyboardHeight}px`)
 
-      setTimeout(() => {
+      // RAF + 100ms: klavye animasyonu başladıktan sonra layout okuma yapılır
+      // setTimeout yerine RAF → main thread bloğu olmaz
+      setTimeout(() => requestAnimationFrame(() => {
         const el = document.activeElement
         if (!el || !['INPUT', 'TEXTAREA', 'SELECT'].includes(el.tagName)) return
 
@@ -50,18 +52,20 @@ export async function capacitorBaslat() {
         if (inputBottom > keyboardTop) {
           const shift = Math.min(inputBottom - keyboardTop, keyboardHeight * 0.8)
           modalBox.style.transition = 'transform 0.25s cubic-bezier(0.25, 0.46, 0.45, 0.94)'
-          modalBox.style.transform = `translateY(-${shift}px)`
+          modalBox.style.transform = `translate3d(0, -${shift}px, 0)`
         }
-      }, 150)
+      }), 100)
     })
 
     Keyboard.addListener('keyboardWillHide', () => {
       document.body.classList.remove('keyboard-open')
       document.documentElement.style.removeProperty('--keyboard-h')
 
-      document.querySelectorAll('[class*="modal-box"], .sgm-box, .kum-box').forEach(box => {
-        box.style.transition = 'transform 0.25s cubic-bezier(0.25, 0.46, 0.45, 0.94)'
-        box.style.transform = 'translateY(0)'
+      requestAnimationFrame(() => {
+        document.querySelectorAll('[class*="modal-box"], .sgm-box, .kum-box').forEach(box => {
+          box.style.transition = 'transform 0.25s cubic-bezier(0.25, 0.46, 0.45, 0.94)'
+          box.style.transform = 'translate3d(0, 0, 0)'
+        })
       })
     })
   } catch {}
