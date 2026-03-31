@@ -8029,7 +8029,7 @@ body:has(.pm-auth-screen) {
 .p-ob-hero {
   width: 100%;
   background: linear-gradient(135deg, #10B981 0%, #059669 60%, #047857 100%);
-  padding: 44px 24px 68px; text-align: center;
+  padding: calc(env(safe-area-inset-top, 0px) + 44px) 24px 68px; text-align: center;
   position: relative; overflow: hidden;
 }
 .p-ob-hero-blob-1 {
