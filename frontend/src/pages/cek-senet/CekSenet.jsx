@@ -479,7 +479,9 @@ function KarsiliksizModal({ open, onClose, item, form, setForm, onKaydet, kayitI
 
 function AutoComplete({ value, onChange, options, placeholder, id, required, p = 'b' }) {
   const [acik, setAcik] = useState(false)
+  const [dropPos, setDropPos] = useState({ top: 0, left: 0, width: 0 })
   const ref = useRef(null)
+  const inputRef = useRef(null)
 
   useEffect(() => {
     const fn = (e) => { if (ref.current && !ref.current.contains(e.target)) setAcik(false) }
@@ -487,11 +489,20 @@ function AutoComplete({ value, onChange, options, placeholder, id, required, p =
     return () => document.removeEventListener('mousedown', fn)
   }, [])
 
+  const handleOpen = () => {
+    if (inputRef.current) {
+      const rect = inputRef.current.getBoundingClientRect()
+      setDropPos({ top: rect.bottom, left: rect.left, width: rect.width })
+    }
+    setAcik(true)
+  }
+
   const filtered = (options || []).filter(o => o.toLowerCase().includes((value || '').toLowerCase()))
 
   return (
     <div ref={ref} style={{ position: 'relative' }}>
       <input
+        ref={inputRef}
         id={id}
         className="form-control"
         value={value || ''}
@@ -499,17 +510,21 @@ function AutoComplete({ value, onChange, options, placeholder, id, required, p =
         required={required}
         autoComplete="off"
         style={{ minHeight: 44 }}
-        onChange={(e) => { onChange(e.target.value); setAcik(true) }}
-        onFocus={() => setAcik(true)}
+        onChange={(e) => { onChange(e.target.value); handleOpen() }}
+        onFocus={handleOpen}
       />
-      {acik && filtered.length > 0 && (
-        <ul className={`${p}-autocomplete-list`}>
+      {acik && filtered.length > 0 && createPortal(
+        <ul
+          className={`${p}-autocomplete-list`}
+          style={{ position: 'fixed', top: dropPos.top, left: dropPos.left, width: dropPos.width, zIndex: 9999 }}
+        >
           {filtered.map(o => (
             <li key={o} className={`${p}-autocomplete-item`}
               onMouseDown={() => { onChange(o); setAcik(false) }}
             >{o}</li>
           ))}
-        </ul>
+        </ul>,
+        document.body
       )}
     </div>
   )
