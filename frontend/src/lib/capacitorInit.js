@@ -15,7 +15,7 @@ export async function capacitorBaslat() {
   // ─── Status Bar ───────────────────────────────────────
   try {
     const { StatusBar, Style } = await import('@capacitor/status-bar')
-    await StatusBar.setOverlaysWebView({ overlay: false })
+    await StatusBar.setOverlaysWebView({ overlay: true })
     // window fonksiyonlarını hazırla — sayfalar bunları kullanır (race condition yok)
     // Başlangıç stili: native config'de DARK (capacitor.config.ts)
     window.__statusBarSetDark  = () => StatusBar.setStyle({ style: Style.Dark })
@@ -36,12 +36,19 @@ export async function capacitorBaslat() {
       document.body.classList.add('keyboard-open')
       document.documentElement.style.setProperty('--keyboard-h', `${keyboardHeight}px`)
 
-      // RAF + 100ms: klavye animasyonu başladıktan sonra layout okuma yapılır
-      // setTimeout yerine RAF → main thread bloğu olmaz
+      // RAF + 150ms: klavye animasyonu yerleştikten sonra layout oku
       setTimeout(() => requestAnimationFrame(() => {
         const el = document.activeElement
         if (!el || !['INPUT', 'TEXTAREA', 'SELECT'].includes(el.tagName)) return
 
+        // Fullscreen modallarda modal-box'ı hareket ettirme:
+        // CSS max-height zaten küçülür, p-modal-body scroll eder → scrollIntoView yeterli
+        if (el.closest('[class*="modal-fullscreen"]')) {
+          el.scrollIntoView({ behavior: 'smooth', block: 'nearest' })
+          return
+        }
+
+        // Diğer modallarda (bottom sheet, ortalanmış) kutuyu yukarı kaydır
         const modalBox = el.closest('[class*="modal-box"], .sgm-box, .kum-box')
         if (!modalBox) return
 
@@ -54,7 +61,7 @@ export async function capacitorBaslat() {
           modalBox.style.transition = 'transform 0.25s cubic-bezier(0.25, 0.46, 0.45, 0.94)'
           modalBox.style.transform = `translate3d(0, -${shift}px, 0)`
         }
-      }), 100)
+      }), 150)
     })
 
     Keyboard.addListener('keyboardWillHide', () => {
