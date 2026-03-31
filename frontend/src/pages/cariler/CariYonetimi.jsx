@@ -192,6 +192,49 @@ const parseParaInput = (formatted) => parseFloat(String(formatted).replace(/\./g
 const bosForm  = { cariTip: 'alici', tip: 'kurumsal', unvan: '', telefon: '', adres: '', il: '', ilce: '', vergi_no: '', durum: 'aktif' }
 const bosIslem = { tur: 'tahsilat', tutar: '', aciklama: '', tarih: bugunTarih() }
 
+// ─── Modal Bileşeni (CekSenet ile aynı yapı) ─────────────────────────────────
+function Modal({ open, onClose, children, size = '', scrollable = false, p = 'b', ariaId = '', confirm = false, style: boxStyleOverride = {} }) {
+  useEffect(() => {
+    if (!open) return
+    document.body.style.overflow = 'hidden'
+    return () => { document.body.style.overflow = '' }
+  }, [open])
+
+  useEffect(() => {
+    if (!open) return
+    const fn = (e) => { if (e.key === 'Escape') onClose() }
+    document.addEventListener('keydown', fn)
+    return () => document.removeEventListener('keydown', fn)
+  }, [open, onClose])
+
+  if (!open) return null
+
+  const maxW = size === 'xl' ? 1140 : size === 'lg' ? 800 : size === 'sm' ? 420 : 560
+
+  return createPortal(
+    <>
+      <div className={`${p}-modal-overlay`} />
+      <div className={`${p}-modal-center${confirm ? ` ${p}-modal-confirm` : ''}`}>
+        <div
+          className={`${p}-modal-box`}
+          role="dialog"
+          aria-labelledby={ariaId || undefined}
+          aria-modal="true"
+          style={{
+            maxWidth: maxW,
+            maxHeight: scrollable ? '90vh' : 'auto',
+            overflow: scrollable ? 'auto' : 'hidden',
+            ...boxStyleOverride,
+          }}
+        >
+          {children}
+        </div>
+      </div>
+    </>,
+    document.body
+  )
+}
+
 // ─── Ana Bileşen ──────────────────────────────────────────────────────────────
 export default function CariYonetimi() {
   const navigate = useNavigate()
@@ -268,26 +311,7 @@ export default function CariYonetimi() {
   const [islem, setIslem]           = useState(bosIslem)
   const [yukleniyor, setYukleniyor] = useState(false)
 
-  // ─── Modal body overflow yönetimi ─────────────────────────────────────────
-  const acikModalSayisi = [cariModalAcik, islemModalAcik, kartModalAcik, silModalAcik, topluModalAcik].filter(Boolean).length
-  useEffect(() => {
-    if (acikModalSayisi > 0) document.body.style.overflow = 'hidden'
-    else document.body.style.overflow = ''
-    return () => { document.body.style.overflow = '' }
-  }, [acikModalSayisi])
-
-  // ─── ESC tuşu ile modal kapatma ──────────────────────────────────────────
-  useEffect(() => {
-    const handler = (e) => {
-      if (e.key !== 'Escape') return
-      if (silModalAcik) { setSilModalAcik(false); return }
-      if (islemModalAcik) { setIslemModalAcik(false); return }
-      if (cariModalAcik) { setCariModalAcik(false); return }
-      if (kartModalAcik) { setKartModalAcik(false); return }
-    }
-    document.addEventListener('keydown', handler)
-    return () => document.removeEventListener('keydown', handler)
-  }, [silModalAcik, islemModalAcik, cariModalAcik, kartModalAcik])
+  // Modal ESC ve overflow yönetimi Modal bileşeni tarafından yapılıyor
 
   // ─── Veri Yükleme ────────────────────────────────────────────────────────
   const veriYukle = useCallback(async () => {
@@ -1096,11 +1120,7 @@ export default function CariYonetimi() {
       {/* ══════════════════════════════════════════════
           MODAL 1 — Cari Ekle / Düzenle
       ══════════════════════════════════════════════ */}
-      {cariModalAcik && createPortal(
-        <>
-          <div className={`${p}-modal-overlay`} />
-          <div className={`${p}-modal-center ${p}-modal-fullscreen`} role="dialog" aria-modal="true" aria-labelledby="cari-modal-title">
-            <div className={`${p}-modal-box`} style={{ maxWidth: 800 }}>
+      <Modal open={cariModalAcik} onClose={() => setCariModalAcik(false)} size="lg" p={p} ariaId="cari-modal-title" style={{ display: 'flex', flexDirection: 'column' }}>
               {/* Header */}
               <div className={`${p}-modal-header ${p}-mh-default`}>
                 <h2 className={`${p}-modal-title`} id="cari-modal-title">
@@ -1211,20 +1231,12 @@ export default function CariYonetimi() {
                   </button>
                 </div>
               </form>
-            </div>
-          </div>
-        </>,
-        document.body
-      )}
+      </Modal>
 
       {/* ══════════════════════════════════════════════
           MODAL 2 — Finansal İşlem (Dinamik)
       ══════════════════════════════════════════════ */}
-      {islemModalAcik && createPortal(
-        <>
-          <div className={`${p}-modal-overlay`} />
-          <div className={`${p}-modal-center ${p}-modal-fullscreen`} role="dialog" aria-modal="true" aria-labelledby="islem-modal-title">
-            <div className={`${p}-modal-box`} style={{ maxWidth: 520 }}>
+      <Modal open={islemModalAcik} onClose={() => setIslemModalAcik(false)} p={p} ariaId="islem-modal-title" style={{ display: 'flex', flexDirection: 'column' }}>
               {(() => {
                 const etiketler = islemEtiketleri(islemCari)
                 return (
@@ -1303,20 +1315,12 @@ export default function CariYonetimi() {
                   </>
                 )
               })()}
-            </div>
-          </div>
-        </>,
-        document.body
-      )}
+      </Modal>
 
       {/* ══════════════════════════════════════════════
           MODAL 3 — Cari Kart (Netsis Mantığı)
       ══════════════════════════════════════════════ */}
-      {kartModalAcik && createPortal(
-        <>
-          <div className={`${p}-modal-overlay`} />
-          <div className={`${p}-modal-center ${p}-modal-fullscreen`} role="dialog" aria-modal="true">
-            <div className={`${p}-modal-box`} style={{ maxWidth: 1140, display: 'flex', flexDirection: 'column' }}>
+      <Modal open={kartModalAcik} onClose={() => setKartModalAcik(false)} size="xl" p={p} style={{ display: 'flex', flexDirection: 'column', maxHeight: '90vh' }}>
               {kartCari && (
                 <>
                   {/* Header — Accent Gradient */}
@@ -1761,20 +1765,12 @@ export default function CariYonetimi() {
                   </div>
                 </>
               )}
-            </div>
-          </div>
-        </>,
-        document.body
-      )}
+      </Modal>
 
       {/* ══════════════════════════════════════════════
           MODAL 4 — Toplu Yükle (CSV + Excel)
       ══════════════════════════════════════════════ */}
-      {topluModalAcik && createPortal(
-        <>
-          <div className={`${p}-modal-overlay`} />
-          <div className={`${p}-modal-center ${p}-modal-fullscreen`} role="dialog" aria-modal="true" aria-labelledby="toplu-modal-title">
-            <div className={`${p}-modal-box`} style={{ maxWidth: 660 }}>
+      <Modal open={topluModalAcik} onClose={() => setTopluModalAcik(false)} p={p} ariaId="toplu-modal-title" style={{ display: 'flex', flexDirection: 'column' }}>
               {/* Header */}
               <div className={`${p}-modal-header ${p}-mh-default`}>
                 <h2 className={`${p}-modal-title`} id="toplu-modal-title">
@@ -1964,20 +1960,12 @@ export default function CariYonetimi() {
                     : <><i className="bi bi-cloud-upload" />{topluOnizleme ? `${topluOnizleme.toplam} Cari Yükle` : 'Yükle'}</>}
                 </button>
               </div>
-            </div>
-          </div>
-        </>,
-        document.body
-      )}
+      </Modal>
 
       {/* ══════════════════════════════════════════════
           MODAL 5 — Silme Onayı
       ══════════════════════════════════════════════ */}
-      {silModalAcik && createPortal(
-        <>
-          <div className={`${p}-modal-overlay`} />
-          <div className={`${p}-modal-center ${p}-modal-confirm`} role="dialog" aria-modal="true" aria-labelledby="sil-modal-title">
-            <div className={`${p}-modal-box`} style={{ maxWidth: 420 }}>
+      <Modal open={silModalAcik} onClose={() => setSilModalAcik(false)} size="sm" confirm p={p} ariaId="sil-modal-title">
               <div className={`${p}-modal-header ${p}-mh-danger`}>
                 <h2 className={`${p}-modal-title`} id="sil-modal-title">
                   <i className="bi bi-exclamation-triangle-fill" aria-hidden="true" />
@@ -2000,11 +1988,7 @@ export default function CariYonetimi() {
                     : <><i className="bi bi-trash" /> Pasife Al</>}
                 </button>
               </div>
-            </div>
-          </div>
-        </>,
-        document.body
-      )}
+      </Modal>
       {/* ─── Floating Action Bar — Toplu Ödeme Takibe Al ─────────────────── */}
       {secilenCariler.size > 0 && (
         <div style={{
