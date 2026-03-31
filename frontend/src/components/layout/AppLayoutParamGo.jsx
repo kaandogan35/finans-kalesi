@@ -409,7 +409,7 @@ export default function AppLayoutParamGo() {
           { path: '/dashboard',  icon: 'bi-speedometer2',      label: 'Ana Ekran' },
           { path: '/cek-senet',  icon: 'bi-file-earmark-text', label: 'Çek/Senet' },
           { path: '/kasa',       icon: 'bi-safe',              label: 'Kasa' },
-          { path: '/gelirler',   icon: 'bi-arrow-down-circle', label: 'Gelirler' },
+          { path: '/cariler',    icon: 'bi-people',            label: 'Cari' },
         ].map(item => (
           <NavLink
             key={item.path}
