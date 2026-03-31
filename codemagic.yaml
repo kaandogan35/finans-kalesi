@@ -50,7 +50,11 @@ workflows:
           ICON_DST="frontend/ios/App/App/Assets.xcassets/AppIcon.appiconset/AppIcon-512@2x.png"
           if [ -f "$ICON_SRC" ]; then
             cp "$ICON_SRC" "$ICON_DST"
-            echo "App icon yerleştirildi."
+            # Apple Store alpha kanal hatasi icin: sips ile alpha kaldir
+            sips -s format png --setProperty formatOptions 100 "$ICON_DST" --out /tmp/icon_no_alpha.png
+            sips -s hasAlpha false /tmp/icon_no_alpha.png --out "$ICON_DST"
+            echo "App icon yerleştirildi (alpha kaldırıldı)."
+            sips -g hasAlpha -g pixelWidth -g pixelHeight "$ICON_DST"
           else
             echo "UYARI: frontend/resources/icon.png bulunamadı."
           fi
