@@ -8025,6 +8025,14 @@ body:has(.pm-auth-screen) {
   display: flex; flex-direction: column; align-items: center;
 }
 
+/* Klavye açıkken onboarding sayfası scroll edilebilir olur */
+body.keyboard-open .p-ob-root {
+  height: calc(100dvh - var(--keyboard-h, 0px));
+  min-height: unset;
+  overflow-y: auto;
+  justify-content: flex-start;
+}
+
 /* ─── Hero ─── */
 .p-ob-hero {
   width: 100%;
