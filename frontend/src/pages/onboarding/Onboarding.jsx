@@ -7,7 +7,7 @@
  *   Adım 3 — İlk çekini gir       (çek   — atlanabilir)
  */
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { bildirim as toast } from '../../components/ui/CenterAlert'
 import useAuthStore from '../../stores/authStore'
@@ -59,6 +59,11 @@ export default function Onboarding() {
   const navigate          = useNavigate()
   const kullanici         = useAuthStore((s) => s.kullanici)
   const onboardingTamamla = useAuthStore((s) => s.onboardingTamamla)
+
+  // Onboarding yeşil arka plan — status bar ikonlarını beyaz yap
+  useEffect(() => {
+    window.__statusBarSetLight?.()
+  }, [])
 
   const [adim, setAdim]             = useState(1)
   const [yukleniyor, setYukleniyor] = useState(false)

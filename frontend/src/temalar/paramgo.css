@@ -8037,7 +8037,7 @@ body.keyboard-open .p-ob-root {
 .p-ob-hero {
   width: 100%;
   background: linear-gradient(135deg, #10B981 0%, #059669 60%, #047857 100%);
-  padding: calc(env(safe-area-inset-top, 0px) + 44px) 24px 68px; text-align: center;
+  padding: max(calc(env(safe-area-inset-top, 0px) + 44px), 80px) 24px 68px; text-align: center;
   position: relative; overflow: hidden;
 }
 .p-ob-hero-blob-1 {
@@ -8285,7 +8285,7 @@ body.keyboard-open .p-ob-root {
 @media (max-width: 600px) {
   .p-ob-card { padding: 28px 20px; border-radius: 16px; }
   .p-ob-step-line { width: 36px; }
-  .p-ob-hero { padding: 32px 16px 60px; }
+  .p-ob-hero { padding: max(calc(env(safe-area-inset-top, 0px) + 44px), 80px) 16px 60px; }
   .p-ob-success-features { grid-template-columns: 1fr; }
   .p-ob-sektor-grid { grid-template-columns: repeat(3, 1fr); gap: 8px; }
   .p-ob-cek-tur-grup { grid-template-columns: 1fr 1fr; }
