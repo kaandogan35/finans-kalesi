@@ -44,6 +44,17 @@ workflows:
 
       # --- Aşağıdaki adımlar cap sync SONRASI çalışır (cap add ios her şeyi sıfırlar) ---
 
+      - name: Set App Icon
+        script: |
+          ICON_SRC="frontend/resources/icon.png"
+          ICON_DST="frontend/ios/App/App/Assets.xcassets/AppIcon.appiconset/AppIcon-512@2x.png"
+          if [ -f "$ICON_SRC" ]; then
+            cp "$ICON_SRC" "$ICON_DST"
+            echo "App icon yerleştirildi."
+          else
+            echo "UYARI: frontend/resources/icon.png bulunamadı."
+          fi
+
       - name: Place GoogleService-Info.plist
         script: |
           if [ -n "$GOOGLE_SERVICE_INFO_PLIST" ]; then
