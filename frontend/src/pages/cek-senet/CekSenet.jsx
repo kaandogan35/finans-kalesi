@@ -489,18 +489,30 @@ function AutoComplete({ value, onChange, options, placeholder, id, required, p =
     return () => document.removeEventListener('mousedown', fn)
   }, [])
 
-  const handleOpen = () => {
-    if (inputRef.current) {
-      const rect = inputRef.current.getBoundingClientRect()
-      const openUp = window.innerHeight - rect.bottom < 200
-      setDropPos({
-        top: openUp ? undefined : rect.bottom,
-        bottom: openUp ? window.innerHeight - rect.top : undefined,
-        left: rect.left,
-        width: rect.width,
-      })
+  const hesaplaPos = () => {
+    if (!inputRef.current) return
+    const rect = inputRef.current.getBoundingClientRect()
+    // Klavye yüksekliğini hesaba kat (Capacitor resize:none → innerHeight değişmez)
+    const keyboardH = parseInt(document.documentElement.style.getPropertyValue('--keyboard-h') || '0')
+    const gorunurYukseklik = window.innerHeight - keyboardH
+    const openUp = gorunurYukseklik - rect.bottom < 200
+    setDropPos({
+      top: openUp ? undefined : rect.bottom + 2,
+      bottom: openUp ? (window.innerHeight - rect.top + 2) : undefined,
+      left: rect.left,
+      width: rect.width,
+    })
+  }
+
+  const handleOpen = () => { hesaplaPos(); setAcik(true) }
+
+  const handleFocus = () => {
+    // Klavye zaten açıksa anında aç, değilse animasyon bitene kadar bekle
+    if (document.body.classList.contains('keyboard-open')) {
+      handleOpen()
+    } else {
+      setTimeout(handleOpen, 350)
     }
-    setAcik(true)
   }
 
   const filtered = (options || []).filter(o => o.toLowerCase().includes((value || '').toLowerCase()))
@@ -517,7 +529,7 @@ function AutoComplete({ value, onChange, options, placeholder, id, required, p =
         autoComplete="off"
         style={{ minHeight: 44 }}
         onChange={(e) => { onChange(e.target.value); handleOpen() }}
-        onFocus={handleOpen}
+        onFocus={handleFocus}
       />
       {acik && filtered.length > 0 && createPortal(
         <ul
