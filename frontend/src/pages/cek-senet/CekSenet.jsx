@@ -479,46 +479,26 @@ function KarsiliksizModal({ open, onClose, item, form, setForm, onKaydet, kayitI
 
 function AutoComplete({ value, onChange, options, placeholder, id, required, p = 'b' }) {
   const [acik, setAcik] = useState(false)
-  const [dropPos, setDropPos] = useState({ top: 0, left: 0, width: 0 })
-  const ref = useRef(null)
   const inputRef = useRef(null)
-
-  useEffect(() => {
-    const fn = (e) => { if (ref.current && !ref.current.contains(e.target)) setAcik(false) }
-    document.addEventListener('mousedown', fn)
-    return () => document.removeEventListener('mousedown', fn)
-  }, [])
-
-  const hesaplaPos = () => {
-    if (!inputRef.current) return
-    const rect = inputRef.current.getBoundingClientRect()
-    // Klavye yüksekliğini hesaba kat (Capacitor resize:none → innerHeight değişmez)
-    const keyboardH = parseInt(document.documentElement.style.getPropertyValue('--keyboard-h') || '0')
-    const gorunurYukseklik = window.innerHeight - keyboardH
-    const openUp = gorunurYukseklik - rect.bottom < 200
-    setDropPos({
-      top: openUp ? undefined : rect.bottom + 2,
-      bottom: openUp ? (window.innerHeight - rect.top + 2) : undefined,
-      left: rect.left,
-      width: rect.width,
-    })
-  }
-
-  const handleOpen = () => { hesaplaPos(); setAcik(true) }
-
-  const handleFocus = () => {
-    // Klavye zaten açıksa anında aç, değilse animasyon bitene kadar bekle
-    if (document.body.classList.contains('keyboard-open')) {
-      handleOpen()
-    } else {
-      setTimeout(handleOpen, 350)
-    }
-  }
 
   const filtered = (options || []).filter(o => o.toLowerCase().includes((value || '').toLowerCase()))
 
+  // Dışarı tıklayınca kapat
+  useEffect(() => {
+    if (!acik) return
+    const fn = (e) => {
+      if (inputRef.current && !inputRef.current.contains(e.target)) setAcik(false)
+    }
+    document.addEventListener('mousedown', fn)
+    document.addEventListener('touchstart', fn, { passive: true })
+    return () => {
+      document.removeEventListener('mousedown', fn)
+      document.removeEventListener('touchstart', fn)
+    }
+  }, [acik])
+
   return (
-    <div ref={ref} style={{ position: 'relative' }}>
+    <div style={{ position: 'relative' }}>
       <input
         ref={inputRef}
         id={id}
@@ -527,21 +507,36 @@ function AutoComplete({ value, onChange, options, placeholder, id, required, p =
         placeholder={placeholder}
         required={required}
         autoComplete="off"
-        style={{ minHeight: 44 }}
-        onChange={(e) => { onChange(e.target.value); handleOpen() }}
-        onFocus={handleFocus}
+        readOnly
+        style={{ minHeight: 44, cursor: 'pointer' }}
+        onPointerDown={(e) => { e.preventDefault(); setAcik(a => !a) }}
       />
+      {/* Dropdown: klavye açık değilse input altında, açıksa klavyenin üstünde sabit */}
       {acik && filtered.length > 0 && createPortal(
-        <ul
-          className={`${p}-autocomplete-list`}
-          style={{ position: 'fixed', top: dropPos.top, bottom: dropPos.bottom, left: dropPos.left, width: dropPos.width, zIndex: 9999 }}
-        >
-          {filtered.map(o => (
-            <li key={o} className={`${p}-autocomplete-item`}
-              onMouseDown={() => { onChange(o); setAcik(false) }}
-            >{o}</li>
-          ))}
-        </ul>,
+        <>
+          <div
+            style={{ position: 'fixed', inset: 0, zIndex: 9998 }}
+            onPointerDown={() => setAcik(false)}
+          />
+          <ul
+            className={`${p}-autocomplete-list`}
+            style={{
+              position: 'fixed',
+              bottom: `calc(var(--keyboard-h, 0px) + 8px)`,
+              left: 12,
+              right: 12,
+              width: 'auto',
+              zIndex: 9999,
+              maxHeight: 240,
+            }}
+          >
+            {filtered.map(o => (
+              <li key={o} className={`${p}-autocomplete-item`}
+                onPointerDown={(e) => { e.preventDefault(); onChange(o); setAcik(false) }}
+              >{o}</li>
+            ))}
+          </ul>
+        </>,
         document.body
       )}
     </div>
