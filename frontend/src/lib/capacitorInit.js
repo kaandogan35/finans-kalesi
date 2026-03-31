@@ -1,7 +1,7 @@
 /**
  * ParamGo — Capacitor Platform Entegrasyonu
  *
- * Status bar: overlaysWebView=true (TEB/Papara tarzı — arka plan rengi uzanır)
+ * Status bar: overlaysWebView=false (layout entegre — safe area otomatik yönetilir)
  * Keyboard: body resize + scrollIntoView (input klavye arkasında kalmaz)
  * Back button: Android geri tuşu yönetimi
  * App state: foreground/background dinleme
@@ -12,15 +12,10 @@ import { Capacitor } from '@capacitor/core'
 export async function capacitorBaslat() {
   if (!Capacitor.isNativePlatform()) return
 
-  // ─── Native Bounce — sadece iOS'ta overscroll efekti ──
-  if (Capacitor.getPlatform() === 'ios') {
-    document.documentElement.classList.add('native-app')
-  }
-
   // ─── Status Bar ───────────────────────────────────────
   try {
     const { StatusBar, Style } = await import('@capacitor/status-bar')
-    await StatusBar.setOverlaysWebView({ overlay: true })
+    await StatusBar.setOverlaysWebView({ overlay: false })
     // window fonksiyonlarını hazırla — sayfalar bunları kullanır (race condition yok)
     // Başlangıç stili: native config'de DARK (capacitor.config.ts)
     window.__statusBarSetDark  = () => StatusBar.setStyle({ style: Style.Dark })

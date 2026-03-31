@@ -2,7 +2,7 @@
 
 /* ============================================================
    MOBİL GLOBAL — Safe Area + Zoom Engelleme
-   overlaysWebView: true — CSS ile safe area yönetimi
+   overlaysWebView: false — safe area sistem tarafından yönetilir
    ============================================================ */
 :root {
   --sat: env(safe-area-inset-top, 0px);
