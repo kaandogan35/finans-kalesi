@@ -17,6 +17,7 @@ const ISLEMLER_ITEMS = [
   { path: '/odemeler',         icon: 'bi-calendar-check',     label: 'Tahsilat Takibi',        breadcrumb: 'Tahsilat Takibi',       modul: 'odemeler'         },
   { path: '/gelirler',         icon: 'bi-arrow-down-circle',  label: 'Gelirler',               breadcrumb: 'Gelirler',              modul: 'kasa'             },
   { path: '/giderler',         icon: 'bi-arrow-up-circle',    label: 'Giderler',               breadcrumb: 'Giderler',              modul: 'kasa'             },
+  { path: '/tekrarlayan-islemler', icon: 'bi-arrow-repeat',   label: 'Sabit Gelir & Gider',    breadcrumb: 'Sabit Gelir & Gider',   modul: 'kasa'             },
   {
     icon: 'bi-safe', label: 'Kasa & Varlık', modul: 'kasa',
     children: [

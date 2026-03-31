@@ -1715,6 +1715,28 @@ export default function GelirGiderSayfasi({ islemTipi }) {
         )
       })()}
 
+      {/* ─── Sabit Gelir & Gider Kısayolu ──────────────────────────────────── */}
+      <div
+        className={`${p}-panel`}
+        style={{ cursor: 'pointer', marginBottom: 16 }}
+        onClick={() => navigate('/tekrarlayan-islemler')}
+      >
+        <div className="d-flex align-items-center justify-content-between gap-3 px-1">
+          <div className="d-flex align-items-center gap-3">
+            <div className={`${p}-kpi-icon-circle ${p}-kpi-ic-sm ${isGiris ? `${p}-kpi-ic-primary` : `${p}-kpi-ic-danger`}`}>
+              <i className="bi bi-arrow-repeat" />
+            </div>
+            <div>
+              <div style={{ fontWeight: 700, fontSize: 14, color: 'var(--p-text)' }}>Sabit Gelir & Gider</div>
+              <div style={{ fontSize: 12, color: 'var(--p-text-muted)' }}>
+                Kira, maaş, fatura gibi her ay tekrar eden işlemleri buradan tanımla
+              </div>
+            </div>
+          </div>
+          <i className="bi bi-chevron-right" style={{ fontSize: 16, color: 'var(--p-text-muted)', flexShrink: 0 }} />
+        </div>
+      </div>
+
       {/* ─── Kategori Dağılımı Grafiği ─────────────────────────────────────── */}
       {!yukleniyor && ozet.kategoriDagilimi.length > 0 && (
         <KategoriGrafik
