@@ -805,9 +805,9 @@ export default function TekrarlayanIslemler() {
           </div>
         </div>
         <div className={`${p}-page-header-right`}>
-          <button onClick={yeniAc} className={`${p}-${isGider ? 'cym-btn-danger' : 'cym-btn-new'} d-none d-md-flex align-items-center gap-2`}>
+          <button onClick={yeniAc} className={`${p}-${isGider ? 'cym-btn-danger' : 'cym-btn-new'} d-flex align-items-center gap-2`}>
             <i className="bi bi-plus-lg" />
-            {isGider ? 'Gider Tanımla' : 'Gelir Tanımla'}
+            <span className="d-none d-md-inline">{isGider ? 'Gider Tanımla' : 'Gelir Tanımla'}</span>
           </button>
         </div>
       </div>
@@ -1112,19 +1112,6 @@ export default function TekrarlayanIslemler() {
 
       </div>
 
-      {/* ─── Mobil FAB Buton ─────────────────────────────────────────────── */}
-      <button
-        onClick={yeniAc}
-        className={`${p}-${isGider ? 'cym-btn-danger' : 'cym-btn-new'} d-md-none p-fab-mobile`}
-        style={{
-          position: 'fixed', bottom: 'calc(88px + env(safe-area-inset-bottom, 0px))', right: 20, zIndex: 1040,
-          width: 56, height: 56, borderRadius: 14,
-          display: 'flex', alignItems: 'center', justifyContent: 'center',
-          boxShadow: isGider ? '0 4px 14px rgba(239,68,68,0.3)' : '0 4px 14px rgba(16,185,129,0.3)',
-        }}
-      >
-        <i className="bi bi-plus-lg" style={{ fontSize: 22 }} />
-      </button>
 
       {/* ═══ MODALLER ═══ */}
       <TekrarlayanModal

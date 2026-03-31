@@ -1514,10 +1514,10 @@ export default function GelirGiderSayfasi({ islemTipi }) {
           </button>
           <button
             onClick={() => setModalAcik(true)}
-            className={`${p}-${isGiris ? 'cym-btn-new' : 'cym-btn-danger'} d-none d-md-flex align-items-center gap-2`}
+            className={`${p}-${isGiris ? 'cym-btn-new' : 'cym-btn-danger'} d-flex align-items-center gap-2`}
           >
             <i className="bi bi-plus-lg" />
-            {isGiris ? 'Gelir Ekle' : 'Gider Ekle'}
+            <span className="d-none d-md-inline">{isGiris ? 'Gelir Ekle' : 'Gider Ekle'}</span>
           </button>
         </div>
       </div>
@@ -1897,20 +1897,6 @@ export default function GelirGiderSayfasi({ islemTipi }) {
 
       </div>
 
-      {/* ─── Mobil FAB Buton ─────────────────────────────────────────────── */}
-      <button
-        onClick={() => setModalAcik(true)}
-        className={`${p}-${isGiris ? 'cym-btn-new' : 'cym-btn-danger'} d-md-none p-fab-mobile`}
-        aria-label={isGiris ? 'Gelir Ekle' : 'Gider Ekle'}
-        style={{
-          position: 'fixed', bottom: 'calc(88px + env(safe-area-inset-bottom, 0px))', right: 20, zIndex: 1040,
-          width: 56, height: 56, borderRadius: 10,
-          display: 'flex', alignItems: 'center', justifyContent: 'center',
-          boxShadow: isGiris ? 'var(--p-shadow-fab-success)' : 'var(--p-shadow-fab-danger)',
-        }}
-      >
-        <i className="bi bi-plus-lg" style={{ fontSize: 22 }} />
-      </button>
 
       {/* ─── Modaller ──────────────────────────────────────────────────────── */}
       {isGiris ? (

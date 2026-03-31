@@ -6,6 +6,7 @@
  */
 
 import { useEffect, useState, useRef, useCallback } from 'react'
+import { createPortal } from 'react-dom'
 import { Link, useNavigate } from 'react-router-dom'
 import { dashboardApi } from '../../api/dashboard'
 import { carilerApi }   from '../../api/cariler'
@@ -763,17 +764,17 @@ export default function Dashboard() {
 
 
       {/* ── Hızlı İşlem Modalı ─────────────────────────────────────────── */}
-      {showHizliIslem && (
+      {showHizliIslem && createPortal(
         <>
-          <div className={`${p}-modal-overlay`} onClick={() => setShowHizliIslem(false)} aria-hidden="true" />
+          <div style={{ position:'fixed', inset:0, zIndex:1040, background:'rgba(15,23,42,0.45)', backdropFilter:'blur(4px)', WebkitBackdropFilter:'blur(4px)' }} onClick={() => setShowHizliIslem(false)} />
           <div
-            className={`${p}-modal-center ${p}-modal-confirm`}
             role="dialog"
             aria-modal="true"
             aria-labelledby="dash-hizli-title"
+            style={{ position:'fixed', inset:0, zIndex:1050, display:'flex', alignItems:'center', justifyContent:'center', padding:16 }}
             onClick={(e) => e.target === e.currentTarget && setShowHizliIslem(false)}
           >
-            <div className={`${p}-modal-box`} style={{ maxWidth: 440 }}>
+            <div className={`${p}-modal-box`} style={{ maxWidth: 440, borderRadius: 14, paddingBottom: 0 }}>
               <div className={`${p}-modal-header ${p}-mh-default`}>
                 <h2 className={`${p}-modal-title`} id="dash-hizli-title">
                   <i className="bi bi-plus-circle-fill" aria-hidden="true" />
@@ -809,12 +810,10 @@ export default function Dashboard() {
                   ))}
                 </div>
               </div>
-              <div className={`${p}-modal-esc-hint`}>
-                <kbd>Esc</kbd> ile kapat
-              </div>
             </div>
           </div>
-        </>
+        </>,
+        document.body
       )}
     </div>
   )

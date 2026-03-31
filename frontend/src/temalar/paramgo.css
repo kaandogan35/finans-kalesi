@@ -16,10 +16,13 @@ input, select, textarea {
   font-size: 16px !important;
 }
 
-/* Overscroll engelleme — web havası vermemesi için */
+/* Overscroll — mobilde native bounce, web'de engelle */
 html, body {
   overscroll-behavior: none;
   -webkit-overflow-scrolling: touch;
+}
+html.native-app, html.native-app body {
+  overscroll-behavior: auto;
 }
 
 /* Klavye açıkken bottom nav gizle */
@@ -45,12 +48,12 @@ body.keyboard-open .p-modal-center {
 }
 /* H2 — Mobil bottom sheet: klavye açıkken modal kutusu küçülür, içerik scroll edilir */
 @media (max-width: 767px) {
-  body.keyboard-open .p-modal-center {
+  body.keyboard-open .p-modal-center.p-modal-sheet {
     align-items: flex-end;
     padding-top: 0;
     padding-bottom: 0;
   }
-  body.keyboard-open .p-modal-center .p-modal-box {
+  body.keyboard-open .p-modal-center.p-modal-sheet .p-modal-box {
     max-height: calc(92dvh - var(--keyboard-h, 0px));
     overflow-y: auto;
   }
@@ -1303,6 +1306,28 @@ body.keyboard-open .p-modal-center {
   box-shadow: 0 0 0 3px rgba(16,185,129,0.08) !important;
 }
 .p-modal-box .form-control::placeholder { color: var(--p-text-sec) !important; }
+
+/* ─── İkonlu Input Grubu ─── */
+.p-input-icon {
+  position: relative; display: flex; align-items: center;
+}
+.p-input-icon > i {
+  position: absolute; left: 14px; top: 50%;
+  transform: translateY(-50%);
+  font-size: 16px; color: var(--p-text-sec); opacity: 0.5;
+  pointer-events: none; z-index: 1;
+}
+.p-input-icon > .form-control,
+.p-input-icon > textarea.form-control {
+  padding-left: 40px !important;
+}
+.p-input-icon > i + .p-cym-select {
+  padding-left: 40px;
+}
+/* İkonlu textarea — ikon üstte hizalı */
+.p-input-icon > i.p-input-icon-top {
+  top: 16px; transform: none;
+}
 .p-modal-box .input-group-text {
   background: #f8f9fb !important; border: 1px solid var(--p-border) !important;
   color: var(--p-text-sec) !important; font-weight: 700;
@@ -1571,16 +1596,39 @@ body.keyboard-open .p-modal-center {
 
 /* ─── CekSenet Responsive ─── */
 @media (max-width: 767px) {
-  .p-modal-center { align-items: flex-end; padding: 0; }
-  .p-modal-box {
+  /* Bottom sheet sadece .p-modal-sheet class'ı olan modallarda */
+  .p-modal-center.p-modal-sheet { align-items: flex-end; padding: 0; }
+  .p-modal-center.p-modal-sheet .p-modal-box {
     border-radius: 20px 20px 0 0 !important;
     max-height: 88vh;
     max-height: 88dvh;
     padding-bottom: env(safe-area-inset-bottom, 0px);
   }
-  .p-modal-confirm { align-items: center !important; padding: 16px !important; }
-  .p-modal-confirm .p-modal-box { border-radius: 14px !important; max-height: none; padding-bottom: 0; }
-  .p-modal-confirm .p-modal-box::before { display: none; }
+  /* Mobilde tam ekran modal — form sayfası gibi */
+  .p-modal-center.p-modal-fullscreen { padding: 0; align-items: stretch; }
+  .p-modal-center.p-modal-fullscreen .p-modal-box {
+    max-width: 100% !important;
+    max-height: 100% !important;
+    height: 100%;
+    border-radius: 0 !important;
+    box-shadow: none;
+    border: none;
+  }
+  .p-modal-center.p-modal-fullscreen .p-modal-header {
+    padding-top: calc(env(safe-area-inset-top, 0px) + 16px);
+    position: sticky; top: 0; z-index: 2;
+  }
+  .p-modal-center.p-modal-fullscreen .p-modal-footer {
+    position: sticky; bottom: 0; z-index: 2;
+    padding-bottom: calc(env(safe-area-inset-bottom, 0px) + 16px);
+    background: #ffffff;
+    border-top: 1px solid rgba(0,0,0,0.06);
+  }
+  /* Diğer modallar (confirm, action) mobilde de ortada kalır */
+  .p-modal-center:not(.p-modal-sheet):not(.p-modal-fullscreen) .p-modal-box {
+    max-height: 88vh;
+    max-height: 88dvh;
+  }
   .p-cek-header { padding: 16px; gap: 12px; }
   .p-cek-header::before { display: none; }
   .p-cek-title { font-size: 18px; }
@@ -5588,74 +5636,6 @@ body:has(.pm-auth-screen) {
   .p-vade-card { border-radius: 14px; }
 }
 
-/* ─── FAB — Hızlı İşlem Butonu ─────────────────────────────────────────────── */
-.p-fab-wrap {
-  position: fixed; bottom: 24px; right: 24px;
-  display: none; flex-direction: column; align-items: flex-end; gap: 10px;
-  z-index: 1040;
-}
-@media (max-width: 767px) {
-  .p-fab-wrap { display: flex; bottom: calc(88px + env(safe-area-inset-bottom)); }
-}
-.p-fab-backdrop {
-  position: fixed; inset: 0; z-index: 1039;
-  background: rgba(0,0,0,0.18);
-  animation: bFadeIn 0.15s ease;
-}
-.p-fab-menu {
-  display: flex; flex-direction: column; align-items: flex-end; gap: 8px;
-  animation: fabMenuIn 0.18s ease;
-}
-@keyframes fabMenuIn {
-  from { opacity: 0; transform: translateY(10px) scale(0.97); }
-  to   { opacity: 1; transform: translateY(0)   scale(1); }
-}
-.p-fab-item {
-  display: flex; align-items: center; gap: 10px;
-  cursor: pointer; border: none; background: transparent; padding: 0;
-}
-.p-fab-item-icon {
-  width: 44px; height: 44px; border-radius: 14px; flex-shrink: 0;
-  background: #ffffff; border: 1px solid var(--p-border);
-  box-shadow: 0 4px 16px rgba(0,0,0,0.12);
-  display: flex; align-items: center; justify-content: center;
-  font-size: 18px; color: var(--p-primary); transition: transform 0.15s;
-}
-.p-fab-item:hover .p-fab-item-icon { transform: scale(1.08); }
-.p-fab-item-label {
-  background: #ffffff; border: 1px solid var(--p-border);
-  box-shadow: 0 4px 16px rgba(0,0,0,0.1);
-  border-radius: 10px; padding: 6px 12px;
-  font-size: 13px; font-weight: 700; color: var(--p-text);
-  white-space: nowrap;
-}
-.p-fab-btn {
-  width: 56px; height: 56px; border-radius: 50%; border: none; cursor: pointer;
-  background: linear-gradient(135deg, #10B981, #059669);
-  box-shadow: 0 6px 20px rgba(16,185,129,0.45);
-  color: #ffffff; font-size: 22px;
-  display: flex; align-items: center; justify-content: center;
-  transition: transform 0.2s, box-shadow 0.2s;
-  flex-shrink: 0;
-}
-.p-fab-btn:hover { transform: scale(1.08); box-shadow: 0 8px 28px rgba(16,185,129,0.55); }
-.p-fab-btn-icon {
-  transition: transform 0.25s cubic-bezier(0.34, 1.56, 0.64, 1);
-  display: flex; align-items: center; justify-content: center;
-}
-.p-fab-btn-icon.p-fab-open { transform: rotate(45deg); }
-
-/* ─── FAB scroll davranışı — aşağı scroll: gizle, yukarı: göster ─── */
-.p-fab-wrap,
-.p-fab-mobile {
-  transition: transform 0.25s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.25s ease;
-}
-body.fab-gizle .p-fab-wrap,
-body.fab-gizle .p-fab-mobile {
-  transform: translateY(16px) scale(0.85);
-  opacity: 0;
-  pointer-events: none;
-}
 
 /* ─── DATE INPUT — DateInput.jsx ──────────────────────────────────────────── */
 /* G — Native (iOS/Android) sistem tarih seçici */
@@ -6420,10 +6400,6 @@ body.fab-gizle .p-fab-mobile {
 }
 
 /* ── FAB Shadow Varyantları ────────────────────────────────── */
-:root {
-  --p-shadow-fab-success: 0 4px 16px rgba(16,185,129,0.35);
-  --p-shadow-fab-danger: 0 4px 16px rgba(239,68,68,0.35);
-}
 
 /* ── GelirGider Mobil Kart ────────────────────────────────── */
 .p-gg-mcard { padding: 14px 16px; background: var(--p-bg-card); }

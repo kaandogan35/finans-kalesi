@@ -421,8 +421,8 @@ export default function YatirimKalesi({ yatirimlar, setYatirimlar, p, renkler })
               <i className="bi bi-graph-up-arrow me-1" style={{ fontSize:13 }} />Fiyatları Güncelle
             </button>
           )}
-          <button onClick={acEkle} className={`${p}-kasa-btn-accent d-none d-md-flex align-items-center gap-2`} style={{ borderRadius:50 }}>
-            <i className="bi bi-plus-lg" />Varlık Ekle
+          <button onClick={acEkle} className={`${p}-kasa-btn-accent d-flex align-items-center gap-2`} style={{ borderRadius:50 }}>
+            <i className="bi bi-plus-lg" /><span className="d-none d-md-inline">Varlık Ekle</span>
           </button>
         </div>
       </div>
@@ -669,17 +669,6 @@ export default function YatirimKalesi({ yatirimlar, setYatirimlar, p, renkler })
         renkler={renkler}
       />
 
-      {/* ── Mobil FAB ── */}
-      <div className="p-fab-wrap">
-        <button
-          className="p-fab-btn"
-          onClick={acEkle}
-          type="button"
-          aria-label="Varlık ekle"
-        >
-          <span className="p-fab-btn-icon"><i className="bi bi-plus-lg" /></span>
-        </button>
-      </div>
     </div>
   )
 }

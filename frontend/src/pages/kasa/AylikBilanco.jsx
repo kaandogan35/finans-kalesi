@@ -453,7 +453,7 @@ export default function AylikBilanco({ kapanislar, setKapanislar, yatirimGuncelD
           onClick={acEkle}
           className={`${p}-cym-btn-new d-flex align-items-center gap-2`}
         >
-          <i className="bi bi-calculator-fill" /> Ay Kapanışı Yap
+          <i className="bi bi-calculator-fill" /> <span className="d-none d-md-inline">Ay Kapanışı Yap</span>
         </button>
       </div>
 
@@ -726,17 +726,6 @@ export default function AylikBilanco({ kapanislar, setKapanislar, yatirimGuncelD
         p={p} renkler={renkler}
       />
 
-      {/* ── Mobil FAB ── */}
-      <div className="p-fab-wrap">
-        <button
-          className="p-fab-btn"
-          onClick={acEkle}
-          type="button"
-          aria-label="Ay kapanışı yap"
-        >
-          <span className="p-fab-btn-icon"><i className="bi bi-plus-lg" /></span>
-        </button>
-      </div>
     </div>
   )
 }

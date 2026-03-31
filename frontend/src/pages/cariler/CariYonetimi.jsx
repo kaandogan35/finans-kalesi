@@ -730,12 +730,12 @@ export default function CariYonetimi() {
           <button
             data-tur="yeni-cari-btn"
             onClick={cariEkleAc}
-            className={`${p}-cym-btn-new d-none d-md-flex align-items-center gap-2`}
+            className={`${p}-cym-btn-new d-flex align-items-center gap-2`}
             disabled={limitDolu}
             title={limitDolu ? 'Cari limiti doldu. Planı yükseltin.' : 'Yeni cari ekle'}
             style={limitDolu ? { opacity: 0.5, cursor: 'not-allowed' } : undefined}
           >
-            <i className="bi bi-plus-lg" /> Yeni Cari Ekle
+            <i className="bi bi-plus-lg" /> <span className="d-none d-md-inline">Yeni Cari Ekle</span>
           </button>
         </div>
       </div>
@@ -1099,7 +1099,7 @@ export default function CariYonetimi() {
       {cariModalAcik && createPortal(
         <>
           <div className={`${p}-modal-overlay`} />
-          <div className={`${p}-modal-center`} role="dialog" aria-modal="true" aria-labelledby="cari-modal-title">
+          <div className={`${p}-modal-center ${p}-modal-fullscreen`} role="dialog" aria-modal="true" aria-labelledby="cari-modal-title">
             <div className={`${p}-modal-box`} style={{ maxWidth: 800 }}>
               {/* Header */}
               <div className={`${p}-modal-header ${p}-mh-default`}>
@@ -1152,35 +1152,53 @@ export default function CariYonetimi() {
                     </div>
                     <div className="col-12">
                       <label className={`${p}-cym-label`}>Cari Ünvanı *</label>
-                      <input type="text" value={form.unvan} onChange={e => setForm(prev => ({ ...prev, unvan: e.target.value }))}
-                        placeholder={form.tip === 'kurumsal' ? 'Şirket Adı A.Ş.' : 'Ad Soyad'}
-                        className="form-control" required />
+                      <div className="p-input-icon">
+                        <i className="bi bi-building" />
+                        <input type="text" value={form.unvan} onChange={e => setForm(prev => ({ ...prev, unvan: e.target.value }))}
+                          placeholder={form.tip === 'kurumsal' ? 'Şirket Adı A.Ş.' : 'Ad Soyad'}
+                          className="form-control" required />
+                      </div>
                     </div>
                     <div className="col-12">
                       <label className={`${p}-cym-label`}>Adres</label>
-                      <textarea value={form.adres} onChange={e => setForm(prev => ({ ...prev, adres: e.target.value }))}
-                        placeholder="Tam adres..." rows={2} className="form-control"
-                        style={{ resize: 'none' }} />
+                      <div className="p-input-icon">
+                        <i className="bi bi-geo-alt p-input-icon-top" />
+                        <textarea value={form.adres} onChange={e => setForm(prev => ({ ...prev, adres: e.target.value }))}
+                          placeholder="Tam adres..." rows={2} className="form-control"
+                          style={{ resize: 'none' }} />
+                      </div>
                     </div>
                     <div className="col-6">
                       <label className={`${p}-cym-label`}>İlçe</label>
-                      <input type="text" value={form.ilce} onChange={e => setForm(prev => ({ ...prev, ilce: e.target.value }))}
-                        placeholder="Örn: Kadıköy" className="form-control" />
+                      <div className="p-input-icon">
+                        <i className="bi bi-pin-map" />
+                        <input type="text" value={form.ilce} onChange={e => setForm(prev => ({ ...prev, ilce: e.target.value }))}
+                          placeholder="Örn: Kadıköy" className="form-control" />
+                      </div>
                     </div>
                     <div className="col-6">
                       <label className={`${p}-cym-label`}>İl</label>
-                      <input type="text" value={form.il} onChange={e => setForm(prev => ({ ...prev, il: e.target.value }))}
-                        placeholder="Örn: İstanbul" className="form-control" />
+                      <div className="p-input-icon">
+                        <i className="bi bi-map" />
+                        <input type="text" value={form.il} onChange={e => setForm(prev => ({ ...prev, il: e.target.value }))}
+                          placeholder="Örn: İstanbul" className="form-control" />
+                      </div>
                     </div>
                     <div className="col-6">
                       <label className={`${p}-cym-label`}>{form.tip === 'kurumsal' ? 'Vergi Numarası' : 'TC Kimlik No'}</label>
-                      <input type="text" value={form.vergi_no} onChange={e => setForm(prev => ({ ...prev, vergi_no: e.target.value }))}
-                        placeholder={form.tip === 'kurumsal' ? '10 haneli' : '11 haneli'} className="form-control" />
+                      <div className="p-input-icon">
+                        <i className="bi bi-hash" />
+                        <input type="text" value={form.vergi_no} onChange={e => setForm(prev => ({ ...prev, vergi_no: e.target.value }))}
+                          placeholder={form.tip === 'kurumsal' ? '10 haneli' : '11 haneli'} className="form-control" />
+                      </div>
                     </div>
                     <div className="col-6">
                       <label className={`${p}-cym-label`}>Telefon</label>
-                      <input type="text" value={form.telefon} onChange={e => setForm(prev => ({ ...prev, telefon: e.target.value }))}
-                        placeholder="0212 555 00 00" className="form-control" />
+                      <div className="p-input-icon">
+                        <i className="bi bi-telephone" />
+                        <input type="text" value={form.telefon} onChange={e => setForm(prev => ({ ...prev, telefon: e.target.value }))}
+                          placeholder="0212 555 00 00" className="form-control" />
+                      </div>
                     </div>
                   </div>
                 </div>
@@ -2017,20 +2035,6 @@ export default function CariYonetimi() {
         </div>
       )}
 
-      {/* ─── FAB — Yeni Cari Ekle (Mobil) ───────────────────────────────── */}
-      <div className="p-fab-wrap">
-        <button
-          className="p-fab-btn"
-          onClick={cariEkleAc}
-          disabled={limitDolu}
-          type="button"
-          aria-label="Yeni cari ekle"
-        >
-          <span className="p-fab-btn-icon">
-            <i className="bi bi-plus-lg" />
-          </span>
-        </button>
-      </div>
 
       <PlanYukseltModal goster={planModalGoster} kapat={() => setPlanModalGoster(false)} ozellikAdi="PDF Ekstre İndirme" mevcutPlan={plan} />
     </div>

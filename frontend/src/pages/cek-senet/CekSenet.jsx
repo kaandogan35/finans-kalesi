@@ -479,27 +479,35 @@ function KarsiliksizModal({ open, onClose, item, form, setForm, onKaydet, kayitI
 
 function AutoComplete({ value, onChange, options, placeholder, id, required, p = 'b' }) {
   const [acik, setAcik] = useState(false)
-  const [pos, setPos] = useState({ bottom: 0, left: 0, width: 0 })
+  const [pos, setPos] = useState({ top: 0, left: 0, width: 0 })
+  const wrapRef = useRef(null)
   const inputRef = useRef(null)
 
   const filtered = (options || []).filter(o => o.toLowerCase().includes((value || '').toLowerCase()))
 
-  const toggle = (e) => {
-    e.preventDefault()
-    if (!acik && inputRef.current) {
-      // readOnly → klavye açılmaz → getBoundingClientRect anında doğru
-      const r = inputRef.current.getBoundingClientRect()
-      setPos({
-        bottom: window.innerHeight - r.top + 4, // input'un tam üstü
-        left: r.left,
-        width: r.width,
-      })
-    }
-    setAcik(a => !a)
+  const hesaplaPos = () => {
+    if (!inputRef.current) return
+    const r = inputRef.current.getBoundingClientRect()
+    setPos({ bottom: window.innerHeight - r.top + 4, left: r.left, width: r.width })
   }
 
+  const handleFocus = () => {
+    hesaplaPos()
+    setAcik(true)
+  }
+
+  // Dışarı tıklanınca kapat
+  useEffect(() => {
+    if (!acik) return
+    const handler = (e) => {
+      if (wrapRef.current && !wrapRef.current.contains(e.target)) setAcik(false)
+    }
+    document.addEventListener('pointerdown', handler)
+    return () => document.removeEventListener('pointerdown', handler)
+  }, [acik])
+
   return (
-    <div style={{ position: 'relative' }}>
+    <div ref={wrapRef} style={{ position: 'relative' }}>
       <input
         ref={inputRef}
         id={id}
@@ -508,34 +516,30 @@ function AutoComplete({ value, onChange, options, placeholder, id, required, p =
         placeholder={placeholder}
         required={required}
         autoComplete="off"
-        readOnly
-        style={{ minHeight: 44, cursor: 'pointer' }}
-        onPointerDown={toggle}
+        style={{ minHeight: 44 }}
+        onFocus={handleFocus}
+        onChange={(e) => { onChange(e.target.value); setAcik(true); hesaplaPos() }}
       />
       {acik && filtered.length > 0 && createPortal(
-        <>
-          <div
-            style={{ position: 'fixed', inset: 0, zIndex: 9998 }}
-            onPointerDown={() => setAcik(false)}
-          />
-          <ul
-            className={`${p}-autocomplete-list`}
-            style={{
-              position: 'fixed',
-              bottom: pos.bottom,
-              left: pos.left,
-              width: pos.width,
-              zIndex: 9999,
-              maxHeight: 240,
-            }}
-          >
-            {filtered.map(o => (
-              <li key={o} className={`${p}-autocomplete-item`}
-                onPointerDown={(e) => { e.preventDefault(); onChange(o); setAcik(false) }}
-              >{o}</li>
-            ))}
-          </ul>
-        </>,
+        <ul
+          className={`${p}-autocomplete-list`}
+          style={{
+            position: 'fixed',
+            bottom: pos.bottom,
+            left: pos.left,
+            width: pos.width,
+            zIndex: 9999,
+            maxHeight: 200,
+            overflowY: 'auto',
+            WebkitOverflowScrolling: 'touch',
+          }}
+        >
+          {filtered.map(o => (
+            <li key={o} className={`${p}-autocomplete-item`}
+              onPointerDown={(e) => { e.preventDefault(); onChange(o); setAcik(false) }}
+            >{o}</li>
+          ))}
+        </ul>,
         document.body
       )}
     </div>
@@ -709,14 +713,6 @@ export default function CekSenet() {
   const cekBilgi  = sinirler?.cek_aylik
   const cekLimitDolu = cekDurum === 'dolu'
 
-  // ─ FAB ───────────────────────────────────────────────────────────────────────
-  const [fabAcik, setFabAcik] = useState(false)
-
-  useEffect(() => {
-    const handler = (e) => { if (e.key === 'Escape' && fabAcik) setFabAcik(false) }
-    document.addEventListener('keydown', handler)
-    return () => document.removeEventListener('keydown', handler)
-  }, [fabAcik])
 
   // ─ Tab & Filtre ─────────────────────────────────────────────────────────────
   const [aktifTab, setAktifTab] = useState(0)
@@ -1623,13 +1619,13 @@ export default function CekSenet() {
                       {cekBilgi.mevcut}/{cekBilgi.sinir} bu ay
                     </div>
                   )}
-                  <button className={`${p}-btn-accent d-none d-md-flex align-items-center`}
+                  <button className={`${p}-btn-accent d-flex align-items-center`}
                     data-tur="cek-ekle-btn"
                     onClick={() => { setPortfoyForm(portfoyBosluk()); setPortfoyDzlId(null); setPortfoyModal(true) }}
                     disabled={cekLimitDolu}
                     title={cekLimitDolu ? 'Aylık çek/senet limiti doldu. Planı yükseltin.' : 'Yeni evrak ekle'}
                     style={cekLimitDolu ? { opacity: 0.5, cursor: 'not-allowed' } : undefined}>
-                    <i className="bi bi-plus-lg me-2" /> Yeni Evrak
+                    <i className="bi bi-plus-lg me-2" /> <span className="d-none d-md-inline">Yeni Evrak</span>
                   </button>
                 </div>
               </div>
@@ -1928,12 +1924,12 @@ export default function CekSenet() {
                       {cekBilgi.mevcut}/{cekBilgi.sinir} bu ay
                     </div>
                   )}
-                  <button className={`${p}-btn-accent d-none d-md-flex align-items-center`}
+                  <button className={`${p}-btn-accent d-flex align-items-center`}
                     onClick={() => { setKendiForm(kendiBosluk()); setKendiDzlId(null); setKendiModal(true) }}
                     disabled={cekLimitDolu}
                     title={cekLimitDolu ? 'Aylık çek/senet limiti doldu. Planı yükseltin.' : 'Yeni borç evrakı ekle'}
                     style={cekLimitDolu ? { opacity: 0.5, cursor: 'not-allowed' } : undefined}>
-                    <i className="bi bi-plus-lg me-2" /> Yeni Borç Ekle
+                    <i className="bi bi-plus-lg me-2" /> <span className="d-none d-md-inline">Yeni Borç Ekle</span>
                   </button>
                 </div>
               </div>
@@ -2878,46 +2874,6 @@ export default function CekSenet() {
         </div>
       </Modal>
 
-      {/* ─── FAB — Hızlı İşlem ──────────────────────────────────────────── */}
-      {fabAcik && <div className="p-fab-backdrop" onClick={() => setFabAcik(false)} />}
-      <div className="p-fab-wrap">
-        {fabAcik && (
-          <div className="p-fab-menu">
-            <button
-              className="p-fab-item"
-              onClick={() => { setFabAcik(false); setKendiForm(kendiBosluk()); setKendiDzlId(null); setKendiModal(true) }}
-              disabled={cekLimitDolu}
-              type="button"
-            >
-              <span className="p-fab-item-label">Yeni Borç Evrakı</span>
-              <span className="p-fab-item-icon" style={cekLimitDolu ? { opacity: 0.45 } : undefined}>
-                <i className="bi bi-arrow-up-circle-fill" />
-              </span>
-            </button>
-            <button
-              className="p-fab-item"
-              onClick={() => { setFabAcik(false); setPortfoyForm(portfoyBosluk()); setPortfoyDzlId(null); setPortfoyModal(true) }}
-              disabled={cekLimitDolu}
-              type="button"
-            >
-              <span className="p-fab-item-label">Yeni Portföy Evrakı</span>
-              <span className="p-fab-item-icon" style={cekLimitDolu ? { opacity: 0.45 } : undefined}>
-                <i className="bi bi-file-earmark-plus-fill" />
-              </span>
-            </button>
-          </div>
-        )}
-        <button
-          className="p-fab-btn"
-          onClick={() => setFabAcik(v => !v)}
-          type="button"
-          aria-label="Hızlı işlem"
-        >
-          <span className={`p-fab-btn-icon${fabAcik ? ' p-fab-open' : ''}`}>
-            <i className="bi bi-plus-lg" />
-          </span>
-        </button>
-      </div>
 
     </div>
   )

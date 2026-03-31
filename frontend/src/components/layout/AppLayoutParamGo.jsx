@@ -108,44 +108,6 @@ export default function AppLayoutParamGo() {
     return () => mq.removeEventListener('change', handler)
   }, [])
 
-  // FAB scroll davranışı — touchmove yönüne göre gizle/göster
-  // scroll event yerine touchmove: Capacitor WKWebView'de her zaman çalışır
-  useEffect(() => {
-    let baslangicY = 0
-    let gizli = false
-    let timer = null
-
-    const onTouchStart = (e) => { baslangicY = e.touches[0].clientY }
-    const onTouchMove = (e) => {
-      const fark = baslangicY - e.touches[0].clientY
-      if (fark > 20 && !gizli) {
-        gizli = true
-        document.body.classList.add('fab-gizle')
-      } else if (fark < -10 && gizli) {
-        gizli = false
-        document.body.classList.remove('fab-gizle')
-      }
-    }
-    const onTouchEnd = () => {
-      // Scroll durduğunda 2sn sonra göster
-      clearTimeout(timer)
-      timer = setTimeout(() => {
-        gizli = false
-        document.body.classList.remove('fab-gizle')
-      }, 2000)
-    }
-
-    document.addEventListener('touchstart', onTouchStart, { passive: true })
-    document.addEventListener('touchmove', onTouchMove, { passive: true })
-    document.addEventListener('touchend', onTouchEnd, { passive: true })
-    return () => {
-      document.removeEventListener('touchstart', onTouchStart)
-      document.removeEventListener('touchmove', onTouchMove)
-      document.removeEventListener('touchend', onTouchEnd)
-      clearTimeout(timer)
-      document.body.classList.remove('fab-gizle')
-    }
-  }, [])
 
   useEffect(() => {
     document.title = 'ParamGo'

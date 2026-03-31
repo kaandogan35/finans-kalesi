@@ -264,9 +264,9 @@ export default function OrtakCarisi({ ortakHareketler, setOrtakHareketler, p, re
               placeholder="Ortak adı filtrele..." className={`${p}-kasa-search`} />
           </div>
           <button onClick={() => setModalAcik(true)}
-            className={`${p}-kasa-btn-accent d-none d-md-flex align-items-center gap-2`}
+            className={`${p}-kasa-btn-accent d-flex align-items-center gap-2`}
             style={{ borderRadius:50, padding:'10px 22px', boxShadow:`0 3px 10px ${hexRgba(renkler.accent, 0.3)}` }}>
-            <i className="bi bi-plus-lg" />Kullanım / Çekim Ekle
+            <i className="bi bi-plus-lg" /><span className="d-none d-md-inline">Kullanım / Çekim Ekle</span>
           </button>
         </div>
       </div>
@@ -478,16 +478,6 @@ export default function OrtakCarisi({ ortakHareketler, setOrtakHareketler, p, re
         p={p} renkler={renkler}
       />
 
-      <div className="p-fab-wrap">
-        <button
-          className="p-fab-btn"
-          onClick={() => setModalAcik(true)}
-          type="button"
-          aria-label="Kullanım / Çekim ekle"
-        >
-          <span className="p-fab-btn-icon"><i className="bi bi-plus-lg" /></span>
-        </button>
-      </div>
     </div>
   )
 }
