@@ -1610,7 +1610,7 @@ body.keyboard-open .p-modal-center {
     padding-bottom: env(safe-area-inset-bottom, 0px);
   }
   /* Mobilde tam ekran modal — form sayfası gibi */
-  .p-modal-center.p-modal-fullscreen { padding: env(safe-area-inset-top, 0px) 0 0; align-items: stretch; }
+  .p-modal-center.p-modal-fullscreen { padding: 0; align-items: stretch; }
   .p-modal-center.p-modal-fullscreen .p-modal-box {
     max-width: 100% !important;
     max-height: 100% !important;
@@ -1618,6 +1618,7 @@ body.keyboard-open .p-modal-center {
     border-radius: 0 !important;
     box-shadow: none;
     border: none;
+    padding-top: env(safe-area-inset-top, 0px);
   }
   .p-modal-center.p-modal-fullscreen .p-modal-header {
     position: sticky; top: 0; z-index: 2;
