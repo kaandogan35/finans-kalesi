@@ -16,6 +16,7 @@ import { authApi } from '../../api/auth'
 const GOOGLE_CLIENT_ID = '505947540272-fuvn80vu0q2bjcgbihea1sm7b4jininv.apps.googleusercontent.com'
 
 const isNative = Capacitor.isNativePlatform() || new URLSearchParams(window.location.search).has('native')
+const isIOS = Capacitor.getPlatform() === 'ios'
 const prefixMap = { paramgo: 'p' }
 
 const OZELLIKLER = [
@@ -232,17 +233,19 @@ export default function GirisYap() {
                 : <><i className="bi bi-apple" /> Apple ile Giriş Yap</>
               }
             </button>
-            <button
-              type="button"
-              className="pm-auth-btn-social pm-auth-btn-google"
-              onClick={handleGoogleGiris}
-              disabled={!!sosyalYukleniyor}
-            >
-              {sosyalYukleniyor === 'google'
-                ? <><i className="bi bi-arrow-repeat pm-spin" /> Bekleniyor...</>
-                : <><i className="bi bi-google" /> Google ile Giriş Yap</>
-              }
-            </button>
+            {!isIOS && (
+              <button
+                type="button"
+                className="pm-auth-btn-social pm-auth-btn-google"
+                onClick={handleGoogleGiris}
+                disabled={!!sosyalYukleniyor}
+              >
+                {sosyalYukleniyor === 'google'
+                  ? <><i className="bi bi-arrow-repeat pm-spin" /> Bekleniyor...</>
+                  : <><i className="bi bi-google" /> Google ile Giriş Yap</>
+                }
+              </button>
+            )}
           </div>
         </div>
 

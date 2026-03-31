@@ -14,6 +14,7 @@ import useTemaStore from '../../stores/temaStore'
 import ParamGoLogo from '../../logo/ParamGoLogo'
 
 const isNative = Capacitor.isNativePlatform() || new URLSearchParams(window.location.search).has('native')
+const isIOS = Capacitor.getPlatform() === 'ios'
 const prefixMap = { paramgo: 'p' }
 const GOOGLE_CLIENT_ID = '505947540272-fuvn80vu0q2bjcgbihea1sm7b4jininv.apps.googleusercontent.com'
 
@@ -236,12 +237,14 @@ export default function KayitOl() {
                 ? <><i className="bi bi-arrow-repeat pm-spin" /> Bekleniyor...</>
                 : <><i className="bi bi-apple" /> Apple ile Devam Et</>}
             </button>
-            <button type="button" className="pm-auth-btn-social pm-auth-btn-google"
-              onClick={handleGoogleGiris} disabled={!!sosyalYukleniyor}>
-              {sosyalYukleniyor === 'google'
-                ? <><i className="bi bi-arrow-repeat pm-spin" /> Bekleniyor...</>
-                : <><i className="bi bi-google" /> Google ile Devam Et</>}
-            </button>
+            {!isIOS && (
+              <button type="button" className="pm-auth-btn-social pm-auth-btn-google"
+                onClick={handleGoogleGiris} disabled={!!sosyalYukleniyor}>
+                {sosyalYukleniyor === 'google'
+                  ? <><i className="bi bi-arrow-repeat pm-spin" /> Bekleniyor...</>
+                  : <><i className="bi bi-google" /> Google ile Devam Et</>}
+              </button>
+            )}
           </div>
         </div>
 
