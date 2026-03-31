@@ -12,6 +12,11 @@ import { Capacitor } from '@capacitor/core'
 export async function capacitorBaslat() {
   if (!Capacitor.isNativePlatform()) return
 
+  // ─── Native Bounce — sadece iOS'ta overscroll efekti ──
+  if (Capacitor.getPlatform() === 'ios') {
+    document.documentElement.classList.add('native-app')
+  }
+
   // ─── Status Bar ───────────────────────────────────────
   try {
     const { StatusBar, Style } = await import('@capacitor/status-bar')

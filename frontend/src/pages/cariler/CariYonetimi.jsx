@@ -1223,7 +1223,7 @@ export default function CariYonetimi() {
       {islemModalAcik && createPortal(
         <>
           <div className={`${p}-modal-overlay`} />
-          <div className={`${p}-modal-center`} role="dialog" aria-modal="true" aria-labelledby="islem-modal-title">
+          <div className={`${p}-modal-center ${p}-modal-fullscreen`} role="dialog" aria-modal="true" aria-labelledby="islem-modal-title">
             <div className={`${p}-modal-box`} style={{ maxWidth: 520 }}>
               {(() => {
                 const etiketler = islemEtiketleri(islemCari)
@@ -1240,8 +1240,8 @@ export default function CariYonetimi() {
                       </button>
                     </div>
 
-                    <form onSubmit={islemKaydet} noValidate>
-                      <div className={`${p}-modal-body`}>
+                    <form onSubmit={islemKaydet} noValidate style={{ display: 'flex', flexDirection: 'column', minHeight: 0 }}>
+                      <div className={`${p}-modal-body`} style={{ overflowY: 'auto', flex: 1 }}>
                         {islemCari && (
                           <div className={`${p}-cym-bakiye-card mb-3`}>
                             <span className={`${p}-cym-bakiye-label`}>Güncel Bakiye</span>
@@ -1268,9 +1268,12 @@ export default function CariYonetimi() {
                         </div>
                         <div className="mb-3">
                           <label className={`${p}-cym-label`}>Tutar (₺) *</label>
-                          <input type="text" inputMode="decimal" value={islem.tutar}
-                            onChange={e => setIslem(prev => ({ ...prev, tutar: formatParaInput(e.target.value) }))}
-                            placeholder="0,00" className="form-control p-tutar-input" required />
+                          <div className="p-input-icon">
+                            <i className="bi bi-currency-exchange" />
+                            <input type="text" inputMode="decimal" value={islem.tutar}
+                              onChange={e => setIslem(prev => ({ ...prev, tutar: formatParaInput(e.target.value) }))}
+                              placeholder="0,00" className="form-control p-tutar-input" required />
+                          </div>
                         </div>
                         <div className="mb-3">
                           <label className={`${p}-cym-label`}>İşlem Tarihi</label>
@@ -1279,9 +1282,12 @@ export default function CariYonetimi() {
                         </div>
                         <div>
                           <label className={`${p}-cym-label`}>Açıklama <span className={`${p}-cym-label-hint`}>(opsiyonel)</span></label>
-                          <textarea value={islem.aciklama} onChange={e => setIslem(prev => ({ ...prev, aciklama: e.target.value }))}
-                            placeholder="İşlem açıklaması..." rows={2} className="form-control"
-                            style={{ resize: 'none' }} />
+                          <div className="p-input-icon">
+                            <i className="bi bi-chat-left p-input-icon-top" />
+                            <textarea value={islem.aciklama} onChange={e => setIslem(prev => ({ ...prev, aciklama: e.target.value }))}
+                              placeholder="İşlem açıklaması..." rows={2} className="form-control"
+                              style={{ resize: 'none' }} />
+                          </div>
                         </div>
                       </div>
                       <div className={`${p}-modal-footer`}>
@@ -1309,8 +1315,8 @@ export default function CariYonetimi() {
       {kartModalAcik && createPortal(
         <>
           <div className={`${p}-modal-overlay`} />
-          <div className={`${p}-modal-center`} role="dialog" aria-modal="true">
-            <div className={`${p}-modal-box`} style={{ maxWidth: 1140, maxHeight: '90vh', display: 'flex', flexDirection: 'column' }}>
+          <div className={`${p}-modal-center ${p}-modal-fullscreen`} role="dialog" aria-modal="true">
+            <div className={`${p}-modal-box`} style={{ maxWidth: 1140, display: 'flex', flexDirection: 'column' }}>
               {kartCari && (
                 <>
                   {/* Header — Accent Gradient */}
@@ -1767,7 +1773,7 @@ export default function CariYonetimi() {
       {topluModalAcik && createPortal(
         <>
           <div className={`${p}-modal-overlay`} />
-          <div className={`${p}-modal-center`} role="dialog" aria-modal="true" aria-labelledby="toplu-modal-title">
+          <div className={`${p}-modal-center ${p}-modal-fullscreen`} role="dialog" aria-modal="true" aria-labelledby="toplu-modal-title">
             <div className={`${p}-modal-box`} style={{ maxWidth: 660 }}>
               {/* Header */}
               <div className={`${p}-modal-header ${p}-mh-default`}>

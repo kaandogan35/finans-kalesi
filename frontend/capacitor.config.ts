@@ -28,8 +28,9 @@ const config: CapacitorConfig = {
   },
   ios: {
     scheme: 'ParamGo',
-    contentInset: 'never',
+    contentInset: 'always',
     backgroundColor: '#0B1120',
+    scrollEnabled: true,
   },
   android: {
     allowMixedContent: false,
