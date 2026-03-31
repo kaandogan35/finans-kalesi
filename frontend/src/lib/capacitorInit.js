@@ -28,32 +28,41 @@ export async function capacitorBaslat() {
     await SplashScreen.hide()
   } catch {}
 
-  // ─── Keyboard — Input'u görünür tut ───────────────────
+  // ─── Keyboard — Modal'ı klavye üstüne taşı ───────────
   try {
     const { Keyboard } = await import('@capacitor/keyboard')
 
     Keyboard.addListener('keyboardWillShow', ({ keyboardHeight }) => {
       document.body.classList.add('keyboard-open')
-      // CSS değişkeni: modaller padding-bottom ile klavye üzerine kayar
       document.documentElement.style.setProperty('--keyboard-h', `${keyboardHeight}px`)
-      // Ek: input doğrudan klavye arkasındaysa scroll et
+
       setTimeout(() => {
         const el = document.activeElement
         if (!el || !['INPUT', 'TEXTAREA', 'SELECT'].includes(el.tagName)) return
+
+        const modalBox = el.closest('[class*="modal-box"], .sgm-box, .kum-box')
+        if (!modalBox) return
+
         const rect = el.getBoundingClientRect()
-        const viewportHeight = window.innerHeight
-        const keyboardTop = viewportHeight - keyboardHeight
-        const inputBottom = rect.bottom + 16
+        const keyboardTop = window.innerHeight - keyboardHeight
+        const inputBottom = rect.bottom + 24
+
         if (inputBottom > keyboardTop) {
-          const scrollParent = encontrarScrollParent(el)
-          if (scrollParent) scrollParent.scrollTop += (inputBottom - keyboardTop)
+          const shift = Math.min(inputBottom - keyboardTop, keyboardHeight * 0.8)
+          modalBox.style.transition = 'transform 0.25s cubic-bezier(0.25, 0.46, 0.45, 0.94)'
+          modalBox.style.transform = `translateY(-${shift}px)`
         }
-      }, 300)
+      }, 150)
     })
 
     Keyboard.addListener('keyboardWillHide', () => {
       document.body.classList.remove('keyboard-open')
       document.documentElement.style.removeProperty('--keyboard-h')
+
+      document.querySelectorAll('[class*="modal-box"], .sgm-box, .kum-box').forEach(box => {
+        box.style.transition = 'transform 0.25s cubic-bezier(0.25, 0.46, 0.45, 0.94)'
+        box.style.transform = 'translateY(0)'
+      })
     })
   } catch {}
 
@@ -87,18 +96,6 @@ export async function capacitorBaslat() {
   } catch {}
 }
 
-// En yakın scroll edilebilir üst elementi bulur (modal-body, p-content, vb.)
-function encontrarScrollParent(el) {
-  let node = el.parentElement
-  while (node) {
-    const { overflowY } = window.getComputedStyle(node)
-    if ((overflowY === 'auto' || overflowY === 'scroll') && node.scrollHeight > node.clientHeight) {
-      return node
-    }
-    node = node.parentElement
-  }
-  return document.documentElement
-}
 
 export function platformBilgi() {
   return {
