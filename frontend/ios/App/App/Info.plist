@@ -62,8 +62,5 @@
 	<!-- Face ID zorunlu açıklama — App Store red sebebi olmaması için -->
 	<key>NSFaceIDUsageDescription</key>
 	<string>ParamGo hesabınıza güvenli ve hızlı giriş yapabilmek için Face ID kullanılır.</string>
-	<!-- Kamera — gelecekte çek/fiş fotoğrafı için (şu an kullanılmıyor) -->
-	<key>NSCameraUsageDescription</key>
-	<string>Çek ve fiş fotoğrafı eklemek için kamera kullanılabilir.</string>
 </dict>
 </plist>
