@@ -33,6 +33,7 @@ class KategoriController {
     // ─── POST /api/kategoriler ───
     public function ekle($payload, $girdi) {
         try {
+            PlanKontrol::yazmaKontrol($payload);
             $hatalar = [];
             if (empty($girdi['ad'])) {
                 $hatalar['ad'] = 'Kategori adı zorunludur';
@@ -57,6 +58,7 @@ class KategoriController {
     // ─── PUT /api/kategoriler/{id} ───
     public function guncelle($payload, $id, $girdi) {
         try {
+            PlanKontrol::yazmaKontrol($payload);
             $model = new Kategori($this->db);
             $sonuc = $model->guncelle($payload['sirket_id'], $id, $girdi);
 
@@ -75,6 +77,7 @@ class KategoriController {
     // ─── DELETE /api/kategoriler/{id} ───
     public function sil($payload, $id) {
         try {
+            PlanKontrol::yazmaKontrol($payload);
             $model = new Kategori($this->db);
             $sonuc = $model->sil($payload['sirket_id'], $id);
 

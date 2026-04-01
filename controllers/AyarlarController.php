@@ -21,14 +21,17 @@ class AyarlarController {
         // 1. Token dogrula
         $payload = AuthMiddleware::dogrula();
 
-        // 2. Yetki kontrolu — sadece sahip veya admin
+        // 2. Deneme süresi kontrolü
+        PlanKontrol::yazmaKontrol($payload);
+
+        // 3. Yetki kontrolu — sadece sahip veya admin
         $izinli_roller = ['sahip', 'admin'];
         if (!in_array($payload['rol'], $izinli_roller, true)) {
             Response::hata('Bu islemi yapmak icin yetkiniz yok', 403);
             return;
         }
 
-        // 3. Girdi dogrula
+        // 4. Girdi dogrula
         $izinli_temalar = ['paramgo'];
         $tema_adi = trim($girdi['tema_adi'] ?? '');
 
@@ -40,7 +43,7 @@ class AyarlarController {
         }
 
         try {
-            // 4. Sirket temasini guncelle (sirket_id JWT'den — kullanici girdisinden ASLA)
+            // 5. Sirket temasini guncelle (sirket_id JWT'den — kullanici girdisinden ASLA)
             $this->sirket_model->tema_guncelle($payload['sirket_id'], $tema_adi);
 
             SistemLog::kaydet(

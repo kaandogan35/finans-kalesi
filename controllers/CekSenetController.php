@@ -155,6 +155,7 @@ class CekSenetController {
     // ─── PUT /api/cek-senet/{id} ───
     public function guncelle($payload, $cek_id, $girdi) {
         try {
+            PlanKontrol::yazmaKontrol($payload);
             $mevcut = $this->cekSenet->getir($payload['sirket_id'], $cek_id);
             if (!$mevcut) {
                 Response::bulunamadi('Cek/senet bulunamadi');
@@ -208,6 +209,7 @@ class CekSenetController {
     // ─── PUT /api/cek-senet/{id}/durum ───
     public function durum_degistir($payload, $cek_id, $girdi) {
         try {
+            PlanKontrol::yazmaKontrol($payload);
             $mevcut = $this->cekSenet->getir($payload['sirket_id'], $cek_id);
             if (!$mevcut) {
                 Response::bulunamadi('Cek/senet bulunamadi');
@@ -339,6 +341,7 @@ class CekSenetController {
     // ─── DELETE /api/cek-senet/{id} ───
     public function sil($payload, $cek_id) {
         try {
+            PlanKontrol::yazmaKontrol($payload);
             $mevcut = $this->cekSenet->getir($payload['sirket_id'], $cek_id);
             if (!$mevcut) {
                 Response::bulunamadi('Cek/senet bulunamadi');

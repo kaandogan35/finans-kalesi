@@ -493,7 +493,6 @@ function AutoComplete({ value, onChange, options, placeholder, id, required, p =
 
   const handleFocus = () => {
     hesaplaPos()
-    setAcik(true)
   }
 
   // Dışarı tıklanınca kapat
@@ -518,7 +517,7 @@ function AutoComplete({ value, onChange, options, placeholder, id, required, p =
         autoComplete="off"
         style={{ minHeight: 44 }}
         onFocus={handleFocus}
-        onChange={(e) => { onChange(e.target.value); setAcik(true); hesaplaPos() }}
+        onChange={(e) => { const v = e.target.value; onChange(v); setAcik(v.length > 0); hesaplaPos() }}
       />
       {acik && filtered.length > 0 && createPortal(
         <ul
@@ -818,6 +817,16 @@ export default function CekSenet() {
   const cariSecenekleri = cariler.map(c => c.adi)
   const cariIdBul = (adi) => cariler.find(c => c.adi === adi)?.id || null
 
+  const cariIdSagla = async (firma_adi, cari_turu) => {
+    if (!firma_adi?.trim()) return null
+    const mevcutId = cariler.find(c => c.adi.toLowerCase() === firma_adi.trim().toLowerCase())?.id
+    if (mevcutId) return mevcutId
+    const r = await carilerApi.olustur({ cari_adi: firma_adi.trim(), cari_turu })
+    const yeniCari = { id: r.data.veri.id, adi: r.data.veri.cari_adi }
+    setCariler(prev => [...prev, yeniCari])
+    return yeniCari.id
+  }
+
   // ─ Filtre Uygulama ───────────────────────────────────────────────────────────
   const filtrele = (liste, alan = 'vade_tarihi') => {
     if (filtre.tumZamanlar) return liste
@@ -894,12 +903,16 @@ export default function CekSenet() {
 
   // ─ Portföy İşlem Fonksiyonları ───────────────────────────────────────────────
   const portfoyKaydet = async () => {
-    if (!portfoyForm.cari_id) { toast.error('Lütfen listeden bir cari seçin.'); return }
+    if (!portfoyForm.firma_adi?.trim()) { toast.error('Cari adı zorunludur.'); return }
     if (!portfoyForm.vade_tarihi) { toast.error('Vade tarihi zorunludur.'); return }
     const tutar = parseParaInput(portfoyForm.tutarStr)
     if (tutar <= 0) { toast.error('Geçerli bir tutar giriniz.'); return }
+    setKaydediyor(true)
+    let cari_id
+    try { cari_id = await cariIdSagla(portfoyForm.firma_adi, 'musteri') }
+    catch { toast.error('Cari kaydedilemedi.'); setKaydediyor(false); return }
     const veri = {
-      cari_id:        portfoyForm.cari_id,
+      cari_id,
       seri_no:        portfoyForm.evrak_no    || undefined,
       banka_adi:      portfoyForm.banka        || undefined,
       kesilme_tarihi: portfoyForm.islem_tarihi || undefined,
@@ -907,7 +920,6 @@ export default function CekSenet() {
       tutar,
       aciklama:       portfoyForm.asil_borclu  || undefined,
     }
-    setKaydediyor(true)
     try {
       if (portfoyDzlId) {
         const r = await cekSenetApi.guncelle(portfoyDzlId, veri)
@@ -966,13 +978,16 @@ export default function CekSenet() {
   }
 
   const cirolaKaydet = async () => {
-    if (!cirolaForm.cari_id) { toast.error('Lütfen listeden teslim edilecek cariyi seçin.'); return }
+    if (!cirolaForm.firma?.trim()) { toast.error('Cari adı zorunludur.'); return }
     if (!cirolaForm.tarih) { toast.error('Ciro tarihi zorunludur.'); return }
     setKaydediyor(true)
+    let ciro_cari_id
+    try { ciro_cari_id = await cariIdSagla(cirolaForm.firma, 'tedarikci') }
+    catch { toast.error('Cari kaydedilemedi.'); setKaydediyor(false); return }
     try {
       const r = await cekSenetApi.durumGuncelle(cirolaId, {
         durum: 'cirolandi',
-        ciro_edilen_cari_id: cirolaForm.cari_id,
+        ciro_edilen_cari_id: ciro_cari_id,
         ciro_tarihi: cirolaForm.tarih,
       })
       setPortfoy(p => p.filter(i => i.id !== cirolaId))
@@ -1060,14 +1075,18 @@ export default function CekSenet() {
 
   // ─ Kendi İşlem Fonksiyonları ──────────────────────────────────────────────
   const kendiKaydet = async () => {
-    if (!kendiForm.cari_id) { toast.error('Lütfen listeden bir cari seçin.'); return }
+    if (!kendiForm.firma_adi?.trim()) { toast.error('Cari adı zorunludur.'); return }
     if (!kendiForm.vade_tarihi || !kendiForm.banka) {
       toast.error('Vade tarihi ve banka zorunludur.'); return
     }
     const tutar = parseParaInput(kendiForm.tutarStr)
     if (tutar <= 0) { toast.error('Geçerli bir tutar giriniz.'); return }
+    setKaydediyor(true)
+    let cari_id
+    try { cari_id = await cariIdSagla(kendiForm.firma_adi, 'tedarikci') }
+    catch { toast.error('Cari kaydedilemedi.'); setKaydediyor(false); return }
     const veri = {
-      cari_id:        kendiForm.cari_id,
+      cari_id,
       seri_no:        kendiForm.evrak_no    || undefined,
       banka_adi:      kendiForm.banka,
       kesilme_tarihi: kendiForm.islem_tarihi || undefined,
@@ -1075,7 +1094,6 @@ export default function CekSenet() {
       tutar,
       aciklama:       kendiForm.asil_borclu  || undefined,
     }
-    setKaydediyor(true)
     try {
       if (kendiDzlId) {
         const r = await cekSenetApi.guncelle(kendiDzlId, veri)

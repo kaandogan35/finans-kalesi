@@ -61,6 +61,15 @@ export default function UpgradeBildirim() {
   const plan = kullanici?.plan || 'deneme'
   const renk = TEMA_RENKLER[aktifTema] || TEMA_RENKLER.paramgo
 
+  // Kalan deneme günü hesapla
+  const kalanDenemGun = (() => {
+    if (plan !== 'deneme' || !kullanici?.deneme_bitis) return null
+    const bitis = new Date(kullanici.deneme_bitis)
+    const bugun = new Date()
+    const fark  = Math.ceil((bitis - bugun) / (1000 * 60 * 60 * 24))
+    return fark > 0 ? fark : 0
+  })()
+
   const cariDurum = uyariDurum('cari')
   const cekDurum  = uyariDurum('cek_aylik')
 
@@ -123,7 +132,9 @@ export default function UpgradeBildirim() {
     border     = renk.borderGenel
     iconColor  = renk.iconGenel
     icon       = 'bi-stars'
-    mesaj      = 'Ücretsiz plandaki özellikleri keşfediyorsunuz. Standart plana geçerek PDF rapor, Excel dışa aktarma ve çok kullanıcı özelliklerini açın.'
+    mesaj      = kalanDenemGun !== null
+      ? `30 günlük ücretsiz deneme sürenizin ${kalanDenemGun} günü kaldı. Standart plana geçerek PDF rapor, Excel dışa aktarma ve çok kullanıcı özelliklerini açın.`
+      : 'Deneme süreniz doldu. Tüm özelliklere erişmek için Standart plana geçin.'
     butonLabel = 'Planları Gör'
     btnBg = renk.btnGenelBg; btnColor = renk.btnGenelColor; btnBorder = renk.btnGenelBorder
   }

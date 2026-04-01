@@ -71,6 +71,7 @@ class OdemeTakipController {
     // ─── POST /api/odemeler ───
     public function olustur($payload, $girdi) {
         try {
+            PlanKontrol::yazmaKontrol($payload);
             $veri = $girdi;
 
             // cari_id VEYA firma_adi zorunlu
@@ -135,6 +136,7 @@ class OdemeTakipController {
     // ─── PUT /api/odemeler/{id} ───
     public function guncelle($payload, $kayit_id, $girdi) {
         try {
+            PlanKontrol::yazmaKontrol($payload);
             $mevcut = $this->odemeTakip->getir($payload['sirket_id'], $kayit_id);
             if (!$mevcut) {
                 Response::bulunamadi('Kayit bulunamadi');
@@ -182,6 +184,7 @@ class OdemeTakipController {
     // ─── PUT /api/odemeler/{id}/arama-kaydi ───
     public function aramaKaydi($payload, $kayit_id, $girdi) {
         try {
+            PlanKontrol::yazmaKontrol($payload);
             $mevcut = $this->odemeTakip->getir($payload['sirket_id'], $kayit_id);
             if (!$mevcut) {
                 Response::bulunamadi('Kayit bulunamadi');
@@ -228,6 +231,7 @@ class OdemeTakipController {
     // ─── DELETE /api/odemeler/{id} ───
     public function sil($payload, $kayit_id) {
         try {
+            PlanKontrol::yazmaKontrol($payload);
             $mevcut = $this->odemeTakip->getir($payload['sirket_id'], $kayit_id);
             if (!$mevcut) {
                 Response::bulunamadi('Kayit bulunamadi');

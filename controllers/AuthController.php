@@ -640,6 +640,7 @@ class AuthController {
         $sirket = $this->sirket_model->id_ile_bul($kullanici['sirket_id']);
         $kullanici['tema_adi']              = $sirket['tema_adi'] ?? 'paramgo';
         $kullanici['plan']                  = $sirket['abonelik_plani'] ?? 'deneme';
+        $kullanici['deneme_bitis']          = $sirket['deneme_bitis'] ?? null;
         $kullanici['onboarding_tamamlandi'] = (int)($sirket['onboarding_tamamlandi'] ?? 0);
         // yetkiler zaten id_ile_bul() sorgusuyla geliyor
 

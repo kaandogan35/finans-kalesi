@@ -330,6 +330,7 @@ class CariController {
     // ─── PUT /api/cariler/{id} ───
     public function guncelle($payload, $cari_id, $girdi) {
         try {
+            PlanKontrol::yazmaKontrol($payload);
             $mevcut = $this->cariKart->getir($payload['sirket_id'], $cari_id);
             if (!$mevcut) {
                 Response::bulunamadi('Cari kart bulunamadi');
@@ -363,6 +364,7 @@ class CariController {
     // ─── DELETE /api/cariler/{id} ───
     public function sil($payload, $cari_id) {
         try {
+            PlanKontrol::yazmaKontrol($payload);
             $mevcut = $this->cariKart->getir($payload['sirket_id'], $cari_id);
             if (!$mevcut) {
                 Response::bulunamadi('Cari kart bulunamadi');
@@ -411,6 +413,7 @@ class CariController {
     // ─── POST /api/cariler/{id}/hareketler ───
     public function hareket_ekle($payload, $cari_id, $girdi) {
         try {
+            PlanKontrol::yazmaKontrol($payload);
             if (!$this->cariKart->var_mi($payload['sirket_id'], $cari_id)) {
                 Response::bulunamadi('Cari kart bulunamadi');
                 return;
@@ -478,6 +481,7 @@ class CariController {
     // ─── PUT /api/cariler/{id}/hareketler/{hid} ───
     public function hareket_guncelle($payload, $cari_id, $hareket_id, $girdi) {
         try {
+            PlanKontrol::yazmaKontrol($payload);
             if (!$this->cariKart->var_mi($payload['sirket_id'], $cari_id)) {
                 Response::bulunamadi('Cari kart bulunamadi');
                 return;
@@ -521,6 +525,7 @@ class CariController {
     // ─── DELETE /api/cariler/{id}/hareketler/{hid} ───
     public function hareket_sil($payload, $cari_id, $hareket_id) {
         try {
+            PlanKontrol::yazmaKontrol($payload);
             if (!$this->cariKart->var_mi($payload['sirket_id'], $cari_id)) {
                 Response::bulunamadi('Cari kart bulunamadi');
                 return;

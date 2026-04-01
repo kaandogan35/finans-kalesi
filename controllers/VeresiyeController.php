@@ -67,6 +67,7 @@ class VeresiyeController {
     // Yeni satış veya ödeme ekle
     public function islem_ekle($payload, $cari_id, $girdi) {
         try {
+            PlanKontrol::yazmaKontrol($payload);
             // Cari var mı kontrol et
             $bilgi = $this->veresiye->cari_bilgi($payload['sirket_id'], $cari_id);
             if (!$bilgi) {
@@ -122,6 +123,7 @@ class VeresiyeController {
     // İşlem sil (soft delete)
     public function islem_sil($payload, $cari_id, $islem_id) {
         try {
+            PlanKontrol::yazmaKontrol($payload);
             // Cari var mı kontrol et
             $bilgi = $this->veresiye->cari_bilgi($payload['sirket_id'], $cari_id);
             if (!$bilgi) {
