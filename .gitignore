@@ -38,15 +38,16 @@ frontend/node_modules/
 frontend/dist/
 public/frontend-build/
 
-# iOS/Android build klasörleri (çok büyük — Assets hariç)
-frontend/ios/*
-!frontend/ios/App
-frontend/ios/App/*
-!frontend/ios/App/App
-!frontend/ios/App/Podfile
-frontend/ios/App/App/*
-!frontend/ios/App/App/Assets.xcassets
-!frontend/ios/App/App/App.entitlements
+# iOS - sadece büyük/üretilen dosyalar engellenir
+frontend/ios/App/Pods/
+frontend/ios/App/build/
+frontend/ios/App/output/
+frontend/ios/App/DerivedData/
+frontend/ios/App/App/public/
+frontend/ios/App/App/capacitor.config.json
+frontend/ios/App/App/config.xml
+frontend/ios/App/App/GoogleService-Info.plist
+frontend/ios/capacitor-cordova-ios-plugins/
 frontend/android/
 
 # Apple Sertifikaları — Hassas
