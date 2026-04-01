@@ -40,6 +40,13 @@ export default function OturumUyari() {
   const tokenlariAyarla = useAuthStore((s) => s.tokenlariAyarla)
   const tokenlarıTemizle = useAuthStore((s) => s.tokenlarıTemizle)
 
+  // Uygulama arka plandan öne gelince sayacı sıfırla (arka planda geçen süre hareketsizlik sayılmaz)
+  useEffect(() => {
+    const onResume = () => { sonAktiviteRef.current = Date.now() }
+    window.addEventListener('app:resume', onResume)
+    return () => window.removeEventListener('app:resume', onResume)
+  }, [])
+
   // Kullanıcı aktivitesini dinle — hareketsizlik sayacını sıfırla
   useEffect(() => {
     if (!accessToken) return
