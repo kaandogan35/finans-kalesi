@@ -235,7 +235,7 @@ class CekSenetController {
                 'portfoyde'       => array('tahsile_verildi', 'cirolandi', 'karsiliksiz', 'iade_edildi', 'odendi'),
                 'tahsile_verildi' => array('tahsil_edildi', 'karsiliksiz', 'iade_edildi', 'portfoyde'),
                 'tahsil_edildi'   => array(), // Son durum — geri alınamaz
-                'cirolandi'       => array('karsiliksiz', 'iade_edildi'),
+                'cirolandi'       => array('tahsil_edildi', 'portfoyde', 'karsiliksiz', 'iade_edildi'),
                 'karsiliksiz'     => array('protestolu', 'iade_edildi'),
                 'iade_edildi'     => array('portfoyde'),
                 'odendi'          => array(), // Son durum

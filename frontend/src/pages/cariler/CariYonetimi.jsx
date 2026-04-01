@@ -1320,7 +1320,7 @@ export default function CariYonetimi() {
       {/* ══════════════════════════════════════════════
           MODAL 3 — Cari Kart (Netsis Mantığı)
       ══════════════════════════════════════════════ */}
-      <Modal open={kartModalAcik} onClose={() => setKartModalAcik(false)} size="xl" p={p} style={{ display: 'flex', flexDirection: 'column', maxHeight: '90vh' }}>
+      <Modal open={kartModalAcik} onClose={() => setKartModalAcik(false)} size="lg" p={p}>
               {kartCari && (
                 <>
                   {/* Header — Accent Gradient */}
@@ -1337,9 +1337,6 @@ export default function CariYonetimi() {
                       </div>
                     </div>
                     <div className="d-flex align-items-center gap-2">
-                      <button onClick={() => { islemAc(kartCari) }} className={`${p}-cym-kart-header-btn`}>
-                        <i className="bi bi-currency-exchange" /> Finansal İşlem
-                      </button>
                       <button onClick={() => izinVarMi('pdf_rapor') ? ekstrePdfIndir(kartCari, kartHareketler) : setPlanModalGoster(true)} className={`${p}-cym-kart-header-btn`}>
                         <i className="bi bi-file-earmark-pdf" /> PDF İndir
                         {!izinVarMi('pdf_rapor') && <i className="bi bi-lock-fill" style={{ fontSize: 10, opacity: 0.5, marginLeft: 4 }} />}
@@ -1375,7 +1372,7 @@ export default function CariYonetimi() {
                   </div>
 
                   {/* Sekme İçeriği */}
-                  <div className={`${p}-modal-body`} style={{ overflowY: 'auto', flex: 1, minHeight: 440 }}>
+                  <div className={`${p}-modal-body`} style={{ overflowY: 'auto', flex: 1 }}>
                     {/* ─── Sekme 1: Cari Bilgiler ─── */}
                     {kartSekme === 'bilgiler' && (
                       <>

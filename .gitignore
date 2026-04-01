@@ -38,8 +38,14 @@ frontend/node_modules/
 frontend/dist/
 public/frontend-build/
 
-# iOS/Android build klasörleri (çok büyük)
-frontend/ios/
+# iOS/Android build klasörleri (çok büyük — Assets hariç)
+frontend/ios/*
+!frontend/ios/App
+frontend/ios/App/*
+!frontend/ios/App/App
+frontend/ios/App/App/*
+!frontend/ios/App/App/Assets.xcassets
+!frontend/ios/App/App/App.entitlements
 frontend/android/
 
 # Apple Sertifikaları — Hassas
