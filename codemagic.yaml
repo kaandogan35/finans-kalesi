@@ -39,10 +39,7 @@ workflows:
       - name: Capacitor sync iOS
         script: |
           cd frontend
-          npx cap add ios
           npx cap sync ios
-
-      # --- Aşağıdaki adımlar cap sync SONRASI çalışır (cap add ios her şeyi sıfırlar) ---
 
       - name: Set App Icon (alpha removed)
         script: |

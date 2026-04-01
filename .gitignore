@@ -43,6 +43,7 @@ frontend/ios/*
 !frontend/ios/App
 frontend/ios/App/*
 !frontend/ios/App/App
+!frontend/ios/App/Podfile
 frontend/ios/App/App/*
 !frontend/ios/App/App/Assets.xcassets
 !frontend/ios/App/App/App.entitlements
