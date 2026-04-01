@@ -1076,8 +1076,9 @@ export default function CekSenet() {
   // ─ Kendi İşlem Fonksiyonları ──────────────────────────────────────────────
   const kendiKaydet = async () => {
     if (!kendiForm.firma_adi?.trim()) { toast.error('Cari adı zorunludur.'); return }
-    if (!kendiForm.vade_tarihi || !kendiForm.banka) {
-      toast.error('Vade tarihi ve banka zorunludur.'); return
+    if (!kendiForm.vade_tarihi) { toast.error('Vade tarihi zorunludur.'); return }
+    if (kendiForm.tur === 'Kendi Çekimiz' && !kendiForm.banka) {
+      toast.error('Banka adı zorunludur.'); return
     }
     const tutar = parseParaInput(kendiForm.tutarStr)
     if (tutar <= 0) { toast.error('Geçerli bir tutar giriniz.'); return }
