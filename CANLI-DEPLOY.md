@@ -1,4 +1,4 @@
-# CANLI-DEPLOY.md — Finans Kalesi Deploy Rehberi
+# CANLI-DEPLOY.md — ParamGo Deploy Rehberi
 # Her deploy öncesi bu dosyayı oku. Tüm bilgiler bağlayıcıdır.
 # Son Güncelleme: 25 Mart 2026
 

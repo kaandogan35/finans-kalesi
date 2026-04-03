@@ -1,6 +1,6 @@
 <?php
 /**
- * Finans Kalesi — CronController
+ * ParamGo — CronController
  *
  * Zamanlı mail gönderimleri. CRON_SECRET key ile korunur.
  *
@@ -329,7 +329,7 @@ class CronController {
                     $odemeler
                 );
 
-                $konu = $ay_yil . ' Aylık Bilanço Raporu — Finans Kalesi';
+                $konu = $ay_yil . ' Aylık Bilanço Raporu — ParamGo';
                 $ok   = MailHelper::gonder($sirket['email'], $konu, $html, $sid, null, 'cron_aylik');
 
                 $ok ? $gonderilen++ : $basarisiz++;

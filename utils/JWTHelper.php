@@ -1,6 +1,6 @@
 <?php
 /**
- * Finans Kalesi — JWT Token Yardimcisi
+ * ParamGo — JWT Token Yardimcisi
  * 
  * JWT (JSON Web Token) = Kullanicinin kimligini tasiyan sifrelenmis bilet.
  * 

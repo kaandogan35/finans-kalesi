@@ -1,6 +1,6 @@
 <?php
 /**
- * Finans Kalesi — SmtpHelper
+ * ParamGo — SmtpHelper
  *
  * Saf PHP, sıfır harici kütüphane.
  * stream_socket_client() ile STARTTLS (port 587) ve SSL (port 465) destekler.
@@ -63,7 +63,7 @@ class SmtpHelper {
         $user = env('SMTP_USER', '');
         $pass = env('SMTP_PASS', '');
         $from = env('SMTP_FROM_EMAIL', '');
-        $name = env('SMTP_FROM_NAME', 'Finans Kalesi');
+        $name = env('SMTP_FROM_NAME', 'ParamGo');
         $ssl  = ($port === 465);
 
         if (empty($host) || empty($user) || empty($pass) || empty($from)) {

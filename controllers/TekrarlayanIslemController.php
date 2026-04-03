@@ -1,7 +1,7 @@
 <?php
 // =============================================================
 // TekrarlayanIslemController.php — Tekrarlayan İşlemler API
-// Finans Kalesi SaaS
+// ParamGo SaaS
 //
 // Her istek: JWT doğrulama zorunlu.
 // =============================================================

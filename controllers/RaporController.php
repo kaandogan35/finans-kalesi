@@ -1,6 +1,6 @@
 <?php
 /**
- * Finans Kalesi — Rapor Controller
+ * ParamGo — Rapor Controller
  *
  * Raporlama endpoint'leri:
  * - Cari yaşlandırma

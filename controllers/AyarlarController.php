@@ -1,6 +1,6 @@
 <?php
 /**
- * Finans Kalesi — Ayarlar Controller
+ * ParamGo — Ayarlar Controller
  *
  * PUT /api/ayarlar/tema  → Sirket temasini guncelle (sahip/admin)
  */

@@ -1,6 +1,6 @@
 <?php
 /**
- * Finans Kalesi — Rate Limiter (Hız Sınırlayıcı)
+ * ParamGo — Rate Limiter (Hız Sınırlayıcı)
  *
  * Login endpoint'ini brute-force saldırılarına karşı korur.
  * Aynı IP'den çok fazla başarısız giriş denemesi gelirse geçici olarak bloklar.
@@ -100,7 +100,7 @@ class RateLimiter {
                  FROM sistem_loglari
                  WHERE ip_adresi = ?
                    AND islem_tipi = 'giris_basarisiz'
-                   AND detay LIKE 'sifre_sifirlama_talebi:%'
+                   AND islem_detayi LIKE 'sifre_sifirlama_talebi:%'
                    AND tarih >= DATE_SUB(NOW(), INTERVAL ? MINUTE)"
             );
             $stmt->execute([$ip, self::SIFRE_SIFIRLAMA_DK]);

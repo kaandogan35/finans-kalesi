@@ -1,6 +1,6 @@
 <?php
 /**
- * Finans Kalesi — Rapor Route'ları
+ * ParamGo — Rapor Route'ları
  *
  * GET /api/raporlar/cari-yaslandirma  → Cari yaşlandırma
  * GET /api/raporlar/nakit-akis        → Nakit akış

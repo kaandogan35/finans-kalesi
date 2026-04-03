@@ -1,7 +1,7 @@
 <?php
 // =============================================================
 // KriptoHelper.php — AES-256-GCM Şifreleme/Çözme Yardımcısı (Varlık & Kasa)
-// Finans Kalesi SaaS — Aşama 1.6
+// ParamGo SaaS — Aşama 1.6
 //
 // KRİTİK GÜVENLİK KURALLARI:
 // - Çözülmüş veriler ASLA loglanmaz, error_log'a yazılmaz

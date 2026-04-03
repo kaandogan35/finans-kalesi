@@ -1,6 +1,6 @@
 <?php
 /**
- * Finans Kalesi — Rapor Modeli
+ * ParamGo — Rapor Modeli
  *
  * Raporlama modülü veritabanı sorguları:
  * - Cari Yaşlandırma

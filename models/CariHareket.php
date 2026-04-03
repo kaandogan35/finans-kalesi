@@ -1,7 +1,7 @@
 <?php
 // =============================================================
 // CariHareket.php — Cari Hareket Veritabanı İşlemleri (Model)
-// Finans Kalesi SaaS — Aşama 1.9 (Global PII Şifreleme + Soft Delete)
+// ParamGo SaaS — Aşama 1.9 (Global PII Şifreleme + Soft Delete)
 //
 // Şifrelenen PII alanlar: aciklama
 // Plaintext kalan alanlar: tutar, tutar_tl, belge_no

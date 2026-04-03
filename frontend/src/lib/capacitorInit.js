@@ -114,3 +114,26 @@ export function platformBilgi() {
     platform: Capacitor.getPlatform(),
   }
 }
+
+/**
+ * RevenueCat SDK'yı başlat
+ * Giriş yaptıktan sonra sirket_id ile çağrılır.
+ * Müşteri ID: "sirket_{sirket_id}" formatı — backend ile eşleşmeli.
+ */
+export async function revenueCatBaslat(sirketId) {
+  if (!Capacitor.isNativePlatform()) return
+  try {
+    const { Purchases, LOG_LEVEL } = await import('@revenuecat/purchases-capacitor')
+    const apiKey = import.meta.env.VITE_REVENUECAT_IOS_KEY
+    if (!apiKey) {
+      console.warn('RevenueCat: VITE_REVENUECAT_IOS_KEY tanımlı değil')
+      return
+    }
+    await Purchases.configure({
+      apiKey,
+      appUserID: `sirket_${sirketId}`,
+    })
+  } catch (e) {
+    console.error('RevenueCat başlatma hatası:', e)
+  }
+}

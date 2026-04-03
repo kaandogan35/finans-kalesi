@@ -1,7 +1,7 @@
 <?php
 // =============================================================
 // routes/guvenlik.php — Güvenlik Modülü URL Yönlendirmesi
-// Finans Kalesi SaaS
+// ParamGo SaaS
 //
 // index.php'den gelen değişkenler:
 //   $metod         → HTTP metodu (GET, POST, PUT, DELETE)

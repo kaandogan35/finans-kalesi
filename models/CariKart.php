@@ -1,7 +1,7 @@
 <?php
 // =============================================================
 // CariKart.php — Cari Kart Veritabanı İşlemleri (Model)
-// Finans Kalesi SaaS — Aşama 1.9 (Global PII Şifreleme + Soft Delete)
+// ParamGo SaaS — Aşama 1.9 (Global PII Şifreleme + Soft Delete)
 //
 // Şifrelenen PII alanlar: cari_adi, vergi_no, telefon, email,
 //                         adres, yetkili_kisi

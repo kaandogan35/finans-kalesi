@@ -1,6 +1,6 @@
 <?php
 /**
- * Finans Kalesi — Cron Route Tanımları
+ * ParamGo — Cron Route Tanımları
  *
  * GET /api/cron/gunluk-ozet      → CronController::gunlukOzet()
  * GET /api/cron/haftalik-vadeler → CronController::haftalikVadeler()

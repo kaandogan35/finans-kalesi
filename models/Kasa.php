@@ -1,7 +1,7 @@
 <?php
 // =============================================================
 // Kasa.php — Varlık & Kasa Veritabanı İşlemleri (Model)
-// Finans Kalesi SaaS — Aşama 1.9 (Soft Delete + AES-256-GCM)
+// ParamGo SaaS — Aşama 1.9 (Soft Delete + AES-256-GCM)
 //
 // Tüm hassas veriler SistemKripto (APP_ENCRYPTION_KEY) ile
 // AES-256-GCM şifreli saklanır.

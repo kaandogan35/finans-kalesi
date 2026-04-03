@@ -120,6 +120,18 @@ const useAuthStore = create(
       },
 
       /**
+       * IAP satın alımı sonrası planı ve tokenleri güncelle
+       * Backend'den gelen yeni JWT'ler ve plan bilgisi ile store güncellenir
+       */
+      iapPlanGuncelle: (yeniPlan, tokenlar) => {
+        const { kullanici } = get()
+        get().tokenlariAyarla(tokenlar.access_token, tokenlar.refresh_token)
+        if (kullanici) {
+          set({ kullanici: { ...kullanici, plan: yeniPlan } })
+        }
+      },
+
+      /**
        * Onboarding tamamlandığında kullanici state'ini güncelle
        */
       onboardingTamamla: () => {

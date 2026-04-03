@@ -1,6 +1,6 @@
 <?php
 /**
- * Finans Kalesi — Güvenlik Controller
+ * ParamGo — Güvenlik Controller
  *
  * Sadece 'sahip' rolü erişebilir.
  *

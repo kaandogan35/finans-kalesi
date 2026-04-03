@@ -1,6 +1,6 @@
 <?php
 /**
- * Finans Kalesi — Auth Route (Kimlik Dogrulama Yollari)
+ * ParamGo — Auth Route (Kimlik Dogrulama Yollari)
  * 
  * Bu dosya index.php'den cagirilir.
  * URL'in ikinci parcasina bakarak dogru controller metodunu calistirir.

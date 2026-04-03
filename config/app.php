@@ -1,6 +1,6 @@
 <?php
 /**
- * Finans Kalesi — Genel Uygulama Ayarları
+ * ParamGo — Genel Uygulama Ayarları
  * 
  * Bu dosya .env'deki gizli ayarları okur ve tüm uygulamaya sunar.
  * Eski sistemdeki db.php + ayarların birleşik hali.
@@ -63,7 +63,7 @@ return [
     // JWT Token
     'jwt' => [
         'secret'         => env('JWT_SECRET'),
-        'issuer'         => env('JWT_ISSUER', 'finans-kalesi-api'),
+        'issuer'         => env('JWT_ISSUER', 'paramgo-api'),
         'access_suresi'  => (int) env('JWT_ACCESS_SURESI', 900),      // 15 dakika
         'refresh_suresi' => (int) env('JWT_REFRESH_SURESI', 2592000), // 30 gün
     ],

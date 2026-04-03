@@ -1,7 +1,7 @@
 <?php
 // =============================================================
 // routes/kullanicilar.php — Kullanıcı Yönetimi URL Yönlendirmesi
-// Finans Kalesi SaaS
+// ParamGo SaaS
 //
 // index.php'den gelen değişkenler:
 //   $metod         → HTTP metodu (GET, POST, PUT, DELETE)

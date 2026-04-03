@@ -1,7 +1,7 @@
 <?php
 // =============================================================
 // routes/dashboard.php — Dashboard Özet Modülü URL Yönlendirmesi
-// Finans Kalesi SaaS — Sprint 2A-3
+// ParamGo SaaS — Sprint 2A-3
 //
 // Bu dosya index.php'den require edilir ve doğrudan çalışır.
 // Diğer route dosyalarıyla aynı yapıda.

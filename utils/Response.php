@@ -1,6 +1,6 @@
 <?php
 /**
- * Finans Kalesi — Standart JSON Yanıt Sınıfı
+ * ParamGo — Standart JSON Yanıt Sınıfı
  * 
  * Tüm API yanıtları bu sınıftan geçer.
  * Böylece her endpoint aynı formatta cevap verir:

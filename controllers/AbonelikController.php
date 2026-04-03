@@ -1,6 +1,6 @@
 <?php
 /**
- * Finans Kalesi — Abonelik Controller
+ * ParamGo — Abonelik Controller
  *
  * GET  /api/abonelik/planlar   → Tüm planları fiyatlarıyla döndür
  * GET  /api/abonelik/durum     → Kullanıcının mevcut planı + deneme bilgisi
@@ -140,6 +140,152 @@ class AbonelikController {
             'tutar'        => $fiyat,
             'durum'        => 'bekliyor_entegrasyon',
         ], 'Plan yükseltme talebi alındı');
+    }
+
+    /**
+     * Apple IAP satın alma doğrula ve planı aktifleştir
+     * POST /api/abonelik/iap-dogrula
+     *
+     * Akış:
+     *   1. Mobil uygulama IAP satın alımı tamamlar (RevenueCat SDK)
+     *   2. Bu endpoint'i çağırır
+     *   3. RevenueCat REST API'ye doğrulama yapılır
+     *   4. Aktif abonelik bulunursa DB güncellenir ve yeni JWT döndürülür
+     */
+    public function iapDogrula(): void {
+        $payload = AuthMiddleware::dogrula();
+        $sirket_id = (int) $payload['sirket_id'];
+
+        // Yalnızca hesap sahibi plan değiştirebilir
+        if ($payload['rol'] !== 'sahip') {
+            Response::hata('Yalnızca hesap sahibi abonelik değiştirebilir', 403);
+            return;
+        }
+
+        // RevenueCat müşteri ID
+        $musteri_id = "sirket_{$sirket_id}";
+
+        // RevenueCat REST API'ye abone bilgisi sor
+        $rc_secret = getenv('REVENUECAT_SECRET_KEY');
+        if (!$rc_secret) {
+            error_log('IAP: REVENUECAT_SECRET_KEY env degiskeni tanimli degil');
+            Response::sunucu_hatasi('Ödeme sistemi yapılandırılmamış');
+            return;
+        }
+
+        $ch = curl_init("https://api.revenuecat.com/v1/subscribers/" . urlencode($musteri_id));
+        curl_setopt_array($ch, [
+            CURLOPT_RETURNTRANSFER => true,
+            CURLOPT_TIMEOUT        => 10,
+            CURLOPT_HTTPHEADER     => [
+                "Authorization: Bearer {$rc_secret}",
+                "Content-Type: application/json",
+                "X-Platform: ios",
+            ],
+        ]);
+        $yanit    = curl_exec($ch);
+        $http_kod = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+        curl_close($ch);
+
+        if ($http_kod !== 200 || !$yanit) {
+            error_log("IAP: RevenueCat API hatasi HTTP {$http_kod} musteri={$musteri_id}");
+            Response::hata('Abonelik doğrulaması şu an yapılamıyor, lütfen tekrar deneyin', 502);
+            return;
+        }
+
+        $rc = json_decode($yanit, true);
+        $abone = $rc['subscriber'] ?? null;
+
+        if (!$abone) {
+            Response::hata('Abone kaydı bulunamadı', 404);
+            return;
+        }
+
+        // Aktif aboneliği bul (subscriptions veya entitlements)
+        $aktif_plan  = null;
+        $aktif_donem = null;
+        $bitis_str   = null;
+        $deneme_mi   = false;
+
+        // Önce subscriptions'a bak
+        foreach (($abone['subscriptions'] ?? []) as $urun_id => $urun) {
+            $bitis_ts = isset($urun['expires_date'])
+                ? strtotime($urun['expires_date'])
+                : 0;
+            if ($bitis_ts > time()) {
+                if (str_contains($urun_id, 'standart'))   $aktif_plan  = 'standart';
+                elseif (str_contains($urun_id, 'kurumsal')) $aktif_plan = 'kurumsal';
+                $aktif_donem = str_contains($urun_id, 'yillik') ? 'yillik' : 'aylik';
+                $bitis_str   = date('Y-m-d H:i:s', $bitis_ts);
+                $deneme_mi   = ($urun['period_type'] ?? '') === 'trial';
+                break;
+            }
+        }
+
+        // Subscription bulunamadıysa entitlements'a bak (fallback)
+        if (!$aktif_plan) {
+            foreach (($abone['entitlements'] ?? []) as $ent) {
+                $bitis_ts = isset($ent['expires_date'])
+                    ? strtotime($ent['expires_date'])
+                    : 0;
+                if ($bitis_ts > time()) {
+                    $pid = $ent['product_identifier'] ?? '';
+                    if (str_contains($pid, 'standart'))   $aktif_plan  = 'standart';
+                    elseif (str_contains($pid, 'kurumsal')) $aktif_plan = 'kurumsal';
+                    $aktif_donem = str_contains($pid, 'yillik') ? 'yillik' : 'aylik';
+                    $bitis_str   = date('Y-m-d H:i:s', $bitis_ts);
+                    break;
+                }
+            }
+        }
+
+        if (!$aktif_plan) {
+            Response::hata('Aktif abonelik bulunamadı. Satın alım doğrulanamadı.', 404);
+            return;
+        }
+
+        // DB güncelle
+        $this->abonelik_model->revenueCatMusteriIdKaydet($sirket_id, $musteri_id);
+
+        $abonelik_id = $this->abonelik_model->planGuncelle(
+            $sirket_id, $aktif_plan, $aktif_donem, 'apple', $bitis_str
+        );
+
+        // Deneme dışında ödeme kaydı oluştur
+        if (!$deneme_mi) {
+            $tutar = Abonelik::FIYATLAR[$aktif_plan][$aktif_donem] ?? 0;
+            $this->abonelik_model->odemeKaydet($sirket_id, $abonelik_id, [
+                'plan_adi'     => $aktif_plan,
+                'odeme_donemi' => $aktif_donem,
+                'odeme_kanali' => 'apple',
+                'tutar'        => $tutar,
+                'para_birimi'  => 'TRY',
+                'referans_no'  => $musteri_id,
+                'durum'        => 'tamamlandi',
+                'odeme_tarihi' => date('Y-m-d H:i:s'),
+            ]);
+        }
+
+        // Yeni JWT oluştur (güncel plan ile)
+        $kullanici_bilgi = [
+            'id'        => (int) $payload['sub'],
+            'sirket_id' => $sirket_id,
+            'rol'       => $payload['rol'],
+            'tema_adi'  => $payload['tema_adi'] ?? 'paramgo',
+            'plan'      => $aktif_plan,
+            'yetkiler'  => $payload['yetkiler'] ?? null,
+        ];
+
+        $access_token = JWTHelper::access_token_olustur($kullanici_bilgi);
+        $refresh_data = JWTHelper::refresh_token_olustur($kullanici_bilgi);
+
+        Response::basarili([
+            'plan'    => $aktif_plan,
+            'tokenlar' => [
+                'access_token'  => $access_token,
+                'refresh_token' => $refresh_data['token'],
+            ],
+        ], 'Abonelik başarıyla aktifleştirildi');
     }
 
     // ─────────────────────────────────────────

@@ -1,6 +1,6 @@
 <?php
 /**
- * Finans Kalesi — MailHelper
+ * ParamGo — MailHelper
  *
  * SmtpHelper üzerinden mail gönderir ve mail_log tablosuna kayıt düşer.
  * Başarısız gönderimlerde error_log() ile hata kaydeder.

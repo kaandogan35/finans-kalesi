@@ -1,7 +1,7 @@
 <?php
 // =============================================================
 // CariController.php — Cari Modülü API Kontrol Merkezi
-// Finans Kalesi SaaS — Aşama 1.3
+// ParamGo SaaS — Aşama 1.3
 //
 // KRİTİK NOT: AuthMiddleware::dogrula() JWT payload döndürür.
 // Payload yapısı (JWTHelper'dan geliyor):

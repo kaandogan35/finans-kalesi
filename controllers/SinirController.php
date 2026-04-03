@@ -1,7 +1,7 @@
 <?php
 // =============================================================
 // SinirController.php — Kullanım Sınırları API
-// Finans Kalesi SaaS
+// ParamGo SaaS
 //
 // GET /api/sinir/durum → Kullanıcının mevcut kullanımı + sınırlar
 // =============================================================

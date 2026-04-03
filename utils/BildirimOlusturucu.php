@@ -1,6 +1,6 @@
 <?php
 /**
- * Finans Kalesi — Merkezi Bildirim Oluşturucu
+ * ParamGo — Merkezi Bildirim Oluşturucu
  *
  * Bildirim oluşturma, tercih kontrolü ve email gönderme işlemlerini
  * tek noktadan yönetir. Dedup kuralını uygular.

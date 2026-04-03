@@ -4,7 +4,7 @@
  * v2: 30 gün deneme + Standart 290₺ / Kurumsal 490₺
  */
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { Capacitor } from '@capacitor/core'
 import { bildirim as toast } from '../../components/ui/CenterAlert'
 import useAuthStore from '../../stores/authStore'
@@ -14,8 +14,20 @@ import { usePlanKontrol } from '../../hooks/usePlanKontrol'
 const IOS_MU = Capacitor.isNativePlatform()
 
 const FIYATLAR = {
-  standart: { aylik: 290.00, yillik: 2900.00 },
-  kurumsal: { aylik: 490.00, yillik: 4900.00 },
+  standart: { aylik: 399.99, yillik: 3999.99 },
+  kurumsal: { aylik: 599.99, yillik: 5999.99 },
+}
+
+// App Store ürün ID'leri (RevenueCat'te tanımlı olanlarla aynı olmalı)
+const URUN_IDS = {
+  standart: {
+    aylik:  'com.paramgo.app.standart.aylik',
+    yillik: 'com.paramgo.app.standart.yillik',
+  },
+  kurumsal: {
+    aylik:  'com.paramgo.app.kurumsal.aylik',
+    yillik: 'com.paramgo.app.kurumsal.yillik',
+  },
 }
 
 const fmt = (n) => new Intl.NumberFormat('tr-TR', { minimumFractionDigits: 2 }).format(n)
@@ -33,12 +45,15 @@ const KANAL_MAP = { web: 'Web', apple: 'App Store', google: 'Google Play' }
 export default function PlanSecim() {
   const p = 'p'
   const { plan: jwtPlan } = usePlanKontrol()
+  const { iapPlanGuncelle } = useAuthStore()
 
   const [yukleniyor, setYukleniyor] = useState(true)
   const [gecmisYukleniyor, setGecmisYukleniyor] = useState(true)
   const [durum, setDurum] = useState(null)
   const [gecmis, setGecmis] = useState([])
   const [yillik, setYillik] = useState(false)
+  const [iapYukleniyor, setIapYukleniyor] = useState(false)
+  const [satinAlinanPlan, setSatinAlinanPlan] = useState(null)
 
   useEffect(() => {
     const durumAl = async () => {
@@ -62,6 +77,77 @@ export default function PlanSecim() {
     durumAl()
     gecmisAl()
   }, [])
+
+  // iOS IAP satın alma
+  const iapSatinAl = useCallback(async (planId) => {
+    if (iapYukleniyor) return
+    setIapYukleniyor(true)
+    setSatinAlinanPlan(planId)
+    try {
+      const { Purchases } = await import('@revenuecat/purchases-capacitor')
+      const donem = yillik ? 'yillik' : 'aylik'
+      const urunId = URUN_IDS[planId]?.[donem]
+
+      // RevenueCat offering'lerden paketi bul
+      const offerings = await Purchases.getOfferings()
+      const paketler = offerings.current?.availablePackages ?? []
+      const paket = paketler.find(p => p.product.identifier === urunId)
+
+      if (!paket) {
+        toast.error('Bu plan şu an satın alınamıyor. Lütfen daha sonra tekrar deneyin.')
+        return
+      }
+
+      // Apple ödeme ekranını aç
+      await Purchases.purchasePackage({ aPackage: paket })
+
+      // Başarılı — backend'e bildir ve JWT'yi güncelle
+      toast.info('Abonelik doğrulanıyor...')
+      const res = await abonelikApi.iapDogrula()
+      const { plan: yeniPlan, tokenlar } = res.data.veri
+      iapPlanGuncelle(yeniPlan, tokenlar)
+
+      // Sayfayı güncelle
+      const durumRes = await abonelikApi.durum()
+      setDurum(durumRes.data.veri)
+      const gecmisRes = await abonelikApi.gecmis()
+      setGecmis(gecmisRes.data.veri.gecmis || [])
+
+      toast.success('Aboneliğiniz başarıyla aktifleştirildi!')
+    } catch (e) {
+      if (e?.userCancelled) {
+        // Kullanıcı ödeme ekranını kapattı — hata gösterme
+      } else {
+        toast.error('Satın alma tamamlanamadı. Lütfen tekrar deneyin.')
+      }
+    } finally {
+      setIapYukleniyor(false)
+      setSatinAlinanPlan(null)
+    }
+  }, [iapYukleniyor, yillik, iapPlanGuncelle])
+
+  // iOS'ta satın alımları geri yükle (Apple zorunlu kılar)
+  const satinAlimlarıGeriYukle = useCallback(async () => {
+    if (iapYukleniyor) return
+    setIapYukleniyor(true)
+    try {
+      const { Purchases } = await import('@revenuecat/purchases-capacitor')
+      await Purchases.restorePurchases()
+      // Geri yükleme sonrası backend'e doğrulat
+      const res = await abonelikApi.iapDogrula()
+      if (res.data.basarili) {
+        const { plan: yeniPlan, tokenlar } = res.data.veri
+        iapPlanGuncelle(yeniPlan, tokenlar)
+        const durumRes = await abonelikApi.durum()
+        setDurum(durumRes.data.veri)
+        toast.success('Aboneliğiniz geri yüklendi!')
+      }
+    } catch {
+      toast.error('Satın alımlar geri yüklenemedi. Lütfen tekrar deneyin.')
+    } finally {
+      setIapYukleniyor(false)
+    }
+  }, [iapYukleniyor, iapPlanGuncelle])
 
   // API'den gelen plan yetkili kaynak; yüklenene kadar JWT'deki plan kullanılır
   const plan = durum?.plan || jwtPlan
@@ -239,18 +325,144 @@ export default function PlanSecim() {
 
         {/* PLAN SEÇİMİ */}
         {IOS_MU ? (
-          /* iOS: Apple App Store kuralı gereği abonelik satın alma UI gösterilmez.
-             Plan yönetimi için web arayüzü kullanılmalıdır. */
-          <div className={`${p}-abn-card`} style={{ textAlign: 'center', padding: '32px 20px' }}>
-            <i className="bi bi-laptop" style={{ fontSize: 36, color: 'var(--p-color-primary)', display: 'block', marginBottom: 12 }} />
-            <div style={{ fontSize: 15, fontWeight: 700, color: '#111827', marginBottom: 8 }}>
-              Abonelik Yönetimi
+          /* iOS: App Store In-App Purchase ile satın alma */
+          <>
+            <div className={`${p}-abn-section-title`}>Plan Seçin</div>
+
+            {/* Dönem toggle */}
+            <div className="d-flex align-items-center justify-content-center gap-3 mb-4">
+              <span
+                className={`${p}-abn-toggle-label ${!yillik ? 'aktif' : ''}`}
+                onClick={() => setYillik(false)}
+              >Aylık</span>
+              <div
+                className={`abn-toggle-switch ${p}-abn-toggle-sw ${yillik ? 'on' : ''}`}
+                onClick={() => setYillik(v => !v)}
+              >
+                <div className="abn-toggle-knob" />
+              </div>
+              <span
+                className={`${p}-abn-toggle-label ${yillik ? 'aktif' : ''}`}
+                onClick={() => setYillik(true)}
+              >
+                Yıllık
+                <span className="abn-tasarruf-chip ms-2">%17 Tasarruf</span>
+              </span>
             </div>
-            <div style={{ fontSize: 13, color: 'var(--p-text-muted)', lineHeight: 1.6 }}>
-              Plan yükseltme ve abonelik yönetimi için bilgisayarınızdan
-              <strong> paramgo.com</strong> adresini ziyaret edin.
+
+            {/* Deneme notu */}
+            <div className={`${p}-abn-card`} style={{ marginBottom: 16, padding: '12px 16px', background: '#f0fdf4', border: '1px solid #86efac', borderRadius: 12 }}>
+              <div className="d-flex align-items-center gap-2">
+                <i className="bi bi-gift-fill" style={{ color: '#16a34a', fontSize: 16 }} />
+                <span style={{ fontSize: 13, fontWeight: 600, color: '#15803d' }}>
+                  1 ay ücretsiz deneme — İstediğiniz zaman iptal edebilirsiniz
+                </span>
+              </div>
             </div>
-          </div>
+
+            {/* Plan kartları (sadece standart + kurumsal) */}
+            <div className="row g-3 mb-3">
+              {[
+                {
+                  id: 'standart', ad: 'Standart', ikon: 'bi-star-fill',
+                  aciklama: 'Büyüyen işletmeler için tam özellik seti',
+                  fiyat: yillik ? Math.round(FIYATLAR.standart.yillik / 12 * 100) / 100 : FIYATLAR.standart.aylik,
+                  fiyatYillik: FIYATLAR.standart.yillik,
+                  onerilen: true,
+                  ozellikler: ['2 kullanıcıya kadar', 'Sınırsız cari hesap', '50 çek/senet (aylık)', 'PDF & Excel rapor', 'WhatsApp desteği'],
+                },
+                {
+                  id: 'kurumsal', ad: 'Kurumsal', ikon: 'bi-building-fill',
+                  aciklama: 'Büyük ekipler için tam kontrol',
+                  fiyat: yillik ? Math.round(FIYATLAR.kurumsal.yillik / 12 * 100) / 100 : FIYATLAR.kurumsal.aylik,
+                  fiyatYillik: FIYATLAR.kurumsal.yillik,
+                  ozellikler: ['10 kullanıcıya kadar', 'Sınırsız her şey', 'Gelişmiş raporlama', 'Öncelikli 7/24 destek'],
+                },
+              ].map((pl) => {
+                const aktif = plan === pl.id
+                const yukleniyor_bu = iapYukleniyor && satinAlinanPlan === pl.id
+                return (
+                  <div key={pl.id} className="col-12">
+                    <div className={`${p}-abn-plan-card ${aktif ? 'aktif-plan' : ''} ${pl.onerilen && !aktif ? 'onerilen' : ''}`}>
+
+                      <div className="d-flex align-items-center justify-content-between mb-3" style={{ minHeight: 24 }}>
+                        <div className="d-flex gap-2">
+                          {aktif && <span className={`${p}-abn-badge-active`}>✓ Aktif Plan</span>}
+                          {pl.onerilen && !aktif && <span className={`${p}-abn-badge-rec`}>★ Önerilen</span>}
+                        </div>
+                      </div>
+
+                      <div className="d-flex align-items-center justify-content-between">
+                        <div>
+                          <div className="d-flex align-items-center gap-2 mb-1">
+                            <i className={`bi ${pl.ikon}`} style={{ fontSize: 16, color: pl.id === 'standart' ? 'var(--p-color-primary)' : 'var(--p-color-primary-dark)' }} />
+                            <span className={`${p}-abn-plan-name`}>{pl.ad}</span>
+                          </div>
+                          <div style={{ fontSize: 12, color: 'var(--p-text-muted)', marginBottom: 8 }}>{pl.aciklama}</div>
+                          <div className="d-flex align-items-baseline gap-1">
+                            <span className={`${p}-abn-plan-price`}>{fmt(pl.fiyat)}</span>
+                            <span className={`${p}-abn-price-unit`}>₺/ay</span>
+                          </div>
+                          {yillik && (
+                            <div className={`${p}-abn-yearly-note`}>Yılda {fmt(pl.fiyatYillik)}₺</div>
+                          )}
+                        </div>
+
+                        {aktif ? (
+                          <button className={`${p}-abn-btn-pasif`} disabled style={{ minWidth: 110 }}>✓ Aktif</button>
+                        ) : (
+                          <button
+                            className={`abn-btn ${pl.id === 'standart' ? 'yesil-standart' : 'yesil-kurumsal'}`}
+                            style={{ minWidth: 110 }}
+                            onClick={() => iapSatinAl(pl.id)}
+                            disabled={iapYukleniyor}
+                          >
+                            {yukleniyor_bu
+                              ? <span className="spinner-border spinner-border-sm" />
+                              : <><i className="bi bi-apple me-1" />{pl.ad}&#39;a Geç</>
+                            }
+                          </button>
+                        )}
+                      </div>
+
+                      <div className={`${p}-abn-sep`} style={{ margin: '12px 0' }} />
+                      <div className="d-flex flex-wrap gap-2">
+                        {pl.ozellikler.map((oz) => (
+                          <span key={oz} style={{ fontSize: 11, color: 'var(--p-text-muted)' }}>
+                            <i className="bi bi-check-circle-fill me-1" style={{ color: 'var(--p-color-primary)' }} />{oz}
+                          </span>
+                        ))}
+                      </div>
+
+                    </div>
+                  </div>
+                )
+              })}
+            </div>
+
+            {/* Geri yükle butonu — Apple zorunlu kılar */}
+            <div style={{ textAlign: 'center', marginBottom: 20 }}>
+              <button
+                className="btn btn-link"
+                style={{ fontSize: 13, color: 'var(--p-text-muted)', textDecoration: 'none' }}
+                onClick={satinAlimlarıGeriYukle}
+                disabled={iapYukleniyor}
+              >
+                {iapYukleniyor && !satinAlinanPlan
+                  ? <span className="spinner-border spinner-border-sm me-1" />
+                  : <i className="bi bi-arrow-counterclockwise me-1" />
+                }
+                Satın Alımları Geri Yükle
+              </button>
+            </div>
+
+            {/* Apple yasal uyarısı */}
+            <div style={{ fontSize: 11, color: 'var(--p-text-muted)', textAlign: 'center', lineHeight: 1.6, marginBottom: 16, padding: '0 8px' }}>
+              Abonelik, onayladıktan sonra iTunes hesabınızdan tahsil edilir.
+              Abonelikler mevcut dönem bitiminden en az 24 saat önce iptal edilmezse otomatik yenilenir.
+              Aboneliği iPhone Ayarlar → Apple ID → Abonelikler bölümünden yönetebilirsiniz.
+            </div>
+          </>
         ) : (
           <>
             <div className={`${p}-abn-section-title`}>Plan Seçin</div>

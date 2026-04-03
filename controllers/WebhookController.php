@@ -1,6 +1,6 @@
 <?php
 /**
- * Finans Kalesi — Webhook Controller
+ * ParamGo — Webhook Controller
  *
  * Ödeme sağlayıcılarından gelen otomatik bildirimler (webhook) burada işlenir.
  * Üç kanal destekleniyor: web (Stripe/İyzico), Apple IAP, Google Play.
@@ -39,22 +39,115 @@ class WebhookController {
     }
 
     /**
-     * Apple IAP (In-App Purchase) webhook'u
+     * RevenueCat Webhook — Abonelik olaylarını işle
+     * POST /api/webhook/revenuecat
      *
-     * TODO: Entegrasyon adımları
-     *   1. $receipt_data al (App Store'dan gelen)
-     *   2. Apple'ın doğrulama sunucusuna gönder:
-     *      POST https://buy.itunes.apple.com/verifyReceipt
-     *   3. status === 0 ise geçerli
-     *   4. product_id'den plan belirle
-     *   5. original_transaction_id ile sirket_id eşleştir
-     *   6. planı aktive et
+     * RevenueCat, abonelik değişikliklerini bu endpoint'e gönderir:
+     *   INITIAL_PURCHASE → İlk satın alma (deneme dahil)
+     *   RENEWAL          → Abonelik yenilendi
+     *   CANCELLATION     → Kullanıcı iptal etti (dönem sonuna kadar devam eder)
+     *   EXPIRATION       → Abonelik süresi doldu
+     *   BILLING_ISSUE    → Ödeme başarısız
      */
-    public function appleIap(array $girdi): void {
-        // GÜVENLİK: Apple receipt doğrulaması olmadan işlenmez
-        error_log('Webhook/apple REDDEDILDI — dogrulama henuz aktif degil: ' . substr(json_encode($girdi), 0, 200));
-        http_response_code(403);
-        echo json_encode(['basarili' => false, 'hata' => 'Webhook dogrulama aktif degil']);
+    public function revenueCat(array $girdi): void {
+        // GÜVENLİK: Authorization header doğrula
+        $webhook_secret = getenv('REVENUECAT_WEBHOOK_SECRET');
+        if ($webhook_secret) {
+            $auth_header = $_SERVER['HTTP_AUTHORIZATION'] ?? '';
+            if ($auth_header !== "Bearer {$webhook_secret}") {
+                error_log('RevenueCat webhook: gecersiz imza');
+                http_response_code(401);
+                echo json_encode(['basarili' => false, 'hata' => 'Yetkisiz']);
+                return;
+            }
+        }
+
+        $event = $girdi['event'] ?? null;
+        if (!$event) {
+            http_response_code(400);
+            echo json_encode(['basarili' => false, 'hata' => 'Event bulunamadi']);
+            return;
+        }
+
+        $event_tipi  = $event['type']        ?? '';
+        $musteri_id  = $event['app_user_id'] ?? '';
+        $urun_id     = $event['product_id']  ?? '';
+        $bitis_ms    = $event['expiration_at_ms'] ?? null;
+        $donem_tipi  = $event['period_type'] ?? 'NORMAL'; // TRIAL, INTRO, NORMAL
+
+        // Müşteri ID'sinden sirket_id çıkar
+        $sirket_id = $this->abonelik_model->sirketIdRevenueCatMusteriden($musteri_id);
+        if (!$sirket_id) {
+            error_log("RevenueCat webhook: gecersiz musteri_id={$musteri_id}");
+            http_response_code(200); // 200 döndür — RevenueCat tekrar göndermez
+            echo json_encode(['basarili' => true]);
+            return;
+        }
+
+        // Ürün ID'sinden plan ve dönem belirle
+        $plan  = null;
+        $donem = null;
+        if (str_contains($urun_id, 'standart'))   $plan  = 'standart';
+        elseif (str_contains($urun_id, 'kurumsal')) $plan = 'kurumsal';
+        $donem = str_contains($urun_id, 'yillik') ? 'yillik' : 'aylik';
+
+        // Bitiş tarihi (ms → datetime)
+        $bitis_str = $bitis_ms
+            ? date('Y-m-d H:i:s', (int)($bitis_ms / 1000))
+            : null;
+
+        switch ($event_tipi) {
+
+            case 'INITIAL_PURCHASE':
+            case 'RENEWAL':
+            case 'UNCANCELLATION': // Kullanıcı iptali geri aldı
+                if (!$plan) {
+                    error_log("RevenueCat webhook: plan belirlenemedi urun={$urun_id}");
+                    break;
+                }
+                $abonelik_id = $this->abonelik_model->planGuncelle(
+                    $sirket_id, $plan, $donem, 'apple', $bitis_str
+                );
+                // Deneme dışı satın alımda ödeme kaydı
+                if ($event_tipi !== 'INITIAL_PURCHASE' || $donem_tipi === 'NORMAL') {
+                    $tutar = Abonelik::FIYATLAR[$plan][$donem] ?? 0;
+                    $this->abonelik_model->odemeKaydet($sirket_id, $abonelik_id, [
+                        'plan_adi'     => $plan,
+                        'odeme_donemi' => $donem,
+                        'odeme_kanali' => 'apple',
+                        'tutar'        => $tutar,
+                        'para_birimi'  => 'TRY',
+                        'referans_no'  => $musteri_id,
+                        'durum'        => 'tamamlandi',
+                        'odeme_tarihi' => date('Y-m-d H:i:s'),
+                    ]);
+                }
+                error_log("RevenueCat webhook: {$event_tipi} sirket={$sirket_id} plan={$plan}/{$donem}");
+                break;
+
+            case 'EXPIRATION':
+                // Abonelik bitti — deneme planına düşür
+                $this->abonelik_model->planGuncelle($sirket_id, 'deneme', null, null, null);
+                error_log("RevenueCat webhook: EXPIRATION sirket={$sirket_id}");
+                break;
+
+            case 'CANCELLATION':
+                // Kullanıcı iptal etti ama dönem sonuna kadar erişim devam eder
+                // Sadece logla, planı değiştirme
+                error_log("RevenueCat webhook: CANCELLATION sirket={$sirket_id} bitis={$bitis_str}");
+                break;
+
+            case 'BILLING_ISSUE':
+                error_log("RevenueCat webhook: BILLING_ISSUE sirket={$sirket_id} urun={$urun_id}");
+                break;
+
+            default:
+                error_log("RevenueCat webhook: bilinmeyen event={$event_tipi}");
+                break;
+        }
+
+        http_response_code(200);
+        echo json_encode(['basarili' => true]);
     }
 
     /**

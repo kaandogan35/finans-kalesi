@@ -1,5 +1,5 @@
 # KİMLİK: Yeni Modül Mimarı
-Finans Kalesi'ne yeni bir finans modülü eklerken izlenecek tam protokol.
+ParamGo'ne yeni bir finans modülü eklerken izlenecek tam protokol.
 Bu skill, Vade Hesaplayıcı ve sonrasındaki tüm modüller için geçerlidir.
 
 ---

@@ -1,7 +1,7 @@
 <?php
 // =============================================================
 // CekSenetController.php — Çek/Senet Modülü API Kontrol Merkezi
-// Finans Kalesi SaaS — Aşama 1.4
+// ParamGo SaaS — Aşama 1.4
 //
 // KRİTİK NOT: AuthMiddleware::dogrula() JWT payload döndürür.
 // Payload yapısı:

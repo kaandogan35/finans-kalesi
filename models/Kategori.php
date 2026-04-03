@@ -1,7 +1,7 @@
 <?php
 // =============================================================
 // Kategori.php — Gelir/Gider Kategorileri Model
-// Finans Kalesi SaaS
+// ParamGo SaaS
 //
 // Varsayılan kategoriler (sirket_id = NULL) + şirkete özel
 // =============================================================

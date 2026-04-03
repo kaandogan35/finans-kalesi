@@ -1,6 +1,6 @@
 <?php
 /**
- * Finans Kalesi — Bildirim Modeli
+ * ParamGo — Bildirim Modeli
  *
  * Bildirimler modülü veritabanı sorguları:
  * - Bildirim CRUD

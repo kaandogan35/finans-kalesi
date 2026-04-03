@@ -1,4 +1,4 @@
-# CLAUDE.md — Finans Kalesi Proje Anayasası
+# CLAUDE.md — ParamGo Proje Anayasası
 # Bu dosya her oturumun başında otomatik okunur. Tüm kurallar bağlayıcıdır.
 # Son Güncelleme: 15 Mart 2026 — Oturum #10
 

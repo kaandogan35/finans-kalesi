@@ -1,6 +1,6 @@
 <?php
 /**
- * Finans Kalesi — API Giriş Noktası (Tek Kapı)
+ * ParamGo — API Giriş Noktası (Tek Kapı)
  *
  * Tüm API istekleri bu dosyadan geçer.
  * .htaccess gelen her isteği buraya yönlendirir.
@@ -137,7 +137,7 @@ try {
             Response::basarili([
                 'durum' => 'aktif',
                 'zaman' => date('Y-m-d H:i:s'),
-            ], 'Finans Kalesi API çalışıyor');
+            ], 'ParamGo API çalışıyor');
             break;
 
         // ─── Auth (Giris/Kayit) ───
@@ -248,10 +248,10 @@ try {
         // ─── API Ana Sayfa ───
         case '':
             Response::basarili([
-                'uygulama' => 'Finans Kalesi API',
+                'uygulama' => 'ParamGo API',
                 'versiyon' => '1.0.0',
                 'dokuman'  => 'Endpoint listesi yakında eklenecek',
-            ], 'Finans Kalesi API\'ye hoş geldiniz');
+            ], 'ParamGo API\'ye hoş geldiniz');
             break;
 
         // ─── Bilinmeyen Endpoint ───
@@ -262,6 +262,6 @@ try {
 
 } catch (Exception $e) {
     $hata_mesaj = 'Beklenmeyen bir hata olustu';
-    error_log('Finans Kalesi HATA: ' . $e->getMessage() . ' | ' . $e->getFile() . ':' . $e->getLine());
+    error_log('ParamGo HATA: ' . $e->getMessage() . ' | ' . $e->getFile() . ':' . $e->getLine());
     Response::sunucu_hatasi($hata_mesaj);
 }

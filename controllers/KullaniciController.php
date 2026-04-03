@@ -1,7 +1,7 @@
 <?php
 // =============================================================
 // KullaniciController.php — Alt Kullanıcı Yönetimi
-// Finans Kalesi SaaS
+// ParamGo SaaS
 //
 // Sadece 'sahip' rolüne sahip kullanıcılar erişebilir.
 // Plan limiti:  deneme=2, standart=2, kurumsal=10

@@ -1,6 +1,6 @@
 <?php
 /**
- * Finans Kalesi — Push Token Route
+ * ParamGo — Push Token Route
  *
  * POST   /api/push-tokens/kaydet → PushTokenController::kaydet()
  * DELETE /api/push-tokens/sil    → PushTokenController::sil()

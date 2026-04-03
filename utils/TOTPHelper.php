@@ -1,13 +1,13 @@
 <?php
 /**
- * Finans Kalesi — TOTP (Time-based One-Time Password) Helper
+ * ParamGo — TOTP (Time-based One-Time Password) Helper
  *
  * RFC 6238 uyumlu — Google Authenticator, Authy ile çalışır.
  * Sıfır bağımlılık, saf PHP.
  *
  * Kullanım:
  *   $secret = TOTPHelper::secret_olustur();
- *   $uri    = TOTPHelper::qr_uri($secret, $email, 'Finans Kalesi');
+ *   $uri    = TOTPHelper::qr_uri($secret, $email, 'ParamGo');
  *   $gecerli = TOTPHelper::dogrula($secret, $kullanici_kodu);
  */
 
@@ -66,7 +66,7 @@ class TOTPHelper {
      * OTP Auth URI oluştur (QR kod için)
      * Format: otpauth://totp/Label:account?secret=XXX&issuer=Label&digits=6&period=30
      */
-    public static function qr_uri(string $secret, string $hesap, string $yayinci = 'Finans Kalesi'): string {
+    public static function qr_uri(string $secret, string $hesap, string $yayinci = 'ParamGo'): string {
         return sprintf(
             'otpauth://totp/%s:%s?secret=%s&issuer=%s&digits=6&period=30&algorithm=SHA1',
             rawurlencode($yayinci),

@@ -1,7 +1,7 @@
 <?php
 // =============================================================
 // routes/tekrarlayan_islem.php — Tekrarlayan İşlemler Yönlendirme
-// Finans Kalesi SaaS
+// ParamGo SaaS
 //
 // URL yapısı:
 //   /api/tekrarlayan-islemler              → GET, POST

@@ -1,6 +1,6 @@
 <?php
 /**
- * Finans Kalesi — CORS Middleware
+ * ParamGo — CORS Middleware
  * 
  * CORS (Cross-Origin Resource Sharing) = Farklı adreslerden gelen isteklere izin verme.
  * 

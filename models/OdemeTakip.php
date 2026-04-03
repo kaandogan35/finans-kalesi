@@ -1,7 +1,7 @@
 <?php
 // =============================================================
 // OdemeTakip.php — Ödeme ve Tahsilat Takip Veritabanı İşlemleri
-// Finans Kalesi SaaS — Aşama 2.0 (Yeni Tab Sistemi + Döngüsel Hatırlatma)
+// ParamGo SaaS — Aşama 2.0 (Yeni Tab Sistemi + Döngüsel Hatırlatma)
 //
 // Durum akışı:
 //   bekliyor → (arama yapıldı) → cevap_vermedi | soz_verildi | tamamlandi

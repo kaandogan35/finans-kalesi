@@ -1,7 +1,7 @@
 <?php
 // =============================================================
 // YetkiKontrol.php — Modül Bazlı Erişim Kontrolü
-// Finans Kalesi SaaS
+// ParamGo SaaS
 //
 // 'sahip' rolü her modüle erişebilir (bypass).
 // Diğer roller için JWT payload'daki 'yetkiler' alanı kontrol edilir.

@@ -1,7 +1,7 @@
 <?php
 // =============================================================
 // routes/cek_senet.php — Çek/Senet Modülü URL Yönlendirmesi
-// Finans Kalesi SaaS — Aşama 1.4
+// ParamGo SaaS — Aşama 1.4
 //
 // Bu dosya index.php'den require edilir ve doğrudan çalışır.
 // cari.php ile AYNI yapıda — fonksiyon yok, doğrudan if/switch.

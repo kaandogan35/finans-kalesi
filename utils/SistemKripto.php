@@ -1,7 +1,7 @@
 <?php
 // =============================================================
 // SistemKripto.php — Sistem Seviyesi AES-256-GCM Şifreleme
-// Finans Kalesi SaaS — Aşama 1.9
+// ParamGo SaaS — Aşama 1.9
 //
 // Global PII verileri için (Cari, Çek/Senet, Ödeme Takip).
 // Anahtar kaynağı: .env → APP_ENCRYPTION_KEY

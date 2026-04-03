@@ -1,6 +1,6 @@
 <?php
 /**
- * Finans Kalesi — Plan Kontrol Middleware
+ * ParamGo — Plan Kontrol Middleware
  *
  * Hangi planın hangi özelliğe erişebileceğini belirler.
  * Deneme süresi dolmuşsa yazma işlemlerini engeller.

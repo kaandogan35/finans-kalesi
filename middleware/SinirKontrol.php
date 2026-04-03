@@ -1,7 +1,7 @@
 <?php
 // =============================================================
 // SinirKontrol.php — Plan Kullanım Sınırları
-// Finans Kalesi SaaS
+// ParamGo SaaS
 //
 // Plan başına işlem sınırlarını tanımlar ve kontrol eder.
 // Deneme planı: Standart ile aynı sınırlar.

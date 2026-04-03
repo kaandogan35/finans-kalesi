@@ -1,7 +1,7 @@
 <?php
 // =============================================================
 // controllers/DashboardController.php — Dashboard Özet Kontrolcüsü
-// Finans Kalesi SaaS — Sprint 2A-3
+// ParamGo SaaS — Sprint 2A-3
 //
 // Üç modülün (Cari, Çek/Senet, Ödeme) özet verilerini
 // tek sorguda derleyip Dashboard'a sunar.

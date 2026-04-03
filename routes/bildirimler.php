@@ -1,7 +1,7 @@
 <?php
 // =============================================================
 // routes/bildirimler.php — Bildirimler Modülü URL Yönlendirmesi
-// Finans Kalesi SaaS
+// ParamGo SaaS
 // =============================================================
 
 require_once BASE_PATH . '/controllers/BildirimController.php';

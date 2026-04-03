@@ -1,7 +1,7 @@
 <?php
 // =============================================================
 // routes/veresiye.php — Veresiye Defteri URL Yönlendirmesi
-// Finans Kalesi SaaS
+// ParamGo SaaS
 //
 // Bu dosya index.php'den require edilir ve doğrudan çalışır.
 //

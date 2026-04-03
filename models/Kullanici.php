@@ -1,6 +1,6 @@
 <?php
 /**
- * Finans Kalesi — Kullanici Modeli
+ * ParamGo — Kullanici Modeli
  * 
  * TABLO: kullanicilar
  * Sutunlar: id, sirket_id, ad_soyad, email, sifre_hash, telefon, 

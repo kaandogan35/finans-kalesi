@@ -1,7 +1,7 @@
 <?php
 // =============================================================
 // KasaController.php — Varlık & Kasa API Kontrol Merkezi
-// Finans Kalesi SaaS — Aşama 1.9
+// ParamGo SaaS — Aşama 1.9
 //
 // Her istek: JWT doğrulama zorunlu.
 // =============================================================

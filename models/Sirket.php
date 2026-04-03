@@ -1,6 +1,6 @@
 <?php
 /**
- * Finans Kalesi — Sirket Modeli
+ * ParamGo — Sirket Modeli
  * 
  * TABLO: sirketler
  * Sutunlar: id, firma_adi, vergi_no, telefon, email, adres, sektor,

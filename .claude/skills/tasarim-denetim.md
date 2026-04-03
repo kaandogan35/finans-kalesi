@@ -3,7 +3,7 @@
 ---
 name: tasarim-denetim
 description: >
-  Finans Kalesi / ParamGo projesindeki tum modullerin tasarim kalitesini denetler.
+  ParamGo / ParamGo projesindeki tum modullerin tasarim kalitesini denetler.
   CSS tutarsizliklari, tema uyumsuzluklari, responsive sorunlar, bileşen standart ihlalleri
   ve erişilebilirlik problemlerini tespit eder. Turkce rapor uretir.
   Kullanici "tasarim denetle", "tasarim kontrol", "UI denetim", "stil tutarsizlik",

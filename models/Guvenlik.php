@@ -1,6 +1,6 @@
 <?php
 /**
- * Finans Kalesi — Güvenlik Modeli
+ * ParamGo — Güvenlik Modeli
  *
  * Güvenlik modülü veritabanı sorguları:
  * - Aktif oturumlar (refresh_tokens)

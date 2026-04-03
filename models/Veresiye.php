@@ -1,7 +1,7 @@
 <?php
 // =============================================================
 // Veresiye.php — Veresiye Defteri Veritabanı İşlemleri (Model)
-// Finans Kalesi SaaS
+// ParamGo SaaS
 //
 // Şifrelenen PII alanlar: aciklama (veresiye notları)
 // Plaintext kalan alanlar: tutar, tarih, tur

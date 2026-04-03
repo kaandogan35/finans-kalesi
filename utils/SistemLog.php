@@ -1,6 +1,6 @@
 <?php
 /**
- * Finans Kalesi — Sistem Loglama
+ * ParamGo — Sistem Loglama
  *
  * Önemli işlemleri sistem_loglari tablosuna yazar.
  * Kim, ne zaman, nereden hangi işlemi yaptı — hepsini kaydeder.

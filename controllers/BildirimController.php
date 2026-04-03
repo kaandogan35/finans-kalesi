@@ -1,6 +1,6 @@
 <?php
 /**
- * Finans Kalesi — Bildirim Controller
+ * ParamGo — Bildirim Controller
  *
  * GET    /api/bildirimler                   → Bildirim listesi (sayfalı)
  * GET    /api/bildirimler/okunmamis-sayisi  → Badge için okunmamış sayı

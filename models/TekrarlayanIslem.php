@@ -1,7 +1,7 @@
 <?php
 // =============================================================
 // TekrarlayanIslem.php — Tekrarlayan İşlemler Veritabanı Modeli
-// Finans Kalesi SaaS
+// ParamGo SaaS
 //
 // Kapsam: tekrarlayan_islemler tablosu
 // Her ay/hafta/gün otomatik tekrar eden gelir ve gider tanımları

@@ -1,7 +1,7 @@
 <?php
 // =============================================================
 // OdemeTakipController.php — Ödeme/Tahsilat Takip API Kontrol Merkezi
-// Finans Kalesi SaaS — Aşama 2.0 (Yeni Tab Sistemi + aramaKaydi)
+// ParamGo SaaS — Aşama 2.0 (Yeni Tab Sistemi + aramaKaydi)
 //
 // Payload: $payload['sub'] = kullanıcı ID, $payload['sirket_id'] = şirket ID
 // =============================================================

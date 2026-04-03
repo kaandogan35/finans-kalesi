@@ -1,4 +1,4 @@
-# PROJE.md — ParamGo (Finans Kalesi) Durum ve Yol Haritasi
+# PROJE.md — ParamGo (ParamGo) Durum ve Yol Haritasi
 # Son Guncelleme: 29 Mart 2026
 
 ---

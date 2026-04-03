@@ -1,6 +1,6 @@
 <?php
 /**
- * Finans Kalesi — Auth Middleware (Kimlik Dogrulama Katmani)
+ * ParamGo — Auth Middleware (Kimlik Dogrulama Katmani)
  * 
  * Eski sistemde: Her sayfanin basinda session kontrolu vardi
  *   if (!isset($_SESSION['kullanici_id'])) { header('Location: login.php'); }

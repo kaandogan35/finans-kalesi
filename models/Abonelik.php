@@ -1,6 +1,6 @@
 <?php
 /**
- * Finans Kalesi — Abonelik Modeli
+ * ParamGo — Abonelik Modeli
  *
  * Abonelik ve ödeme geçmişi veritabanı işlemleri.
  * v2: 30 gün deneme + Standart/Kurumsal ücretli planlar
@@ -10,15 +10,15 @@ class Abonelik {
 
     private PDO $db;
 
-    // Plan fiyatları (TL)
+    // Plan fiyatları (TL) — App Store Connect fiyat dilimleri
     public const FIYATLAR = [
         'standart' => [
-            'aylik'  => 290.00,
-            'yillik' => 2900.00,
+            'aylik'  => 399.99,
+            'yillik' => 3999.99,
         ],
         'kurumsal' => [
-            'aylik'  => 490.00,
-            'yillik' => 4900.00,
+            'aylik'  => 599.99,
+            'yillik' => 5999.99,
         ],
     ];
 
@@ -252,6 +252,36 @@ class Abonelik {
     }
 
     // ─────────────────────────────────────────
+    // REVENUECAT ENTEGRASYONU
+    // ─────────────────────────────────────────
+
+    /**
+     * RevenueCat müşteri ID'sini sirketler tablosuna kaydet
+     */
+    public function revenueCatMusteriIdKaydet(int $sirket_id, string $musteri_id): void {
+        $stmt = $this->db->prepare("
+            UPDATE sirketler
+            SET revenuecat_musteri_id = :musteri_id
+            WHERE id = :sirket_id
+        ");
+        $stmt->execute([
+            ':musteri_id' => $musteri_id,
+            ':sirket_id'  => $sirket_id,
+        ]);
+    }
+
+    /**
+     * RevenueCat event'inden sirket_id çıkar
+     * Müşteri ID formatı: "sirket_123" → 123
+     */
+    public function sirketIdRevenueCatMusteriden(string $musteri_id): ?int {
+        if (!preg_match('/^sirket_(\d+)$/', $musteri_id, $m)) {
+            return null;
+        }
+        return (int) $m[1];
+    }
+
+    // ─────────────────────────────────────────
     // PLAN LİSTESİ (statik)
     // ─────────────────────────────────────────
 
@@ -285,6 +315,8 @@ class Abonelik {
                     'aylik'            => self::FIYATLAR['standart']['aylik'],
                     'yillik'           => self::FIYATLAR['standart']['yillik'],
                     'yillik_aylik_kar' => round(self::FIYATLAR['standart']['aylik'] * 12 - self::FIYATLAR['standart']['yillik'], 2),
+                    'urun_id_aylik'    => 'com.paramgo.app.standart.aylik',
+                    'urun_id_yillik'   => 'com.paramgo.app.standart.yillik',
                 ],
                 'ozellikler' => [
                     '2 kullanıcıya kadar',
@@ -306,6 +338,8 @@ class Abonelik {
                     'aylik'            => self::FIYATLAR['kurumsal']['aylik'],
                     'yillik'           => self::FIYATLAR['kurumsal']['yillik'],
                     'yillik_aylik_kar' => round(self::FIYATLAR['kurumsal']['aylik'] * 12 - self::FIYATLAR['kurumsal']['yillik'], 2),
+                    'urun_id_aylik'    => 'com.paramgo.app.kurumsal.aylik',
+                    'urun_id_yillik'   => 'com.paramgo.app.kurumsal.yillik',
                 ],
                 'ozellikler' => [
                     '10 kullanıcıya kadar',

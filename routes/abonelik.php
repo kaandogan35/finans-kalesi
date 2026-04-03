@@ -1,6 +1,6 @@
 <?php
 /**
- * Finans Kalesi — Abonelik & Webhook Route'ları
+ * ParamGo — Abonelik & Webhook Route'ları
  *
  * /api/abonelik/*  → AbonelikController
  * /api/webhook/*   → WebhookController
@@ -50,6 +50,12 @@ if ($alt_modul === 'abonelik') {
         $abonelik_ctrl->yukselt($girdi);
         exit;
     }
+
+    // POST /api/abonelik/iap-dogrula — iOS IAP sonrası plan aktivasyonu
+    if ($metod === 'POST' && $islem === 'iap-dogrula') {
+        $abonelik_ctrl->iapDogrula();
+        exit;
+    }
 }
 
 // ── WEBHOOK ENDPOINT'LERİ ──────────────────
@@ -61,9 +67,15 @@ if ($alt_modul === 'webhook') {
         exit;
     }
 
-    // POST /api/webhook/apple
+    // POST /api/webhook/revenuecat — RevenueCat abonelik olayları
+    if ($metod === 'POST' && $islem === 'revenuecat') {
+        $webhook_ctrl->revenueCat($girdi);
+        exit;
+    }
+
+    // POST /api/webhook/apple (eski placeholder — artık kullanılmıyor)
     if ($metod === 'POST' && $islem === 'apple') {
-        $webhook_ctrl->appleIap($girdi);
+        $webhook_ctrl->revenueCat($girdi); // RevenueCat handler'a yönlendir
         exit;
     }
 

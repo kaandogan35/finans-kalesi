@@ -1,6 +1,6 @@
 <?php
 /**
- * Finans Kalesi — Tur Route Tanımları
+ * ParamGo — Tur Route Tanımları
  *
  * GET /api/tur           → TurController::durum()
  * PUT /api/tur/{tur_adi} → TurController::tamamla()

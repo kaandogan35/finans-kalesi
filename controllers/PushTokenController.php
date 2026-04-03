@@ -1,6 +1,6 @@
 <?php
 /**
- * Finans Kalesi — Push Token Controller
+ * ParamGo — Push Token Controller
  *
  * POST /api/push-tokens/kaydet  → Cihaz push token'ını kaydet/güncelle
  * DELETE /api/push-tokens/sil   → Çıkışta token'ı pasife çek

@@ -1,6 +1,6 @@
 <?php
 /**
- * Finans Kalesi — Veritabanı Bağlantısı (PDO)
+ * ParamGo — Veritabanı Bağlantısı (PDO)
  * 
  * Eski sistemdeki db.php'nin yeni versiyonu.
  * Aynı PDO + güvenlik ayarları, ama artık .env'den okuyor.

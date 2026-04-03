@@ -1,6 +1,6 @@
 <?php
 /**
- * Finans Kalesi — TurController
+ * ParamGo — TurController
  *
  * Tanıtım turu tamamlanma durumlarını yönetir.
  * Görev 2 kapsamında tam olarak implement edilecek.

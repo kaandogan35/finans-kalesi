@@ -1,6 +1,6 @@
 <?php
 /**
- * Finans Kalesi — Auth Controller
+ * ParamGo — Auth Controller
  * 
  * POST /api/auth/kayit   → Yeni sirket + kullanici olustur
  * POST /api/auth/giris   → E-posta + sifre ile giris, token al
@@ -124,7 +124,7 @@ class AuthController {
                 $html = MailSablonlar::hosgeldin($girdi['ad_soyad'], $girdi['firma_adi']);
                 MailHelper::gonder(
                     $girdi['email'],
-                    'Finans Kalesi\'ne Hoş Geldiniz',
+                    'ParamGo\'ne Hoş Geldiniz',
                     $html,
                     (int)$sirket_id,
                     (int)$kullanici_id,
@@ -328,12 +328,13 @@ class AuthController {
                 $son_token = $stmt_ip->fetch();
 
                 if ($son_token && $son_token['ip_adresi'] && $son_token['ip_adresi'] !== $mevcut_ip) {
-                    $app_url    = env('APP_URL', 'https://app.finanskalesi.com');
+                    $app_url    = env('APP_URL', 'https://paramgo.com');
                     $sifirla_link = $app_url . '/sifre-sifirla';
                     $cihaz      = substr($_SERVER['HTTP_USER_AGENT'] ?? 'Bilinmiyor', 0, 80);
                     $tarih_saat = date('d.m.Y H:i');
+                    $ad_soyad   = $kullanici['ad_soyad'] ?? '';
 
-                    $html = MailSablonlar::guvenlikUyarisi($tarih_saat, $mevcut_ip, $cihaz, $sifirla_link);
+                    $html = MailSablonlar::guvenlikUyarisi($ad_soyad, $cihaz, $mevcut_ip, $tarih_saat);
                     MailHelper::gonder(
                         $kullanici['email'],
                         'Güvenlik Uyarısı: Yeni Cihazdan Giriş',
@@ -527,13 +528,14 @@ class AuthController {
                     ':id'    => (int)$kullanici['id'],
                 ]);
 
-                $app_url = env('APP_URL', 'https://app.finanskalesi.com');
+                $app_url = env('APP_URL', 'https://paramgo.com');
                 $link    = $app_url . '/sifre-sifirla?token=' . $token;
-                $html    = MailSablonlar::sifreSifirla($link, 30);
+                $ad_soyad = $kullanici['ad_soyad'] ?? '';
+                $html    = MailSablonlar::sifreSifirla($ad_soyad, $link);
 
                 MailHelper::gonder(
                     $kullanici['email'],
-                    'Şifre Sıfırlama — Finans Kalesi',
+                    'Şifre Sıfırlama — ParamGo',
                     $html,
                     (int)$kullanici['sirket_id'],
                     (int)$kullanici['id'],

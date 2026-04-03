@@ -1,7 +1,7 @@
 <?php
 // =============================================================
 // routes/odeme.php — Ödeme/Tahsilat Takip URL Yönlendirmesi
-// Finans Kalesi SaaS — Aşama 1.5
+// ParamGo SaaS — Aşama 1.5
 //
 // index.php'den gelen değişkenler:
 //   $metod         → HTTP metodu (GET, POST, PUT, DELETE)

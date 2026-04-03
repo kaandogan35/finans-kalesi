@@ -1,7 +1,7 @@
 <?php
 // =============================================================
 // routes/kasa.php — Varlık & Kasa URL Yönlendirmesi
-// Finans Kalesi SaaS — Aşama 1.9
+// ParamGo SaaS — Aşama 1.9
 //
 // index.php'den gelen değişkenler:
 //   $metod         → HTTP metodu

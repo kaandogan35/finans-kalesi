@@ -1,6 +1,6 @@
 <?php
 /**
- * Finans Kalesi — Ayarlar Route'ları
+ * ParamGo — Ayarlar Route'ları
  *
  * PUT /api/ayarlar/tema  → Sirket temasini guncelle
  *

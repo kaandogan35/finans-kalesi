@@ -1,7 +1,7 @@
 <?php
 // =============================================================
 // KategoriController.php — Gelir/Gider Kategori API
-// Finans Kalesi SaaS
+// ParamGo SaaS
 // =============================================================
 
 class KategoriController {

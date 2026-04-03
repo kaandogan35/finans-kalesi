@@ -1,7 +1,7 @@
 <?php
 // =============================================================
 // routes/cari.php — Cari Modülü URL Yönlendirmesi
-// Finans Kalesi SaaS — Aşama 1.3
+// ParamGo SaaS — Aşama 1.3
 //
 // Bu dosya index.php'den require edilir ve doğrudan çalışır.
 // auth.php ile AYNI yapıda — fonksiyon yok, doğrudan switch/if.

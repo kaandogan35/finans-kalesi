@@ -1,7 +1,7 @@
 <?php
 // =============================================================
 // VeresiyeController.php — Veresiye Defteri API Kontrol Merkezi
-// Finans Kalesi SaaS
+// ParamGo SaaS
 //
 // Payload yapısı (JWTHelper'dan):
 //   $payload['sub']       → Kullanıcı ID

@@ -1,7 +1,7 @@
 <?php
 // =============================================================
 // CekSenet.php — Çek/Senet Veritabanı İşlemleri (Model)
-// Finans Kalesi SaaS — Aşama 1.9 (Global PII Şifreleme + Soft Delete)
+// ParamGo SaaS — Aşama 1.9 (Global PII Şifreleme + Soft Delete)
 //
 // Şifrelenen PII alanlar: banka_adi, sube, hesap_no, aciklama
 // Plaintext kalan alanlar: seri_no (benzersizlik kontrolü için),
