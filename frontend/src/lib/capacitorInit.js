@@ -125,7 +125,10 @@ let _rcBaslatilmisSirketId = null
 
 export async function revenueCatBaslat(sirketId) {
   if (!Capacitor.isNativePlatform()) return
-  if (_rcBaslatilmisSirketId === sirketId) return  // Zaten bu kullanıcı için başlatıldı
+  if (!sirketId) return
+  // Aynı kullanıcı için zaten başlatıldıysa atla
+  // Farklı kullanıcıya geçildiyse (hesap değişimi) yeniden configure et
+  if (_rcBaslatilmisSirketId === sirketId) return
   try {
     const { Purchases } = await import('@revenuecat/purchases-capacitor')
     const apiKey = import.meta.env.VITE_REVENUECAT_IOS_KEY
@@ -140,6 +143,8 @@ export async function revenueCatBaslat(sirketId) {
     _rcBaslatilmisSirketId = sirketId
     console.log('RevenueCat başlatıldı, kullanıcı: sirket_' + sirketId)
   } catch (e) {
+    // "configure" hatasında guard'ı sıfırla — bir sonraki çağrıda tekrar denesin
+    _rcBaslatilmisSirketId = null
     console.error('RevenueCat başlatma hatası:', e)
   }
 }

@@ -173,11 +173,14 @@ class AbonelikController {
             return;
         }
 
-        $ch = curl_init("https://api.revenuecat.com/v1/subscribers/" . urlencode($musteri_id));
+        $rc_url = "https://api.revenuecat.com/v1/subscribers/" . urlencode($musteri_id);
+        $ch = curl_init($rc_url);
         curl_setopt_array($ch, [
             CURLOPT_RETURNTRANSFER => true,
-            CURLOPT_TIMEOUT        => 15,
-            CURLOPT_CONNECTTIMEOUT => 8,
+            CURLOPT_TIMEOUT        => 30,
+            CURLOPT_CONNECTTIMEOUT => 10,
+            CURLOPT_SSL_VERIFYPEER => true,
+            CURLOPT_SSL_VERIFYHOST => 2,
             CURLOPT_HTTPHEADER     => [
                 "Authorization: Bearer {$rc_secret}",
                 "Content-Type: application/json",
@@ -185,12 +188,31 @@ class AbonelikController {
             ],
         ]);
         $yanit    = curl_exec($ch);
-        $http_kod = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+        $http_kod = (int) curl_getinfo($ch, CURLINFO_HTTP_CODE);
         $curl_err = curl_error($ch);
+        $curl_no  = curl_errno($ch);
         curl_close($ch);
 
-        if ($http_kod !== 200 || !$yanit) {
-            error_log("IAP: RevenueCat API hatasi HTTP={$http_kod} musteri={$musteri_id} curl_err={$curl_err}");
+        if ($curl_no || !$yanit) {
+            error_log("IAP: curl hatasi #{$curl_no}: {$curl_err} musteri={$musteri_id}");
+            Response::hata('Ödeme sunucusuna bağlanılamadı, lütfen tekrar deneyin', 503);
+            return;
+        }
+
+        if ($http_kod === 401) {
+            error_log("IAP: RevenueCat API 401 Unauthorized — secret key hatalı olabilir musteri={$musteri_id}");
+            Response::sunucu_hatasi('Ödeme sistemi yetkilendirme hatası');
+            return;
+        }
+
+        if ($http_kod === 404) {
+            error_log("IAP: RevenueCat 404 — abone bulunamadı musteri={$musteri_id} yanit=" . substr($yanit, 0, 200));
+            Response::hata('Abonelik kaydı henüz oluşmadı, birkaç saniye sonra tekrar deneyin', 404);
+            return;
+        }
+
+        if ($http_kod !== 200) {
+            error_log("IAP: RevenueCat API hatasi HTTP={$http_kod} musteri={$musteri_id} yanit=" . substr($yanit, 0, 200));
             Response::hata('Abonelik doğrulaması şu an yapılamıyor, lütfen tekrar deneyin', 502);
             return;
         }

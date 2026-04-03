@@ -119,18 +119,24 @@ export default function PlanSecim() {
       toast.info('Abonelik doğrulanıyor...')
       await new Promise(r => setTimeout(r, 2000))
 
-      // Backend doğrulama — ağ sorunlarına karşı 2 deneme
+      // Backend doğrulama — RC'nin işlemesi için 3 deneme x 4s
       let res = null
-      for (let deneme = 1; deneme <= 2; deneme++) {
+      for (let deneme = 1; deneme <= 3; deneme++) {
         try {
           res = await abonelikApi.iapDogrula()
           break
         } catch (err) {
-          if (deneme === 2) {
-            toast.error('Ödemeniz Apple tarafından onaylandı. Plan güncellemesi yapılamadı — lütfen "Satın Alımları Geri Yükle" butonuna basın.')
+          const httpKod = err?.response?.status
+          console.error(`iapDogrula deneme ${deneme} hata:`, httpKod, err?.response?.data || err?.message)
+          if (deneme === 3) {
+            if (!httpKod) {
+              toast.error('Sunucuya bağlanılamadı. İnternet bağlantınızı kontrol edip "Satın Alımları Geri Yükle" butonuna basın.')
+            } else {
+              toast.error('Ödemeniz Apple tarafından onaylandı. Plan aktifleştirilemedi — lütfen "Satın Alımları Geri Yükle" butonuna basın.')
+            }
             return
           }
-          await new Promise(r => setTimeout(r, 3000))
+          await new Promise(r => setTimeout(r, 4000))
         }
       }
 
@@ -166,16 +172,26 @@ export default function PlanSecim() {
       const { Purchases } = await import('@revenuecat/purchases-capacitor')
       await Purchases.restorePurchases()
       toast.info('Abonelik doğrulanıyor...')
-      await new Promise(r => setTimeout(r, 2000))
-      // Backend'e doğrulat — 2 deneme
+      await new Promise(r => setTimeout(r, 3000))
+      // Backend'e doğrulat — 3 deneme x 4s
       let res = null
-      for (let deneme = 1; deneme <= 2; deneme++) {
+      for (let deneme = 1; deneme <= 3; deneme++) {
         try {
           res = await abonelikApi.iapDogrula()
           break
-        } catch {
-          if (deneme === 2) throw new Error('backend_hatasi')
-          await new Promise(r => setTimeout(r, 3000))
+        } catch (err) {
+          const httpKod = err?.response?.status
+          console.error(`Geri yükle deneme ${deneme} hata:`, httpKod, err?.response?.data || err?.message)
+          if (deneme === 3) {
+            if (!httpKod) {
+              throw new Error('network_hatasi')
+            } else if (httpKod === 404) {
+              throw new Error('abone_yok')
+            } else {
+              throw new Error('sunucu_hatasi')
+            }
+          }
+          await new Promise(r => setTimeout(r, 4000))
         }
       }
       if (res?.data?.basarili) {
@@ -186,8 +202,12 @@ export default function PlanSecim() {
         toast.success('Aboneliğiniz geri yüklendi!')
       }
     } catch (e) {
-      if (e?.message === 'backend_hatasi') {
+      if (e?.message === 'network_hatasi') {
         toast.error('Sunucuya bağlanılamadı. İnternet bağlantınızı kontrol edip tekrar deneyin.')
+      } else if (e?.message === 'abone_yok') {
+        toast.error('Apple hesabınızda aktif abonelik bulunamadı.')
+      } else if (e?.userCancelled) {
+        // Kullanıcı iptal etti — sessiz
       } else {
         toast.error('Geri yükleme başarısız. Lütfen tekrar deneyin.')
       }

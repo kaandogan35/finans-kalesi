@@ -18,7 +18,7 @@ const baseURL = isNative
 const api = axios.create({
   baseURL,
   headers: { 'Content-Type': 'application/json' },
-  timeout: 15000,
+  timeout: 30000,
 })
 
 // ─── İstek interceptor: Her isteğe JWT token ekle ──────────────────────────
