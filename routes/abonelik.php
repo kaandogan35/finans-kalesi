@@ -56,6 +56,7 @@ if ($alt_modul === 'abonelik') {
         $abonelik_ctrl->iapDogrula();
         exit;
     }
+
 }
 
 // ── WEBHOOK ENDPOINT'LERİ ──────────────────

@@ -75,44 +75,51 @@ class Abonelik {
         ?string $odeme_kanali,
         ?string $bitis_tarihi
     ): int {
-        // Eski aktif aboneliği pasife çek
-        $stmt = $this->db->prepare("
-            UPDATE abonelikler
-            SET durum = 'pasif'
-            WHERE sirket_id = :sirket_id AND durum = 'aktif'
-        ");
-        $stmt->execute([':sirket_id' => $sirket_id]);
+        $this->db->beginTransaction();
+        try {
+            // Eski aktif aboneliği pasife çek
+            $stmt = $this->db->prepare("
+                UPDATE abonelikler
+                SET durum = 'pasif'
+                WHERE sirket_id = :sirket_id AND durum = 'aktif'
+            ");
+            $stmt->execute([':sirket_id' => $sirket_id]);
 
-        // Yeni abonelik kaydı oluştur
-        $stmt = $this->db->prepare("
-            INSERT INTO abonelikler
-                (sirket_id, plan_adi, odeme_donemi, odeme_kanali, baslangic_tarihi, bitis_tarihi, durum)
-            VALUES
-                (:sirket_id, :plan_adi, :odeme_donemi, :odeme_kanali, NOW(), :bitis_tarihi, 'aktif')
-        ");
-        $stmt->execute([
-            ':sirket_id'    => $sirket_id,
-            ':plan_adi'     => $plan_adi,
-            ':odeme_donemi' => $odeme_donemi,
-            ':odeme_kanali' => $odeme_kanali,
-            ':bitis_tarihi' => $bitis_tarihi,
-        ]);
-        $abonelik_id = (int) $this->db->lastInsertId();
+            // Yeni abonelik kaydı oluştur
+            $stmt = $this->db->prepare("
+                INSERT INTO abonelikler
+                    (sirket_id, plan_adi, odeme_donemi, odeme_kanali, baslangic_tarihi, bitis_tarihi, durum)
+                VALUES
+                    (:sirket_id, :plan_adi, :odeme_donemi, :odeme_kanali, NOW(), :bitis_tarihi, 'aktif')
+            ");
+            $stmt->execute([
+                ':sirket_id'    => $sirket_id,
+                ':plan_adi'     => $plan_adi,
+                ':odeme_donemi' => $odeme_donemi,
+                ':odeme_kanali' => $odeme_kanali,
+                ':bitis_tarihi' => $bitis_tarihi,
+            ]);
+            $abonelik_id = (int) $this->db->lastInsertId();
 
-        // sirketler tablosunu da güncelle (hızlı erişim için)
-        $stmt = $this->db->prepare("
-            UPDATE sirketler
-            SET abonelik_plani = :plan_adi,
-                abonelik_bitis = :bitis_tarihi
-            WHERE id = :sirket_id
-        ");
-        $stmt->execute([
-            ':plan_adi'     => $plan_adi,
-            ':bitis_tarihi' => $bitis_tarihi,
-            ':sirket_id'    => $sirket_id,
-        ]);
+            // sirketler tablosunu da güncelle (hızlı erişim için)
+            $stmt = $this->db->prepare("
+                UPDATE sirketler
+                SET abonelik_plani = :plan_adi,
+                    abonelik_bitis = :bitis_tarihi
+                WHERE id = :sirket_id
+            ");
+            $stmt->execute([
+                ':plan_adi'     => $plan_adi,
+                ':bitis_tarihi' => $bitis_tarihi,
+                ':sirket_id'    => $sirket_id,
+            ]);
 
-        return $abonelik_id;
+            $this->db->commit();
+            return $abonelik_id;
+        } catch (\Throwable $e) {
+            $this->db->rollBack();
+            throw $e;
+        }
     }
 
     /**

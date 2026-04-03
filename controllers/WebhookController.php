@@ -52,14 +52,18 @@ class WebhookController {
     public function revenueCat(array $girdi): void {
         // GÜVENLİK: Authorization header doğrula
         $webhook_secret = getenv('REVENUECAT_WEBHOOK_SECRET');
-        if ($webhook_secret) {
-            $auth_header = $_SERVER['HTTP_AUTHORIZATION'] ?? '';
-            if ($auth_header !== "Bearer {$webhook_secret}") {
-                error_log('RevenueCat webhook: gecersiz imza');
-                http_response_code(401);
-                echo json_encode(['basarili' => false, 'hata' => 'Yetkisiz']);
-                return;
-            }
+        if (!$webhook_secret) {
+            error_log('RevenueCat webhook: REVENUECAT_WEBHOOK_SECRET tanimli degil — tum istekler reddedildi');
+            http_response_code(500);
+            echo json_encode(['basarili' => false]);
+            return;
+        }
+        $auth_header = $_SERVER['HTTP_AUTHORIZATION'] ?? '';
+        if ($auth_header !== "Bearer {$webhook_secret}") {
+            error_log('RevenueCat webhook: gecersiz imza');
+            http_response_code(401);
+            echo json_encode(['basarili' => false, 'hata' => 'Yetkisiz']);
+            return;
         }
 
         $event = $girdi['event'] ?? null;
@@ -76,10 +80,15 @@ class WebhookController {
         $donem_tipi  = $event['period_type'] ?? 'NORMAL'; // TRIAL, INTRO, NORMAL
 
         // Müşteri ID'sinden sirket_id çıkar
+        // Önce app_user_id dene, başarısızsa original_app_user_id
         $sirket_id = $this->abonelik_model->sirketIdRevenueCatMusteriden($musteri_id);
         if (!$sirket_id) {
-            error_log("RevenueCat webhook: gecersiz musteri_id={$musteri_id}");
-            http_response_code(200); // 200 döndür — RevenueCat tekrar göndermez
+            $original_id = $event['original_app_user_id'] ?? '';
+            $sirket_id = $this->abonelik_model->sirketIdRevenueCatMusteriden($original_id);
+        }
+        if (!$sirket_id) {
+            error_log("RevenueCat webhook: gecersiz musteri_id={$musteri_id} original=" . ($event['original_app_user_id'] ?? ''));
+            http_response_code(200);
             echo json_encode(['basarili' => true]);
             return;
         }
@@ -101,6 +110,7 @@ class WebhookController {
             case 'INITIAL_PURCHASE':
             case 'RENEWAL':
             case 'UNCANCELLATION': // Kullanıcı iptali geri aldı
+            case 'PRODUCT_CHANGE': // Plan değişikliği (upgrade/downgrade)
                 if (!$plan) {
                     error_log("RevenueCat webhook: plan belirlenemedi urun={$urun_id}");
                     break;

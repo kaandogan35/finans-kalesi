@@ -122,29 +122,37 @@ export function platformBilgi() {
  * Aynı sirket_id ile tekrar çağrılırsa atlanır (double-configure önlemi).
  */
 let _rcBaslatilmisSirketId = null
+let _rcKuruldu = false  // O8: ilk configure yapıldı mı?
 
 export async function revenueCatBaslat(sirketId) {
   if (!Capacitor.isNativePlatform()) return
   if (!sirketId) return
   // Aynı kullanıcı için zaten başlatıldıysa atla
-  // Farklı kullanıcıya geçildiyse (hesap değişimi) yeniden configure et
   if (_rcBaslatilmisSirketId === sirketId) return
   try {
     const { Purchases } = await import('@revenuecat/purchases-capacitor')
     const apiKey = import.meta.env.VITE_REVENUECAT_IOS_KEY
     if (!apiKey) {
-      console.warn('RevenueCat: VITE_REVENUECAT_IOS_KEY tanımlı değil')
-      return
+      // K3: hata fırlat — sessizce dönme
+      throw new Error('VITE_REVENUECAT_IOS_KEY tanımlı değil')
     }
-    await Purchases.configure({
-      apiKey,
-      appUserID: `sirket_${sirketId}`,
-    })
+    if (!_rcKuruldu) {
+      // İlk başlatma — configure
+      await Purchases.configure({
+        apiKey,
+        appUserID: `sirket_${sirketId}`,
+      })
+      _rcKuruldu = true
+    } else {
+      // O8: Hesap değişimi — configure yerine logIn kullan
+      await Purchases.logIn({ appUserID: `sirket_${sirketId}` })
+    }
     _rcBaslatilmisSirketId = sirketId
     console.log('RevenueCat başlatıldı, kullanıcı: sirket_' + sirketId)
   } catch (e) {
-    // "configure" hatasında guard'ı sıfırla — bir sonraki çağrıda tekrar denesin
+    // K3: guard'ı sıfırla ve hatayı çağırana ilet
     _rcBaslatilmisSirketId = null
     console.error('RevenueCat başlatma hatası:', e)
+    throw e
   }
 }

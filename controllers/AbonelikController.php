@@ -184,7 +184,6 @@ class AbonelikController {
             CURLOPT_HTTPHEADER     => [
                 "Authorization: Bearer {$rc_secret}",
                 "Content-Type: application/json",
-                "X-Platform: ios",
             ],
         ]);
         $yanit    = curl_exec($ch);
@@ -277,6 +276,7 @@ class AbonelikController {
                     $aktif_plan  = $plan_adayi;
                     $aktif_donem = str_contains($pid, 'yillik') ? 'yillik' : 'aylik';
                     $bitis_str   = date('Y-m-d H:i:s', $bitis_ts);
+                    $deneme_mi   = ($ent['period_type'] ?? '') === 'trial';
                 }
             }
         }

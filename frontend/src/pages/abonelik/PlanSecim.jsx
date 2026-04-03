@@ -8,6 +8,7 @@ import { useState, useEffect, useCallback } from 'react'
 import { Capacitor } from '@capacitor/core'
 import { bildirim as toast } from '../../components/ui/CenterAlert'
 import useAuthStore from '../../stores/authStore'
+import api from '../../api/axios'
 import { abonelikApi } from '../../api/abonelik'
 import { usePlanKontrol } from '../../hooks/usePlanKontrol'
 
@@ -78,6 +79,29 @@ export default function PlanSecim() {
     gecmisAl()
   }, [])
 
+  // O9: Uygulama arka plandan ön plana gelince aktif abonelik kontrolü
+  // iOS WebView satın alma sırasında öldürülebilir — geri dönüşte senkronize et
+  useEffect(() => {
+    if (!IOS_MU) return
+    const resumeKontrol = async () => {
+      try {
+        const { Purchases } = await import('@revenuecat/purchases-capacitor')
+        const { customerInfo } = await Purchases.getCustomerInfo()
+        const aktifAbonelikler = customerInfo?.activeSubscriptions ?? []
+        if (aktifAbonelikler.length === 0) return
+        const res = await abonelikApi.iapDogrula()
+        if (res?.data?.basarili) {
+          const { plan: yeniPlan, tokenlar } = res.data.veri
+          iapPlanGuncelle(yeniPlan, tokenlar)
+          const durumRes = await abonelikApi.durum()
+          setDurum(durumRes.data.veri)
+        }
+      } catch { /* sessiz — arka plan kontrolü kritik değil */ }
+    }
+    window.addEventListener('app:resume', resumeKontrol)
+    return () => window.removeEventListener('app:resume', resumeKontrol)
+  }, [iapPlanGuncelle])
+
   // iOS IAP satın alma
   const iapSatinAl = useCallback(async (planId) => {
     if (iapYukleniyor) return
@@ -112,12 +136,32 @@ export default function PlanSecim() {
       }
 
       // Apple ödeme ekranını aç
-      await Purchases.purchasePackage({ aPackage: paket })
+      const satinAlim = await Purchases.purchasePackage({ aPackage: paket })
+      console.log('IAP satın alım sonucu:', JSON.stringify({
+        urunId: satinAlim?.customerInfo?.activeSubscriptions,
+        entitlements: Object.keys(satinAlim?.customerInfo?.entitlements?.active ?? {}),
+      }))
+
+      // Receipt'i RevenueCat'e sync et (403 döneminde kayıp kalan alımları kurtarır)
+      await Purchases.syncPurchases()
 
       // Başarılı — backend'e bildir ve JWT'yi güncelle
-      // RevenueCat'in satın alımı işlemesi için kısa bekleme
       toast.info('Abonelik doğrulanıyor...')
-      await new Promise(r => setTimeout(r, 2000))
+      await new Promise(r => setTimeout(r, 3000))
+
+      // K5: Token geçerliliğini kontrol et — IAP akışı uzun sürebilir (15+ sn)
+      // 5 dakikadan az kaldıysa proaktif yenile, oturum kapanmasın
+      try {
+        const { accessToken: mevToken, refreshToken: mevRefresh, tokenlariAyarla } = useAuthStore.getState()
+        if (mevToken && mevRefresh) {
+          const payload = JSON.parse(atob(mevToken.split('.')[1]))
+          const kalanSaniye = payload.exp - Math.floor(Date.now() / 1000)
+          if (kalanSaniye < 300) {
+            const refreshRes = await api.post('/auth/yenile', { refresh_token: mevRefresh })
+            tokenlariAyarla(refreshRes.data.veri.tokenlar.access_token, mevRefresh)
+          }
+        }
+      } catch { /* sessiz — interceptor 401'i halleder */ }
 
       // Backend doğrulama — RC'nin işlemesi için 3 deneme x 4s
       let res = null
@@ -171,6 +215,7 @@ export default function PlanSecim() {
     try {
       const { Purchases } = await import('@revenuecat/purchases-capacitor')
       await Purchases.restorePurchases()
+      await Purchases.syncPurchases()
       toast.info('Abonelik doğrulanıyor...')
       await new Promise(r => setTimeout(r, 3000))
       // Backend'e doğrulat — 3 deneme x 4s
@@ -200,6 +245,9 @@ export default function PlanSecim() {
         const durumRes = await abonelikApi.durum()
         setDurum(durumRes.data.veri)
         toast.success('Aboneliğiniz geri yüklendi!')
+      } else {
+        // O7: başarısız ama hata fırlatmadan döndü — kullanıcıya açıkla
+        toast.error('Aktif abonelik bulunamadı. Daha önce satın aldıysanız App Store hesabınızın doğru olduğundan emin olun.')
       }
     } catch (e) {
       if (e?.message === 'network_hatasi') {
