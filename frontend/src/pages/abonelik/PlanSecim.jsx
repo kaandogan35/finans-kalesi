@@ -426,7 +426,11 @@ export default function PlanSecim() {
                   ozellikler: ['10 kullanıcıya kadar', 'Sınırsız her şey', 'Gelişmiş raporlama', 'Öncelikli 7/24 destek'],
                 },
               ].map((pl) => {
-                const aktif = plan === pl.id
+                // Hem plan adı hem dönem uyuşuyorsa "Aktif" — dönem bilinmiyorsa sadece plan adına bak
+                const aktif = plan === pl.id && (
+                  !durum?.odeme_donemi ||
+                  (yillik ? durum.odeme_donemi === 'yillik' : durum.odeme_donemi === 'aylik')
+                )
                 const yukleniyor_bu = iapYukleniyor && satinAlinanPlan === pl.id
                 return (
                   <div key={pl.id} className="col-12">
