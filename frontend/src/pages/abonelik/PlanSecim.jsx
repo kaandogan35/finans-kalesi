@@ -115,8 +115,25 @@ export default function PlanSecim() {
       await Purchases.purchasePackage({ aPackage: paket })
 
       // Başarılı — backend'e bildir ve JWT'yi güncelle
+      // RevenueCat'in satın alımı işlemesi için kısa bekleme
       toast.info('Abonelik doğrulanıyor...')
-      const res = await abonelikApi.iapDogrula()
+      await new Promise(r => setTimeout(r, 2000))
+
+      // Backend doğrulama — ağ sorunlarına karşı 2 deneme
+      let res = null
+      for (let deneme = 1; deneme <= 2; deneme++) {
+        try {
+          res = await abonelikApi.iapDogrula()
+          break
+        } catch (err) {
+          if (deneme === 2) {
+            toast.error('Ödemeniz Apple tarafından onaylandı. Plan güncellemesi yapılamadı — lütfen "Satın Alımları Geri Yükle" butonuna basın.')
+            return
+          }
+          await new Promise(r => setTimeout(r, 3000))
+        }
+      }
+
       const { plan: yeniPlan, tokenlar } = res.data.veri
       iapPlanGuncelle(yeniPlan, tokenlar)
 
@@ -148,17 +165,32 @@ export default function PlanSecim() {
     try {
       const { Purchases } = await import('@revenuecat/purchases-capacitor')
       await Purchases.restorePurchases()
-      // Geri yükleme sonrası backend'e doğrulat
-      const res = await abonelikApi.iapDogrula()
-      if (res.data.basarili) {
+      toast.info('Abonelik doğrulanıyor...')
+      await new Promise(r => setTimeout(r, 2000))
+      // Backend'e doğrulat — 2 deneme
+      let res = null
+      for (let deneme = 1; deneme <= 2; deneme++) {
+        try {
+          res = await abonelikApi.iapDogrula()
+          break
+        } catch {
+          if (deneme === 2) throw new Error('backend_hatasi')
+          await new Promise(r => setTimeout(r, 3000))
+        }
+      }
+      if (res?.data?.basarili) {
         const { plan: yeniPlan, tokenlar } = res.data.veri
         iapPlanGuncelle(yeniPlan, tokenlar)
         const durumRes = await abonelikApi.durum()
         setDurum(durumRes.data.veri)
         toast.success('Aboneliğiniz geri yüklendi!')
       }
-    } catch {
-      toast.error('Satın alımlar geri yüklenemedi. Lütfen tekrar deneyin.')
+    } catch (e) {
+      if (e?.message === 'backend_hatasi') {
+        toast.error('Sunucuya bağlanılamadı. İnternet bağlantınızı kontrol edip tekrar deneyin.')
+      } else {
+        toast.error('Geri yükleme başarısız. Lütfen tekrar deneyin.')
+      }
     } finally {
       setIapYukleniyor(false)
     }
