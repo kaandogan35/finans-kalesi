@@ -85,6 +85,12 @@ export default function PlanSecim() {
     setSatinAlinanPlan(planId)
     try {
       const { Purchases } = await import('@revenuecat/purchases-capacitor')
+      // RC henüz başlatılmamışsa şimdi başlat (race condition önlemi)
+      const { kullanici: k } = useAuthStore.getState()
+      if (k?.sirket_id) {
+        const { revenueCatBaslat: rcBaslat } = await import('../../lib/capacitorInit')
+        await rcBaslat(k.sirket_id)
+      }
       const donem = yillik ? 'yillik' : 'aylik'
       const urunId = URUN_IDS[planId]?.[donem]
 
