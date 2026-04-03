@@ -119,11 +119,15 @@ export function platformBilgi() {
  * RevenueCat SDK'yı başlat
  * Giriş yaptıktan sonra sirket_id ile çağrılır.
  * Müşteri ID: "sirket_{sirket_id}" formatı — backend ile eşleşmeli.
+ * Aynı sirket_id ile tekrar çağrılırsa atlanır (double-configure önlemi).
  */
+let _rcBaslatilmisSirketId = null
+
 export async function revenueCatBaslat(sirketId) {
   if (!Capacitor.isNativePlatform()) return
+  if (_rcBaslatilmisSirketId === sirketId) return  // Zaten bu kullanıcı için başlatıldı
   try {
-    const { Purchases, LOG_LEVEL } = await import('@revenuecat/purchases-capacitor')
+    const { Purchases } = await import('@revenuecat/purchases-capacitor')
     const apiKey = import.meta.env.VITE_REVENUECAT_IOS_KEY
     if (!apiKey) {
       console.warn('RevenueCat: VITE_REVENUECAT_IOS_KEY tanımlı değil')
@@ -133,6 +137,8 @@ export async function revenueCatBaslat(sirketId) {
       apiKey,
       appUserID: `sirket_${sirketId}`,
     })
+    _rcBaslatilmisSirketId = sirketId
+    console.log('RevenueCat başlatıldı, kullanıcı: sirket_' + sirketId)
   } catch (e) {
     console.error('RevenueCat başlatma hatası:', e)
   }

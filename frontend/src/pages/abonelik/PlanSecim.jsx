@@ -96,11 +96,18 @@ export default function PlanSecim() {
 
       // RevenueCat offering'lerden paketi bul
       const offerings = await Purchases.getOfferings()
+      console.log('RC offerings:', JSON.stringify({
+        current: offerings.current?.identifier,
+        paketSayisi: offerings.current?.availablePackages?.length ?? 0,
+        paketler: offerings.current?.availablePackages?.map(p => p.product.identifier) ?? [],
+      }))
       const paketler = offerings.current?.availablePackages ?? []
       const paket = paketler.find(p => p.product.identifier === urunId)
 
       if (!paket) {
-        toast.error('Bu plan şu an satın alınamıyor. Lütfen daha sonra tekrar deneyin.')
+        const mesaj = `Ürün bulunamadı: ${urunId} (mevcut: ${paketler.map(p=>p.product.identifier).join(', ') || 'yok'})`
+        console.warn(mesaj)
+        toast.error(mesaj)
         return
       }
 
@@ -124,7 +131,9 @@ export default function PlanSecim() {
       if (e?.userCancelled) {
         // Kullanıcı ödeme ekranını kapattı — hata gösterme
       } else {
-        toast.error('Satın alma tamamlanamadı. Lütfen tekrar deneyin.')
+        const detay = e?.message || e?.code || JSON.stringify(e) || 'bilinmeyen hata'
+        console.error('IAP hata detayı:', detay, e)
+        toast.error(`Satın alma hatası: ${detay}`)
       }
     } finally {
       setIapYukleniyor(false)
