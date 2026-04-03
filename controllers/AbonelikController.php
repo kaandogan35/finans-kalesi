@@ -176,7 +176,8 @@ class AbonelikController {
         $ch = curl_init("https://api.revenuecat.com/v1/subscribers/" . urlencode($musteri_id));
         curl_setopt_array($ch, [
             CURLOPT_RETURNTRANSFER => true,
-            CURLOPT_TIMEOUT        => 10,
+            CURLOPT_TIMEOUT        => 15,
+            CURLOPT_CONNECTTIMEOUT => 8,
             CURLOPT_HTTPHEADER     => [
                 "Authorization: Bearer {$rc_secret}",
                 "Content-Type: application/json",
@@ -185,10 +186,11 @@ class AbonelikController {
         ]);
         $yanit    = curl_exec($ch);
         $http_kod = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+        $curl_err = curl_error($ch);
         curl_close($ch);
 
         if ($http_kod !== 200 || !$yanit) {
-            error_log("IAP: RevenueCat API hatasi HTTP {$http_kod} musteri={$musteri_id}");
+            error_log("IAP: RevenueCat API hatasi HTTP={$http_kod} musteri={$musteri_id} curl_err={$curl_err}");
             Response::hata('Abonelik doğrulaması şu an yapılamıyor, lütfen tekrar deneyin', 502);
             return;
         }
@@ -207,18 +209,29 @@ class AbonelikController {
         $bitis_str   = null;
         $deneme_mi   = false;
 
-        // Önce subscriptions'a bak
+        // Plan öncelik sırası: kurumsal > standart
+        $plan_onceligi = ['kurumsal' => 2, 'standart' => 1];
+
+        // Tüm aktif abonelikleri tara — en yüksek planı seç (break YOK)
         foreach (($abone['subscriptions'] ?? []) as $urun_id => $urun) {
             $bitis_ts = isset($urun['expires_date'])
                 ? strtotime($urun['expires_date'])
                 : 0;
-            if ($bitis_ts > time()) {
-                if (str_contains($urun_id, 'standart'))   $aktif_plan  = 'standart';
-                elseif (str_contains($urun_id, 'kurumsal')) $aktif_plan = 'kurumsal';
+            if ($bitis_ts <= time()) continue;
+
+            $plan_adayi = null;
+            if (str_contains($urun_id, 'kurumsal'))    $plan_adayi = 'kurumsal';
+            elseif (str_contains($urun_id, 'standart')) $plan_adayi = 'standart';
+            if (!$plan_adayi) continue;
+
+            // Mevcut bulgudan daha yüksek öncelikli mi?
+            $mevcut_onc = $plan_onceligi[$aktif_plan] ?? 0;
+            $yeni_onc   = $plan_onceligi[$plan_adayi];
+            if ($yeni_onc > $mevcut_onc) {
+                $aktif_plan  = $plan_adayi;
                 $aktif_donem = str_contains($urun_id, 'yillik') ? 'yillik' : 'aylik';
                 $bitis_str   = date('Y-m-d H:i:s', $bitis_ts);
                 $deneme_mi   = ($urun['period_type'] ?? '') === 'trial';
-                break;
             }
         }
 
@@ -228,13 +241,20 @@ class AbonelikController {
                 $bitis_ts = isset($ent['expires_date'])
                     ? strtotime($ent['expires_date'])
                     : 0;
-                if ($bitis_ts > time()) {
-                    $pid = $ent['product_identifier'] ?? '';
-                    if (str_contains($pid, 'standart'))   $aktif_plan  = 'standart';
-                    elseif (str_contains($pid, 'kurumsal')) $aktif_plan = 'kurumsal';
+                if ($bitis_ts <= time()) continue;
+
+                $pid = $ent['product_identifier'] ?? '';
+                $plan_adayi = null;
+                if (str_contains($pid, 'kurumsal'))    $plan_adayi = 'kurumsal';
+                elseif (str_contains($pid, 'standart')) $plan_adayi = 'standart';
+                if (!$plan_adayi) continue;
+
+                $mevcut_onc = $plan_onceligi[$aktif_plan] ?? 0;
+                $yeni_onc   = $plan_onceligi[$plan_adayi];
+                if ($yeni_onc > $mevcut_onc) {
+                    $aktif_plan  = $plan_adayi;
                     $aktif_donem = str_contains($pid, 'yillik') ? 'yillik' : 'aylik';
                     $bitis_str   = date('Y-m-d H:i:s', $bitis_ts);
-                    break;
                 }
             }
         }
