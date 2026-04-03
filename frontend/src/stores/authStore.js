@@ -16,6 +16,7 @@ import { Capacitor } from '@capacitor/core'
 import { Preferences } from '@capacitor/preferences'
 import { authApi } from '../api/auth'
 import useTemaStore from './temaStore'
+import { revenueCatBaslat } from '../lib/capacitorInit'
 
 // Giriş sonrası push token kaydet
 function pushTokenKaydet() {
@@ -88,6 +89,7 @@ const useAuthStore = create(
           set({ kullanici, girisYapildi: true, yukleniyor: false })
           // Tema store'u güncelle
           useTemaStore.getState().temaAyarla(kullanici.tema_adi || 'paramgo')
+          revenueCatBaslat(kullanici.sirket_id)
         } catch {
           get().tokenlarıTemizle()
           set({ yukleniyor: false, girisYapildi: false })
@@ -104,6 +106,7 @@ const useAuthStore = create(
         get().tokenlariAyarla(tokenlar.access_token, tokenlar.refresh_token)
         set({ kullanici, girisYapildi: true })
         useTemaStore.getState().temaAyarla(kullanici.tema_adi || 'paramgo')
+        revenueCatBaslat(kullanici.sirket_id)
         pushTokenKaydet()
         return kullanici
       },
@@ -115,6 +118,7 @@ const useAuthStore = create(
         get().tokenlariAyarla(tokenlar.access_token, tokenlar.refresh_token)
         set({ kullanici, girisYapildi: true })
         useTemaStore.getState().temaAyarla(kullanici.tema_adi || 'paramgo')
+        revenueCatBaslat(kullanici.sirket_id)
         pushTokenKaydet()
         return kullanici
       },
