@@ -137,13 +137,14 @@ class AuthController {
             // 12. Basarili yanit
             Response::basarili([
                 'kullanici' => [
-                    'id'        => $kullanici_id,
-                    'sirket_id' => $sirket_id,
-                    'ad_soyad'  => $girdi['ad_soyad'],
-                    'email'     => $girdi['email'],
-                    'rol'       => 'sahip',
-                    'tema_adi'  => 'paramgo',
-                    'plan'      => 'deneme',
+                    'id'           => $kullanici_id,
+                    'sirket_id'    => $sirket_id,
+                    'ad_soyad'     => $girdi['ad_soyad'],
+                    'email'        => $girdi['email'],
+                    'rol'          => 'sahip',
+                    'tema_adi'     => 'paramgo',
+                    'plan'         => 'deneme',
+                    'deneme_bitis' => date('Y-m-d H:i:s', strtotime('+30 days')),
                 ],
                 'tokenlar' => [
                     'access_token'  => $access_token,
@@ -358,6 +359,7 @@ class AuthController {
                     'rol'                    => $kullanici['rol'],
                     'tema_adi'               => $sirket['tema_adi'] ?? 'paramgo',
                     'plan'                   => $sirket['abonelik_plani'] ?? 'deneme',
+                    'deneme_bitis'           => $sirket['deneme_bitis'] ?? null,
                     'yetkiler'               => $kullanici['yetkiler'] ?? null,
                     'onboarding_tamamlandi'  => (int)($sirket['onboarding_tamamlandi'] ?? 0),
                 ],
@@ -721,13 +723,14 @@ class AuthController {
                 $this->abonelik_model->denemeBaslat((int)$sirket_id);
 
                 $kullanici = [
-                    'id'        => $kullanici_id,
-                    'sirket_id' => $sirket_id,
-                    'ad_soyad'  => $ad_soyad,
-                    'email'     => $email,
-                    'rol'       => 'sahip',
-                    'tema_adi'  => 'paramgo',
-                    'plan'      => 'deneme',
+                    'id'           => $kullanici_id,
+                    'sirket_id'    => $sirket_id,
+                    'ad_soyad'     => $ad_soyad,
+                    'email'        => $email,
+                    'rol'          => 'sahip',
+                    'tema_adi'     => 'paramgo',
+                    'plan'         => 'deneme',
+                    'deneme_bitis' => date('Y-m-d H:i:s', strtotime('+30 days')),
                     'onboarding_tamamlandi' => 0,
                 ];
 
@@ -750,6 +753,7 @@ class AuthController {
                 ];
                 $kullanici['tema_adi']             = $kullanici_bilgi['tema_adi'];
                 $kullanici['plan']                 = $kullanici_bilgi['plan'];
+                $kullanici['deneme_bitis']          = $sirket['deneme_bitis'] ?? null;
                 $kullanici['onboarding_tamamlandi'] = (int)($sirket['onboarding_tamamlandi'] ?? 0);
             }
 
@@ -860,13 +864,14 @@ class AuthController {
                 $this->abonelik_model->denemeBaslat((int)$sirket_id);
 
                 $kullanici = [
-                    'id'        => $kullanici_id,
-                    'sirket_id' => $sirket_id,
-                    'ad_soyad'  => $ad_soyad,
-                    'email'     => $email,
-                    'rol'       => 'sahip',
-                    'tema_adi'  => 'paramgo',
-                    'plan'      => 'deneme',
+                    'id'           => $kullanici_id,
+                    'sirket_id'    => $sirket_id,
+                    'ad_soyad'     => $ad_soyad,
+                    'email'        => $email,
+                    'rol'          => 'sahip',
+                    'tema_adi'     => 'paramgo',
+                    'plan'         => 'deneme',
+                    'deneme_bitis' => date('Y-m-d H:i:s', strtotime('+30 days')),
                     'onboarding_tamamlandi' => 0,
                 ];
 
@@ -889,6 +894,7 @@ class AuthController {
                 ];
                 $kullanici['tema_adi']             = $kullanici_bilgi['tema_adi'];
                 $kullanici['plan']                 = $kullanici_bilgi['plan'];
+                $kullanici['deneme_bitis']          = $sirket['deneme_bitis'] ?? null;
                 $kullanici['onboarding_tamamlandi'] = (int)($sirket['onboarding_tamamlandi'] ?? 0);
             }
 

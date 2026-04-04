@@ -89,7 +89,7 @@ const useAuthStore = create(
           set({ kullanici, girisYapildi: true, yukleniyor: false })
           // Tema store'u güncelle
           useTemaStore.getState().temaAyarla(kullanici.tema_adi || 'paramgo')
-          revenueCatBaslat(kullanici.sirket_id)
+          revenueCatBaslat(kullanici.sirket_id).catch((e) => console.error('RevenueCat (baslat):', e))
         } catch {
           get().tokenlarıTemizle()
           set({ yukleniyor: false, girisYapildi: false })
@@ -106,7 +106,7 @@ const useAuthStore = create(
         get().tokenlariAyarla(tokenlar.access_token, tokenlar.refresh_token)
         set({ kullanici, girisYapildi: true })
         useTemaStore.getState().temaAyarla(kullanici.tema_adi || 'paramgo')
-        revenueCatBaslat(kullanici.sirket_id)
+        revenueCatBaslat(kullanici.sirket_id).catch((e) => console.error('RevenueCat (girisYap):', e))
         pushTokenKaydet()
         return kullanici
       },
@@ -118,7 +118,7 @@ const useAuthStore = create(
         get().tokenlariAyarla(tokenlar.access_token, tokenlar.refresh_token)
         set({ kullanici, girisYapildi: true })
         useTemaStore.getState().temaAyarla(kullanici.tema_adi || 'paramgo')
-        revenueCatBaslat(kullanici.sirket_id)
+        revenueCatBaslat(kullanici.sirket_id).catch((e) => console.error('RevenueCat (sosyalGiris):', e))
         pushTokenKaydet()
         return kullanici
       },
