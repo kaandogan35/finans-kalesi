@@ -343,16 +343,10 @@ export default function GirisYap() {
 
             <div className={`${p}-giris-kart-ic`}>
 
-              {/* Ana sayfaya dönüş */}
-              <a href="https://paramgo.com" className={`${p}-giris-anasayfa-link`}>
-                <i className="bi bi-arrow-left me-1" />
-                Ana Sayfa
-              </a>
-
-              {/* Mobil logo (lg altinda gorunur) */}
-              <div className={`d-flex d-lg-none align-items-center justify-content-center mb-4`}>
+              {/* Mobil logo (lg altinda gorunur) — tıklanınca ana sayfa */}
+              <a href="https://paramgo.com" className={`d-flex d-lg-none align-items-center justify-content-center mb-4 ${p}-giris-marka-wrap`}>
                 <ParamGoLogo size="sm" />
-              </div>
+              </a>
 
               {/* Form basligi */}
               <div className={`${p}-giris-form-baslik-wrap`}>

@@ -4857,7 +4857,7 @@ body.keyboard-open .p-modal-center {
 .p-giris-sol-anim-1 { position: relative; z-index: 1; animation: b-giris-solGir 0.5s ease 0.1s both; }
 .p-giris-sol-anim-2 { position: relative; z-index: 1; text-align: center; animation: b-giris-solGir 0.5s ease 0.2s both; }
 
-.p-giris-marka-wrap { display: flex; align-items: center; gap: 12px; }
+.p-giris-marka-wrap { display: flex; align-items: center; gap: 12px; text-decoration: none; color: inherit; }
 .p-giris-marka-ikon {
   width: 46px; height: 46px; border-radius: 13px; flex-shrink: 0;
   background: rgba(255,255,255,0.18);
