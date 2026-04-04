@@ -576,10 +576,25 @@ export default function PlanSecim() {
             </div>
 
             {/* Apple yasal uyarısı */}
-            <div style={{ fontSize: 11, color: 'var(--p-text-muted)', textAlign: 'center', lineHeight: 1.6, marginBottom: 16, padding: '0 8px' }}>
+            <div style={{ fontSize: 11, color: 'var(--p-text-muted)', textAlign: 'center', lineHeight: 1.6, marginBottom: 8, padding: '0 8px' }}>
               Abonelik, onayladıktan sonra iTunes hesabınızdan tahsil edilir.
               Abonelikler mevcut dönem bitiminden en az 24 saat önce iptal edilmezse otomatik yenilenir.
               Aboneliği iPhone Ayarlar → Apple ID → Abonelikler bölümünden yönetebilirsiniz.
+            </div>
+            <div style={{ fontSize: 11, textAlign: 'center', marginBottom: 16 }}>
+              <a
+                href="https://paramgo.com/privacy"
+                target="_blank"
+                rel="noopener noreferrer"
+                style={{ color: 'var(--p-color-primary)', textDecoration: 'none', fontWeight: 500 }}
+              >Gizlilik Politikası</a>
+              <span style={{ color: 'var(--p-text-muted)', margin: '0 8px' }}>·</span>
+              <a
+                href="https://paramgo.com/terms"
+                target="_blank"
+                rel="noopener noreferrer"
+                style={{ color: 'var(--p-color-primary)', textDecoration: 'none', fontWeight: 500 }}
+              >Kullanım Koşulları</a>
             </div>
           </>
         ) : (
