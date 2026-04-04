@@ -217,6 +217,25 @@ class Abonelik {
     // ─────────────────────────────────────────
 
     /**
+     * Aynı gün aynı plan+dönem için ödeme kaydı var mı kontrol et
+     */
+    public function bugunOdemeVarMi(int $sirket_id, string $plan_adi, string $odeme_donemi): bool {
+        $stmt = $this->db->prepare("
+            SELECT COUNT(*) FROM odeme_gecmisi
+            WHERE sirket_id = :sirket_id
+              AND plan_adi = :plan_adi
+              AND odeme_donemi = :odeme_donemi
+              AND DATE(odeme_tarihi) = CURDATE()
+        ");
+        $stmt->execute([
+            ':sirket_id'     => $sirket_id,
+            ':plan_adi'      => $plan_adi,
+            ':odeme_donemi'  => $odeme_donemi,
+        ]);
+        return (int) $stmt->fetchColumn() > 0;
+    }
+
+    /**
      * Ödeme kaydı oluştur
      */
     public function odemeKaydet(int $sirket_id, ?int $abonelik_id, array $veri): int {

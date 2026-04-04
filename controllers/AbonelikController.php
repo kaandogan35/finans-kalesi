@@ -293,8 +293,8 @@ class AbonelikController {
             $sirket_id, $aktif_plan, $aktif_donem, 'apple', $bitis_str
         );
 
-        // Deneme dışında ödeme kaydı oluştur
-        if (!$deneme_mi) {
+        // Deneme dışında ödeme kaydı oluştur (aynı gün aynı plan+dönem için tekrar kayıt açma)
+        if (!$deneme_mi && !$this->abonelik_model->bugunOdemeVarMi($sirket_id, $aktif_plan, $aktif_donem)) {
             $tutar = Abonelik::FIYATLAR[$aktif_plan][$aktif_donem] ?? 0;
             $this->abonelik_model->odemeKaydet($sirket_id, $abonelik_id, [
                 'plan_adi'     => $aktif_plan,
