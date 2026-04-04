@@ -588,6 +588,7 @@ body.keyboard-open .p-modal-center {
 .p-page-header-right {
   display: flex; align-items: center; gap: 8px;
   flex-shrink: 0;
+  margin-left: auto;
 }
 
 .p-topbar-right { display: flex; align-items: center; gap: 6px; }

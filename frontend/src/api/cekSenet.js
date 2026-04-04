@@ -8,6 +8,7 @@ const cekSenetApi = {
   guncelle:       (id, data) => api.put(`/cek-senet/${id}`,     data),
   sil:            (id)     => api.delete(`/cek-senet/${id}`),
   durumGuncelle:  (id, data) => api.put(`/cek-senet/${id}/durum`, data),
+  topluYukle:     (formData) => api.post('/cek-senet/toplu', formData, { headers: { 'Content-Type': 'multipart/form-data' } }),
 }
 
 export default cekSenetApi

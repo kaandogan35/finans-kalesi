@@ -7,6 +7,7 @@
 
 import { useState, useEffect, useRef, useCallback } from 'react'
 import { createPortal } from 'react-dom'
+import { Capacitor } from '@capacitor/core'
 import { bildirim as toast } from '../../components/ui/CenterAlert'
 import cekSenetApi from '../../api/cekSenet'
 import { carilerApi } from '../../api/cariler'
@@ -705,6 +706,9 @@ export default function CekSenet() {
   const p = prefixMap[aktifTema] || 'p'
   const renkler = temaRenkleri[aktifTema] || temaRenkleri.paramgo
 
+  // ─ Platform ─────────────────────────────────────────────────────────────────
+  const isWeb = !Capacitor.isNativePlatform()
+
   // ─ Kullanım Sınırları ───────────────────────────────────────────────────────
   const { kullanici } = useAuthStore()
   const { sinirler, uyariDurum } = useSinirler()
@@ -776,6 +780,24 @@ export default function CekSenet() {
   const [ciroDzlForm,     setCiroDzlForm]     = useState({})
   const [ciroDzlId,       setCiroDzlId]       = useState(null)
 
+  // ─ Hızlı Ekle Dropdown ───────────────────────────────────────────────────────
+  const [hizliEkleAcik,     setHizliEkleAcik]     = useState(false)
+  const hizliEkleBtnRef = useRef(null)
+  const [hizliEklePos, setHizliEklePos] = useState({ top: 0, right: 0 })
+
+  // ─ Toplu Yükleme ─────────────────────────────────────────────────────────────
+  const [topluSecimAcik,    setTopluSecimAcik]    = useState(false)
+  const topluSecimBtnRef = useRef(null)
+  const [topluSecimPos, setTopluSecimPos] = useState({ top: 0, right: 0 })
+  const [topluModal,        setTopluModal]        = useState(null) // null | 'portfoy' | 'tahsil' | 'kendi' | 'ciro'
+  const [topluDosya,        setTopluDosya]        = useState(null)
+  const [topluOnizleme,     setTopluOnizleme]     = useState(null) // { satirlar, toplam }
+  const [topluYukleniyor,   setTopluYukleniyor]   = useState(false)
+  const [topluSonuc,        setTopluSonuc]        = useState(null)
+  const [topluDragOver,     setTopluDragOver]     = useState(false)
+  const [topluKolonlar,     setTopluKolonlar]     = useState([])
+  const [topluKolonEslesme, setTopluKolonEslesme] = useState({})
+
   // ─ Çek Detay Modalı ──────────────────────────────────────────────────────────
   const [detayItem, setDetayItem] = useState(null)
 
@@ -825,6 +847,183 @@ export default function CekSenet() {
     const yeniCari = { id: r.data.veri.id, adi: r.data.veri.cari_adi }
     setCariler(prev => [...prev, yeniCari])
     return yeniCari.id
+  }
+
+  // ─ Toplu Yükleme Konfigürasyonları ───────────────────────────────────────────
+  const TOPLU_CFG = {
+    portfoy: {
+      baslik: 'Portföydeki — Toplu Yükle',
+      icon: 'bi-collection-fill', renk: renkler.primary,
+      dosyaAdi: 'portfoy-sablon.xlsx',
+      sistemAlanlari: ['cari_adi','vade_tarihi','tutar','banka_adi','seri_no','aciklama'],
+      kolonlar: [
+        { ad: 'cari_adi',     zorunlu: true,  ornek: 'Ahmet Demir Ltd. Şti.' },
+        { ad: 'vade_tarihi',  zorunlu: true,  ornek: '25.05.2026' },
+        { ad: 'tutar',        zorunlu: true,  ornek: '15000' },
+        { ad: 'banka_adi',    zorunlu: true,  ornek: 'Ziraat Bankası' },
+        { ad: 'seri_no',      zorunlu: false, ornek: 'ZRT-123456' },
+        { ad: 'aciklama',     zorunlu: false, ornek: 'Ek notlar...' },
+      ],
+      ornekSatirlar: [
+        ['cari_adi','vade_tarihi','tutar','banka_adi','seri_no','aciklama'],
+        ['Ahmet Demir Ltd. Şti.','25.06.2026','15000','Ziraat Bankası','ZRT-123456',''],
+        ['Çelik Yapı A.Ş.','15.07.2026','28500','Garanti BBVA','GRT-654321','Vadeli ödeme'],
+      ],
+    },
+    tahsil: {
+      baslik: 'Tahsildeki — Toplu Yükle',
+      icon: 'bi-bank', renk: renkler.success,
+      dosyaAdi: 'tahsil-sablon.xlsx',
+      sistemAlanlari: ['cari_adi','vade_tarihi','tutar','banka_adi','teslim_bankasi','seri_no','aciklama'],
+      kolonlar: [
+        { ad: 'cari_adi',       zorunlu: true,  ornek: 'Ahmet Demir Ltd. Şti.' },
+        { ad: 'vade_tarihi',    zorunlu: true,  ornek: '25.05.2026' },
+        { ad: 'tutar',          zorunlu: true,  ornek: '15000' },
+        { ad: 'banka_adi',      zorunlu: true,  ornek: 'Ziraat Bankası' },
+        { ad: 'teslim_bankasi', zorunlu: true,  ornek: 'Akbank' },
+        { ad: 'seri_no',        zorunlu: false, ornek: 'ZRT-123456' },
+        { ad: 'aciklama',       zorunlu: false, ornek: 'Ek notlar...' },
+      ],
+      ornekSatirlar: [
+        ['cari_adi','vade_tarihi','tutar','banka_adi','teslim_bankasi','seri_no','aciklama'],
+        ['Ahmet Demir Ltd. Şti.','25.06.2026','15000','Ziraat Bankası','Akbank','ZRT-123456',''],
+        ['Çelik Yapı A.Ş.','15.07.2026','28500','Garanti BBVA','İş Bankası','GRT-654321',''],
+      ],
+    },
+    kendi: {
+      baslik: 'Kendi Çekimiz — Toplu Yükle',
+      icon: 'bi-arrow-up-circle-fill', renk: renkler.danger,
+      dosyaAdi: 'kendi-cek-sablon.xlsx',
+      sistemAlanlari: ['cari_adi','vade_tarihi','tutar','banka_adi','seri_no','aciklama'],
+      kolonlar: [
+        { ad: 'cari_adi',     zorunlu: true,  ornek: 'Çelik Yapı A.Ş.' },
+        { ad: 'vade_tarihi',  zorunlu: true,  ornek: '25.05.2026' },
+        { ad: 'tutar',        zorunlu: true,  ornek: '15000' },
+        { ad: 'banka_adi',    zorunlu: true,  ornek: 'Ziraat Bankası' },
+        { ad: 'seri_no',      zorunlu: false, ornek: 'ZRT-123456' },
+        { ad: 'aciklama',     zorunlu: false, ornek: 'Ek notlar...' },
+      ],
+      ornekSatirlar: [
+        ['cari_adi','vade_tarihi','tutar','banka_adi','seri_no','aciklama'],
+        ['Çelik Yapı A.Ş.','25.06.2026','15000','Ziraat Bankası','ZRT-123456',''],
+        ['Demir İnşaat Ltd.','15.07.2026','28500','Akbank','AKB-654321',''],
+      ],
+    },
+    ciro: {
+      baslik: 'Cirolanan — Toplu Yükle',
+      icon: 'bi-arrow-left-right', renk: renkler.primary,
+      dosyaAdi: 'ciro-sablon.xlsx',
+      sistemAlanlari: ['cari_adi','vade_tarihi','tutar','banka_adi','ciro_edilen','seri_no','aciklama'],
+      kolonlar: [
+        { ad: 'cari_adi',    zorunlu: true,  ornek: 'Ahmet Demir Ltd. Şti.' },
+        { ad: 'vade_tarihi', zorunlu: true,  ornek: '25.05.2026' },
+        { ad: 'tutar',       zorunlu: true,  ornek: '15000' },
+        { ad: 'banka_adi',   zorunlu: true,  ornek: 'Ziraat Bankası' },
+        { ad: 'ciro_edilen', zorunlu: true,  ornek: 'Tedarikçi Firma A.Ş.' },
+        { ad: 'seri_no',     zorunlu: false, ornek: 'ZRT-123456' },
+        { ad: 'aciklama',    zorunlu: false, ornek: 'Ek notlar...' },
+      ],
+      ornekSatirlar: [
+        ['cari_adi','vade_tarihi','tutar','banka_adi','ciro_edilen','seri_no','aciklama'],
+        ['Ahmet Demir Ltd. Şti.','25.06.2026','15000','Ziraat Bankası','Tedarikçi Firma A.Ş.','ZRT-123456',''],
+        ['Çelik Yapı A.Ş.','15.07.2026','28500','Garanti BBVA','Demir İnşaat Ltd.','GRT-654321',''],
+      ],
+    },
+  }
+
+  const topluAc = (tabKey) => {
+    setTopluSecimAcik(false)
+    setTopluModal(tabKey)
+    setTopluDosya(null)
+    setTopluOnizleme(null)
+    setTopluSonuc(null)
+    setTopluKolonlar([])
+    setTopluKolonEslesme({})
+  }
+  const topluKapat = () => setTopluModal(null)
+
+  const topluSablonIndir = async () => {
+    if (!topluModal) return
+    const cfg = TOPLU_CFG[topluModal]
+    try {
+      const { utils, writeFile } = await import('xlsx')
+      const ws = utils.aoa_to_sheet(cfg.ornekSatirlar)
+      ws['!cols'] = cfg.ornekSatirlar[0].map((_, i) => ({ wch: i === 0 ? 30 : 18 }))
+      const wb = utils.book_new()
+      utils.book_append_sheet(wb, ws, 'Şablon')
+      writeFile(wb, cfg.dosyaAdi)
+    } catch {
+      toast.error('Şablon oluşturulamadı.')
+    }
+  }
+
+  const topluDosyaIsle = async (dosya) => {
+    if (!dosya || !topluModal) return
+    if (!/\.xlsx?$/i.test(dosya.name)) {
+      toast.error('Lütfen Excel (.xlsx) formatında dosya yükleyin.')
+      return
+    }
+    setTopluSonuc(null)
+    setTopluKolonlar([])
+    setTopluKolonEslesme({})
+    try {
+      const { read, utils } = await import('xlsx')
+      const ab = await dosya.arrayBuffer()
+      const wb = read(ab)
+      const ws = wb.Sheets[wb.SheetNames[0]]
+      const csvMetin = utils.sheet_to_csv(ws)
+      const csvBlob = new Blob([csvMetin], { type: 'text/csv;charset=utf-8;' })
+      const csvDosya = new File([csvBlob], dosya.name.replace(/\.xlsx?$/i, '.csv'), { type: 'text/csv' })
+      setTopluDosya(csvDosya)
+      const satirlar = csvMetin.split('\n').filter(s => s.trim())
+      const kayitSayisi = Math.max(0, satirlar.length - 1)
+      if (kayitSayisi > 50) {
+        toast.error(`Tek seferde en fazla 50 kayıt yüklenebilir. Dosyada ${kayitSayisi} kayıt var.`)
+        return
+      }
+      setTopluOnizleme({ satirlar: satirlar.slice(0, 4), toplam: kayitSayisi })
+      if (satirlar.length > 0) {
+        const basliklar = satirlar[0].split(',').map(b => b.trim().replace(/^"|"$/g, ''))
+        setTopluKolonlar(basliklar)
+        const sistemAlanlari = TOPLU_CFG[topluModal]?.sistemAlanlari ?? []
+        const eslesme = {}
+        basliklar.forEach(b => {
+          const kucuk = b.toLowerCase().trim()
+          eslesme[b] = sistemAlanlari.includes(kucuk) ? kucuk : 'atla'
+        })
+        setTopluKolonEslesme(eslesme)
+      }
+    } catch {
+      toast.error('Excel dosyası okunamadı. Dosyanın bozuk olmadığından emin olun.')
+    }
+  }
+
+  const topluDosyaSec = (e) => topluDosyaIsle(e.target.files[0])
+
+  const topluGonder = async () => {
+    if (!topluDosya || !topluModal) return
+    setTopluYukleniyor(true)
+    try {
+      const formData = new FormData()
+      formData.append('dosya', topluDosya)
+      formData.append('tab', topluModal)
+      const aktifEslesme = {}
+      Object.entries(topluKolonEslesme).forEach(([csv, sistem]) => {
+        if (sistem && sistem !== 'atla') aktifEslesme[csv] = sistem
+      })
+      formData.append('kolon_eslesme', JSON.stringify(aktifEslesme))
+      const yanit = await cekSenetApi.topluYukle(formData)
+      const veri = yanit.data.veri
+      setTopluSonuc(veri)
+      if (veri.basarili_sayisi > 0) {
+        toast.success(`${veri.basarili_sayisi} çek/senet yüklendi`)
+        await veriYukle()
+      }
+    } catch {
+      toast.error('Toplu yükleme başarısız.')
+    } finally {
+      setTopluYukleniyor(false)
+    }
   }
 
   // ─ Filtre Uygulama ───────────────────────────────────────────────────────────
@@ -1292,6 +1491,7 @@ export default function CekSenet() {
   )
 
   return (
+    <>
     <div className={`${p}-page-root`}>
       {/* STYLE BLOCK REMOVED — tema CSS dosyalarında */}
       {/* ─── Sayfa Başlığı ──────────────────────────────────────────────────── */}
@@ -1305,7 +1505,49 @@ export default function CekSenet() {
             <p className={`${p}-page-sub`}>Portföy takibi · Tahsilat · Borç evrakları · Ciro yönetimi</p>
           </div>
         </div>
-
+        <div className={`${p}-page-header-right`}>
+          {kullanici?.plan === 'deneme' && cekBilgi && !cekBilgi.sinirsiz && (cekDurum === 'uyari' || cekDurum === 'dolu') && (
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 12, fontWeight: 600,
+              color: cekLimitDolu ? renkler.danger : renkler.warning }}>
+              <div style={{ width: 80, height: 4, borderRadius: 2, background: hexRgba(renkler.textSec, 0.15), overflow: 'hidden' }}>
+                <div style={{ height: '100%', width: `${Math.min(cekBilgi.yuzde, 100)}%`,
+                  background: cekLimitDolu ? renkler.danger : renkler.warning, borderRadius: 2 }} />
+              </div>
+              {cekBilgi.mevcut}/{cekBilgi.sinir} bu ay
+            </div>
+          )}
+          {isWeb && (
+            <button
+              ref={topluSecimBtnRef}
+              className={`${p}-cym-btn-outline d-none d-md-flex align-items-center gap-2`}
+              onClick={() => {
+                if (!topluSecimAcik && topluSecimBtnRef.current) {
+                  const r = topluSecimBtnRef.current.getBoundingClientRect()
+                  setTopluSecimPos({ top: r.bottom + 6, right: window.innerWidth - r.right })
+                }
+                setTopluSecimAcik(prev => !prev)
+              }}
+              title="Excel ile toplu çek/senet yükle">
+              <i className="bi bi-upload" /> Toplu Yükle
+            </button>
+          )}
+          <button
+            ref={hizliEkleBtnRef}
+            className={`${p}-cym-btn-new d-flex align-items-center gap-2`}
+            data-tur="cek-ekle-btn"
+            onClick={() => {
+              if (!hizliEkleAcik && hizliEkleBtnRef.current) {
+                const r = hizliEkleBtnRef.current.getBoundingClientRect()
+                setHizliEklePos({ top: r.bottom + 6, right: window.innerWidth - r.right })
+              }
+              setHizliEkleAcik(prev => !prev)
+            }}
+            disabled={cekLimitDolu}
+            title={cekLimitDolu ? 'Aylık çek/senet limiti doldu. Planı yükseltin.' : 'Yeni çek/senet ekle'}
+            style={cekLimitDolu ? { opacity: 0.5, cursor: 'not-allowed' } : undefined}>
+            <i className="bi bi-plus-lg" /> <span className="d-none d-md-inline">Yeni Çek / Senet</span>
+          </button>
+        </div>
       </div>
 
       {/* ─── Ana Kart ───────────────────────────────────────────────────────── */}
@@ -1619,34 +1861,12 @@ export default function CekSenet() {
                 </div>
               </div>
 
-              {/* Arama + Yeni Buton */}
-              <div className="d-flex gap-2 mb-3 flex-wrap">
-                <div className={`input-group flex-grow-1 ${p}-search`} style={{ minWidth: 220 }}>
-                  <span className="input-group-text"><i className="bi bi-search" /></span>
-                  <input className="form-control" style={{ minHeight: 44 }} placeholder="Müşteri, evrak no veya vade tarihi ara..."
-                    value={aramaMetni} onChange={e => setAramaMetni(e.target.value)} />
-                  {aramaMetni && <button className="btn btn-outline-secondary" onClick={() => setAramaMetni('')}><i className="bi bi-x" /></button>}
-                </div>
-                <div className="d-flex flex-column align-items-end gap-1">
-                  {kullanici?.plan === 'deneme' && cekBilgi && !cekBilgi.sinirsiz && (cekDurum === 'uyari' || cekDurum === 'dolu') && (
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 11, fontWeight: 600,
-                      color: cekLimitDolu ? renkler.danger : renkler.warning }}>
-                      <div style={{ width: 60, height: 3, borderRadius: 2, background: hexRgba(renkler.textSec, 0.15), overflow: 'hidden' }}>
-                        <div style={{ height: '100%', width: `${Math.min(cekBilgi.yuzde, 100)}%`,
-                          background: cekLimitDolu ? renkler.danger : renkler.warning, borderRadius: 2 }} />
-                      </div>
-                      {cekBilgi.mevcut}/{cekBilgi.sinir} bu ay
-                    </div>
-                  )}
-                  <button className={`${p}-btn-accent d-flex align-items-center`}
-                    data-tur="cek-ekle-btn"
-                    onClick={() => { setPortfoyForm(portfoyBosluk()); setPortfoyDzlId(null); setPortfoyModal(true) }}
-                    disabled={cekLimitDolu}
-                    title={cekLimitDolu ? 'Aylık çek/senet limiti doldu. Planı yükseltin.' : 'Yeni evrak ekle'}
-                    style={cekLimitDolu ? { opacity: 0.5, cursor: 'not-allowed' } : undefined}>
-                    <i className="bi bi-plus-lg me-2" /> <span className="d-none d-md-inline">Yeni Evrak</span>
-                  </button>
-                </div>
+              {/* Arama */}
+              <div className={`input-group mb-3 ${p}-search`}>
+                <span className="input-group-text"><i className="bi bi-search" /></span>
+                <input className="form-control" style={{ minHeight: 44 }} placeholder="Müşteri, evrak no veya vade tarihi ara..."
+                  value={aramaMetni} onChange={e => setAramaMetni(e.target.value)} />
+                {aramaMetni && <button className="btn btn-outline-secondary" onClick={() => setAramaMetni('')}><i className="bi bi-x" /></button>}
               </div>
 
               {/* Tablo */}
@@ -1924,33 +2144,12 @@ export default function CekSenet() {
                 </div>
               </div>
 
-              {/* Arama + Yeni Buton */}
-              <div className="d-flex gap-2 mb-3 flex-wrap">
-                <div className={`input-group flex-grow-1 ${p}-search`} style={{ minWidth: 220 }}>
-                  <span className="input-group-text"><i className="bi bi-search" /></span>
-                  <input className="form-control" style={{ minHeight: 44 }} placeholder="Firma, evrak no, banka veya vade tarihi ara..."
-                    value={aramaMetni} onChange={e => setAramaMetni(e.target.value)} />
-                  {aramaMetni && <button className="btn btn-outline-secondary" onClick={() => setAramaMetni('')}><i className="bi bi-x" /></button>}
-                </div>
-                <div className="d-flex flex-column align-items-end gap-1">
-                  {kullanici?.plan === 'deneme' && cekBilgi && !cekBilgi.sinirsiz && (cekDurum === 'uyari' || cekDurum === 'dolu') && (
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 11, fontWeight: 600,
-                      color: cekLimitDolu ? renkler.danger : renkler.warning }}>
-                      <div style={{ width: 60, height: 3, borderRadius: 2, background: hexRgba(renkler.textSec, 0.15), overflow: 'hidden' }}>
-                        <div style={{ height: '100%', width: `${Math.min(cekBilgi.yuzde, 100)}%`,
-                          background: cekLimitDolu ? renkler.danger : renkler.warning, borderRadius: 2 }} />
-                      </div>
-                      {cekBilgi.mevcut}/{cekBilgi.sinir} bu ay
-                    </div>
-                  )}
-                  <button className={`${p}-btn-accent d-flex align-items-center`}
-                    onClick={() => { setKendiForm(kendiBosluk()); setKendiDzlId(null); setKendiModal(true) }}
-                    disabled={cekLimitDolu}
-                    title={cekLimitDolu ? 'Aylık çek/senet limiti doldu. Planı yükseltin.' : 'Yeni borç evrakı ekle'}
-                    style={cekLimitDolu ? { opacity: 0.5, cursor: 'not-allowed' } : undefined}>
-                    <i className="bi bi-plus-lg me-2" /> <span className="d-none d-md-inline">Yeni Borç Ekle</span>
-                  </button>
-                </div>
+              {/* Arama */}
+              <div className={`input-group mb-3 ${p}-search`}>
+                <span className="input-group-text"><i className="bi bi-search" /></span>
+                <input className="form-control" style={{ minHeight: 44 }} placeholder="Firma, evrak no, banka veya vade tarihi ara..."
+                  value={aramaMetni} onChange={e => setAramaMetni(e.target.value)} />
+                {aramaMetni && <button className="btn btn-outline-secondary" onClick={() => setAramaMetni('')}><i className="bi bi-x" /></button>}
               </div>
 
               <div className="table-responsive d-none d-md-block">
@@ -2893,7 +3092,283 @@ export default function CekSenet() {
         </div>
       </Modal>
 
+      {/* ══════════════════════════════════════════════════════════════════════
+          TOPLU YÜKLEME MODALI — Portföy / Tahsil / Kendi Çekimiz / Ciro
+      ══════════════════════════════════════════════════════════════════════ */}
+      {topluModal && (() => {
+        const cfg = TOPLU_CFG[topluModal]
+        return (
+          <Modal open={!!topluModal} onClose={topluKapat} p={p} ariaId="toplu-cek-modal-title" style={{ display: 'flex', flexDirection: 'column' }}>
+            {/* Header */}
+            <div className={`${p}-modal-header ${p}-mh-default`}>
+              <h2 className={`${p}-modal-title`} id="toplu-cek-modal-title">
+                <i className={`bi ${cfg.icon}`} style={{ color: cfg.renk }} aria-hidden="true" />
+                {cfg.baslik}
+              </h2>
+              <button onClick={topluKapat} className={`${p}-modal-close`} type="button" aria-label="Kapat">
+                <i className="bi bi-x-lg" aria-hidden="true" />
+              </button>
+            </div>
+
+            <div className={`${p}-modal-body`} style={{ overflowY: 'auto', maxHeight: '70vh' }}>
+
+              {/* ─── Adım 1: Şablon İndir ─── */}
+              <div className="d-flex gap-3 mb-3">
+                <span className={`${p}-cym-toplu-step-num`}>1</span>
+                <div style={{ flex: 1 }}>
+                  <div className={`${p}-cym-toplu-step-title`}>Excel Şablonunu İndirin ve Doldurun</div>
+                  <p className={`${p}-cym-toplu-step-desc`}>
+                    Aşağıdaki şablonu indirin, çek bilgilerini ekleyin ve geri yükleyin.
+                    <br />
+                    <strong>Tutar:</strong> Binlik ayraçlı veya düz yazabilirsiniz (15.000 veya 15000).
+                    <br />
+                    <strong>Tarih:</strong> GG.AA.YYYY formatı kullanın (örnek: 25.05.2026).
+                  </p>
+                  <button onClick={topluSablonIndir} className={`${p}-cym-toplu-dl-btn mt-2`}>
+                    <i className="bi bi-file-earmark-excel-fill me-1" /> Excel Şablonu İndir (.xlsx)
+                  </button>
+                </div>
+              </div>
+
+              <hr className={`${p}-cym-toplu-divider`} />
+
+              {/* ─── Adım 2: Sütun Açıklamaları ─── */}
+              <div className="d-flex gap-3 mb-3">
+                <span className={`${p}-cym-toplu-step-num`}>2</span>
+                <div style={{ flex: 1 }}>
+                  <div className={`${p}-cym-toplu-step-title mb-2`}>Sütun Bilgileri</div>
+                  <div className={`${p}-cym-toplu-col-row`} style={{ opacity: 0.55, fontSize: 10, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.06em' }}>
+                    <div>Sütun Adı</div><div>Durum</div><div>Örnek Değer</div>
+                  </div>
+                  {cfg.kolonlar.map(s => (
+                    <div key={s.ad} className={`${p}-cym-toplu-col-row`}>
+                      <span className={`${p}-cym-toplu-col-name`}>{s.ad}</span>
+                      <span className={s.zorunlu ? `${p}-cym-toplu-badge-req` : `${p}-cym-toplu-badge-opt`}>
+                        {s.zorunlu ? 'Zorunlu' : 'Opsiyonel'}
+                      </span>
+                      <span className={`${p}-cym-toplu-col-example`}>{s.ornek}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              <hr className={`${p}-cym-toplu-divider`} />
+
+              {/* ─── Adım 3: Dosya Yükleme ─── */}
+              <div className="d-flex gap-3">
+                <span className={`${p}-cym-toplu-step-num`}>3</span>
+                <div style={{ flex: 1 }}>
+                  <div className={`${p}-cym-toplu-step-title mb-2`}>Dosyanızı Seçin</div>
+
+                  {!topluDosya ? (
+                    <div
+                      className={`${p}-cym-toplu-drop-zone ${topluDragOver ? `${p}-cym-toplu-drop-active` : ''}`}
+                      onClick={() => document.getElementById('topluCekDosyaInput').click()}
+                      onDragOver={e => { e.preventDefault(); setTopluDragOver(true) }}
+                      onDragLeave={() => setTopluDragOver(false)}
+                      onDrop={e => { e.preventDefault(); setTopluDragOver(false); topluDosyaIsle(e.dataTransfer.files[0]) }}
+                    >
+                      <i className={`bi bi-cloud-upload ${p}-cym-toplu-drop-icon`} />
+                      <div className={`${p}-cym-toplu-drop-text`}>Dosyayı buraya sürükleyin veya tıklayın</div>
+                      <div className={`${p}-cym-toplu-drop-sub`}>Yalnızca Excel (.xlsx) — Maks. 5 MB</div>
+                    </div>
+                  ) : (
+                    <div className={`${p}-cym-toplu-file-ok`}>
+                      <i className={`bi bi-file-earmark-excel-fill ${p}-cym-toplu-file-icon`} />
+                      <div style={{ flex: 1, minWidth: 0 }}>
+                        <div className={`${p}-cym-toplu-file-name text-truncate`}>{topluDosya.name}</div>
+                        <div className={`${p}-cym-toplu-file-meta`}>
+                          {topluOnizleme ? `${topluOnizleme.toplam} kayıt okundu` : 'İşleniyor...'}
+                        </div>
+                      </div>
+                      <button
+                        onClick={() => { setTopluDosya(null); setTopluOnizleme(null); setTopluSonuc(null) }}
+                        className={`${p}-modal-close`} title="Kaldır"
+                      >
+                        <i className="bi bi-x-lg" />
+                      </button>
+                    </div>
+                  )}
+
+                  {/* Önizleme */}
+                  {topluOnizleme && topluOnizleme.satirlar.length > 1 && (
+                    <div className={`${p}-cym-info-card mt-2`} style={{ padding: '8px 12px' }}>
+                      <div className={`${p}-cym-info-card-label mb-1`}>
+                        <i className="bi bi-table me-1" />Önizleme (ilk 3 satır)
+                      </div>
+                      {topluOnizleme.satirlar.slice(1, 4).map((s, i) => (
+                        <div key={i} style={{ fontFamily: 'monospace', fontSize: 11, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', opacity: 0.75 }}>
+                          {i + 1}. {s}
+                        </div>
+                      ))}
+                    </div>
+                  )}
+
+                  {/* Kolon Eşleştirme */}
+                  {topluDosya && topluKolonlar.length > 0 && (
+                    <div className={`${p}-cym-info-card mt-3`} style={{ padding: '12px 16px' }}>
+                      <div className={`${p}-cym-info-card-label mb-2`} style={{ fontWeight: 700 }}>
+                        <i className="bi bi-arrow-left-right me-1" /> Kolon Eşleştirme
+                        <span style={{ fontWeight: 400, fontSize: 11, marginLeft: 8, opacity: 0.6 }}>
+                          Şablonu kullandıysanız otomatik eşleşir
+                        </span>
+                      </div>
+                      {topluKolonlar.map(kolon => (
+                        <div key={kolon} style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 8 }}>
+                          <span style={{ fontFamily: 'monospace', fontSize: 12, flex: '0 0 140px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', opacity: 0.8 }}>{kolon}</span>
+                          <i className="bi bi-arrow-right" style={{ opacity: 0.4, fontSize: 12 }} />
+                          <select
+                            value={topluKolonEslesme[kolon] ?? 'atla'}
+                            onChange={e => setTopluKolonEslesme(prev => ({ ...prev, [kolon]: e.target.value }))}
+                            className={`${p}-cym-select`}
+                            style={{ flex: 1, fontSize: 12, padding: '4px 8px' }}
+                          >
+                            <option value="atla">— Atla —</option>
+                            {cfg.sistemAlanlari.map(a => (
+                              <option key={a} value={a}>{a}</option>
+                            ))}
+                          </select>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+
+                  {/* Sonuç */}
+                  {topluSonuc && (
+                    <div className={`${p}-cym-toplu-result ${topluSonuc.basarili_sayisi > 0 ? `${p}-cym-toplu-result-ok` : `${p}-cym-toplu-result-warn`}`}>
+                      <div className={`${p}-cym-toplu-result-title`}>
+                        <i className={`bi ${topluSonuc.basarili_sayisi > 0 ? 'bi-check-circle-fill' : 'bi-x-circle-fill'} me-2`} />
+                        {topluSonuc.basarili_sayisi > 0 && `${topluSonuc.basarili_sayisi} çek/senet yüklendi`}
+                        {topluSonuc.hatali_sayisi > 0 && ` · ${topluSonuc.hatali_sayisi} satırda hata`}
+                      </div>
+                      {topluSonuc.hatali_satirlar?.map((h, i) => (
+                        <div key={i} className={`${p}-cym-toplu-result-row`}>
+                          <i className="bi bi-exclamation-triangle me-1" />Satır {h.satir}: {h.hata}
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+
+            {/* Gizli file input */}
+            <input
+              id="topluCekDosyaInput"
+              type="file"
+              accept=".xlsx,.xls"
+              style={{ display: 'none' }}
+              onChange={topluDosyaSec}
+            />
+
+            <div className={`${p}-modal-footer`}>
+              <button onClick={topluKapat} className={`${p}-btn-cancel`}>Kapat</button>
+              <button
+                onClick={topluGonder}
+                disabled={!topluDosya || topluYukleniyor}
+                className={`${p}-btn-save ${p}-btn-save-default d-flex align-items-center gap-2`}
+                style={{ opacity: (!topluDosya || topluYukleniyor) ? 0.5 : 1 }}
+              >
+                {topluYukleniyor
+                  ? <><i className={`bi bi-arrow-repeat ${p}-cym-spin`} />Yükleniyor...</>
+                  : <><i className="bi bi-cloud-upload" />{topluOnizleme ? `${topluOnizleme.toplam} Kayıt Yükle` : 'Yükle'}</>}
+              </button>
+            </div>
+          </Modal>
+        )
+      })()}
 
     </div>
+
+    {/* ── Toplu Yükle Dropdown (portal) ── */}
+    {topluSecimAcik && createPortal(
+      <>
+        <div style={{ position: 'fixed', inset: 0, zIndex: 1099 }} onClick={() => setTopluSecimAcik(false)} />
+        <div style={{
+          position: 'fixed', top: topluSecimPos.top, right: topluSecimPos.right, zIndex: 1100,
+          background: '#fff', borderRadius: 10, boxShadow: '0 8px 32px rgba(0,0,0,0.15)',
+          border: '1px solid rgba(0,0,0,0.08)', minWidth: 220, overflow: 'hidden',
+        }}>
+          <div style={{ padding: '10px 14px 6px', fontSize: 11, fontWeight: 700, color: renkler.textSec, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+            Hangi kategori?
+          </div>
+          {[
+            { key: 'portfoy', label: 'Portföydeki Çekler',      icon: 'bi-collection-fill',      renk: renkler.primary },
+            { key: 'tahsil',  label: 'Tahsildeki Çekler',       icon: 'bi-bank',                 renk: renkler.success },
+            { key: 'kendi',   label: 'Kendi Çeklerimiz (Borç)', icon: 'bi-arrow-up-circle-fill', renk: renkler.danger  },
+            { key: 'ciro',    label: 'Cirolanan Çekler',        icon: 'bi-arrow-left-right',     renk: renkler.primary },
+          ].map(t => (
+            <button key={t.key}
+              onClick={() => { setTopluSecimAcik(false); topluAc(t.key) }}
+              style={{
+                display: 'flex', alignItems: 'center', gap: 10, width: '100%',
+                padding: '10px 14px', border: 'none', background: 'none', cursor: 'pointer',
+                fontSize: 13, fontWeight: 500, color: renkler.text, textAlign: 'left',
+              }}
+              onMouseEnter={e => e.currentTarget.style.background = 'rgba(0,0,0,0.04)'}
+              onMouseLeave={e => e.currentTarget.style.background = 'none'}
+            >
+              <i className={`bi ${t.icon}`} style={{ color: t.renk, fontSize: 15 }} />
+              {t.label}
+            </button>
+          ))}
+        </div>
+      </>,
+      document.body
+    )}
+
+    {/* ── Yeni Çek/Senet Dropdown (portal) ── */}
+    {hizliEkleAcik && !cekLimitDolu && createPortal(
+      <>
+        <div style={{ position: 'fixed', inset: 0, zIndex: 1099 }} onClick={() => setHizliEkleAcik(false)} />
+        <div style={{
+          position: 'fixed', top: hizliEklePos.top, right: hizliEklePos.right, zIndex: 1100,
+          background: '#fff', borderRadius: 10, boxShadow: '0 8px 32px rgba(0,0,0,0.15)',
+          border: '1px solid rgba(0,0,0,0.08)', minWidth: 240, overflow: 'hidden',
+        }}>
+          <button
+            onClick={() => { setHizliEkleAcik(false); setPortfoyForm(portfoyBosluk()); setPortfoyDzlId(null); setPortfoyModal(true) }}
+            style={{
+              display: 'flex', alignItems: 'center', gap: 10, width: '100%',
+              padding: '12px 16px', border: 'none', background: 'none', cursor: 'pointer',
+              fontSize: 13, fontWeight: 600, color: renkler.text, textAlign: 'left',
+            }}
+            onMouseEnter={e => e.currentTarget.style.background = 'rgba(16,185,129,0.06)'}
+            onMouseLeave={e => e.currentTarget.style.background = 'none'}
+          >
+            <div style={{ width: 32, height: 32, borderRadius: 8, background: hexRgba(renkler.success, 0.12),
+              display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              <i className="bi bi-file-earmark-plus" style={{ color: renkler.success, fontSize: 15 }} />
+            </div>
+            <div>
+              <div>Müşteriden Alınan</div>
+              <div style={{ fontSize: 11, fontWeight: 400, color: renkler.textSec }}>Müşteri çeki veya senedi</div>
+            </div>
+          </button>
+          <div style={{ height: 1, background: 'rgba(0,0,0,0.06)', margin: '0 12px' }} />
+          <button
+            onClick={() => { setHizliEkleAcik(false); setKendiForm(kendiBosluk()); setKendiDzlId(null); setKendiModal(true) }}
+            style={{
+              display: 'flex', alignItems: 'center', gap: 10, width: '100%',
+              padding: '12px 16px', border: 'none', background: 'none', cursor: 'pointer',
+              fontSize: 13, fontWeight: 600, color: renkler.text, textAlign: 'left',
+            }}
+            onMouseEnter={e => e.currentTarget.style.background = 'rgba(239,68,68,0.06)'}
+            onMouseLeave={e => e.currentTarget.style.background = 'none'}
+          >
+            <div style={{ width: 32, height: 32, borderRadius: 8, background: hexRgba(renkler.danger, 0.12),
+              display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              <i className="bi bi-file-earmark-minus" style={{ color: renkler.danger, fontSize: 15 }} />
+            </div>
+            <div>
+              <div>Kendi Çekimiz / Senedimiz</div>
+              <div style={{ fontSize: 11, fontWeight: 400, color: renkler.textSec }}>Borç çeki veya senedi</div>
+            </div>
+          </button>
+        </div>
+      </>,
+      document.body
+    )}
+    </>
   )
 }

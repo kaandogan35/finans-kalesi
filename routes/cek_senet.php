@@ -14,6 +14,7 @@
 // Model ve Controller dosyalarini yukle
 require_once BASE_PATH . '/models/CekSenet.php';
 require_once BASE_PATH . '/models/Kasa.php';
+require_once BASE_PATH . '/models/CariKart.php';
 require_once BASE_PATH . '/controllers/CekSenetController.php';
 
 // JWT dogrulama — her endpoint giris gerektirir
@@ -53,6 +54,15 @@ if ($parca_sayisi === 1) {
 elseif ($parca_sayisi === 2 && $yol_parcalari[1] === 'ozet') {
     if ($metod === 'GET') {
         $cek_senet->ozet($payload);
+    } else {
+        Response::hata('Bu HTTP metodu desteklenmiyor', 405);
+    }
+}
+
+// ─── /api/cek-senet/toplu ───
+elseif ($parca_sayisi === 2 && $yol_parcalari[1] === 'toplu') {
+    if ($metod === 'POST') {
+        $cek_senet->topluYukle($payload);
     } else {
         Response::hata('Bu HTTP metodu desteklenmiyor', 405);
     }

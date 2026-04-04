@@ -13,9 +13,11 @@
 
 class CekSenetController {
     private $cekSenet;
+    private $db;
 
     public function __construct($db) {
         $this->cekSenet = new CekSenet($db);
+        $this->db = $db;
     }
 
     // ─── GET /api/cek-senet ───
@@ -336,6 +338,314 @@ class CekSenetController {
             error_log('CekSenet durum hatasi: ' . $e->getMessage());
             Response::sunucu_hatasi('Durum degistirilemedi');
         }
+    }
+
+    // ─── POST /api/cek-senet/toplu ───
+    // tab: portfoy | tahsil | kendi | ciro
+    // Zorunlu alanlar: cari_adi, vade_tarihi, tutar, banka_adi
+    // Tahsil tab ek zorunlu: teslim_bankasi  | Ciro tab ek zorunlu: ciro_edilen
+    public function topluYukle($payload) {
+        try {
+            if (empty($_FILES['dosya']) || $_FILES['dosya']['error'] !== UPLOAD_ERR_OK) {
+                Response::hata('Dosya yuklenemedi', 400);
+                return;
+            }
+
+            $tab = trim($_POST['tab'] ?? '');
+            $gecerli_tablar = ['portfoy', 'tahsil', 'kendi', 'ciro'];
+            if (!in_array($tab, $gecerli_tablar)) {
+                Response::hata('Gecersiz tab parametresi', 400);
+                return;
+            }
+
+            // Tab'a göre tur/durum/cari_turu belirle
+            $tab_ayar = [
+                'portfoy' => ['tur' => 'alacak_ceki', 'durum' => 'portfoyde',       'cari_turu' => 'musteri'],
+                'tahsil'  => ['tur' => 'alacak_ceki', 'durum' => 'tahsile_verildi', 'cari_turu' => 'musteri'],
+                'kendi'   => ['tur' => 'borc_ceki',   'durum' => 'portfoyde',       'cari_turu' => 'tedarikci'],
+                'ciro'    => ['tur' => 'alacak_ceki', 'durum' => 'cirolandi',       'cari_turu' => 'musteri'],
+            ][$tab];
+
+            // Kolon eşleştirme haritası
+            $eslesme_ham = $_POST['kolon_eslesme'] ?? '{}';
+            $kolon_eslesme = json_decode($eslesme_ham, true) ?? [];
+            $eslesme = [];
+            foreach ($kolon_eslesme as $csv_k => $sistem_k) {
+                $eslesme[mb_strtolower(trim($csv_k))] = trim($sistem_k);
+            }
+
+            $dosya = $_FILES['dosya']['tmp_name'];
+            $handle = fopen($dosya, 'r');
+            if (!$handle) {
+                Response::hata('Dosya acilamadi', 400);
+                return;
+            }
+
+            $raw_basliklar = fgetcsv($handle, 0, ',');
+            if (!$raw_basliklar) {
+                fclose($handle);
+                Response::hata('Dosya bos veya gecersiz', 400);
+                return;
+            }
+            $raw_basliklar = array_map(function($b) { return mb_strtolower(trim($b)); }, $raw_basliklar);
+
+            // Kolon eşleştirmesi uygula
+            $sistem_basliklar = [];
+            foreach ($raw_basliklar as $csv_k) {
+                $sistem_basliklar[] = $eslesme[$csv_k] ?? $csv_k;
+            }
+
+            // Cari önbelleği oluştur (şifreli ad → id)
+            $cari_cache = [];
+            $stmt = $this->db->prepare(
+                "SELECT id, cari_adi_sifreli FROM cari_kartlar WHERE sirket_id = ? AND silindi_mi = 0 AND aktif_mi = 1"
+            );
+            $stmt->execute([$payload['sirket_id']]);
+            foreach ($stmt->fetchAll(PDO::FETCH_ASSOC) as $c) {
+                if (!empty($c['cari_adi_sifreli'])) {
+                    $adi = SistemKripto::coz($c['cari_adi_sifreli']);
+                    if ($adi !== null) {
+                        $cari_cache[mb_strtolower(trim($adi))] = (int)$c['id'];
+                    }
+                }
+            }
+
+            $basarili_sayisi = 0;
+            $hatali_sayisi   = 0;
+            $hatali_satirlar = [];
+            $satirNo = 1;
+            $toplam_islenen  = 0;
+            $LIMIT = 50;
+
+            while (($satir = fgetcsv($handle, 0, ',')) !== false) {
+                // 50 satır limiti
+                if ($toplam_islenen >= $LIMIT) {
+                    $hatali_satirlar[] = ['satir' => $satirNo + 1, 'hata' => "Tek seferde en fazla {$LIMIT} kayit yuklenebilir"];
+                    break;
+                }
+                $satirNo++;
+                // Boş satırları atla
+                if (implode('', array_map('trim', $satir)) === '') continue;
+                $toplam_islenen++;
+                if (count($satir) < count($sistem_basliklar)) {
+                    $hatali_sayisi++;
+                    $hatali_satirlar[] = ['satir' => $satirNo, 'hata' => 'Eksik sutun sayisi'];
+                    continue;
+                }
+
+                $veri = array_combine($sistem_basliklar, array_map('trim', $satir));
+
+                // ── Zorunlu alan kontrolleri ──
+                if (empty($veri['cari_adi'])) {
+                    $hatali_sayisi++;
+                    $hatali_satirlar[] = ['satir' => $satirNo, 'hata' => 'cari_adi zorunludur'];
+                    continue;
+                }
+                if (empty($veri['vade_tarihi'])) {
+                    $hatali_sayisi++;
+                    $hatali_satirlar[] = ['satir' => $satirNo, 'hata' => 'vade_tarihi zorunludur'];
+                    continue;
+                }
+                if (empty($veri['banka_adi'])) {
+                    $hatali_sayisi++;
+                    $hatali_satirlar[] = ['satir' => $satirNo, 'hata' => 'banka_adi zorunludur'];
+                    continue;
+                }
+                $tutar_ham = preg_replace('/[^\d,.]/', '', $veri['tutar'] ?? '');
+                if ($tutar_ham === '') {
+                    $hatali_sayisi++;
+                    $hatali_satirlar[] = ['satir' => $satirNo, 'hata' => 'tutar zorunludur'];
+                    continue;
+                }
+
+                // Tab'a özel zorunlu alanlar
+                if ($tab === 'tahsil' && empty($veri['teslim_bankasi'])) {
+                    $hatali_sayisi++;
+                    $hatali_satirlar[] = ['satir' => $satirNo, 'hata' => 'teslim_bankasi zorunludur'];
+                    continue;
+                }
+                if ($tab === 'ciro' && empty($veri['ciro_edilen'])) {
+                    $hatali_sayisi++;
+                    $hatali_satirlar[] = ['satir' => $satirNo, 'hata' => 'ciro_edilen zorunludur'];
+                    continue;
+                }
+
+                try {
+                    // Plan sınırı
+                    SinirKontrol::kontrol($payload, 'cek');
+
+                    // Tutarı parse et (Türkçe ve İngilizce format desteği)
+                    // 8.000.000 → 8000000  |  15.000 → 15000  |  15000.50 → 15000.50
+                    // 1.500,75 → 1500.75   |  15000,50 → 15000.50
+                    if (strpos($tutar_ham, ',') !== false && strpos($tutar_ham, '.') !== false) {
+                        // Hem nokta hem virgül var (ör: 1.500,75 veya 1,500.75)
+                        $last_dot   = strrpos($tutar_ham, '.');
+                        $last_comma = strrpos($tutar_ham, ',');
+                        if ($last_comma > $last_dot) {
+                            $tutar_ham = str_replace('.', '', $tutar_ham);
+                            $tutar_ham = str_replace(',', '.', $tutar_ham);
+                        } else {
+                            $tutar_ham = str_replace(',', '', $tutar_ham);
+                        }
+                    } elseif (strpos($tutar_ham, ',') !== false) {
+                        // Sadece virgül var (ör: 15000,50)
+                        $tutar_ham = str_replace(',', '.', $tutar_ham);
+                    } elseif (strpos($tutar_ham, '.') !== false) {
+                        // Sadece nokta var — binlik mi ondalık mı?
+                        // Her nokta-grubunun son kısmı 3 haneyse → binlik ayraç
+                        $parcalar = explode('.', $tutar_ham);
+                        $binlik = true;
+                        for ($pi = 1; $pi < count($parcalar); $pi++) {
+                            if (strlen($parcalar[$pi]) !== 3) { $binlik = false; break; }
+                        }
+                        if ($binlik && count($parcalar) > 1) {
+                            // 8.000.000 → 8000000  |  15.000 → 15000
+                            $tutar_ham = str_replace('.', '', $tutar_ham);
+                        }
+                        // Aksi halde nokta ondalık ayracı: 15000.50 → 15000.50 (olduğu gibi)
+                    }
+                    $tutar = (float)$tutar_ham;
+                    if ($tutar <= 0) {
+                        $hatali_sayisi++;
+                        $hatali_satirlar[] = ['satir' => $satirNo, 'hata' => 'Tutar sifirdan buyuk olmalidir'];
+                        continue;
+                    }
+
+                    // Vade tarihini normalize et (25.05.2026 / 25/05/2026 → 2026-05-25)
+                    $veri['vade_tarihi'] = $this->_tarihNormalize($veri['vade_tarihi']);
+                    if (!$veri['vade_tarihi']) {
+                        $hatali_sayisi++;
+                        $hatali_satirlar[] = ['satir' => $satirNo, 'hata' => 'vade_tarihi gecersiz format'];
+                        continue;
+                    }
+
+                    // İşlem tarihi (yoksa bugün)
+                    $kesilme_tarihi = !empty($veri['islem_tarihi'])
+                        ? ($this->_tarihNormalize($veri['islem_tarihi']) ?: date('Y-m-d'))
+                        : date('Y-m-d');
+
+                    // Cari bul / oluştur
+                    $cari_id = $this->_cariIdBul(
+                        $payload['sirket_id'],
+                        $veri['cari_adi'],
+                        $tab_ayar['cari_turu'],
+                        $cari_cache
+                    );
+
+                    // Ciro tab: kime verildi
+                    $ciro_edilen_cari_id = null;
+                    if ($tab === 'ciro') {
+                        $ciro_edilen_cari_id = $this->_cariIdBul(
+                            $payload['sirket_id'],
+                            $veri['ciro_edilen'],
+                            'tedarikci',
+                            $cari_cache
+                        );
+                    }
+
+                    // Tahsil tab: teslim bankasını açıklamaya ekle
+                    $aciklama = $veri['aciklama'] ?? null;
+                    if ($tab === 'tahsil' && !empty($veri['teslim_bankasi'])) {
+                        $aciklama = '[Teslim Bankası: ' . $veri['teslim_bankasi'] . ']'
+                                  . ($aciklama ? ' ' . $aciklama : '');
+                    }
+
+                    $cek_veri = [
+                        'cari_id'        => $cari_id,
+                        'tur'            => $tab_ayar['tur'],
+                        'durum'          => $tab_ayar['durum'],
+                        'seri_no'        => !empty($veri['seri_no'])   ? $veri['seri_no']  : null,
+                        'banka_adi'      => $veri['banka_adi'],
+                        'sube'           => !empty($veri['sube'])      ? $veri['sube']     : null,
+                        'hesap_no'       => !empty($veri['hesap_no'])  ? $veri['hesap_no'] : null,
+                        'kesilme_tarihi' => $kesilme_tarihi,
+                        'vade_tarihi'    => $veri['vade_tarihi'],
+                        'tutar'          => $tutar,
+                        'doviz_kodu'     => 'TRY',
+                        'kur'            => 1.0,
+                        'aciklama'       => $aciklama,
+                    ];
+
+                    $yeni_cek = $this->cekSenet->olustur($payload['sirket_id'], $cek_veri, $payload['sub']);
+
+                    // Ciro tab: ciro_edilen_cari_id ve ciro_tarihi ata
+                    if ($tab === 'ciro' && $ciro_edilen_cari_id && $yeni_cek) {
+                        $updStmt = $this->db->prepare(
+                            "UPDATE cek_senetler SET ciro_edilen_cari_id = ?, ciro_tarihi = ?
+                             WHERE id = ? AND sirket_id = ?"
+                        );
+                        $updStmt->execute([$ciro_edilen_cari_id, $kesilme_tarihi, (int)$yeni_cek['id'], (int)$payload['sirket_id']]);
+                    }
+
+                    $basarili_sayisi++;
+
+                } catch (Exception $kayitHata) {
+                    $hatali_sayisi++;
+                    $hatali_satirlar[] = [
+                        'satir' => $satirNo,
+                        'hata'  => $kayitHata->getMessage(),
+                    ];
+                }
+            }
+
+            fclose($handle);
+
+            Response::basarili([
+                'basarili_sayisi' => $basarili_sayisi,
+                'hatali_sayisi'   => $hatali_sayisi,
+                'hatali_satirlar' => $hatali_satirlar,
+            ], "{$basarili_sayisi} cek/senet yuklendi");
+
+        } catch (Exception $e) {
+            error_log('CekSenet toplu yukle hatasi: ' . $e->getMessage());
+            Response::sunucu_hatasi('Toplu yukleme basarisiz');
+        }
+    }
+
+    // ─── Yardımcı: Cari adına göre ID bul, yoksa oluştur ───
+    // $cari_cache referans olarak alınır — yeni oluşturulan cariler önbelleğe eklenir
+    private function _cariIdBul($sirket_id, $cari_adi, $cari_turu, array &$cari_cache) {
+        $aranan = mb_strtolower(trim($cari_adi));
+        if (isset($cari_cache[$aranan])) {
+            return $cari_cache[$aranan];
+        }
+        // Yeni cari oluştur
+        $cariKart = new CariKart($this->db);
+        $yeni = $cariKart->olustur($sirket_id, [
+            'cari_adi'  => trim($cari_adi),
+            'cari_turu' => $cari_turu,
+        ]);
+        $cari_cache[$aranan] = (int)$yeni['id'];
+        return (int)$yeni['id'];
+    }
+
+    // ─── Yardımcı: Tarih formatını YYYY-MM-DD'ye çevir ───
+    // Desteklenen formatlar: 25.05.2026 | 25/05/2026 | 2026-05-25 | 2026/05/25
+    private function _tarihNormalize($tarih) {
+        $tarih = trim($tarih);
+        if (empty($tarih)) return null;
+
+        // Zaten YYYY-MM-DD ise
+        if (preg_match('/^\d{4}-\d{2}-\d{2}$/', $tarih)) {
+            return $tarih;
+        }
+        // GG.AA.YYYY veya GG/AA/YYYY
+        if (preg_match('#^(\d{1,2})[./](\d{1,2})[./](\d{4})$#', $tarih, $m)) {
+            $gun = str_pad($m[1], 2, '0', STR_PAD_LEFT);
+            $ay  = str_pad($m[2], 2, '0', STR_PAD_LEFT);
+            $yil = $m[3];
+            if (checkdate((int)$ay, (int)$gun, (int)$yil)) {
+                return "{$yil}-{$ay}-{$gun}";
+            }
+        }
+        // YYYY/MM/DD
+        if (preg_match('#^(\d{4})[./](\d{1,2})[./](\d{1,2})$#', $tarih, $m)) {
+            $yil = $m[1]; $ay = str_pad($m[2], 2, '0', STR_PAD_LEFT); $gun = str_pad($m[3], 2, '0', STR_PAD_LEFT);
+            if (checkdate((int)$ay, (int)$gun, (int)$yil)) {
+                return "{$yil}-{$ay}-{$gun}";
+            }
+        }
+        return null;
     }
 
     // ─── DELETE /api/cek-senet/{id} ───
