@@ -452,7 +452,7 @@ export default function Dashboard() {
 
   // Selamlama
   const sh = new Date().getHours()
-  const selamlama = sh < 12 ? 'Günaydın' : sh < 18 ? 'İyi günler' : 'İyi akşamlar'
+  const selamlama = sh < 6 ? 'İyi geceler' : sh < 12 ? 'Günaydın' : sh < 18 ? 'İyi günler' : 'İyi akşamlar'
   const ad = kullanici?.ad_soyad?.split(' ')[0] || ''
 
   // ─── KPI Veri Dizisi (5 standart kart — 6. slot NetCekKpiKart) ───────────
