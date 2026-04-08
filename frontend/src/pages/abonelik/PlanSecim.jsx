@@ -518,12 +518,19 @@ export default function PlanSecim() {
                             <span className={`${p}-abn-plan-name`}>{pl.ad}</span>
                           </div>
                           <div style={{ fontSize: 12, color: 'var(--p-text-muted)', marginBottom: 8 }}>{pl.aciklama}</div>
-                          <div className="d-flex align-items-baseline gap-1">
-                            <span className={`${p}-abn-plan-price`}>{fmt(pl.fiyat)}</span>
-                            <span className={`${p}-abn-price-unit`}>₺/ay</span>
-                          </div>
-                          {yillik && (
-                            <div className={`${p}-abn-yearly-note`}>Yılda {fmt(pl.fiyatYillik)}₺</div>
+                          {yillik ? (
+                            <>
+                              <div className="d-flex align-items-baseline gap-1">
+                                <span className={`${p}-abn-plan-price`}>{fmt(pl.fiyatYillik)}</span>
+                                <span className={`${p}-abn-price-unit`}>₺/yıl</span>
+                              </div>
+                              <div className={`${p}-abn-yearly-note`}>{fmt(pl.fiyat)} ₺/ay olarak hesaplanır</div>
+                            </>
+                          ) : (
+                            <div className="d-flex align-items-baseline gap-1">
+                              <span className={`${p}-abn-plan-price`}>{fmt(pl.fiyat)}</span>
+                              <span className={`${p}-abn-price-unit`}>₺/ay</span>
+                            </div>
                           )}
                         </div>
 
@@ -669,14 +676,21 @@ export default function PlanSecim() {
                           <div className={`${p}-abn-plan-price`}>Ücretsiz</div>
                         ) : (
                           <>
-                            <div className="d-flex align-items-baseline gap-1">
-                              <span className={`${p}-abn-plan-price`}>{fmt(pl.fiyat)}</span>
-                              <span className={`${p}-abn-price-unit`}>₺/ay</span>
-                            </div>
-                            {yillik && pl.fiyatYillik && (
-                              <div className={`${p}-abn-yearly-note`}>
-                                Yılda {fmt(pl.fiyatYillik)}₺ —{' '}
-                                <span className={`${p}-abn-savings`}>{pl.tasarruf}₺ tasarruf</span>
+                            {yillik && pl.fiyatYillik ? (
+                              <>
+                                <div className="d-flex align-items-baseline gap-1">
+                                  <span className={`${p}-abn-plan-price`}>{fmt(pl.fiyatYillik)}</span>
+                                  <span className={`${p}-abn-price-unit`}>₺/yıl</span>
+                                </div>
+                                <div className={`${p}-abn-yearly-note`}>
+                                  {fmt(pl.fiyat)} ₺/ay olarak hesaplanır —{' '}
+                                  <span className={`${p}-abn-savings`}>{pl.tasarruf}₺ tasarruf</span>
+                                </div>
+                              </>
+                            ) : (
+                              <div className="d-flex align-items-baseline gap-1">
+                                <span className={`${p}-abn-plan-price`}>{fmt(pl.fiyat)}</span>
+                                <span className={`${p}-abn-price-unit`}>₺/ay</span>
                               </div>
                             )}
                           </>
