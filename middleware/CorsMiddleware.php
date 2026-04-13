@@ -56,7 +56,8 @@ class CorsMiddleware {
         header('Access-Control-Allow-Methods: GET, POST, PUT, DELETE, OPTIONS');
         
         // Hangi başlıklar (header) gönderilebilir
-        header('Access-Control-Allow-Headers: Content-Type, Authorization, X-Requested-With');
+        // X-Platform: iOS/Web ayrımı için axios'ta gönderilen custom header
+        header('Access-Control-Allow-Headers: Content-Type, Authorization, X-Requested-With, X-Platform');
         
         // Tarayıcı bu bilgiyi 1 saat cache'lesin (her istekte tekrar sormasın)
         header('Access-Control-Max-Age: 3600');
