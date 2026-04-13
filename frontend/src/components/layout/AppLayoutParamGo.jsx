@@ -169,13 +169,17 @@ export default function AppLayoutParamGo() {
   )
 
   const modulSwipeHandlers = useSwipeable({
-    onSwipedLeft: () => {
+    onSwipedLeft: (e) => {
       if (!modulSwipeAktif) return
+      if (mevcutModulIndex === -1) return
+      if (e.event?.target?.closest?.('.p-swipe-wrapper')) return
       const next = mevcutModulIndex + 1
       if (next < MODUL_ROTALARI.length) navigate(MODUL_ROTALARI[next])
     },
-    onSwipedRight: () => {
+    onSwipedRight: (e) => {
       if (!modulSwipeAktif) return
+      if (mevcutModulIndex === -1) return
+      if (e.event?.target?.closest?.('.p-swipe-wrapper')) return
       const prev = mevcutModulIndex - 1
       if (prev >= 0) navigate(MODUL_ROTALARI[prev])
     },

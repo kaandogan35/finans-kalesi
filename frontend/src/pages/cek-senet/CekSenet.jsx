@@ -741,8 +741,8 @@ export default function CekSenet() {
 
   // Header bölgesi → modül geçişi
   const headerSwipeHandlers = useSwipeable({
-    onSwipedLeft:  () => { const next = mevcutModulIndex + 1; if (next < MODUL_ROTALARI.length) navigateTo(MODUL_ROTALARI[next]) },
-    onSwipedRight: () => { const prev = mevcutModulIndex - 1; if (prev >= 0) navigateTo(MODUL_ROTALARI[prev]) },
+    onSwipedLeft:  (e) => { if (e.event?.target?.closest?.('.p-swipe-wrapper')) return; const next = mevcutModulIndex + 1; if (next < MODUL_ROTALARI.length) navigateTo(MODUL_ROTALARI[next]) },
+    onSwipedRight: (e) => { if (e.event?.target?.closest?.('.p-swipe-wrapper')) return; const prev = mevcutModulIndex - 1; if (prev >= 0) navigateTo(MODUL_ROTALARI[prev]) },
     delta: 25,
     swipeDuration: 250,
     trackMouse: false,
@@ -753,8 +753,8 @@ export default function CekSenet() {
   // Panel/kart bölgesi → tab geçişi
   const TAB_SAYISI = 6
   const tabSwipeHandlers = useSwipeable({
-    onSwipedLeft:  () => { if (aktifTab < TAB_SAYISI - 1) tabDegistir(aktifTab + 1) },
-    onSwipedRight: () => { if (aktifTab > 0) tabDegistir(aktifTab - 1) },
+    onSwipedLeft:  (e) => { if (e.event?.target?.closest?.('.p-swipe-wrapper')) return; if (aktifTab < TAB_SAYISI - 1) tabDegistir(aktifTab + 1) },
+    onSwipedRight: (e) => { if (e.event?.target?.closest?.('.p-swipe-wrapper')) return; if (aktifTab > 0) tabDegistir(aktifTab - 1) },
     delta: 25,
     swipeDuration: 250,
     trackMouse: false,
