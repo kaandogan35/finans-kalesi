@@ -84,14 +84,43 @@ class PlanKontrol {
     }
 
     /**
-     * Deneme planı yazma kontrolü — iOS/Web ayrımlı
+     * Yeni abonelik sisteminin devreye girdiği tarih.
+     * Bu tarihten ÖNCE kayıt olmuş kullanıcılar eski mantıkla devam eder (7 gün tam erişim).
+     * Bu tarihten SONRA kayıt olanlar iOS'ta Apple trial zorunluluğuyla karşılaşır.
+     */
+    const YENI_SISTEM_TARIHI = '2026-04-13 00:00:00';
+
+    /**
+     * Kullanıcı yeni sistem kullanıcısı mı kontrol et
+     * (Kayıt tarihi YENI_SISTEM_TARIHI'nden sonra ise true)
+     */
+    public static function yeniSistemKullanicisiMi(int $sirket_id): bool {
+        static $cache = [];
+        if (isset($cache[$sirket_id])) return $cache[$sirket_id];
+
+        $db = Database::baglan();
+        $stmt = $db->prepare("SELECT olusturma_tarihi FROM sirketler WHERE id = :sid LIMIT 1");
+        $stmt->execute([':sid' => $sirket_id]);
+        $row = $stmt->fetch();
+
+        if (!$row || empty($row['olusturma_tarihi'])) {
+            return $cache[$sirket_id] = false;  // Emin değilsek eski kullanıcı say (güvenli)
+        }
+
+        $kayit = strtotime($row['olusturma_tarihi']);
+        $esik  = strtotime(self::YENI_SISTEM_TARIHI);
+        return $cache[$sirket_id] = ($kayit >= $esik);
+    }
+
+    /**
+     * Deneme planı yazma kontrolü — iOS/Web + Eski/Yeni kullanıcı ayrımlı
      *
-     * Yeni sistem:
-     *  - iOS: deneme planı = Apple trial alınmamış. Kullanıcı POST/PUT/DELETE yapamaz.
-     *         Her yazma girişiminde 403 döner, frontend paywall açar.
-     *  - Web: deneme planı = 7 gün tam erişim. Süre dolunca POST'lar engellenir (eski sistem).
-     *
-     * Okuma (GET) her zaman serbest — kullanıcı modülleri gezebilir.
+     * Mantık:
+     *  - Ücretli plan (standart/kurumsal) → kontrol yok
+     *  - GET istekler → kontrol yok (okuma her zaman serbest)
+     *  - iOS + YENİ kullanıcı + deneme plan → 403 PLAN_GEREKLI (Apple trial zorunlu)
+     *  - iOS + ESKİ kullanıcı + deneme plan → eski sistem (deneme süresi kontrolü)
+     *  - Web + deneme plan → eski sistem (deneme süresi kontrolü)
      */
     public static function denemeSuresiKontrol(array $payload): void {
         $plan = $payload['plan'] ?? 'deneme';
@@ -104,10 +133,16 @@ class PlanKontrol {
             return;  // okuma her zaman serbest
         }
 
-        $platform = self::platformAl();
+        $sirket_id = (int) ($payload['sirket_id'] ?? 0);
+        if ($sirket_id === 0) {
+            return;
+        }
 
-        if ($platform === 'ios') {
-            // iOS: deneme planı yazma yasağı — mutlaka Apple trial/abonelik alınmalı
+        $platform       = self::platformAl();
+        $yeni_kullanici = self::yeniSistemKullanicisiMi($sirket_id);
+
+        if ($platform === 'ios' && $yeni_kullanici) {
+            // Yeni iOS kullanıcısı — Apple trial zorunlu
             Response::json([
                 'basarili'     => false,
                 'hata'         => 'Bu işlemi yapabilmek için Premium aboneliği başlatmanız gerekir. İlk 7 gün ücretsiz.',
@@ -118,12 +153,8 @@ class PlanKontrol {
             exit;
         }
 
-        // Web: eski sistem — 7 gün ücretsiz deneme, süre dolunca engelle
-        $sirket_id = (int) ($payload['sirket_id'] ?? 0);
-        if ($sirket_id === 0) {
-            return;
-        }
-
+        // Eski kullanıcılar (iOS veya Web) ve yeni Web kullanıcıları: eski mantık
+        // Deneme süresi dolunca engelle
         $db = Database::baglan();
         $abonelik = new Abonelik($db);
 

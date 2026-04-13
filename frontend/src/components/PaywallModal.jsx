@@ -236,11 +236,11 @@ export default function PaywallModal({ goster, onKapat, onBasarili }) {
               gap: 10,
             }}>
               {[
-                'Sınırsız cari, çek ve kasa kaydı',
-                'PDF ve Excel rapor',
-                'Çok kullanıcı desteği',
-                'WhatsApp ve e-posta desteği',
-                'Kesintisiz kullanım',
+                'Kaç para kazandığınızı anında görün',
+                'Vadesi yaklaşan çeklerde otomatik hatırlatma',
+                'Sınırsız müşteri ve tedarikçi takibi',
+                'Kar/zarar analizi ve detaylı raporlar',
+                'Verileriniz güvende — otomatik yedekleme',
               ].map((ozellik, i) => (
                 <li key={i} style={{
                   display: 'flex',

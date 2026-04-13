@@ -138,10 +138,10 @@ export default function UpgradeBildirim() {
     iconColor  = renk.iconGenel
     icon       = 'bi-stars'
     mesaj      = kalanDenemGun === null || kalanDenemGun === -1
-      ? 'Premium\'u 7 gün ücretsiz deneyin — tüm özellikler açılsın, kesintisiz çalışın.'
+      ? 'Premium\'u 7 gün ücretsiz deneyin — kaç para kazandığınızı anında görün, hiçbir vadeyi kaçırmayın.'
       : kalanDenemGun === 0
-        ? 'Ücretsiz erişim süreniz doldu. Premium\'a geçerek kaldığınız yerden devam edin.'
-        : `${kalanDenemGun} gün ücretsiz erişiminiz kaldı. Premium'a geçerek PDF rapor, Excel dışa aktarma ve çok kullanıcı özelliklerini açın.`
+        ? 'Ücretsiz erişim süreniz doldu. Premium\'a geçerek çek takibi, kar/zarar analizi ve verilerinize kesintisiz erişin.'
+        : `${kalanDenemGun} gün ücretsiz erişiminiz kaldı. Premium ile kaç para kazandığınızı anında görün, vadesi yaklaşan çekleri otomatik takip edin.`
     butonLabel = 'Planları Gör'
     btnBg = renk.btnGenelBg; btnColor = renk.btnGenelColor; btnBorder = renk.btnGenelBorder
   }

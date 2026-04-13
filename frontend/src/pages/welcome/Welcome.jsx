@@ -53,12 +53,12 @@ function CekIllustration() {
       <rect x="40" y="40" width="200" height="28" rx="12" fill="url(#cekTop)" />
       <rect x="40" y="56" width="200" height="12" fill="url(#cekTop)" />
 
-      {/* Banka logosu */}
-      <circle cx="60" cy="54" r="8" fill="#fff" />
-      <text x="60" y="58" fontSize="9" fontWeight="800" fill="#059669" textAnchor="middle">T</text>
+      {/* ₺ simgeli daire */}
+      <circle cx="60" cy="54" r="9" fill="#fff" />
+      <text x="60" y="58" fontSize="11" fontWeight="800" fill="#059669" textAnchor="middle">₺</text>
 
-      {/* Banka adı */}
-      <text x="75" y="58" fontSize="10" fontWeight="700" fill="#fff">TÜRKİYE BANKASI</text>
+      {/* Başlık: Tüm bankalar tek ekran */}
+      <text x="75" y="58" fontSize="10" fontWeight="700" fill="#fff">TÜM BANKALAR TEK EKRAN</text>
 
       {/* TUTAR YAZISI */}
       <text x="60" y="96" fontSize="8" fontWeight="600" fill="#059669">TUTAR</text>

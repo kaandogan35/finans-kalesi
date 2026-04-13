@@ -147,6 +147,7 @@ class AuthController {
                     'deneme_bitis'          => date('Y-m-d H:i:s', strtotime('+' . \Abonelik::DENEME_SURESI_GUN . ' days')),
                     'onboarding_tamamlandi' => 1,  // Yeni sistem: klasik onboarding bypass
                     'yeni_kayit'            => true, // Frontend Welcome ekranlarına yönlendirmek için
+                    'yeni_sistem_kullanici' => true, // Bugün kayıt olan = yeni sistem
                 ],
                 'tokenlar' => [
                     'access_token'  => $access_token,
@@ -365,6 +366,7 @@ class AuthController {
                     'yetkiler'               => $kullanici['yetkiler'] ?? null,
                     'onboarding_tamamlandi'  => (int)($sirket['onboarding_tamamlandi'] ?? 0),
                     'yeni_kayit'             => false,  // giriş mevcut kullanıcı
+                    'yeni_sistem_kullanici'  => PlanKontrol::yeniSistemKullanicisiMi((int)$kullanici['sirket_id']),
                 ],
                 'tokenlar' => [
                     'access_token'  => $access_token,
@@ -649,6 +651,10 @@ class AuthController {
         $kullanici['plan']                  = $sirket['abonelik_plani'] ?? 'deneme';
         $kullanici['deneme_bitis']          = $sirket['deneme_bitis'] ?? null;
         $kullanici['onboarding_tamamlandi'] = (int)($sirket['onboarding_tamamlandi'] ?? 0);
+
+        // Yeni abonelik sistemi kullanıcısı mı? (2026-04-13 sonrası kayıt)
+        // Frontend PaywallKoruyucu bu flag'e bakarak eski kullanıcılara paywall açmaz.
+        $kullanici['yeni_sistem_kullanici'] = PlanKontrol::yeniSistemKullanicisiMi((int)$kullanici['sirket_id']);
         // yetkiler zaten id_ile_bul() sorgusuyla geliyor
 
         unset($kullanici['sifre_hash']);
@@ -736,6 +742,7 @@ class AuthController {
                     'deneme_bitis' => date('Y-m-d H:i:s', strtotime('+' . \Abonelik::DENEME_SURESI_GUN . ' days')),
                     'onboarding_tamamlandi' => 1,  // Yeni sistem bypass
                     'yeni_kayit'   => true,
+                    'yeni_sistem_kullanici' => true,  // Bugün kayıt olan = yeni sistem
                 ];
 
                 $kullanici_bilgi = [
@@ -760,6 +767,7 @@ class AuthController {
                 $kullanici['deneme_bitis']          = $sirket['deneme_bitis'] ?? null;
                 $kullanici['onboarding_tamamlandi'] = (int)($sirket['onboarding_tamamlandi'] ?? 0);
                 $kullanici['yeni_kayit']            = false;  // Mevcut kullanıcı
+                $kullanici['yeni_sistem_kullanici'] = PlanKontrol::yeniSistemKullanicisiMi((int)$kullanici['sirket_id']);
             }
 
             $access_token = JWTHelper::access_token_olustur($kullanici_bilgi);
@@ -879,6 +887,7 @@ class AuthController {
                     'deneme_bitis' => date('Y-m-d H:i:s', strtotime('+' . \Abonelik::DENEME_SURESI_GUN . ' days')),
                     'onboarding_tamamlandi' => 1,  // Yeni sistem bypass
                     'yeni_kayit'   => true,
+                    'yeni_sistem_kullanici' => true,  // Bugün kayıt olan = yeni sistem
                 ];
 
                 $kullanici_bilgi = [
@@ -903,6 +912,7 @@ class AuthController {
                 $kullanici['deneme_bitis']          = $sirket['deneme_bitis'] ?? null;
                 $kullanici['onboarding_tamamlandi'] = (int)($sirket['onboarding_tamamlandi'] ?? 0);
                 $kullanici['yeni_kayit']            = false;  // Mevcut kullanıcı
+                $kullanici['yeni_sistem_kullanici'] = PlanKontrol::yeniSistemKullanicisiMi((int)$kullanici['sirket_id']);
             }
 
             $access_token = JWTHelper::access_token_olustur($kullanici_bilgi);

@@ -28,18 +28,21 @@ export default function PaywallKoruyucu() {
   const [acik, setAcik] = useState(false)
   const tetikRef = useRef(false)
 
-  // 1) Oturum başına 1 kez otomatik göster (sadece iOS deneme planı)
+  // 1) Oturum başına 1 kez otomatik göster
+  //    Koşul: iOS + deneme plan + YENİ SİSTEM kullanıcısı
+  //    Eski kullanıcılar eski mantıkla devam eder (paywall zorlanmaz)
   useEffect(() => {
     if (!Capacitor.isNativePlatform()) return
     if (!kullanici) return
     if (kullanici.plan !== 'deneme') return
+    if (kullanici.yeni_sistem_kullanici !== true) return  // eski kullanıcıya dokunma
     if (tetikRef.current) return
 
     // Oturum başına 1 kez göster
     const gosterildi = sessionStorage.getItem(PAYWALL_OTURUM_KEY)
     if (gosterildi === '1') return
 
-    // 1 saniye gecikme — dashboard render olsun, ani açılma rahatsız etmesin
+    // 1.2 saniye gecikme — dashboard render olsun, ani açılma rahatsız etmesin
     const t = setTimeout(() => {
       setAcik(true)
       sessionStorage.setItem(PAYWALL_OTURUM_KEY, '1')
@@ -50,13 +53,14 @@ export default function PaywallKoruyucu() {
   }, [kullanici])
 
   // 2) 403 PLAN_GEREKLI event dinleyicisi
+  //    Backend zaten eski/yeni ayrımı yapıyor, eski kullanıcıya 403 döndürmüyor.
+  //    Ama fazladan kontrol — event geldiğinde yeni sistem kullanıcısı olmalı.
   useEffect(() => {
-    const handleAc = (e) => {
-      // Sadece iOS'ta ve deneme planında aç
+    const handleAc = () => {
       if (!Capacitor.isNativePlatform()) return
       if (kullanici?.plan !== 'deneme') return
+      if (kullanici?.yeni_sistem_kullanici !== true) return
       setAcik(true)
-      // SessionStorage'a işaretle — 1. görev'in tekrar açmaması için
       sessionStorage.setItem(PAYWALL_OTURUM_KEY, '1')
     }
     window.addEventListener('paywall:ac', handleAc)
