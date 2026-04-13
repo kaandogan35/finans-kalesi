@@ -8,6 +8,7 @@
 import axios from 'axios'
 import { Capacitor } from '@capacitor/core'
 import useAuthStore from '../stores/authStore'
+import { bildirim } from '../components/ui/CenterAlert'
 
 // Mobilde tam URL gerekli — web'de relative /api yeterli
 const isNative = Capacitor.isNativePlatform()
@@ -52,9 +53,13 @@ api.interceptors.response.use(
 
     // 403 Plan gerekli → Paywall event'i yayınla (PaywallKoruyucu dinler)
     // Backend iOS'ta deneme planındaki kullanıcıya yazma yasağı uygular.
+    // Modal'ların kendi generic "sistem hatası" toast'larını bastırmak için
+    // bildirim.bastirSonraki() çağrılıyor — kullanıcı sadece paywall görür.
     if (error.response?.status === 403) {
       const kod = error.response?.data?.kod
       if (kod === 'PLAN_GEREKLI' || kod === 'DENEME_SURESI_DOLDU') {
+        // Önce toast'ları bastır (1.5 saniye), sonra paywall aç
+        bildirim.bastirSonraki(1500)
         window.dispatchEvent(new CustomEvent('paywall:ac', {
           detail: { kod, mesaj: error.response?.data?.hata },
         }))

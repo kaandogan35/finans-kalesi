@@ -23,7 +23,10 @@ import api from '../api/axios'
 import { bildirim as toast } from './ui/CenterAlert'
 
 const URUN_ID = 'com.paramgo.app.standart.aylik'
-const STANDART_AYLIK_FIYAT = '399,99 ₺'
+// Sabit fiyat — sandbox veya farklı locale'lerde RevenueCat priceString USD dönebiliyor.
+// Türkiye pazarında TL göstermek zorunluluk (güven + tutarlılık).
+// App Store'daki gerçek tutar: ₺399,99
+const STANDART_AYLIK_FIYAT = '₺399,99'
 
 export default function PaywallModal({ goster, onKapat, onBasarili }) {
   const { iapPlanGuncelle } = useAuthStore()
@@ -33,7 +36,6 @@ export default function PaywallModal({ goster, onKapat, onBasarili }) {
   const [geriYukleniyor, setGeriYukleniyor] = useState(false)
   const [paket, setPaket] = useState(null)
   const [trialUygun, setTrialUygun] = useState(false)  // Kullanıcı free trial almaya uygun mu?
-  const [fiyatMetni, setFiyatMetni] = useState(STANDART_AYLIK_FIYAT)
 
   // Offering'i ve eligibility'yi yükle
   useEffect(() => {
@@ -69,10 +71,9 @@ export default function PaywallModal({ goster, onKapat, onBasarili }) {
 
         setPaket(bulunan)
 
-        // Fiyatı App Store'dan al
-        if (bulunan.product.priceString) {
-          setFiyatMetni(bulunan.product.priceString)
-        }
+        // Fiyatı sabit TL olarak tutuyoruz (STANDART_AYLIK_FIYAT).
+        // RevenueCat priceString sandbox'ta veya farklı locale'lerde USD
+        // dönebildiği için kullanıcıya tutarsız gelmesin diye sabit tutuldu.
 
         // Trial eligibility kontrolü (iOS-only)
         try {
@@ -272,7 +273,7 @@ export default function PaywallModal({ goster, onKapat, onBasarili }) {
                 lineHeight: 1.1,
                 letterSpacing: '-0.5px',
               }}>
-                {fiyatMetni}
+                {STANDART_AYLIK_FIYAT}
                 <span style={{ fontSize: 15, fontWeight: 600, color: '#6B7280', marginLeft: 2 }}>
                   {' / ay'}
                 </span>
