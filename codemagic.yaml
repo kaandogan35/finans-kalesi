@@ -88,14 +88,15 @@ workflows:
             echo "Google URL scheme zaten mevcut."
           fi
 
-      - name: Add Sign In with Apple entitlement
+      - name: Add Sign In with Apple + Push Notifications entitlement
         script: |
           ENTITLEMENTS="frontend/ios/App/App/App.entitlements"
           # PlistBuddy ile sıfırdan oluştur (YAML-safe, heredoc yok)
           /usr/libexec/PlistBuddy -c "Clear dict" "$ENTITLEMENTS" 2>/dev/null || /usr/libexec/PlistBuddy -c "Save" "$ENTITLEMENTS"
           /usr/libexec/PlistBuddy -c "Add :com.apple.developer.applesignin array" "$ENTITLEMENTS"
           /usr/libexec/PlistBuddy -c "Add :com.apple.developer.applesignin:0 string Default" "$ENTITLEMENTS"
-          echo "App.entitlements oluşturuldu (PlistBuddy ile)."
+          /usr/libexec/PlistBuddy -c "Add :aps-environment string production" "$ENTITLEMENTS"
+          echo "App.entitlements oluşturuldu (Sign In with Apple + Push Notifications)."
           # pbxproj'a entitlements referansı ekle
           PBXPROJ="frontend/ios/App/App.xcodeproj/project.pbxproj"
           if ! grep -q "App.entitlements" "$PBXPROJ"; then

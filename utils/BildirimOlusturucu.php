@@ -77,6 +77,16 @@ class BildirimOlusturucu {
                 self::whatsapp_gonder($sirket_id, $kullanici_id, $veri);
             }
 
+            // 6. iOS Push bildirimi (PushHelper yüklüyse)
+            if (class_exists('PushHelper')) {
+                PushHelper::kullanici_push(
+                    $kullanici_id,
+                    $veri['baslik'],
+                    $veri['mesaj'],
+                    ['url' => $veri['aksiyon_url'] ?? '/dashboard']
+                );
+            }
+
             return $bildirim_id;
 
         } catch (\Exception $e) {
