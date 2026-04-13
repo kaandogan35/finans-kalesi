@@ -93,23 +93,32 @@ class PlanKontrol {
     /**
      * Kullanıcı yeni sistem kullanıcısı mı kontrol et
      * (Kayıt tarihi YENI_SISTEM_TARIHI'nden sonra ise true)
+     *
+     * Güvenli: Eğer 'olusturma_tarihi' kolonu yoksa veya DB hatası olursa
+     * false döner (eski kullanıcı varsayılır, uygulama çökmez).
      */
     public static function yeniSistemKullanicisiMi(int $sirket_id): bool {
         static $cache = [];
         if (isset($cache[$sirket_id])) return $cache[$sirket_id];
 
-        $db = Database::baglan();
-        $stmt = $db->prepare("SELECT olusturma_tarihi FROM sirketler WHERE id = :sid LIMIT 1");
-        $stmt->execute([':sid' => $sirket_id]);
-        $row = $stmt->fetch();
+        try {
+            $db = Database::baglan();
+            $stmt = $db->prepare("SELECT olusturma_tarihi FROM sirketler WHERE id = :sid LIMIT 1");
+            $stmt->execute([':sid' => $sirket_id]);
+            $row = $stmt->fetch();
 
-        if (!$row || empty($row['olusturma_tarihi'])) {
-            return $cache[$sirket_id] = false;  // Emin değilsek eski kullanıcı say (güvenli)
+            if (!$row || empty($row['olusturma_tarihi'])) {
+                return $cache[$sirket_id] = false;  // Emin değilsek eski kullanıcı say
+            }
+
+            $kayit = strtotime($row['olusturma_tarihi']);
+            $esik  = strtotime(self::YENI_SISTEM_TARIHI);
+            return $cache[$sirket_id] = ($kayit >= $esik);
+        } catch (\Throwable $e) {
+            // Kolon eksik veya DB hatası — güvenli taraf: eski kullanıcı say
+            error_log('PlanKontrol yeniSistemKullanicisiMi hata: ' . $e->getMessage());
+            return $cache[$sirket_id] = false;
         }
-
-        $kayit = strtotime($row['olusturma_tarihi']);
-        $esik  = strtotime(self::YENI_SISTEM_TARIHI);
-        return $cache[$sirket_id] = ($kayit >= $esik);
     }
 
     /**
