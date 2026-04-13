@@ -224,8 +224,9 @@ export default function SifreSifirla() {
           <div className={`${p}-giris-kart`}>
             <div className={`${p}-giris-kart-serit`} />
             <div className={`${p}-giris-kart-ic`}>
-              <a href="https://paramgo.com" className={`${p}-giris-anasayfa-link`}><i className="bi bi-arrow-left me-1" />Ana Sayfa</a>
-              <div className="d-flex d-lg-none align-items-center justify-content-center mb-4"><ParamGoLogo size="sm" /></div>
+              <a href="https://paramgo.com" className={`d-flex d-lg-none align-items-center justify-content-center mb-4 ${p}-giris-marka-wrap`}>
+                <ParamGoLogo size="sm" />
+              </a>
 
               {tamamlandi && (
                 <div style={{ textAlign: 'center', padding: '16px 0' }}>

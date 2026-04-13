@@ -8,6 +8,7 @@
 import { useState, useEffect, useRef, useCallback } from 'react'
 import { createPortal } from 'react-dom'
 import { Capacitor } from '@capacitor/core'
+import { useSwipeable } from 'react-swipeable'
 import { bildirim as toast } from '../../components/ui/CenterAlert'
 import cekSenetApi from '../../api/cekSenet'
 import { carilerApi } from '../../api/cariler'
@@ -730,6 +731,18 @@ export default function CekSenet() {
   const [arsivKategori, setArsivKategori] = useState('tumu')
 
   const tabDegistir = (i) => { setAktifTab(i); setAramaMetni('') }
+
+  // ─ Tab Swipe ────────────────────────────────────────────────────────────────
+  const TAB_SAYISI = 6
+  const tabSwipeHandlers = useSwipeable({
+    onSwipedLeft:  () => { if (aktifTab < TAB_SAYISI - 1) tabDegistir(aktifTab + 1) },
+    onSwipedRight: () => { if (aktifTab > 0) tabDegistir(aktifTab - 1) },
+    delta: 60,
+    swipeDuration: 500,
+    trackMouse: false,
+    preventScrollOnSwipe: false,
+    touchEventOptions: { passive: true },
+  })
 
   const aramaFiltrele = (liste, alanlar) => {
     if (!aramaMetni.trim()) return liste
@@ -1492,7 +1505,7 @@ export default function CekSenet() {
 
   return (
     <>
-    <div className={`${p}-page-root`}>
+    <div className={`${p}-page-root`} {...tabSwipeHandlers}>
       {/* STYLE BLOCK REMOVED — tema CSS dosyalarında */}
       {/* ─── Sayfa Başlığı ──────────────────────────────────────────────────── */}
       <div className={`${p}-page-header mb-4`}>

@@ -1,6 +1,7 @@
-import { useState, useEffect, useMemo, useRef } from 'react'
+import { useState, useEffect, useMemo, useRef, useCallback } from 'react'
 import { Outlet, NavLink, Link, useNavigate, useLocation } from 'react-router-dom'
 import { Capacitor } from '@capacitor/core'
+import { useSwipeable } from 'react-swipeable'
 import useAuthStore from '../../stores/authStore'
 import useBildirimStore from '../../stores/bildirimStore'
 import '../../temalar/paramgo.css'
@@ -153,6 +154,41 @@ export default function AppLayoutParamGo() {
     await cikisYap()
     navigate('/giris')
   }
+
+  // ─── Modül Swipe (sadece kendi tab'ı olmayan sayfalarda) ───────────────────
+  const MODUL_ROTALARI = ['/dashboard', '/cek-senet', '/kasa', '/cariler']
+  const KENDI_SWIPE_ROTALARI = ['/cek-senet', '/kasa']
+
+  const modulSwipeAktif = !sidebarOpen && !KENDI_SWIPE_ROTALARI.some(r =>
+    location.pathname === r || location.pathname.startsWith(r + '/')
+  )
+
+  const mevcutModulIndex = MODUL_ROTALARI.findIndex(r =>
+    location.pathname === r || location.pathname.startsWith(r + '/')
+  )
+
+  const modulSwipeHandlers = useSwipeable({
+    onSwipedLeft: () => {
+      if (!modulSwipeAktif) return
+      const next = mevcutModulIndex + 1
+      if (next < MODUL_ROTALARI.length) navigate(MODUL_ROTALARI[next])
+    },
+    onSwipedRight: () => {
+      if (!modulSwipeAktif) return
+      const prev = mevcutModulIndex - 1
+      if (prev >= 0) navigate(MODUL_ROTALARI[prev])
+    },
+    delta: 60,
+    swipeDuration: 500,
+    trackMouse: false,
+    preventScrollOnSwipe: false,
+    touchEventOptions: { passive: true },
+  })
+
+  const contentRefCb = useCallback((node) => {
+    contentRef.current = node
+    modulSwipeHandlers.ref(node)
+  }, [])
 
   const adKisalt = kisalt(kullanici?.ad_soyad)
 
@@ -397,7 +433,7 @@ export default function AppLayoutParamGo() {
         <UpgradeBildirim />
 
         {/* Sayfa içeriği */}
-        <main className="p-content" ref={contentRef}>
+        <main className="p-content" ref={contentRefCb}>
           <Outlet />
         </main>
 
