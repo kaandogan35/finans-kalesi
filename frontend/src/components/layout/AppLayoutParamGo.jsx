@@ -155,9 +155,10 @@ export default function AppLayoutParamGo() {
     navigate('/giris')
   }
 
-  // ─── Modül Swipe (sadece kendi tab'ı olmayan sayfalarda) ───────────────────
+  // ─── Modül Swipe ────────────────────────────────────────────────────────────
+  // /cek-senet hariç tüm sayfalarda aktif (cek-senet kendi zone'unu yönetiyor)
   const MODUL_ROTALARI = ['/dashboard', '/cek-senet', '/kasa', '/cariler']
-  const KENDI_SWIPE_ROTALARI = ['/cek-senet', '/kasa']
+  const KENDI_SWIPE_ROTALARI = ['/cek-senet']
 
   const modulSwipeAktif = !sidebarOpen && !KENDI_SWIPE_ROTALARI.some(r =>
     location.pathname === r || location.pathname.startsWith(r + '/')
@@ -178,8 +179,8 @@ export default function AppLayoutParamGo() {
       const prev = mevcutModulIndex - 1
       if (prev >= 0) navigate(MODUL_ROTALARI[prev])
     },
-    delta: 60,
-    swipeDuration: 500,
+    delta: 25,
+    swipeDuration: 250,
     trackMouse: false,
     preventScrollOnSwipe: false,
     touchEventOptions: { passive: true },

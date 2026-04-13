@@ -7,8 +7,7 @@
 
 import { useState, useEffect } from 'react'
 import { bildirim as toast } from '../../components/ui/CenterAlert'
-import { useLocation, useNavigate } from 'react-router-dom'
-import { useSwipeable } from 'react-swipeable'
+import { useLocation } from 'react-router-dom'
 import useTemaStore from '../../stores/temaStore'
 import { temaRenkleri } from '../../lib/temaRenkleri'
 import useAuthStore from '../../stores/authStore'
@@ -42,7 +41,6 @@ export default function VarlikKasa() {
 
   const { kullanici } = useAuthStore()
   const location = useLocation()
-  const navigate  = useNavigate()
 
   // URL'den aktif sekmeyi belirle
   const aktifSekme = location.pathname === '/kasa/bilanco'    ? 'bilanco'
@@ -51,20 +49,6 @@ export default function VarlikKasa() {
                    : 'gosterge'
 
   const sayfa = SAYFA_BILGI[aktifSekme]
-
-  // ─ Tab Swipe ────────────────────────────────────────────────────────────────
-  const KASA_SEKME_ROTALARI = ['/kasa', '/kasa/bilanco', '/kasa/ortaklar', '/kasa/yatirimlar']
-  const mevcutKasaIndex = KASA_SEKME_ROTALARI.findIndex(r => location.pathname === r)
-
-  const kasaSwipeHandlers = useSwipeable({
-    onSwipedLeft:  () => { const next = mevcutKasaIndex + 1; if (next < KASA_SEKME_ROTALARI.length) navigate(KASA_SEKME_ROTALARI[next]) },
-    onSwipedRight: () => { const prev = mevcutKasaIndex - 1; if (prev >= 0) navigate(KASA_SEKME_ROTALARI[prev]) },
-    delta: 60,
-    swipeDuration: 500,
-    trackMouse: false,
-    preventScrollOnSwipe: false,
-    touchEventOptions: { passive: true },
-  })
 
   const bugun = new Date()
   const [secilenAy,   setSecilenAy]   = useState(bugun.getMonth() + 1)
@@ -128,7 +112,7 @@ export default function VarlikKasa() {
     .reduce((s, y) => s + y.miktar * y.guncel_fiyat, 0)
 
   return (
-    <div className={`${p}-page-root`} {...kasaSwipeHandlers}>
+    <div className={`${p}-page-root`}>
 
       {/* ─── Sayfa Başlığı (route'a göre değişir) ─── */}
       <div className={`${p}-page-header`}>

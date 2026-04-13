@@ -9,6 +9,7 @@ import { useState, useEffect, useRef, useCallback } from 'react'
 import { createPortal } from 'react-dom'
 import { Capacitor } from '@capacitor/core'
 import { useSwipeable } from 'react-swipeable'
+import { useNavigate, useLocation } from 'react-router-dom'
 import { bildirim as toast } from '../../components/ui/CenterAlert'
 import cekSenetApi from '../../api/cekSenet'
 import { carilerApi } from '../../api/cariler'
@@ -732,13 +733,30 @@ export default function CekSenet() {
 
   const tabDegistir = (i) => { setAktifTab(i); setAramaMetni('') }
 
-  // ─ Tab Swipe ────────────────────────────────────────────────────────────────
+  // ─ Bölge Bazlı Swipe ────────────────────────────────────────────────────────
+  const navigateTo = useNavigate()
+  const cekLocation = useLocation()
+  const MODUL_ROTALARI = ['/dashboard', '/cek-senet', '/kasa', '/cariler']
+  const mevcutModulIndex = MODUL_ROTALARI.indexOf('/cek-senet')
+
+  // Header bölgesi → modül geçişi
+  const headerSwipeHandlers = useSwipeable({
+    onSwipedLeft:  () => { const next = mevcutModulIndex + 1; if (next < MODUL_ROTALARI.length) navigateTo(MODUL_ROTALARI[next]) },
+    onSwipedRight: () => { const prev = mevcutModulIndex - 1; if (prev >= 0) navigateTo(MODUL_ROTALARI[prev]) },
+    delta: 25,
+    swipeDuration: 250,
+    trackMouse: false,
+    preventScrollOnSwipe: false,
+    touchEventOptions: { passive: true },
+  })
+
+  // Panel/kart bölgesi → tab geçişi
   const TAB_SAYISI = 6
   const tabSwipeHandlers = useSwipeable({
     onSwipedLeft:  () => { if (aktifTab < TAB_SAYISI - 1) tabDegistir(aktifTab + 1) },
     onSwipedRight: () => { if (aktifTab > 0) tabDegistir(aktifTab - 1) },
-    delta: 60,
-    swipeDuration: 500,
+    delta: 25,
+    swipeDuration: 250,
     trackMouse: false,
     preventScrollOnSwipe: false,
     touchEventOptions: { passive: true },
@@ -1505,10 +1523,10 @@ export default function CekSenet() {
 
   return (
     <>
-    <div className={`${p}-page-root`} {...tabSwipeHandlers}>
+    <div className={`${p}-page-root`}>
       {/* STYLE BLOCK REMOVED — tema CSS dosyalarında */}
       {/* ─── Sayfa Başlığı ──────────────────────────────────────────────────── */}
-      <div className={`${p}-page-header mb-4`}>
+      <div className={`${p}-page-header mb-4`} {...headerSwipeHandlers}>
         <div className={`${p}-page-header-left`}>
           <div className={`${p}-page-header-icon`}>
             <i className="bi bi-file-earmark-text-fill" />
@@ -1564,7 +1582,7 @@ export default function CekSenet() {
       </div>
 
       {/* ─── Ana Kart ───────────────────────────────────────────────────────── */}
-      <div className={`${p}-panel`} style={{ padding: 0, overflow: 'hidden' }}>
+      <div className={`${p}-panel`} style={{ padding: 0, overflow: 'hidden' }} {...tabSwipeHandlers}>
 
         {/* Tab Başlıkları */}
         <div className={`${p}-tab-bar`} data-tur="cek-tablar">
