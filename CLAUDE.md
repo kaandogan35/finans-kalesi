@@ -112,18 +112,22 @@ $stmt = $pdo->prepare("SELECT * FROM tablo WHERE id = :id");
 - Şifreler terminalde veya kodda açık yazılmaz
 - `.env` Git'e eklenmez
 
-### 5b. Deploy — SFTP Otomatik / public_html Manuel
+### 5b. Deploy — Tüm Dosyalar WinSCP ile Manuel
 
-**Otomatik (SFTP watcher):** PHP dosyaları kaydedilince doğrudan sunucuya gider.
-- `controllers/`, `models/`, `routes/`, `middleware/`, `utils/`, `config/`, `cron/` → otomatik
+**SFTP watcher ÇALIŞMIYOR.** Hiçbir dosya otomatik yüklenmiyor.
+Her değişiklik sonrası Kaan'a WinSCP ile yükleme tablosu ver:
 
-**public_html için KULLANICIYA UYAR:** Aşağıdaki durumlarda Kaan'a hatırlat:
-1. `public/frontend-build/` değiştiyse → WinSCP ile `/public_html/frontend-build/` üzerine kopyalaması gerekir
-2. `public/index-canli.php` değiştiyse → WinSCP ile `/public_html/index.php` olarak yüklemesi gerekir
-3. `public/.htaccess` değiştiyse → WinSCP ile `/public_html/.htaccess` olarak yüklemesi gerekir
+**Sunucu yolları:**
+- Backend dosyaları → `/home/goparam/repositories/finans-kalesi/[aynı yol]`
+- `public/index-canli.php` → `/home/goparam/public_html/index.php`
+- `public/frontend-build/` → `/home/goparam/public_html/frontend-build/`
+- `public/.htaccess` → `/home/goparam/public_html/.htaccess`
 
-**Uyarı formatı:**
-> ⚠️ public_html güncellemesi gerekiyor: [dosya adı] → WinSCP ile [hedef yol] yükle
+**Her değişiklik sonrası şu formatta bildir:**
+
+| Yerel | Sunucu |
+|-------|--------|
+| `dosya/yolu` | `/home/goparam/hedef/yolu` |
 
 ### 5c. KRİTİK UYARI — index.php ve .htaccess
 
