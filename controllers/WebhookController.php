@@ -141,6 +141,41 @@ class WebhookController {
                 error_log("RevenueCat webhook: EXPIRATION sirket={$sirket_id}");
                 break;
 
+            case 'TRANSFER':
+                // KRİTİK: Aynı Apple ID ile farklı app user arasında transfer
+                // Senaryo: User A abone oldu, User B (aynı Apple ID) "Geri Yükle" dedi
+                //          → RevenueCat abonelik'i User B'ye transfer etti
+                //          → User A'nın aboneliği artık geçersiz
+                //
+                // $event['transferred_from']: eski app user ID listesi (aboneliği kaybeden)
+                // $event['transferred_to']:   yeni app user ID listesi (aboneliği alan)
+                //
+                // Burada sadece transferred_from'u 'deneme'ye düşürüyoruz.
+                // transferred_to zaten frontend tarafında iapDogrula çağırarak planını aktifleştirecek.
+                $transferred_from = $event['transferred_from'] ?? [];
+                if (is_array($transferred_from)) {
+                    foreach ($transferred_from as $eski_musteri_id) {
+                        $eski_sirket = $this->abonelik_model->sirketIdRevenueCatMusteriden($eski_musteri_id);
+                        if ($eski_sirket) {
+                            $this->abonelik_model->planGuncelle($eski_sirket, 'deneme', null, null, null);
+                            error_log("RevenueCat webhook: TRANSFER from sirket={$eski_sirket} (plan sifirlandi)");
+                        }
+                    }
+                }
+                // transferred_to için: yeni user zaten kendi cihazından iapDogrula çağıracak
+                // Ama yine de burada da güncellemek istersek:
+                $transferred_to = $event['transferred_to'] ?? [];
+                if (is_array($transferred_to) && $plan) {
+                    foreach ($transferred_to as $yeni_musteri_id) {
+                        $yeni_sirket = $this->abonelik_model->sirketIdRevenueCatMusteriden($yeni_musteri_id);
+                        if ($yeni_sirket) {
+                            $this->abonelik_model->planGuncelle($yeni_sirket, $plan, $donem, 'apple', $bitis_str);
+                            error_log("RevenueCat webhook: TRANSFER to sirket={$yeni_sirket} plan={$plan}/{$donem}");
+                        }
+                    }
+                }
+                break;
+
             case 'CANCELLATION':
                 // Kullanıcı iptal etti ama dönem sonuna kadar erişim devam eder
                 // Sadece logla, planı değiştirme

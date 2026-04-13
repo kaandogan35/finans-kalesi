@@ -11,8 +11,10 @@
 class AbonelikController {
 
     private Abonelik $abonelik_model;
+    private PDO $db;
 
     public function __construct(PDO $db) {
+        $this->db = $db;
         $this->abonelik_model = new Abonelik($db);
     }
 
@@ -29,10 +31,19 @@ class AbonelikController {
 
     /**
      * Kullanıcının aktif plan durumunu döndür
+     *
+     * RevenueCat Senkronizasyonu:
+     * Çağrıldığında DB planı ücretliyse RevenueCat ile sessiz senkronizasyon yapar.
+     * Böylece aynı Apple ID ile farklı hesaplar arasında transfer olmuş
+     * abonelikler backend'de otomatik temizlenir (Revenue Leak koruması).
      */
     public function durum(): void {
         $payload = AuthMiddleware::dogrula();
         $sirket_id = (int) $payload['sirket_id'];
+
+        // Sessiz RC senkronizasyonu — sadece ücretli planda olanlar için çalışır
+        // Hata olursa bloklamaz, sadece log atar (RevenueCatHelper içinde try/catch)
+        RevenueCatHelper::planSenkronizeEt($sirket_id, $this->db);
 
         $abonelik = $this->abonelik_model->guncelPlan($sirket_id);
 
@@ -206,6 +217,20 @@ class AbonelikController {
 
         if ($http_kod === 404) {
             error_log("IAP: RevenueCat 404 — abone bulunamadı musteri={$musteri_id} yanit=" . substr($yanit, 0, 200));
+
+            // Revenue Leak Koruması:
+            // DB'de ücretli plan varsa ve RevenueCat 404 diyorsa, abonelik artık
+            // bu sirket'e bağlı değil (transfer, iptal, expiration). Plan'ı 'deneme'ye
+            // düşürerek DB'yi senkronize et.
+            $mevcut = $this->abonelik_model->guncelPlan($sirket_id);
+            $mevcut_plan = $mevcut['plan_adi'] ?? 'deneme';
+            if (in_array($mevcut_plan, ['standart', 'kurumsal'], true)) {
+                $this->abonelik_model->planGuncelle($sirket_id, 'deneme', null, null, null);
+                error_log("IAP 404 sync: sirket={$sirket_id} plan temizlendi ({$mevcut_plan} → deneme)");
+                Response::hata('Aboneliğiniz artık bu hesaba bağlı değil. Başka bir Apple ID veya hesap üzerinden aktifleştirilmiş olabilir.', 404);
+                return;
+            }
+
             Response::hata('Abonelik kaydı henüz oluşmadı, birkaç saniye sonra tekrar deneyin', 404);
             return;
         }

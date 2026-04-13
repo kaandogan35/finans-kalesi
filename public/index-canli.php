@@ -69,6 +69,7 @@ require_once BASE_PATH . '/controllers/CronController.php';
 require_once BASE_PATH . '/controllers/TurController.php';
 require_once BASE_PATH . '/models/Guvenlik.php';
 require_once BASE_PATH . '/utils/TOTPHelper.php';
+require_once BASE_PATH . '/utils/RevenueCatHelper.php';
 require_once BASE_PATH . '/models/Bildirim.php';
 require_once BASE_PATH . '/utils/BildirimOlusturucu.php';
 require_once BASE_PATH . '/models/Rapor.php';
