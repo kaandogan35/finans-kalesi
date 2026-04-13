@@ -52,22 +52,21 @@ $baslangic = microtime(true);
 error_log("[vade-uyari-cron] Başladı: " . date('Y-m-d H:i:s'));
 
 // ─── Vade Kuralları ───────────────────────────────────────────────
-// [ gün_farkı => [ oncelik, alacak_mesaj_sablonu, borc_mesaj_sablonu ] ]
 $vade_kurallari = [
     3 => [
-        'oncelik' => 'yuksek',
-        'alacak'  => '3 gün sonra çekin doluyor',
-        'borc'    => '3 gün sonra verdiğin çek doluyor',
+        'oncelik'       => 'yuksek',
+        'alacak_baslik' => 'Çek Vadesi Yaklaşıyor · 3 Gün Kaldı',
+        'borc_baslik'   => 'Ödeme Vadesi Yaklaşıyor · 3 Gün Kaldı',
     ],
     1 => [
-        'oncelik' => 'yuksek',
-        'alacak'  => 'Yarın çekin doluyor',
-        'borc'    => 'Yarın verdiğin çek doluyor',
+        'oncelik'       => 'yuksek',
+        'alacak_baslik' => 'Yarın Vadesi Dolan Çekin Var',
+        'borc_baslik'   => 'Yarın Ödenmesi Gereken Çekin Var',
     ],
     0 => [
-        'oncelik' => 'kritik',
-        'alacak'  => 'Bugün çekin doluyor!',
-        'borc'    => 'Bugün verdiğin çek doluyor!',
+        'oncelik'       => 'kritik',
+        'alacak_baslik' => 'Bugün Vadesi Dolan Çekin Var!',
+        'borc_baslik'   => 'Bugün Ödenmesi Gereken Çekin Var!',
     ],
 ];
 
@@ -102,13 +101,15 @@ foreach ($sirketler as $sirket_id) {
 
         // ── A) ALACAK ÇEKLERİ (tahsilde) ─────────────────────────
         $stmt = $db->prepare(
-            "SELECT id, seri_no, tutar, tutar_tl, doviz_kodu, cari_id
-             FROM cek_senet
-             WHERE sirket_id    = :sirket_id
-               AND tur          = 'alacak'
-               AND durum        = 'tahsilde'
-               AND vade_tarihi  = :vade_tarihi
-               AND silindi_mi   = 0"
+            "SELECT cs.id, cs.tutar, cs.tutar_tl, cs.doviz_kodu, cs.vade_tarihi,
+                    COALESCE(c.ad, 'Bilinmeyen Cari') AS cari_adi
+             FROM cek_senet cs
+             LEFT JOIN cariler c ON c.id = cs.cari_id
+             WHERE cs.sirket_id   = :sirket_id
+               AND cs.tur         = 'alacak'
+               AND cs.durum       = 'tahsilde'
+               AND cs.vade_tarihi = :vade_tarihi
+               AND cs.silindi_mi  = 0"
         );
         $stmt->execute([':sirket_id' => $sirket_id, ':vade_tarihi' => $hedef_tarih]);
         $alacak_cekler = $stmt->fetchAll();
@@ -116,12 +117,15 @@ foreach ($sirketler as $sirket_id) {
         foreach ($alacak_cekler as $cek) {
             $toplam_cek_tarandi++;
             $tutar_goster = format_tutar($cek['tutar_tl'] ?? $cek['tutar'], $cek['doviz_kodu'] ?? 'TRY');
+            $cari_kisa    = cari_kisalt($cek['cari_adi']);
+            $vade_kisa    = tarih_kisalt($cek['vade_tarihi']);
 
-            $baslik = $kural['alacak'];
-            $mesaj  = "{$kural['alacak']} — Seri: {$cek['seri_no']} / {$tutar_goster}";
-            if ($gun_farki === 0) {
-                $mesaj = "Bugün tahsil edilmesi gereken çekin var: {$cek['seri_no']} ({$tutar_goster})";
-            }
+            $baslik = $kural['alacak_baslik'];
+            $mesaj  = match ((int)$gun_farki) {
+                0 => "{$tutar_goster} · {$cari_kisa}'dan alacak çekin bugün tahsil edilmeli",
+                1 => "{$tutar_goster} · {$cari_kisa}'dan alacak çekin yarın tahsil edilmeli",
+                default => "{$tutar_goster} · {$cari_kisa}'dan alacak çekin {$vade_kisa}'de tahsil edilmeli",
+            };
 
             $gonderilen = BildirimOlusturucu::toplu_gonder($kullanici_idler, [
                 'sirket_id'   => $sirket_id,
@@ -139,13 +143,15 @@ foreach ($sirketler as $sirket_id) {
 
         // ── B) BORÇ ÇEKLERİ (verildi / odeme_bekleniyor) ─────────
         $stmt = $db->prepare(
-            "SELECT id, seri_no, tutar, tutar_tl, doviz_kodu, cari_id
-             FROM cek_senet
-             WHERE sirket_id    = :sirket_id
-               AND tur          = 'borc'
-               AND durum        IN ('verildi', 'odeme_bekleniyor')
-               AND vade_tarihi  = :vade_tarihi
-               AND silindi_mi   = 0"
+            "SELECT cs.id, cs.tutar, cs.tutar_tl, cs.doviz_kodu, cs.vade_tarihi,
+                    COALESCE(c.ad, 'Bilinmeyen Cari') AS cari_adi
+             FROM cek_senet cs
+             LEFT JOIN cariler c ON c.id = cs.cari_id
+             WHERE cs.sirket_id   = :sirket_id
+               AND cs.tur         = 'borc'
+               AND cs.durum       IN ('verildi', 'odeme_bekleniyor')
+               AND cs.vade_tarihi = :vade_tarihi
+               AND cs.silindi_mi  = 0"
         );
         $stmt->execute([':sirket_id' => $sirket_id, ':vade_tarihi' => $hedef_tarih]);
         $borc_cekler = $stmt->fetchAll();
@@ -153,12 +159,15 @@ foreach ($sirketler as $sirket_id) {
         foreach ($borc_cekler as $cek) {
             $toplam_cek_tarandi++;
             $tutar_goster = format_tutar($cek['tutar_tl'] ?? $cek['tutar'], $cek['doviz_kodu'] ?? 'TRY');
+            $cari_kisa    = cari_kisalt($cek['cari_adi']);
+            $vade_kisa    = tarih_kisalt($cek['vade_tarihi']);
 
-            $baslik = $kural['borc'];
-            $mesaj  = "{$kural['borc']} — Seri: {$cek['seri_no']} / {$tutar_goster}";
-            if ($gun_farki === 0) {
-                $mesaj = "Bugün ödenmesi gereken çekin var: {$cek['seri_no']} ({$tutar_goster})";
-            }
+            $baslik = $kural['borc_baslik'];
+            $mesaj  = match ((int)$gun_farki) {
+                0 => "{$tutar_goster} · {$cari_kisa}'ya borcunuzun vadesi bugün ödenmeli",
+                1 => "{$tutar_goster} · {$cari_kisa}'ya borcunuzun vadesi yarın",
+                default => "{$tutar_goster} · {$cari_kisa}'ya borcunuzun vadesi {$vade_kisa}'de",
+            };
 
             $gonderilen = BildirimOlusturucu::toplu_gonder($kullanici_idler, [
                 'sirket_id'   => $sirket_id,
@@ -188,6 +197,22 @@ error_log(sprintf(
 ));
 
 exit(0);
+
+// ─── Yardımcı: Cari Adı Kısalt ────────────────────────────────────
+function cari_kisalt(string $ad): string {
+    $ad = trim($ad);
+    $kelimeler = preg_split('/\s+/', $ad);
+    if (count($kelimeler) === 1) return $kelimeler[0];
+    $iki_kelime = $kelimeler[0] . ' ' . $kelimeler[1];
+    return mb_strlen($iki_kelime) <= 15 ? $iki_kelime : $kelimeler[0];
+}
+
+// ─── Yardımcı: Tarihi Kısalt ──────────────────────────────────────
+function tarih_kisalt(string $tarih): string {
+    $aylar = ['', 'Oca', 'Şub', 'Mar', 'Nis', 'May', 'Haz', 'Tem', 'Ağu', 'Eyl', 'Eki', 'Kas', 'Ara'];
+    [$yil, $ay, $gun] = explode('-', $tarih);
+    return (int)$gun . ' ' . ($aylar[(int)$ay] ?? $ay);
+}
 
 // ─── Yardımcı: Tutar Formatla ─────────────────────────────────────
 function format_tutar(float $tutar, string $doviz): string {
