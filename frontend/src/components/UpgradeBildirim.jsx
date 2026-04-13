@@ -62,9 +62,14 @@ export default function UpgradeBildirim() {
   const renk = TEMA_RENKLER[aktifTema] || TEMA_RENKLER.paramgo
 
   // Kalan deneme günü hesapla
+  // Not: iOS/Safari "2026-05-13 10:30:00" formatını Invalid Date olarak parse eder.
+  // Bu yüzden boşluğu T ile değiştirip ISO 8601 formatına çeviriyoruz.
   const kalanDenemGun = (() => {
-    if (plan !== 'deneme' || !kullanici?.deneme_bitis) return null
-    const bitis = new Date(kullanici.deneme_bitis)
+    if (plan !== 'deneme') return null
+    if (!kullanici?.deneme_bitis) return -1  // null = tarih bilinmiyor (henüz yüklenmedi)
+    const ham = kullanici.deneme_bitis.replace(' ', 'T')
+    const bitis = new Date(ham)
+    if (isNaN(bitis.getTime())) return -1    // geçersiz tarih — bilinmiyor say
     const bugun = new Date()
     const fark  = Math.ceil((bitis - bugun) / (1000 * 60 * 60 * 24))
     return fark > 0 ? fark : 0
@@ -132,9 +137,11 @@ export default function UpgradeBildirim() {
     border     = renk.borderGenel
     iconColor  = renk.iconGenel
     icon       = 'bi-stars'
-    mesaj      = kalanDenemGun !== null
-      ? `30 günlük ücretsiz deneme sürenizin ${kalanDenemGun} günü kaldı. Standart plana geçerek PDF rapor, Excel dışa aktarma ve çok kullanıcı özelliklerini açın.`
-      : 'Deneme süreniz doldu. Tüm özelliklere erişmek için Standart plana geçin.'
+    mesaj      = kalanDenemGun === null || kalanDenemGun === -1
+      ? 'Premium\'u 7 gün ücretsiz deneyin — tüm özellikler açılsın, kesintisiz çalışın.'
+      : kalanDenemGun === 0
+        ? 'Ücretsiz erişim süreniz doldu. Premium\'a geçerek kaldığınız yerden devam edin.'
+        : `${kalanDenemGun} gün ücretsiz erişiminiz kaldı. Premium'a geçerek PDF rapor, Excel dışa aktarma ve çok kullanıcı özelliklerini açın.`
     butonLabel = 'Planları Gör'
     btnBg = renk.btnGenelBg; btnColor = renk.btnGenelColor; btnBorder = renk.btnGenelBorder
   }

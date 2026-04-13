@@ -50,6 +50,7 @@ const VeresiyeListesi      = lazy(() => import('./pages/veresiye/VeresiyeListesi
 const VeresiyeDetay        = lazy(() => import('./pages/veresiye/VeresiyeDetay'))
 const RaporlarEkrani       = lazy(() => import('./pages/raporlar/RaporlarEkrani'))
 const Onboarding           = lazy(() => import('./pages/onboarding/Onboarding'))
+const Welcome              = lazy(() => import('./pages/welcome/Welcome'))
 
 // Lazy yükleme sırasında gösterilecek minimal yükleyici
 function SayfaYukleniyor() {
@@ -134,6 +135,9 @@ export default function App() {
 
           {/* Onboarding — TemaLayout dışında, herhangi bir route önce */}
           <Route path="/onboarding" element={<Onboarding />} />
+
+          {/* Welcome — yeni kayıt sonrası 3 swipe tanıtım ekranı */}
+          <Route path="/welcome" element={<Welcome />} />
 
           {/* Onboarding tamamlanmamışsa /onboarding'e yönlendir */}
           <Route element={<OnboardingKoruma />}>

@@ -68,15 +68,57 @@ class PlanKontrol {
     }
 
     /**
-     * Deneme süresi dolmuşsa yazma işlemlerini engelle
-     * Okuma (GET) isteklerine izin verir — kullanıcı verilerini görebilsin
+     * Platform bilgisini request header'dan oku
+     * Frontend her istekte X-Platform: ios | web header'ı gönderir.
+     * Native Capacitor istekleri "ios", tarayıcı istekleri "web" etiketlenir.
+     *
+     * @return string 'ios' | 'web'
+     */
+    public static function platformAl(): string {
+        $header = $_SERVER['HTTP_X_PLATFORM'] ?? '';
+        $header = strtolower(trim($header));
+        if ($header === 'ios' || $header === 'android') {
+            return 'ios';  // mobil platform (android şu an ios ile aynı davranış)
+        }
+        return 'web';
+    }
+
+    /**
+     * Deneme planı yazma kontrolü — iOS/Web ayrımlı
+     *
+     * Yeni sistem:
+     *  - iOS: deneme planı = Apple trial alınmamış. Kullanıcı POST/PUT/DELETE yapamaz.
+     *         Her yazma girişiminde 403 döner, frontend paywall açar.
+     *  - Web: deneme planı = 7 gün tam erişim. Süre dolunca POST'lar engellenir (eski sistem).
+     *
+     * Okuma (GET) her zaman serbest — kullanıcı modülleri gezebilir.
      */
     public static function denemeSuresiKontrol(array $payload): void {
         $plan = $payload['plan'] ?? 'deneme';
         if ($plan !== 'deneme') {
-            return;
+            return;  // ücretli planlardaki kullanıcıya dokunma
         }
 
+        $metod = $_SERVER['REQUEST_METHOD'] ?? 'GET';
+        if ($metod === 'GET') {
+            return;  // okuma her zaman serbest
+        }
+
+        $platform = self::platformAl();
+
+        if ($platform === 'ios') {
+            // iOS: deneme planı yazma yasağı — mutlaka Apple trial/abonelik alınmalı
+            Response::json([
+                'basarili'     => false,
+                'hata'         => 'Bu işlemi yapabilmek için Premium aboneliği başlatmanız gerekir. İlk 7 gün ücretsiz.',
+                'kod'          => 'PLAN_GEREKLI',
+                'kalan_gun'    => 0,
+                'plan_sayfasi' => true,
+            ], 403);
+            exit;
+        }
+
+        // Web: eski sistem — 7 gün ücretsiz deneme, süre dolunca engelle
         $sirket_id = (int) ($payload['sirket_id'] ?? 0);
         if ($sirket_id === 0) {
             return;
@@ -86,19 +128,14 @@ class PlanKontrol {
         $abonelik = new Abonelik($db);
 
         if ($abonelik->denemeSuresiDolduMu($sirket_id)) {
-            // GET isteklerine izin ver (okuma)
-            $metod = $_SERVER['REQUEST_METHOD'] ?? 'GET';
-            if ($metod !== 'GET') {
-                $kalan = 0;
-                Response::json([
-                    'basarili'     => false,
-                    'hata'         => '30 günlük ücretsiz deneme süreniz doldu. Devam etmek için bir plan satın alın.',
-                    'kod'          => 'DENEME_SURESI_DOLDU',
-                    'kalan_gun'    => $kalan,
-                    'plan_sayfasi' => true,
-                ], 403);
-                exit;
-            }
+            Response::json([
+                'basarili'     => false,
+                'hata'         => 'Ücretsiz deneme süreniz doldu. Devam etmek için bir plan satın alın.',
+                'kod'          => 'DENEME_SURESI_DOLDU',
+                'kalan_gun'    => 0,
+                'plan_sayfasi' => true,
+            ], 403);
+            exit;
         }
     }
 

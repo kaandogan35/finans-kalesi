@@ -1,7 +1,7 @@
 /**
  * PlanSecim — Abonelik Yönetim Sayfası
  * Route: /abonelik
- * v2: 30 gün deneme + Standart 290₺ / Kurumsal 490₺
+ * v2: 7 gün deneme + Standart 399₺ / Kurumsal 599₺
  */
 
 import { useState, useEffect, useCallback } from 'react'
@@ -277,10 +277,10 @@ export default function PlanSecim() {
 
   const planlar = [
     {
-      id: 'deneme', ad: '30 Gün Deneme', ikon: 'bi-gift', btnSinif: 'pasif',
-      aciklama: 'Tüm özellikleri 30 gün boyunca ücretsiz deneyin',
+      id: 'deneme', ad: '7 Gün Deneme', ikon: 'bi-gift', btnSinif: 'pasif',
+      aciklama: 'Tüm özellikleri 7 gün boyunca ücretsiz deneyin',
       ozellikler: [
-        '30 gün tüm özellikler açık',
+        '7 gün tüm özellikler açık',
         '2 kullanıcıya kadar',
         'Sınırsız cari hesap',
         '50 çek/senet kaydı (aylık)',
@@ -288,7 +288,7 @@ export default function PlanSecim() {
         'PDF & Excel rapor',
       ],
       kisitlamalar: [
-        '30 gün sonra plan seçimi gerekir',
+        '7 gün sonra plan seçimi gerekir',
       ],
     },
     {
@@ -346,14 +346,14 @@ export default function PlanSecim() {
             <div style={{ flex: 1 }}>
               <div style={{ fontWeight: 700, fontSize: 14, color: denemeDoldu ? '#991b1b' : '#92400e', marginBottom: 2 }}>
                 {denemeDoldu
-                  ? 'Deneme süreniz doldu'
-                  : `Deneme süreniz: ${denemeKalanGun} gün kaldı`
+                  ? 'Ücretsiz erişim süreniz doldu'
+                  : `Ücretsiz erişim: ${denemeKalanGun} gün kaldı`
                 }
               </div>
               <div style={{ fontSize: 12, color: denemeDoldu ? '#b91c1c' : '#a16207' }}>
                 {denemeDoldu
-                  ? 'Verileriniz güvende ancak yeni kayıt ekleyemezsiniz. Devam etmek için bir plan satın alın.'
-                  : 'Tüm özellikler açık. Süre dolmadan bir plan seçerek kesintisiz devam edin.'
+                  ? 'Verileriniz güvende ancak yeni kayıt ekleyemezsiniz. Devam etmek için Premium\'a geçin.'
+                  : 'Tüm özellikler açık. Kesintisiz devam için Premium\'a geçin — ilk 7 gün ücretsiz.'
                 }
               </div>
             </div>
@@ -379,7 +379,7 @@ export default function PlanSecim() {
             </div>
             <div className="col-12 col-md-4 d-none d-md-flex justify-content-end align-items-center gap-4 mt-3 mt-md-0">
               <div className={`${p}-abn-hero-stat`} style={{ textAlign: 'center' }}>
-                <div style={{ fontSize: 28, fontWeight: 800, lineHeight: 1, color: '#fff' }}>30 Gün</div>
+                <div style={{ fontSize: 28, fontWeight: 800, lineHeight: 1, color: '#fff' }}>7 Gün</div>
                 <div style={{ fontSize: 11, marginTop: 3, color: '#fff', opacity: .65 }}>Ücretsiz Deneme</div>
               </div>
               <div style={{ width: 1, height: 44, background: 'rgba(255,255,255,0.2)' }} />
@@ -409,7 +409,7 @@ export default function PlanSecim() {
               <div style={{ minWidth: 0 }}>
                 <div className={`${p}-abn-current-label`}>Mevcut Plan</div>
                 <div className="d-flex align-items-center gap-2 flex-wrap">
-                  <span className={`${p}-abn-current-name`}>{durum?.plan_adi || '30 Gün Deneme'}</span>
+                  <span className={`${p}-abn-current-name`}>{durum?.plan_adi || '7 Gün Deneme'}</span>
                 </div>
               </div>
               {(durum?.bitis_tarihi || durum?.odeme_kanali || durum?.deneme_bitis) && (
@@ -470,7 +470,7 @@ export default function PlanSecim() {
               <div className="d-flex align-items-center gap-2">
                 <i className="bi bi-gift-fill" style={{ color: '#16a34a', fontSize: 16 }} />
                 <span style={{ fontSize: 13, fontWeight: 600, color: '#15803d' }}>
-                  1 ay ücretsiz deneme — İstediğiniz zaman iptal edebilirsiniz
+                  7 gün ücretsiz deneme — İstediğiniz zaman iptal edebilirsiniz
                 </span>
               </div>
             </div>

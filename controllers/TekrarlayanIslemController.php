@@ -65,6 +65,7 @@ class TekrarlayanIslemController {
     // ─── POST /api/tekrarlayan-islemler ───
     public function olustur($payload, $girdi) {
         try {
+            PlanKontrol::yazmaKontrol($payload);
             // Zorunlu alanlar
             $hatalar = [];
 
@@ -117,6 +118,7 @@ class TekrarlayanIslemController {
     // ─── PUT /api/tekrarlayan-islemler/{id} ───
     public function guncelle($payload, $id, $girdi) {
         try {
+            PlanKontrol::yazmaKontrol($payload);
             // Gelen verileri doğrula
             if (isset($girdi['islem_tipi']) && !in_array($girdi['islem_tipi'], ['giris', 'cikis'])) {
                 Response::dogrulama_hatasi(['islem_tipi' => 'Geçerli değerler: giris, cikis']);
@@ -149,6 +151,7 @@ class TekrarlayanIslemController {
     // ─── PUT /api/tekrarlayan-islemler/{id}/durum ───
     public function durum_degistir($payload, $id, $girdi) {
         try {
+            PlanKontrol::yazmaKontrol($payload);
             if (!isset($girdi['aktif_mi'])) {
                 Response::dogrulama_hatasi(['aktif_mi' => 'Aktif durumu belirtilmelidir (0 veya 1)']);
                 return;
@@ -173,6 +176,7 @@ class TekrarlayanIslemController {
     // ─── DELETE /api/tekrarlayan-islemler/{id} ───
     public function sil($payload, $id) {
         try {
+            PlanKontrol::yazmaKontrol($payload);
             $model = new TekrarlayanIslem($this->db);
             $sonuc = $model->sil($payload['sirket_id'], $id);
 

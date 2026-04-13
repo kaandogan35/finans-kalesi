@@ -9,11 +9,13 @@
 
 import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { Capacitor } from '@capacitor/core'
 import { bildirim as toast } from '../../components/ui/CenterAlert'
 import useAuthStore from '../../stores/authStore'
 import { onboardingApi } from '../../api/onboarding'
 import ParamGoLogo from '../../logo/ParamGoLogo'
 import { DateInput } from '../../components/ui/DateInput'
+import PaywallModal from '../../components/PaywallModal'
 
 // Projedeki standart Türkçe para formatı (CekSenet.jsx ile aynı)
 const formatParaInput = (v) => {
@@ -67,6 +69,16 @@ export default function Onboarding() {
 
   const [adim, setAdim]             = useState(1)
   const [yukleniyor, setYukleniyor] = useState(false)
+  const [paywallAcik, setPaywallAcik] = useState(false)
+
+  // Dashboard'a git — native platformda önce PaywallModal'i aç
+  const dashboardaGit = () => {
+    if (Capacitor.isNativePlatform()) {
+      setPaywallAcik(true)
+    } else {
+      navigate('/dashboard')
+    }
+  }
 
   // Adım 1
   const [sektor, setSektor]               = useState('')
@@ -501,7 +513,7 @@ export default function Onboarding() {
                 </div>
               </div>
 
-              <button className="p-ob-btn-next" onClick={() => navigate('/dashboard')}>
+              <button className="p-ob-btn-next" onClick={dashboardaGit}>
                 <i className="bi bi-speedometer2" /> Dashboard'a Git
               </button>
             </div>
@@ -509,6 +521,19 @@ export default function Onboarding() {
         )}
 
       </div>
+
+      {/* Onboarding sonrası abonelik teklifi — Apple 3.1.2 uyumlu */}
+      <PaywallModal
+        goster={paywallAcik}
+        onKapat={() => {
+          setPaywallAcik(false)
+          navigate('/dashboard')
+        }}
+        onBasarili={() => {
+          setPaywallAcik(false)
+          navigate('/dashboard')
+        }}
+      />
     </div>
   )
 }

@@ -63,6 +63,7 @@ class KasaController {
     // ─── POST /api/kasa/hareketler ───
     public function hareket_ekle($payload, $girdi) {
         try {
+            PlanKontrol::yazmaKontrol($payload);
             $veri = $girdi;
 
             if (empty($veri['islem_tipi'])) {
@@ -93,6 +94,7 @@ class KasaController {
     // ─── DELETE /api/kasa/hareketler/{id} ───
     public function hareket_sil($payload, $hareket_id) {
         try {
+            PlanKontrol::yazmaKontrol($payload);
             $kasa = new Kasa($this->db);
             $yeni_bakiye = $kasa->hareket_sil($payload['sirket_id'], $hareket_id);
 
@@ -111,6 +113,7 @@ class KasaController {
     // ─── POST /api/kasa/cekmece-kapanis ───
     public function cekmece_kapanis($payload, $girdi) {
         try {
+            PlanKontrol::yazmaKontrol($payload);
             $veri = $girdi;
 
             if (!isset($veri['tutar']) || (float)$veri['tutar'] <= 0) {
@@ -160,6 +163,7 @@ class KasaController {
     // ─── POST /api/kasa/yatirimlar ───
     public function yatirim_ekle($payload, $girdi) {
         try {
+            PlanKontrol::yazmaKontrol($payload);
             $veri = $girdi;
 
             // Frontend alan adı eşleştirmesi: tur → yatirim_adi, varlık_tipi → kategori
@@ -193,6 +197,7 @@ class KasaController {
     // ─── PUT /api/kasa/yatirimlar/{id} ───
     public function yatirim_guncelle($payload, $yatirim_id, $girdi) {
         try {
+            PlanKontrol::yazmaKontrol($payload);
             $veri = $girdi;
 
             // Frontend alan adı eşleştirmesi
@@ -221,6 +226,7 @@ class KasaController {
     // ─── POST /api/kasa/yatirimlar/fiyat ───
     public function guncel_fiyat_guncelle($payload, $girdi) {
         try {
+            PlanKontrol::yazmaKontrol($payload);
             if (empty($girdi['fiyatlar']) || !is_array($girdi['fiyatlar'])) {
                 Response::dogrulama_hatasi(array('fiyatlar' => 'Fiyat listesi zorunludur'));
                 return;
@@ -239,6 +245,7 @@ class KasaController {
     // ─── DELETE /api/kasa/yatirimlar/{id} ───
     public function yatirim_sil($payload, $yatirim_id) {
         try {
+            PlanKontrol::yazmaKontrol($payload);
             $kasa = new Kasa($this->db);
             $basarili = $kasa->yatirim_sil($payload['sirket_id'], $yatirim_id);
 
@@ -276,6 +283,7 @@ class KasaController {
     // ─── POST /api/kasa/ortaklar ───
     public function ortak_hareket_ekle($payload, $girdi) {
         try {
+            PlanKontrol::yazmaKontrol($payload);
             $veri = $girdi;
 
             if (empty($veri['ortak_adi'])) {
@@ -306,6 +314,7 @@ class KasaController {
     // ─── DELETE /api/kasa/ortaklar/{id} ───
     public function ortak_hareket_sil($payload, $hareket_id) {
         try {
+            PlanKontrol::yazmaKontrol($payload);
             $kasa = new Kasa($this->db);
             $basarili = $kasa->ortak_hareket_sil($payload['sirket_id'], $hareket_id);
 
@@ -336,6 +345,7 @@ class KasaController {
     // ─── POST /api/kasa/bilanco ───
     public function bilanco_kaydet($payload, $girdi) {
         try {
+            PlanKontrol::yazmaKontrol($payload);
             if (empty($girdi['donem'])) {
                 Response::dogrulama_hatasi(array('donem' => 'Donem zorunludur'));
                 return;
@@ -362,6 +372,7 @@ class KasaController {
     // ─── PUT /api/kasa/bilanco/{id} ───
     public function bilanco_guncelle($payload, $bilanco_id, $girdi) {
         try {
+            PlanKontrol::yazmaKontrol($payload);
             $kasa = new Kasa($this->db);
             $basarili = $kasa->bilanco_guncelle($payload['sirket_id'], $bilanco_id, $girdi);
 
@@ -380,6 +391,7 @@ class KasaController {
     // ─── DELETE /api/kasa/bilanco/{id} ───
     public function bilanco_sil($payload, $bilanco_id) {
         try {
+            PlanKontrol::yazmaKontrol($payload);
             $kasa = new Kasa($this->db);
             $basarili = $kasa->bilanco_sil($payload['sirket_id'], $bilanco_id);
 

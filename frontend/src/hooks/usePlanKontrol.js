@@ -23,7 +23,7 @@ const IZINLER = {
 }
 
 const PLAN_ADLARI = {
-  deneme:    '30 Gün Deneme',
+  deneme:    '7 Gün Deneme',
   standart:  'Standart',
   kurumsal:  'Kurumsal',
 }
@@ -31,7 +31,7 @@ const PLAN_ADLARI = {
 export function usePlanKontrol() {
   const { kullanici } = useAuthStore()
   const plan = kullanici?.plan || 'deneme'
-  const planAdi = PLAN_ADLARI[plan] || '30 Gün Deneme'
+  const planAdi = PLAN_ADLARI[plan] || '7 Gün Deneme'
 
   /**
    * Belirtilen özelliğe erişim var mı?

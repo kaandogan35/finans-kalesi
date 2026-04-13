@@ -8,6 +8,7 @@ import ParamGoLogo from '../../logo/ParamGoLogo'
 import UpgradeBildirim from '../UpgradeBildirim'
 import BildirimZili from '../BildirimZili'
 import OturumUyari from '../OturumUyari'
+import PaywallKoruyucu from '../PaywallKoruyucu'
 
 // ─── Navigasyon menüsü ────────────────────────────────────────────────────────
 const ISLEMLER_ITEMS = [
@@ -404,6 +405,9 @@ export default function AppLayoutParamGo() {
 
       {/* ── Oturum Uyarı Modalı ─────────────────────────────── */}
       <OturumUyari />
+
+      {/* ── Paywall Koruyucu — iOS deneme planı yazma koruması ── */}
+      <PaywallKoruyucu />
 
       {/* ── Mobil Alt Menü ─────────────────────────────────────── */}
       <nav className="p-bottom-nav" aria-label="Alt menü">

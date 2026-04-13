@@ -58,7 +58,7 @@ class AbonelikController {
                 // Gerçekten deneme planı — doldu olarak işaretle
                 Response::basarili([
                     'plan'              => 'deneme',
-                    'plan_adi'          => '30 Gün Deneme',
+                    'plan_adi'          => '7 Gün Deneme',
                     'bitis_tarihi'      => null,
                     'odeme_kanali'      => null,
                     'odeme_donemi'      => null,
@@ -336,7 +336,7 @@ class AbonelikController {
 
     private function plan_gorsel_adi(string $plan): string {
         return match ($plan) {
-            'deneme'   => '30 Gün Deneme',
+            'deneme'   => '7 Gün Deneme',
             'standart' => 'Standart',
             'kurumsal' => 'Kurumsal',
             default    => ucfirst($plan),

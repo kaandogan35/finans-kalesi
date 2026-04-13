@@ -57,7 +57,8 @@ export default function KayitOl() {
       if (res.data?.basarili) {
         sosyalGiris(res.data.veri.kullanici, res.data.veri.tokenlar)
         toast.success('Apple ile giriş yapıldı!')
-        navigate('/dashboard')
+        // Yeni kullanıcıysa Welcome, mevcut kullanıcıysa Dashboard
+        navigate(res.data.veri.kullanici?.yeni_kayit ? '/welcome' : '/dashboard')
       } else { toast.error(res.data?.hata || 'Apple ile giriş başarısız.') }
     } catch (err) {
       if (err?.message !== 'USER_CANCELLED') toast.error('Apple ile giriş yapılamadı.')
@@ -75,7 +76,7 @@ export default function KayitOl() {
       if (res.data?.basarili) {
         sosyalGiris(res.data.veri.kullanici, res.data.veri.tokenlar)
         toast.success('Google ile giriş yapıldı!')
-        navigate('/dashboard')
+        navigate(res.data.veri.kullanici?.yeni_kayit ? '/welcome' : '/dashboard')
       } else { toast.error(res.data?.hata || 'Google ile giriş başarısız.') }
     } catch (err) {
       if (err?.message !== 'USER_CANCELLED') toast.error('Google ile giriş yapılamadı.')
@@ -115,7 +116,7 @@ export default function KayitOl() {
       await authApi.kayit({ firma_adi: form.firma_adi, ad_soyad: form.ad_soyad, email: form.email, sifre: form.sifre })
       await girisYap(form.email, form.sifre)
       toast.success('Hesabınız oluşturuldu! Hoş geldiniz.')
-      navigate('/dashboard')
+      navigate('/welcome')  // Mail kayıt: yeni kullanıcı → Welcome
     } catch (err) {
       const status = err.response?.status
       const mesaj  = err.response?.data?.hata
@@ -314,8 +315,9 @@ export default function KayitOl() {
           <div className={`${p}-giris-kart`}>
             <div className={`${p}-giris-kart-serit`} />
             <div className={`${p}-giris-kart-ic`}>
-              <a href="https://paramgo.com" className={`${p}-giris-anasayfa-link`}><i className="bi bi-arrow-left me-1" />Ana Sayfa</a>
-              <div className="d-flex d-lg-none align-items-center justify-content-center mb-4"><ParamGoLogo size="sm" /></div>
+              <a href="https://paramgo.com" className={`d-flex d-lg-none align-items-center justify-content-center mb-4 ${p}-giris-marka-wrap`}>
+                <ParamGoLogo size="sm" />
+              </a>
               <div className={`${p}-giris-form-baslik-wrap`}>
                 <div className={`${p}-giris-form-ikon`}><i className="bi bi-person-plus" /></div>
                 <h1 className={`${p}-giris-form-baslik`}>Ücretsiz Hesap Oluşturun</h1>

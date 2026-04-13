@@ -89,7 +89,7 @@ class AuthController {
                 'rol'       => 'sahip'  // Ilk kullanici = sirket sahibi
             ]);
             
-            // 7. 30 gün ücretsiz deneme başlat
+            // 7. Ücretsiz deneme başlat
             $this->abonelik_model->denemeBaslat((int) $sirket_id);
 
             // 8. Tokenlar olustur
@@ -137,14 +137,16 @@ class AuthController {
             // 12. Basarili yanit
             Response::basarili([
                 'kullanici' => [
-                    'id'           => $kullanici_id,
-                    'sirket_id'    => $sirket_id,
-                    'ad_soyad'     => $girdi['ad_soyad'],
-                    'email'        => $girdi['email'],
-                    'rol'          => 'sahip',
-                    'tema_adi'     => 'paramgo',
-                    'plan'         => 'deneme',
-                    'deneme_bitis' => date('Y-m-d H:i:s', strtotime('+30 days')),
+                    'id'                    => $kullanici_id,
+                    'sirket_id'             => $sirket_id,
+                    'ad_soyad'              => $girdi['ad_soyad'],
+                    'email'                 => $girdi['email'],
+                    'rol'                   => 'sahip',
+                    'tema_adi'              => 'paramgo',
+                    'plan'                  => 'deneme',
+                    'deneme_bitis'          => date('Y-m-d H:i:s', strtotime('+' . \Abonelik::DENEME_SURESI_GUN . ' days')),
+                    'onboarding_tamamlandi' => 1,  // Yeni sistem: klasik onboarding bypass
+                    'yeni_kayit'            => true, // Frontend Welcome ekranlarına yönlendirmek için
                 ],
                 'tokenlar' => [
                     'access_token'  => $access_token,
@@ -362,6 +364,7 @@ class AuthController {
                     'deneme_bitis'           => $sirket['deneme_bitis'] ?? null,
                     'yetkiler'               => $kullanici['yetkiler'] ?? null,
                     'onboarding_tamamlandi'  => (int)($sirket['onboarding_tamamlandi'] ?? 0),
+                    'yeni_kayit'             => false,  // giriş mevcut kullanıcı
                 ],
                 'tokenlar' => [
                     'access_token'  => $access_token,
@@ -730,8 +733,9 @@ class AuthController {
                     'rol'          => 'sahip',
                     'tema_adi'     => 'paramgo',
                     'plan'         => 'deneme',
-                    'deneme_bitis' => date('Y-m-d H:i:s', strtotime('+30 days')),
-                    'onboarding_tamamlandi' => 0,
+                    'deneme_bitis' => date('Y-m-d H:i:s', strtotime('+' . \Abonelik::DENEME_SURESI_GUN . ' days')),
+                    'onboarding_tamamlandi' => 1,  // Yeni sistem bypass
+                    'yeni_kayit'   => true,
                 ];
 
                 $kullanici_bilgi = [
@@ -755,6 +759,7 @@ class AuthController {
                 $kullanici['plan']                 = $kullanici_bilgi['plan'];
                 $kullanici['deneme_bitis']          = $sirket['deneme_bitis'] ?? null;
                 $kullanici['onboarding_tamamlandi'] = (int)($sirket['onboarding_tamamlandi'] ?? 0);
+                $kullanici['yeni_kayit']            = false;  // Mevcut kullanıcı
             }
 
             $access_token = JWTHelper::access_token_olustur($kullanici_bilgi);
@@ -871,8 +876,9 @@ class AuthController {
                     'rol'          => 'sahip',
                     'tema_adi'     => 'paramgo',
                     'plan'         => 'deneme',
-                    'deneme_bitis' => date('Y-m-d H:i:s', strtotime('+30 days')),
-                    'onboarding_tamamlandi' => 0,
+                    'deneme_bitis' => date('Y-m-d H:i:s', strtotime('+' . \Abonelik::DENEME_SURESI_GUN . ' days')),
+                    'onboarding_tamamlandi' => 1,  // Yeni sistem bypass
+                    'yeni_kayit'   => true,
                 ];
 
                 $kullanici_bilgi = [
@@ -896,6 +902,7 @@ class AuthController {
                 $kullanici['plan']                 = $kullanici_bilgi['plan'];
                 $kullanici['deneme_bitis']          = $sirket['deneme_bitis'] ?? null;
                 $kullanici['onboarding_tamamlandi'] = (int)($sirket['onboarding_tamamlandi'] ?? 0);
+                $kullanici['yeni_kayit']            = false;  // Mevcut kullanıcı
             }
 
             $access_token = JWTHelper::access_token_olustur($kullanici_bilgi);

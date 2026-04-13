@@ -3,7 +3,7 @@
  * ParamGo — Abonelik Modeli
  *
  * Abonelik ve ödeme geçmişi veritabanı işlemleri.
- * v2: 30 gün deneme + Standart/Kurumsal ücretli planlar
+ * v2: 7 gün deneme + Standart/Kurumsal ücretli planlar
  */
 
 class Abonelik {
@@ -23,7 +23,7 @@ class Abonelik {
     ];
 
     // Deneme süresi (gün)
-    public const DENEME_SURESI_GUN = 30;
+    public const DENEME_SURESI_GUN = 7;
 
     public function __construct(PDO $db) {
         $this->db = $db;
@@ -318,11 +318,11 @@ class Abonelik {
         return [
             [
                 'id'         => 'deneme',
-                'ad'         => '30 Gün Ücretsiz Deneme',
-                'aciklama'   => 'Tüm özellikleri 30 gün boyunca ücretsiz deneyin',
+                'ad'         => '7 Gün Ücretsiz Deneme',
+                'aciklama'   => 'Tüm özellikleri 7 gün boyunca ücretsiz deneyin',
                 'fiyat'      => ['aylik' => 0, 'yillik' => 0],
                 'ozellikler' => [
-                    '30 gün tüm özellikler açık',
+                    '7 gün tüm özellikler açık',
                     '2 kullanıcıya kadar',
                     'Sınırsız cari hesap',
                     '50 çek/senet kaydı (aylık)',
@@ -330,7 +330,7 @@ class Abonelik {
                     'PDF & Excel rapor',
                 ],
                 'kisitlamalar' => [
-                    '30 gün sonra plan seçimi gerekir',
+                    '7 gün sonra plan seçimi gerekir',
                 ],
             ],
             [

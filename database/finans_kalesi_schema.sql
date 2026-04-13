@@ -26,7 +26,7 @@ CREATE TABLE IF NOT EXISTS `sirketler` (
     `sektor` VARCHAR(100) DEFAULT NULL,
     `abonelik_plani` ENUM('deneme','standart','kurumsal') NOT NULL DEFAULT 'deneme',
     `abonelik_bitis` DATETIME DEFAULT NULL,
-    `deneme_bitis` DATETIME DEFAULT NULL COMMENT '30 günlük deneme bitiş tarihi',
+    `deneme_bitis` DATETIME DEFAULT NULL COMMENT '7 günlük deneme bitiş tarihi',
     `kampanya_kullanici` TINYINT(1) NOT NULL DEFAULT 0,
     `tema_adi` VARCHAR(50) NOT NULL DEFAULT 'paramgo',
     `aktif_mi` TINYINT(1) NOT NULL DEFAULT 1,

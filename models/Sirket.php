@@ -19,11 +19,14 @@ class Sirket {
     
     /**
      * Yeni sirket olustur
+     * Not: onboarding_tamamlandi = 1 default set edilir — yeni sistemde klasik
+     * onboarding akışı kaldırıldı, kullanıcı kayıt sonrası Welcome ekranlarına
+     * yönlendirilir. OnboardingKoruma bypass edilmiş olur.
      */
     public function olustur($veri) {
-        $sql = "INSERT INTO sirketler (firma_adi, vergi_no, telefon, email, adres, sektor, abonelik_plani, aktif_mi)
-                VALUES (?, ?, ?, ?, ?, ?, 'deneme', 1)";
-        
+        $sql = "INSERT INTO sirketler (firma_adi, vergi_no, telefon, email, adres, sektor, abonelik_plani, aktif_mi, onboarding_tamamlandi)
+                VALUES (?, ?, ?, ?, ?, ?, 'deneme', 1, 1)";
+
         $stmt = $this->db->prepare($sql);
         $stmt->execute([
             $veri['firma_adi'],
@@ -33,7 +36,7 @@ class Sirket {
             $veri['adres'] ?? null,
             $veri['sektor'] ?? null
         ]);
-        
+
         return (int) $this->db->lastInsertId();
     }
     

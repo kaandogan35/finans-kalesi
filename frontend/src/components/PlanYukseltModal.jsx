@@ -47,10 +47,10 @@ export default function PlanYukseltModal({ goster, kapat, ozellikAdi = 'Bu özel
   const planlar = [
     {
       id: 'deneme',
-      ad: '30 Gün Deneme',
+      ad: '7 Gün Deneme',
       ikon: 'bi-clock-history',
       fiyat: 0,
-      birim: '30 gün',
+      birim: '7 gün',
       ozellikler: ['Sınırsız cari hesap', 'Çek/Senet takibi (50)', 'Kasa yönetimi', 'Ödeme takibi', 'Vade hesaplayıcı'],
       kisit: ['PDF/Excel rapor yok', '2 kullanıcıya kadar', 'Veri dışa aktarma yok'],
       renk: '#9CA3AF',
