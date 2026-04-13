@@ -72,6 +72,7 @@ require_once BASE_PATH . '/utils/TOTPHelper.php';
 require_once BASE_PATH . '/utils/RevenueCatHelper.php';
 require_once BASE_PATH . '/models/Bildirim.php';
 require_once BASE_PATH . '/utils/BildirimOlusturucu.php';
+require_once BASE_PATH . '/utils/PushHelper.php';
 require_once BASE_PATH . '/models/Rapor.php';
 require_once BASE_PATH . '/controllers/RaporController.php';
 
