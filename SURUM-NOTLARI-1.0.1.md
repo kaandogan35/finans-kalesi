@@ -180,6 +180,15 @@ Sürüm yayınlanmadan önce bu liste BÖLÜM 1 ve BÖLÜM 2'ye dahil edilmeli.
 
 ### 2026-04-14 — Swipe Navigasyon + iOS Push Bildirimleri
 
+**Kasa — İşlem Butonu**
+- `frontend/src/pages/kasa/VarlikKasa.jsx` — Kasa Özeti başlığına "İşlem" dropdown butonu eklendi
+  - Menü: Ay Sonu Özeti / Ortaklar / Döviz & Altın — her biri ilgili sayfaya yönlendirir
+  - Sayfa açılışında `?modal=ekle` URL parametresiyle modal otomatik açılır
+  - Dışarı tıklandığında menü kapanır (useRef + mousedown listener)
+- `frontend/src/pages/kasa/AylikBilanco.jsx` — `autoOpenModal` prop ile otomatik modal desteği
+- `frontend/src/pages/kasa/OrtakCarisi.jsx` — `autoOpenModal` prop ile otomatik modal desteği
+- `frontend/src/pages/kasa/YatirimKalesi.jsx` — `autoOpenModal` prop ile otomatik modal desteği
+
 **Swipe Navigasyon (react-swipeable)**
 - Tüm modüller arası geçiş parmak kaydırmasıyla yapılabilir (Instagram tarzı)
 - Çek/Senet sayfasında bölge bazlı swipe: üst alan = modül değiştir, alt alan = sekme değiştir
@@ -192,16 +201,55 @@ Sürüm yayınlanmadan önce bu liste BÖLÜM 1 ve BÖLÜM 2'ye dahil edilmeli.
   - Token 55 dakika cache'lenir
   - HTTP 410 yanıtında geçersiz token otomatik devre dışı bırakılır
 - `utils/BildirimOlusturucu.php` — push bildirimi 6. adım olarak eklendi
-- `public/index.php` — PushHelper require eklendi
+- `public/index.php` + `public/index-canli.php` — PushHelper require eklendi
 - `codemagic.yaml` — `App.entitlements`'a `aps-environment: production` eklendi
 - `.env` — APNS_AUTH_KEY, APNS_KEY_ID, APNS_TEAM_ID eklendi
+- `frontend/ios/App/App/AppDelegate.swift` — eksik push delegate metodları eklendi
+  - `didRegisterForRemoteNotificationsWithDeviceToken` → Capacitor'a iletiliyor
+  - `didFailToRegisterForRemoteNotificationsWithError` → Capacitor'a iletiliyor
+- `frontend/src/stores/authStore.js` — `baslat()` fonksiyonuna push token kaydı eklendi
+  - Uygulama açılışında mevcut oturumda da token sunucuya gönderiliyor
+- `models/Bildirim.php` — `push_token_kaydet()` UPSERT metodu (push_tokens tablosu)
+- `controllers/AuthController.php` — `/push-token` endpoint push token kaydı
 
 **Vade Uyarı Bildirimleri İyileştirme**
 - `cron/vade-uyari-cron.php` — bildirim metinleri müşteri adı + tutar + tarih içeriyor
   - Örnek: `"50.000 ₺ · Yön Cıvata'dan alacak çekin yarın tahsil edilmeli"`
   - `cari_kisalt()` — müşteri adını max 15 karakter / 2 kelimeye kısaltır
   - `tarih_kisalt()` — tarihi "16 Nis" formatına çevirir
-  - SQL sorguları `cariler` tablosunu JOIN ile çekiyor
+  - `format_tutar()` — match() yerine if/elseif kullanıyor (PHP 7.x uyumluluk)
+  - Tablo adı `cek_senetler` olarak düzeltildi
+  - Tür değerleri `alacak_ceki/alacak_senedi/borc_ceki/borc_senedi`
+  - Durum değerleri `portfoyde/tahsile_verildi` olarak düzeltildi
+  - PHP CLI uyumsuzluk hatası düzeltildi (Parse error: unexpected '=>' T_DOUBLE_ARROW)
+
+**CronController bildirimKontrol Endpoint Düzeltmeleri**
+- `controllers/CronController.php` — `bildirimKontrol()` metodu tamamen elden geçti
+  - Tablo adı `cek_senet` → `cek_senetler`
+  - `cariler` → `cari_kartlar` (gerçek tablo adı)
+  - `SistemKripto::coz()` ile `cari_adi_sifreli` çözülüyor — bildirimlerde gerçek cari adı
+  - `odeme_takip` sorgusu `firma_adi_sifreli` kullanıyor (plain `firma_adi` yoktu)
+  - Her SQL bloğu kendi try/catch'inde — bir hata diğer blokları etkilemiyor
+  - `cariKisalt()` private helper eklendi
+- `routes/cron.php` — `CRON_SECRET` güvenlik kontrolü: tanımlı değilse endpoint 503 döner
+- `.env` — `CRON_SECRET` eklendi (production değeri)
+
+**Reklam Test Push Endpoint (pazarlama)**
+- `routes/cron.php` — yeni case `reklam-test-push`
+- `controllers/CronController.php::reklamTestPush()` — 3 hazır bildirim seti
+  - `set=banka` — 5 farklı banka bildirimi (Ziraat, Akbank, Garanti, İş, QNB)
+  - `set=gelir-gider` — 5 kâr/zarar/kasa bildirimi
+  - `set=aciliyet` — 5 uyarı bildirimi (karşılıksız çek, geciken tahsilat vb.)
+  - Sadece push gönderiyor, `bildirimler` tablosuna yazmıyor (test için)
+  - APNs rate limit için 0.15 sn gecikme
+  - Tüm aktif iOS push token'larına gönderir
+  - Sosyal medya screenshot'ları ve reklam videoları için kullanıldı
+
+**Pazarlama — Duvar Kağıtları**
+- `pazarlama/wallpaper-indir.html` — Canvas tabanlı PNG wallpaper jeneratörü
+  - 6 farklı tema: Dark Derin Yeşil, Dark Minimal, Dark Merkez Glow, Light Krem, Light Beyaz, Light Mint
+  - iPhone 14 Pro Max tam çözünürlük (1290×2796)
+  - Tek tık PNG indirme, logo/yazı yok (temiz zemin)
 
 ---
 
