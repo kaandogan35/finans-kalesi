@@ -574,20 +574,24 @@ class CronController {
         $this->cronDogrula();
         require_once BASE_PATH . '/utils/PushHelper.php';
 
-        $bildirimler = [
-            ['baslik' => 'Ziraat Bankası · Bugün Vade',
-             'mesaj'  => "350.000 ₺ · Altın Tekstil A.Ş.'den alacak çekin bugün tahsil edilmeli"],
-            ['baslik' => 'Akbank · Çek Tahsil Edildi',
-             'mesaj'  => "240.500 ₺ · Star Gıda'dan alacak çekiniz hesabınıza geçti"],
-            ['baslik' => 'Garanti BBVA · Vade Hatırlatıcı',
-             'mesaj'  => "125.000 ₺ · Zenith Mobilya'dan alacak çek · 2 gün kaldı"],
-            ['baslik' => 'İş Bankası · Çek Ödendi',
-             'mesaj'  => "180.000 ₺ · Demir İnşaat'a olan borcunuz ödendi"],
-            ['baslik' => 'Yapı Kredi · Vade Hatırlatıcı',
-             'mesaj'  => "95.750 ₺ · Mavi Lojistik'ten alacak çek · 5 gün kaldı"],
-            ['baslik' => 'QNB Finansbank · Geciken Tahsilat',
-             'mesaj'  => "68.300 ₺ · Yönder Plastik'ten alacak çek 3 gün gecikti"],
+        // URL parametresi: ?set=banka (varsayılan) — farklı kategoriler eklenebilir
+        $set = $_GET['set'] ?? 'banka';
+
+        $setler = [
+            // BANKA ÇEKLERİ (4 bildirim — ekran dolu, sığıyor)
+            'banka' => [
+                ['baslik' => 'Ziraat Bankası · Bugün Vade',
+                 'mesaj'  => "350.000 ₺ · Altın Tekstil A.Ş.'den alacak çekin bugün tahsil edilmeli"],
+                ['baslik' => 'Akbank · Çek Tahsil Edildi',
+                 'mesaj'  => "240.500 ₺ · Star Gıda'dan alacak çekiniz hesabınıza geçti"],
+                ['baslik' => 'Garanti BBVA · Vade Hatırlatıcı',
+                 'mesaj'  => "125.000 ₺ · Zenith Mobilya'dan alacak çek · 2 gün kaldı"],
+                ['baslik' => 'İş Bankası · Çek Ödendi',
+                 'mesaj'  => "180.000 ₺ · Demir İnşaat'a olan borcunuz ödendi"],
+            ],
         ];
+
+        $bildirimler = $setler[$set] ?? $setler['banka'];
 
         // Aktif iOS tokenları çek
         $stmt = $this->db->query("
