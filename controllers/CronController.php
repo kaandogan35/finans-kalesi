@@ -377,16 +377,14 @@ class CronController {
                 // ── 1. Yaklaşan ödeme vadeleri (3 gün, 1 gün, bugün) ──
                 try {
                     $stmt = $this->db->prepare(
-                        "SELECT ot.id, COALESCE(c.ad, 'Cari') AS cari_adi,
-                                ot.tutar, ot.soz_tarihi,
-                                DATEDIFF(ot.soz_tarihi, CURDATE()) AS gun_kaldi
-                         FROM odeme_takip ot
-                         LEFT JOIN cariler c ON c.id = ot.cari_id
-                         WHERE ot.sirket_id = :sid
-                           AND ot.silindi_mi = 0
-                           AND ot.durum = 'bekliyor'
-                           AND ot.soz_tarihi BETWEEN CURDATE() AND DATE_ADD(CURDATE(), INTERVAL 3 DAY)
-                         ORDER BY ot.soz_tarihi ASC
+                        "SELECT id, tutar, soz_tarihi,
+                                DATEDIFF(soz_tarihi, CURDATE()) AS gun_kaldi
+                         FROM odeme_takip
+                         WHERE sirket_id = :sid
+                           AND silindi_mi = 0
+                           AND durum = 'bekliyor'
+                           AND soz_tarihi BETWEEN CURDATE() AND DATE_ADD(CURDATE(), INTERVAL 3 DAY)
+                         ORDER BY soz_tarihi ASC
                          LIMIT 50"
                     );
                     $stmt->execute([':sid' => $sid]);
@@ -402,7 +400,7 @@ class CronController {
                                 'sirket_id'    => $sid,
                                 'kullanici_id' => $sahip['id'],
                                 'tip'          => 'odeme_vade',
-                                'baslik'       => "{$odeme['cari_adi']} — ödeme vadesi {$gun_metin}",
+                                'baslik'       => "Ödeme Vadesi {$gun_metin}",
                                 'mesaj'        => number_format((float)$odeme['tutar'], 2, ',', '.') . " TL tutarındaki ödeme {$gun_metin} vadeli.",
                                 'oncelik'      => $oncelik,
                                 'kaynak_turu'  => 'odeme_takip',
@@ -419,17 +417,15 @@ class CronController {
                 // ── 2. Geciken ödemeler ──
                 try {
                     $stmt2 = $this->db->prepare(
-                        "SELECT ot.id, COALESCE(c.ad, 'Cari') AS cari_adi,
-                                ot.tutar, ot.soz_tarihi,
-                                DATEDIFF(CURDATE(), ot.soz_tarihi) AS gun_gecmis
-                         FROM odeme_takip ot
-                         LEFT JOIN cariler c ON c.id = ot.cari_id
-                         WHERE ot.sirket_id = :sid
-                           AND ot.silindi_mi = 0
-                           AND ot.durum = 'bekliyor'
-                           AND ot.soz_tarihi < CURDATE()
-                           AND ot.soz_tarihi >= DATE_SUB(CURDATE(), INTERVAL 30 DAY)
-                         ORDER BY ot.soz_tarihi ASC
+                        "SELECT id, tutar, soz_tarihi,
+                                DATEDIFF(CURDATE(), soz_tarihi) AS gun_gecmis
+                         FROM odeme_takip
+                         WHERE sirket_id = :sid
+                           AND silindi_mi = 0
+                           AND durum = 'bekliyor'
+                           AND soz_tarihi < CURDATE()
+                           AND soz_tarihi >= DATE_SUB(CURDATE(), INTERVAL 30 DAY)
+                         ORDER BY soz_tarihi ASC
                          LIMIT 30"
                     );
                     $stmt2->execute([':sid' => $sid]);
@@ -443,7 +439,7 @@ class CronController {
                                 'sirket_id'    => $sid,
                                 'kullanici_id' => $sahip['id'],
                                 'tip'          => 'geciken_odeme',
-                                'baslik'       => "{$odeme['cari_adi']} — ödeme {$gun} gün gecikti",
+                                'baslik'       => "Ödeme {$gun} Gün Gecikti",
                                 'mesaj'        => number_format((float)$odeme['tutar'], 2, ',', '.') . " TL tutarındaki ödeme {$gun} gündür gecikiyor.",
                                 'oncelik'      => $gun > 7 ? 'kritik' : 'yuksek',
                                 'kaynak_turu'  => 'odeme_takip',
@@ -459,17 +455,15 @@ class CronController {
 
                 // ── 3. Yaklaşan alacak çek vadeleri (portföyde veya tahsile verildi) ──
                 $stmt3 = $this->db->prepare(
-                    "SELECT cs.id, COALESCE(c.ad, 'Bilinmeyen Cari') AS cari_adi,
-                            cs.tutar, cs.tutar_tl, cs.doviz_kodu, cs.vade_tarihi, cs.tur,
-                            DATEDIFF(cs.vade_tarihi, CURDATE()) AS gun_kaldi
-                     FROM cek_senetler cs
-                     LEFT JOIN cariler c ON c.id = cs.cari_id
-                     WHERE cs.sirket_id = :sid
-                       AND cs.silindi_mi = 0
-                       AND cs.tur IN ('alacak_ceki', 'alacak_senedi')
-                       AND cs.durum IN ('portfoyde', 'tahsile_verildi')
-                       AND cs.vade_tarihi BETWEEN CURDATE() AND DATE_ADD(CURDATE(), INTERVAL 3 DAY)
-                     ORDER BY cs.vade_tarihi ASC
+                    "SELECT id, tutar, tutar_tl, doviz_kodu, vade_tarihi, tur,
+                            DATEDIFF(vade_tarihi, CURDATE()) AS gun_kaldi
+                     FROM cek_senetler
+                     WHERE sirket_id = :sid
+                       AND silindi_mi = 0
+                       AND tur IN ('alacak_ceki', 'alacak_senedi')
+                       AND durum IN ('portfoyde', 'tahsile_verildi')
+                       AND vade_tarihi BETWEEN CURDATE() AND DATE_ADD(CURDATE(), INTERVAL 3 DAY)
+                     ORDER BY vade_tarihi ASC
                      LIMIT 50"
                 );
                 $stmt3->execute([':sid' => $sid]);
@@ -482,7 +476,7 @@ class CronController {
                     $tutar    = number_format((float)($cek['tutar_tl'] ?? $cek['tutar']), 2, ',', '.');
                     $doviz    = $cek['doviz_kodu'] ?? 'TRY';
                     $sembol   = $doviz === 'TRY' ? '₺' : ($doviz === 'USD' ? '$' : ($doviz === 'EUR' ? '€' : $doviz));
-                    $gun_metin = $gun === 0 ? 'Bugün' : ($gun === 1 ? 'Yarın' : "$gun gün sonra");
+                    $gun_metin = $gun === 0 ? 'bugün' : ($gun === 1 ? 'yarın' : "$gun gün sonra");
 
                     foreach ($sahipler as $sahip) {
                         $sonuc = BildirimOlusturucu::gonder([
@@ -490,7 +484,7 @@ class CronController {
                             'kullanici_id' => $sahip['id'],
                             'tip'          => 'cek_vade',
                             'baslik'       => $gun === 0 ? 'Bugün Vadesi Dolan Çekin Var!' : ($gun === 1 ? 'Yarın Vadesi Dolan Çekin Var' : 'Çek Vadesi Yaklaşıyor · ' . $gun . ' Gün Kaldı'),
-                            'mesaj'        => "{$tutar} {$sembol} · {$cek['cari_adi']} alacak çekin {$gun_metin} tahsil edilmeli",
+                            'mesaj'        => "{$tutar} {$sembol} tutarındaki alacak çekin {$gun_metin} tahsil edilmeli",
                             'oncelik'      => $oncelik,
                             'kaynak_turu'  => 'cek_senet',
                             'kaynak_id'    => (int)$cek['id'],
@@ -502,17 +496,15 @@ class CronController {
 
                 // ── 4. Yaklaşan borç çek vadeleri (portföyde) ──
                 $stmt4 = $this->db->prepare(
-                    "SELECT cs.id, COALESCE(c.ad, 'Bilinmeyen Cari') AS cari_adi,
-                            cs.tutar, cs.tutar_tl, cs.doviz_kodu, cs.vade_tarihi, cs.tur,
-                            DATEDIFF(cs.vade_tarihi, CURDATE()) AS gun_kaldi
-                     FROM cek_senetler cs
-                     LEFT JOIN cariler c ON c.id = cs.cari_id
-                     WHERE cs.sirket_id = :sid
-                       AND cs.silindi_mi = 0
-                       AND cs.tur IN ('borc_ceki', 'borc_senedi')
-                       AND cs.durum = 'portfoyde'
-                       AND cs.vade_tarihi BETWEEN CURDATE() AND DATE_ADD(CURDATE(), INTERVAL 3 DAY)
-                     ORDER BY cs.vade_tarihi ASC
+                    "SELECT id, tutar, tutar_tl, doviz_kodu, vade_tarihi, tur,
+                            DATEDIFF(vade_tarihi, CURDATE()) AS gun_kaldi
+                     FROM cek_senetler
+                     WHERE sirket_id = :sid
+                       AND silindi_mi = 0
+                       AND tur IN ('borc_ceki', 'borc_senedi')
+                       AND durum = 'portfoyde'
+                       AND vade_tarihi BETWEEN CURDATE() AND DATE_ADD(CURDATE(), INTERVAL 3 DAY)
+                     ORDER BY vade_tarihi ASC
                      LIMIT 50"
                 );
                 $stmt4->execute([':sid' => $sid]);
@@ -533,7 +525,7 @@ class CronController {
                             'kullanici_id' => $sahip['id'],
                             'tip'          => 'cek_vade',
                             'baslik'       => $gun === 0 ? 'Bugün Ödenmesi Gereken Çekin Var!' : ($gun === 1 ? 'Yarın Ödenmesi Gereken Çekin Var' : 'Ödeme Vadesi Yaklaşıyor · ' . $gun . ' Gün Kaldı'),
-                            'mesaj'        => "{$tutar} {$sembol} · {$cek['cari_adi']} borcunuzun vadesi {$gun_metin}",
+                            'mesaj'        => "{$tutar} {$sembol} tutarındaki borç çekinizin vadesi {$gun_metin}",
                             'oncelik'      => $oncelik,
                             'kaynak_turu'  => 'cek_senet',
                             'kaynak_id'    => (int)$cek['id'],
