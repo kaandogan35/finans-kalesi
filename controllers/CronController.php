@@ -440,35 +440,81 @@ class CronController {
                     }
                 }
 
-                // ── 3. Yaklaşan çek/senet vadeleri (7, 3, 1 gün, bugün) ──
+                // ── 3. Yaklaşan alacak çek vadeleri (tahsilde) ──
                 $stmt3 = $this->db->prepare(
-                    "SELECT id, cari_adi_sifreli, tutar, vade_tarihi, tur,
-                            DATEDIFF(vade_tarihi, CURDATE()) AS gun_kaldi
-                     FROM cek_senetler
-                     WHERE sirket_id = :sid
-                       AND silindi_mi = 0
-                       AND durum = 'portfoyde'
-                       AND vade_tarihi BETWEEN CURDATE() AND DATE_ADD(CURDATE(), INTERVAL 7 DAY)
-                     ORDER BY vade_tarihi ASC
+                    "SELECT cs.id, COALESCE(c.ad, 'Bilinmeyen Cari') AS cari_adi,
+                            cs.tutar, cs.tutar_tl, cs.doviz_kodu, cs.vade_tarihi, cs.tur,
+                            DATEDIFF(cs.vade_tarihi, CURDATE()) AS gun_kaldi
+                     FROM cek_senet cs
+                     LEFT JOIN cariler c ON c.id = cs.cari_id
+                     WHERE cs.sirket_id = :sid
+                       AND cs.silindi_mi = 0
+                       AND cs.tur = 'alacak'
+                       AND cs.durum = 'tahsilde'
+                       AND cs.vade_tarihi BETWEEN CURDATE() AND DATE_ADD(CURDATE(), INTERVAL 3 DAY)
+                     ORDER BY cs.vade_tarihi ASC
                      LIMIT 50"
                 );
                 $stmt3->execute([':sid' => $sid]);
-                $yaklasan_cekler = $stmt3->fetchAll();
+                $alacak_cekler = $stmt3->fetchAll();
 
-                foreach ($yaklasan_cekler as $cek) {
-                    $gun = (int)$cek['gun_kaldi'];
-                    $oncelik = $gun <= 1 ? 'yuksek' : 'normal';
-                    $gun_metin = $gun === 0 ? 'BUGÜN' : "$gun gün sonra";
-                    $tur = $cek['tur'] === 'cek' ? 'Çek' : 'Senet';
+                foreach ($alacak_cekler as $cek) {
+                    $gun      = (int)$cek['gun_kaldi'];
+                    $oncelik  = $gun === 0 ? 'kritik' : 'yuksek';
+                    $tutar    = number_format((float)($cek['tutar_tl'] ?? $cek['tutar']), 2, ',', '.');
+                    $doviz    = $cek['doviz_kodu'] ?? 'TRY';
+                    $sembol   = $doviz === 'TRY' ? '₺' : ($doviz === 'USD' ? '$' : ($doviz === 'EUR' ? '€' : $doviz));
+                    $gun_metin = $gun === 0 ? 'Bugün' : ($gun === 1 ? 'Yarın' : "$gun gün sonra");
 
-                    // Cari adı şifreli — çözmeye gerek yok, kısa bilgi yeterli
                     foreach ($sahipler as $sahip) {
                         $sonuc = BildirimOlusturucu::gonder([
                             'sirket_id'    => $sid,
                             'kullanici_id' => $sahip['id'],
                             'tip'          => 'cek_vade',
-                            'baslik'       => "{$tur} vadesi {$gun_metin}",
-                            'mesaj'        => number_format((float)$cek['tutar'], 2, ',', '.') . " TL tutarındaki {$tur} {$gun_metin} vadeli.",
+                            'baslik'       => $gun === 0 ? 'Bugün Vadesi Dolan Çekin Var!' : ($gun === 1 ? 'Yarın Vadesi Dolan Çekin Var' : 'Çek Vadesi Yaklaşıyor · ' . $gun . ' Gün Kaldı'),
+                            'mesaj'        => "{$tutar} {$sembol} · {$cek['cari_adi']} alacak çekin {$gun_metin} tahsil edilmeli",
+                            'oncelik'      => $oncelik,
+                            'kaynak_turu'  => 'cek_senet',
+                            'kaynak_id'    => (int)$cek['id'],
+                            'aksiyon_url'  => '/cek-senet',
+                        ]);
+                        if ($sonuc !== false) $olusturulan++;
+                    }
+                }
+
+                // ── 4. Yaklaşan borç çek vadeleri (verildi / odeme_bekleniyor) ──
+                $stmt4 = $this->db->prepare(
+                    "SELECT cs.id, COALESCE(c.ad, 'Bilinmeyen Cari') AS cari_adi,
+                            cs.tutar, cs.tutar_tl, cs.doviz_kodu, cs.vade_tarihi, cs.tur,
+                            DATEDIFF(cs.vade_tarihi, CURDATE()) AS gun_kaldi
+                     FROM cek_senet cs
+                     LEFT JOIN cariler c ON c.id = cs.cari_id
+                     WHERE cs.sirket_id = :sid
+                       AND cs.silindi_mi = 0
+                       AND cs.tur = 'borc'
+                       AND cs.durum IN ('verildi', 'odeme_bekleniyor')
+                       AND cs.vade_tarihi BETWEEN CURDATE() AND DATE_ADD(CURDATE(), INTERVAL 3 DAY)
+                     ORDER BY cs.vade_tarihi ASC
+                     LIMIT 50"
+                );
+                $stmt4->execute([':sid' => $sid]);
+                $borc_cekler = $stmt4->fetchAll();
+
+                foreach ($borc_cekler as $cek) {
+                    $gun      = (int)$cek['gun_kaldi'];
+                    $oncelik  = $gun === 0 ? 'kritik' : 'yuksek';
+                    $tutar    = number_format((float)($cek['tutar_tl'] ?? $cek['tutar']), 2, ',', '.');
+                    $doviz    = $cek['doviz_kodu'] ?? 'TRY';
+                    $sembol   = $doviz === 'TRY' ? '₺' : ($doviz === 'USD' ? '$' : ($doviz === 'EUR' ? '€' : $doviz));
+                    $gun_metin = $gun === 0 ? 'Bugün' : ($gun === 1 ? 'Yarın' : "$gun gün sonra");
+
+                    foreach ($sahipler as $sahip) {
+                        $sonuc = BildirimOlusturucu::gonder([
+                            'sirket_id'    => $sid,
+                            'kullanici_id' => $sahip['id'],
+                            'tip'          => 'cek_vade',
+                            'baslik'       => $gun === 0 ? 'Bugün Ödenmesi Gereken Çekin Var!' : ($gun === 1 ? 'Yarın Ödenmesi Gereken Çekin Var' : 'Ödeme Vadesi Yaklaşıyor · ' . $gun . ' Gün Kaldı'),
+                            'mesaj'        => "{$tutar} {$sembol} · {$cek['cari_adi']} borcunuzun vadesi {$gun_metin}",
                             'oncelik'      => $oncelik,
                             'kaynak_turu'  => 'cek_senet',
                             'kaynak_id'    => (int)$cek['id'],
