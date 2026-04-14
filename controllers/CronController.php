@@ -357,9 +357,10 @@ class CronController {
     public function bildirimKontrol(): void {
         $this->cronDogrula();
 
+        require_once BASE_PATH . '/utils/SistemKripto.php';
+
         $sirketler    = $this->aktifSirketleriGetir();
         $olusturulan  = 0;
-        $debug        = [];
 
         foreach ($sirketler as $sirket) {
             try {
@@ -368,23 +369,21 @@ class CronController {
                 // Sahip kullanıcı ID (bildirim gönderilecek kişi)
                 $bildirim_model = new Bildirim();
                 $sahipler = $bildirim_model->sirket_sahipleri($sid);
-                if (empty($sahipler)) {
-                    $debug[] = "sid=$sid: sahip yok";
-                    continue;
-                }
-                $debug[] = "sid=$sid: " . count($sahipler) . " sahip";
+                if (empty($sahipler)) continue;
 
                 // ── 1. Yaklaşan ödeme vadeleri (3 gün, 1 gün, bugün) ──
                 try {
                     $stmt = $this->db->prepare(
-                        "SELECT id, tutar, soz_tarihi,
-                                DATEDIFF(soz_tarihi, CURDATE()) AS gun_kaldi
-                         FROM odeme_takip
-                         WHERE sirket_id = :sid
-                           AND silindi_mi = 0
-                           AND durum = 'bekliyor'
-                           AND soz_tarihi BETWEEN CURDATE() AND DATE_ADD(CURDATE(), INTERVAL 3 DAY)
-                         ORDER BY soz_tarihi ASC
+                        "SELECT ot.id, ot.tutar, ot.soz_tarihi,
+                                ot.firma_adi_sifreli, ck.cari_adi_sifreli,
+                                DATEDIFF(ot.soz_tarihi, CURDATE()) AS gun_kaldi
+                         FROM odeme_takip ot
+                         LEFT JOIN cari_kartlar ck ON ck.id = ot.cari_id
+                         WHERE ot.sirket_id = :sid
+                           AND ot.silindi_mi = 0
+                           AND ot.durum = 'bekliyor'
+                           AND ot.soz_tarihi BETWEEN CURDATE() AND DATE_ADD(CURDATE(), INTERVAL 3 DAY)
+                         ORDER BY ot.soz_tarihi ASC
                          LIMIT 50"
                     );
                     $stmt->execute([':sid' => $sid]);
@@ -393,15 +392,20 @@ class CronController {
                     foreach ($yaklasan_odemeler as $odeme) {
                         $gun = (int)$odeme['gun_kaldi'];
                         $oncelik = $gun === 0 ? 'kritik' : ($gun === 1 ? 'yuksek' : 'normal');
-                        $gun_metin = $gun === 0 ? 'BUGÜN' : "$gun gün sonra";
+                        $gun_metin = $gun === 0 ? 'bugün' : ($gun === 1 ? 'yarın' : "$gun gün sonra");
+                        $cari_adi = SistemKripto::coz($odeme['cari_adi_sifreli'] ?? '')
+                                  ?? SistemKripto::coz($odeme['firma_adi_sifreli'] ?? '')
+                                  ?? 'Cari';
+                        $cari_kisa = self::cariKisalt($cari_adi);
+                        $tutar = number_format((float)$odeme['tutar'], 2, ',', '.');
 
                         foreach ($sahipler as $sahip) {
                             $sonuc = BildirimOlusturucu::gonder([
                                 'sirket_id'    => $sid,
                                 'kullanici_id' => $sahip['id'],
                                 'tip'          => 'odeme_vade',
-                                'baslik'       => "Ödeme Vadesi {$gun_metin}",
-                                'mesaj'        => number_format((float)$odeme['tutar'], 2, ',', '.') . " TL tutarındaki ödeme {$gun_metin} vadeli.",
+                                'baslik'       => $gun === 0 ? 'Bugün Ödeme Vadesi Var!' : ($gun === 1 ? 'Yarın Ödeme Vadesi Var' : 'Ödeme Vadesi · ' . $gun . ' Gün Kaldı'),
+                                'mesaj'        => "{$tutar} ₺ · {$cari_kisa} ödemesi {$gun_metin} yapılmalı",
                                 'oncelik'      => $oncelik,
                                 'kaynak_turu'  => 'odeme_takip',
                                 'kaynak_id'    => (int)$odeme['id'],
@@ -411,21 +415,23 @@ class CronController {
                         }
                     }
                 } catch (Exception $e) {
-                    $debug[] = "sid=$sid odeme_takip HATA: " . $e->getMessage();
+                    error_log("CronController odeme_takip sid=$sid: " . $e->getMessage());
                 }
 
                 // ── 2. Geciken ödemeler ──
                 try {
                     $stmt2 = $this->db->prepare(
-                        "SELECT id, tutar, soz_tarihi,
-                                DATEDIFF(CURDATE(), soz_tarihi) AS gun_gecmis
-                         FROM odeme_takip
-                         WHERE sirket_id = :sid
-                           AND silindi_mi = 0
-                           AND durum = 'bekliyor'
-                           AND soz_tarihi < CURDATE()
-                           AND soz_tarihi >= DATE_SUB(CURDATE(), INTERVAL 30 DAY)
-                         ORDER BY soz_tarihi ASC
+                        "SELECT ot.id, ot.tutar, ot.soz_tarihi,
+                                ot.firma_adi_sifreli, ck.cari_adi_sifreli,
+                                DATEDIFF(CURDATE(), ot.soz_tarihi) AS gun_gecmis
+                         FROM odeme_takip ot
+                         LEFT JOIN cari_kartlar ck ON ck.id = ot.cari_id
+                         WHERE ot.sirket_id = :sid
+                           AND ot.silindi_mi = 0
+                           AND ot.durum = 'bekliyor'
+                           AND ot.soz_tarihi < CURDATE()
+                           AND ot.soz_tarihi >= DATE_SUB(CURDATE(), INTERVAL 30 DAY)
+                         ORDER BY ot.soz_tarihi ASC
                          LIMIT 30"
                     );
                     $stmt2->execute([':sid' => $sid]);
@@ -433,6 +439,11 @@ class CronController {
 
                     foreach ($geciken_odemeler as $odeme) {
                         $gun = (int)$odeme['gun_gecmis'];
+                        $cari_adi = SistemKripto::coz($odeme['cari_adi_sifreli'] ?? '')
+                                  ?? SistemKripto::coz($odeme['firma_adi_sifreli'] ?? '')
+                                  ?? 'Cari';
+                        $cari_kisa = self::cariKisalt($cari_adi);
+                        $tutar = number_format((float)$odeme['tutar'], 2, ',', '.');
 
                         foreach ($sahipler as $sahip) {
                             $sonuc = BildirimOlusturucu::gonder([
@@ -440,7 +451,7 @@ class CronController {
                                 'kullanici_id' => $sahip['id'],
                                 'tip'          => 'geciken_odeme',
                                 'baslik'       => "Ödeme {$gun} Gün Gecikti",
-                                'mesaj'        => number_format((float)$odeme['tutar'], 2, ',', '.') . " TL tutarındaki ödeme {$gun} gündür gecikiyor.",
+                                'mesaj'        => "{$tutar} ₺ · {$cari_kisa} ödemesi {$gun} gündür gecikiyor",
                                 'oncelik'      => $gun > 7 ? 'kritik' : 'yuksek',
                                 'kaynak_turu'  => 'odeme_takip',
                                 'kaynak_id'    => (int)$odeme['id'],
@@ -450,25 +461,26 @@ class CronController {
                         }
                     }
                 } catch (Exception $e) {
-                    $debug[] = "sid=$sid geciken HATA: " . $e->getMessage();
+                    error_log("CronController geciken sid=$sid: " . $e->getMessage());
                 }
 
                 // ── 3. Yaklaşan alacak çek vadeleri (portföyde veya tahsile verildi) ──
                 $stmt3 = $this->db->prepare(
-                    "SELECT id, tutar, tutar_tl, doviz_kodu, vade_tarihi, tur,
-                            DATEDIFF(vade_tarihi, CURDATE()) AS gun_kaldi
-                     FROM cek_senetler
-                     WHERE sirket_id = :sid
-                       AND silindi_mi = 0
-                       AND tur IN ('alacak_ceki', 'alacak_senedi')
-                       AND durum IN ('portfoyde', 'tahsile_verildi')
-                       AND vade_tarihi BETWEEN CURDATE() AND DATE_ADD(CURDATE(), INTERVAL 3 DAY)
-                     ORDER BY vade_tarihi ASC
+                    "SELECT cs.id, cs.tutar, cs.tutar_tl, cs.doviz_kodu, cs.vade_tarihi, cs.tur,
+                            ck.cari_adi_sifreli,
+                            DATEDIFF(cs.vade_tarihi, CURDATE()) AS gun_kaldi
+                     FROM cek_senetler cs
+                     LEFT JOIN cari_kartlar ck ON ck.id = cs.cari_id
+                     WHERE cs.sirket_id = :sid
+                       AND cs.silindi_mi = 0
+                       AND cs.tur IN ('alacak_ceki', 'alacak_senedi')
+                       AND cs.durum IN ('portfoyde', 'tahsile_verildi')
+                       AND cs.vade_tarihi BETWEEN CURDATE() AND DATE_ADD(CURDATE(), INTERVAL 3 DAY)
+                     ORDER BY cs.vade_tarihi ASC
                      LIMIT 50"
                 );
                 $stmt3->execute([':sid' => $sid]);
                 $alacak_cekler = $stmt3->fetchAll();
-                if ($sid === 1) $debug[] = "sid=1 alacak_cek: " . count($alacak_cekler);
 
                 foreach ($alacak_cekler as $cek) {
                     $gun      = (int)$cek['gun_kaldi'];
@@ -477,6 +489,8 @@ class CronController {
                     $doviz    = $cek['doviz_kodu'] ?? 'TRY';
                     $sembol   = $doviz === 'TRY' ? '₺' : ($doviz === 'USD' ? '$' : ($doviz === 'EUR' ? '€' : $doviz));
                     $gun_metin = $gun === 0 ? 'bugün' : ($gun === 1 ? 'yarın' : "$gun gün sonra");
+                    $cari_adi  = SistemKripto::coz($cek['cari_adi_sifreli'] ?? '') ?? 'Cari';
+                    $cari_kisa = self::cariKisalt($cari_adi);
 
                     foreach ($sahipler as $sahip) {
                         $sonuc = BildirimOlusturucu::gonder([
@@ -484,7 +498,7 @@ class CronController {
                             'kullanici_id' => $sahip['id'],
                             'tip'          => 'cek_vade',
                             'baslik'       => $gun === 0 ? 'Bugün Vadesi Dolan Çekin Var!' : ($gun === 1 ? 'Yarın Vadesi Dolan Çekin Var' : 'Çek Vadesi Yaklaşıyor · ' . $gun . ' Gün Kaldı'),
-                            'mesaj'        => "{$tutar} {$sembol} tutarındaki alacak çekin {$gun_metin} tahsil edilmeli",
+                            'mesaj'        => "{$tutar} {$sembol} · {$cari_kisa}'dan alacak çekin {$gun_metin} tahsil edilmeli",
                             'oncelik'      => $oncelik,
                             'kaynak_turu'  => 'cek_senet',
                             'kaynak_id'    => (int)$cek['id'],
@@ -496,20 +510,21 @@ class CronController {
 
                 // ── 4. Yaklaşan borç çek vadeleri (portföyde) ──
                 $stmt4 = $this->db->prepare(
-                    "SELECT id, tutar, tutar_tl, doviz_kodu, vade_tarihi, tur,
-                            DATEDIFF(vade_tarihi, CURDATE()) AS gun_kaldi
-                     FROM cek_senetler
-                     WHERE sirket_id = :sid
-                       AND silindi_mi = 0
-                       AND tur IN ('borc_ceki', 'borc_senedi')
-                       AND durum = 'portfoyde'
-                       AND vade_tarihi BETWEEN CURDATE() AND DATE_ADD(CURDATE(), INTERVAL 3 DAY)
-                     ORDER BY vade_tarihi ASC
+                    "SELECT cs.id, cs.tutar, cs.tutar_tl, cs.doviz_kodu, cs.vade_tarihi, cs.tur,
+                            ck.cari_adi_sifreli,
+                            DATEDIFF(cs.vade_tarihi, CURDATE()) AS gun_kaldi
+                     FROM cek_senetler cs
+                     LEFT JOIN cari_kartlar ck ON ck.id = cs.cari_id
+                     WHERE cs.sirket_id = :sid
+                       AND cs.silindi_mi = 0
+                       AND cs.tur IN ('borc_ceki', 'borc_senedi')
+                       AND cs.durum = 'portfoyde'
+                       AND cs.vade_tarihi BETWEEN CURDATE() AND DATE_ADD(CURDATE(), INTERVAL 3 DAY)
+                     ORDER BY cs.vade_tarihi ASC
                      LIMIT 50"
                 );
                 $stmt4->execute([':sid' => $sid]);
                 $borc_cekler = $stmt4->fetchAll();
-                if ($sid === 1) $debug[] = "sid=1 borc_cek: " . count($borc_cekler);
 
                 foreach ($borc_cekler as $cek) {
                     $gun      = (int)$cek['gun_kaldi'];
@@ -517,7 +532,9 @@ class CronController {
                     $tutar    = number_format((float)($cek['tutar_tl'] ?? $cek['tutar']), 2, ',', '.');
                     $doviz    = $cek['doviz_kodu'] ?? 'TRY';
                     $sembol   = $doviz === 'TRY' ? '₺' : ($doviz === 'USD' ? '$' : ($doviz === 'EUR' ? '€' : $doviz));
-                    $gun_metin = $gun === 0 ? 'Bugün' : ($gun === 1 ? 'Yarın' : "$gun gün sonra");
+                    $gun_metin = $gun === 0 ? 'bugün' : ($gun === 1 ? 'yarın' : "$gun gün sonra");
+                    $cari_adi  = SistemKripto::coz($cek['cari_adi_sifreli'] ?? '') ?? 'Cari';
+                    $cari_kisa = self::cariKisalt($cari_adi);
 
                     foreach ($sahipler as $sahip) {
                         $sonuc = BildirimOlusturucu::gonder([
@@ -525,7 +542,7 @@ class CronController {
                             'kullanici_id' => $sahip['id'],
                             'tip'          => 'cek_vade',
                             'baslik'       => $gun === 0 ? 'Bugün Ödenmesi Gereken Çekin Var!' : ($gun === 1 ? 'Yarın Ödenmesi Gereken Çekin Var' : 'Ödeme Vadesi Yaklaşıyor · ' . $gun . ' Gün Kaldı'),
-                            'mesaj'        => "{$tutar} {$sembol} tutarındaki borç çekinizin vadesi {$gun_metin}",
+                            'mesaj'        => "{$tutar} {$sembol} · {$cari_kisa}'ya borcunuzun vadesi {$gun_metin}",
                             'oncelik'      => $oncelik,
                             'kaynak_turu'  => 'cek_senet',
                             'kaynak_id'    => (int)$cek['id'],
@@ -536,7 +553,6 @@ class CronController {
                 }
 
             } catch (Exception $e) {
-                $debug[] = "sid={$sirket['sirket_id']} HATA: " . $e->getMessage();
                 error_log("CronController::bildirimKontrol sirket {$sirket['sirket_id']}: " . $e->getMessage());
             }
         }
@@ -546,7 +562,16 @@ class CronController {
             'basarili'    => true,
             'olusturulan' => $olusturulan,
             'toplam'      => count($sirketler),
-            'debug'       => $debug,
         ]);
+    }
+
+    /** Cari adını max 15 karakter / 2 kelimeye kısaltır (push/bildirim için) */
+    private static function cariKisalt(string $ad): string {
+        $ad = trim($ad);
+        if ($ad === '') return 'Cari';
+        $kelimeler = preg_split('/\s+/', $ad);
+        if (count($kelimeler) === 1) return $kelimeler[0];
+        $iki = $kelimeler[0] . ' ' . $kelimeler[1];
+        return mb_strlen($iki) <= 15 ? $iki : $kelimeler[0];
     }
 }
