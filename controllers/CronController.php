@@ -532,6 +532,7 @@ class CronController {
                 }
 
             } catch (Exception $e) {
+                $debug[] = "sid={$sirket['sirket_id']} HATA: " . $e->getMessage();
                 error_log("CronController::bildirimKontrol sirket {$sirket['sirket_id']}: " . $e->getMessage());
             }
         }
