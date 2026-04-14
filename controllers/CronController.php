@@ -375,74 +375,86 @@ class CronController {
                 $debug[] = "sid=$sid: " . count($sahipler) . " sahip";
 
                 // ── 1. Yaklaşan ödeme vadeleri (3 gün, 1 gün, bugün) ──
-                $stmt = $this->db->prepare(
-                    "SELECT id, firma_adi, aciklama, tutar, soz_tarihi,
-                            DATEDIFF(soz_tarihi, CURDATE()) AS gun_kaldi
-                     FROM odeme_takip
-                     WHERE sirket_id = :sid
-                       AND silindi_mi = 0
-                       AND durum = 'bekliyor'
-                       AND soz_tarihi BETWEEN CURDATE() AND DATE_ADD(CURDATE(), INTERVAL 3 DAY)
-                     ORDER BY soz_tarihi ASC
-                     LIMIT 50"
-                );
-                $stmt->execute([':sid' => $sid]);
-                $yaklasan_odemeler = $stmt->fetchAll();
+                try {
+                    $stmt = $this->db->prepare(
+                        "SELECT ot.id, COALESCE(c.ad, 'Cari') AS cari_adi,
+                                ot.tutar, ot.soz_tarihi,
+                                DATEDIFF(ot.soz_tarihi, CURDATE()) AS gun_kaldi
+                         FROM odeme_takip ot
+                         LEFT JOIN cariler c ON c.id = ot.cari_id
+                         WHERE ot.sirket_id = :sid
+                           AND ot.silindi_mi = 0
+                           AND ot.durum = 'bekliyor'
+                           AND ot.soz_tarihi BETWEEN CURDATE() AND DATE_ADD(CURDATE(), INTERVAL 3 DAY)
+                         ORDER BY ot.soz_tarihi ASC
+                         LIMIT 50"
+                    );
+                    $stmt->execute([':sid' => $sid]);
+                    $yaklasan_odemeler = $stmt->fetchAll();
 
-                foreach ($yaklasan_odemeler as $odeme) {
-                    $gun = (int)$odeme['gun_kaldi'];
-                    $oncelik = $gun === 0 ? 'kritik' : ($gun === 1 ? 'yuksek' : 'normal');
-                    $gun_metin = $gun === 0 ? 'BUGÜN' : "$gun gün sonra";
+                    foreach ($yaklasan_odemeler as $odeme) {
+                        $gun = (int)$odeme['gun_kaldi'];
+                        $oncelik = $gun === 0 ? 'kritik' : ($gun === 1 ? 'yuksek' : 'normal');
+                        $gun_metin = $gun === 0 ? 'BUGÜN' : "$gun gün sonra";
 
-                    foreach ($sahipler as $sahip) {
-                        $sonuc = BildirimOlusturucu::gonder([
-                            'sirket_id'    => $sid,
-                            'kullanici_id' => $sahip['id'],
-                            'tip'          => 'odeme_vade',
-                            'baslik'       => "{$odeme['firma_adi']} — ödeme vadesi {$gun_metin}",
-                            'mesaj'        => number_format((float)$odeme['tutar'], 2, ',', '.') . " TL tutarındaki ödeme {$gun_metin} vadeli. " . ($odeme['aciklama'] ?? ''),
-                            'oncelik'      => $oncelik,
-                            'kaynak_turu'  => 'odeme_takip',
-                            'kaynak_id'    => (int)$odeme['id'],
-                            'aksiyon_url'  => '/odemeler',
-                        ]);
-                        if ($sonuc !== false) $olusturulan++;
+                        foreach ($sahipler as $sahip) {
+                            $sonuc = BildirimOlusturucu::gonder([
+                                'sirket_id'    => $sid,
+                                'kullanici_id' => $sahip['id'],
+                                'tip'          => 'odeme_vade',
+                                'baslik'       => "{$odeme['cari_adi']} — ödeme vadesi {$gun_metin}",
+                                'mesaj'        => number_format((float)$odeme['tutar'], 2, ',', '.') . " TL tutarındaki ödeme {$gun_metin} vadeli.",
+                                'oncelik'      => $oncelik,
+                                'kaynak_turu'  => 'odeme_takip',
+                                'kaynak_id'    => (int)$odeme['id'],
+                                'aksiyon_url'  => '/odemeler',
+                            ]);
+                            if ($sonuc !== false) $olusturulan++;
+                        }
                     }
+                } catch (Exception $e) {
+                    $debug[] = "sid=$sid odeme_takip HATA: " . $e->getMessage();
                 }
 
                 // ── 2. Geciken ödemeler ──
-                $stmt2 = $this->db->prepare(
-                    "SELECT id, firma_adi, aciklama, tutar, soz_tarihi,
-                            DATEDIFF(CURDATE(), soz_tarihi) AS gun_gecmis
-                     FROM odeme_takip
-                     WHERE sirket_id = :sid
-                       AND silindi_mi = 0
-                       AND durum = 'bekliyor'
-                       AND soz_tarihi < CURDATE()
-                       AND soz_tarihi >= DATE_SUB(CURDATE(), INTERVAL 30 DAY)
-                     ORDER BY soz_tarihi ASC
-                     LIMIT 30"
-                );
-                $stmt2->execute([':sid' => $sid]);
-                $geciken_odemeler = $stmt2->fetchAll();
+                try {
+                    $stmt2 = $this->db->prepare(
+                        "SELECT ot.id, COALESCE(c.ad, 'Cari') AS cari_adi,
+                                ot.tutar, ot.soz_tarihi,
+                                DATEDIFF(CURDATE(), ot.soz_tarihi) AS gun_gecmis
+                         FROM odeme_takip ot
+                         LEFT JOIN cariler c ON c.id = ot.cari_id
+                         WHERE ot.sirket_id = :sid
+                           AND ot.silindi_mi = 0
+                           AND ot.durum = 'bekliyor'
+                           AND ot.soz_tarihi < CURDATE()
+                           AND ot.soz_tarihi >= DATE_SUB(CURDATE(), INTERVAL 30 DAY)
+                         ORDER BY ot.soz_tarihi ASC
+                         LIMIT 30"
+                    );
+                    $stmt2->execute([':sid' => $sid]);
+                    $geciken_odemeler = $stmt2->fetchAll();
 
-                foreach ($geciken_odemeler as $odeme) {
-                    $gun = (int)$odeme['gun_gecmis'];
+                    foreach ($geciken_odemeler as $odeme) {
+                        $gun = (int)$odeme['gun_gecmis'];
 
-                    foreach ($sahipler as $sahip) {
-                        $sonuc = BildirimOlusturucu::gonder([
-                            'sirket_id'    => $sid,
-                            'kullanici_id' => $sahip['id'],
-                            'tip'          => 'geciken_odeme',
-                            'baslik'       => "{$odeme['firma_adi']} — ödeme {$gun} gün gecikti",
-                            'mesaj'        => number_format((float)$odeme['tutar'], 2, ',', '.') . " TL tutarındaki ödeme {$gun} gündür gecikiyor.",
-                            'oncelik'      => $gun > 7 ? 'kritik' : 'yuksek',
-                            'kaynak_turu'  => 'odeme_takip',
-                            'kaynak_id'    => (int)$odeme['id'],
-                            'aksiyon_url'  => '/odemeler',
-                        ]);
-                        if ($sonuc !== false) $olusturulan++;
+                        foreach ($sahipler as $sahip) {
+                            $sonuc = BildirimOlusturucu::gonder([
+                                'sirket_id'    => $sid,
+                                'kullanici_id' => $sahip['id'],
+                                'tip'          => 'geciken_odeme',
+                                'baslik'       => "{$odeme['cari_adi']} — ödeme {$gun} gün gecikti",
+                                'mesaj'        => number_format((float)$odeme['tutar'], 2, ',', '.') . " TL tutarındaki ödeme {$gun} gündür gecikiyor.",
+                                'oncelik'      => $gun > 7 ? 'kritik' : 'yuksek',
+                                'kaynak_turu'  => 'odeme_takip',
+                                'kaynak_id'    => (int)$odeme['id'],
+                                'aksiyon_url'  => '/odemeler',
+                            ]);
+                            if ($sonuc !== false) $olusturulan++;
+                        }
                     }
+                } catch (Exception $e) {
+                    $debug[] = "sid=$sid geciken HATA: " . $e->getMessage();
                 }
 
                 // ── 3. Yaklaşan alacak çek vadeleri (portföyde veya tahsile verildi) ──
