@@ -44,6 +44,12 @@ if (file_exists($wp_helper)) {
     require_once $wp_helper;
 }
 
+// PushHelper — iOS push bildirimleri (varsa yükle)
+$push_helper = CRON_ROOT . '/utils/PushHelper.php';
+if (file_exists($push_helper)) {
+    require_once $push_helper;
+}
+
 // ─── Sayaçlar ─────────────────────────────────────────────────────
 $toplam_gonderilen = 0;
 $toplam_cek_tarandi = 0;
