@@ -127,11 +127,13 @@ foreach ($sirketler as $sirket_id) {
             $vade_kisa    = tarih_kisalt($cek['vade_tarihi']);
 
             $baslik = $kural['alacak_baslik'];
-            $mesaj  = match ((int)$gun_farki) {
-                0 => "{$tutar_goster} · {$cari_kisa}'dan alacak çekin bugün tahsil edilmeli",
-                1 => "{$tutar_goster} · {$cari_kisa}'dan alacak çekin yarın tahsil edilmeli",
-                default => "{$tutar_goster} · {$cari_kisa}'dan alacak çekin {$vade_kisa}'de tahsil edilmeli",
-            };
+            if ((int)$gun_farki === 0) {
+                $mesaj = "{$tutar_goster} · {$cari_kisa}'dan alacak çekin bugün tahsil edilmeli";
+            } elseif ((int)$gun_farki === 1) {
+                $mesaj = "{$tutar_goster} · {$cari_kisa}'dan alacak çekin yarın tahsil edilmeli";
+            } else {
+                $mesaj = "{$tutar_goster} · {$cari_kisa}'dan alacak çekin {$vade_kisa}'de tahsil edilmeli";
+            }
 
             $gonderilen = BildirimOlusturucu::toplu_gonder($kullanici_idler, [
                 'sirket_id'   => $sirket_id,
@@ -169,11 +171,13 @@ foreach ($sirketler as $sirket_id) {
             $vade_kisa    = tarih_kisalt($cek['vade_tarihi']);
 
             $baslik = $kural['borc_baslik'];
-            $mesaj  = match ((int)$gun_farki) {
-                0 => "{$tutar_goster} · {$cari_kisa}'ya borcunuzun vadesi bugün ödenmeli",
-                1 => "{$tutar_goster} · {$cari_kisa}'ya borcunuzun vadesi yarın",
-                default => "{$tutar_goster} · {$cari_kisa}'ya borcunuzun vadesi {$vade_kisa}'de",
-            };
+            if ((int)$gun_farki === 0) {
+                $mesaj = "{$tutar_goster} · {$cari_kisa}'ya borcunuzun vadesi bugün ödenmeli";
+            } elseif ((int)$gun_farki === 1) {
+                $mesaj = "{$tutar_goster} · {$cari_kisa}'ya borcunuzun vadesi yarın";
+            } else {
+                $mesaj = "{$tutar_goster} · {$cari_kisa}'ya borcunuzun vadesi {$vade_kisa}'de";
+            }
 
             $gonderilen = BildirimOlusturucu::toplu_gonder($kullanici_idler, [
                 'sirket_id'   => $sirket_id,
@@ -223,10 +227,8 @@ function tarih_kisalt(string $tarih): string {
 // ─── Yardımcı: Tutar Formatla ─────────────────────────────────────
 function format_tutar(float $tutar, string $doviz): string {
     $formatli = number_format($tutar, 2, ',', '.');
-    return match ($doviz) {
-        'TRY'   => "{$formatli} ₺",
-        'USD'   => "{$formatli} $",
-        'EUR'   => "{$formatli} €",
-        default => "{$formatli} {$doviz}",
-    };
+    if ($doviz === 'TRY') return "{$formatli} ₺";
+    if ($doviz === 'USD') return "{$formatli} $";
+    if ($doviz === 'EUR') return "{$formatli} €";
+    return "{$formatli} {$doviz}";
 }
