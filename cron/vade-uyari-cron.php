@@ -105,15 +105,15 @@ foreach ($sirketler as $sirket_id) {
     foreach ($vade_kurallari as $gun_farki => $kural) {
         $hedef_tarih = date('Y-m-d', strtotime("+{$gun_farki} days"));
 
-        // ── A) ALACAK ÇEKLERİ (tahsilde) ─────────────────────────
+        // ── A) ALACAK ÇEKLERİ (portföyde veya tahsile verildi) ───
         $stmt = $db->prepare(
             "SELECT cs.id, cs.tutar, cs.tutar_tl, cs.doviz_kodu, cs.vade_tarihi,
                     COALESCE(c.ad, 'Bilinmeyen Cari') AS cari_adi
-             FROM cek_senet cs
+             FROM cek_senetler cs
              LEFT JOIN cariler c ON c.id = cs.cari_id
              WHERE cs.sirket_id   = :sirket_id
-               AND cs.tur         = 'alacak'
-               AND cs.durum       = 'tahsilde'
+               AND cs.tur         IN ('alacak_ceki', 'alacak_senedi')
+               AND cs.durum       IN ('portfoyde', 'tahsile_verildi')
                AND cs.vade_tarihi = :vade_tarihi
                AND cs.silindi_mi  = 0"
         );
@@ -149,15 +149,15 @@ foreach ($sirketler as $sirket_id) {
             $toplam_gonderilen += $gonderilen;
         }
 
-        // ── B) BORÇ ÇEKLERİ (verildi / odeme_bekleniyor) ─────────
+        // ── B) BORÇ ÇEKLERİ (portföyde) ──────────────────────────
         $stmt = $db->prepare(
             "SELECT cs.id, cs.tutar, cs.tutar_tl, cs.doviz_kodu, cs.vade_tarihi,
                     COALESCE(c.ad, 'Bilinmeyen Cari') AS cari_adi
-             FROM cek_senet cs
+             FROM cek_senetler cs
              LEFT JOIN cariler c ON c.id = cs.cari_id
              WHERE cs.sirket_id   = :sirket_id
-               AND cs.tur         = 'borc'
-               AND cs.durum       IN ('verildi', 'odeme_bekleniyor')
+               AND cs.tur         IN ('borc_ceki', 'borc_senedi')
+               AND cs.durum       = 'portfoyde'
                AND cs.vade_tarihi = :vade_tarihi
                AND cs.silindi_mi  = 0"
         );

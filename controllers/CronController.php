@@ -440,17 +440,17 @@ class CronController {
                     }
                 }
 
-                // ── 3. Yaklaşan alacak çek vadeleri (tahsilde) ──
+                // ── 3. Yaklaşan alacak çek vadeleri (portföyde veya tahsile verildi) ──
                 $stmt3 = $this->db->prepare(
                     "SELECT cs.id, COALESCE(c.ad, 'Bilinmeyen Cari') AS cari_adi,
                             cs.tutar, cs.tutar_tl, cs.doviz_kodu, cs.vade_tarihi, cs.tur,
                             DATEDIFF(cs.vade_tarihi, CURDATE()) AS gun_kaldi
-                     FROM cek_senet cs
+                     FROM cek_senetler cs
                      LEFT JOIN cariler c ON c.id = cs.cari_id
                      WHERE cs.sirket_id = :sid
                        AND cs.silindi_mi = 0
-                       AND cs.tur = 'alacak'
-                       AND cs.durum = 'tahsilde'
+                       AND cs.tur IN ('alacak_ceki', 'alacak_senedi')
+                       AND cs.durum IN ('portfoyde', 'tahsile_verildi')
                        AND cs.vade_tarihi BETWEEN CURDATE() AND DATE_ADD(CURDATE(), INTERVAL 3 DAY)
                      ORDER BY cs.vade_tarihi ASC
                      LIMIT 50"
@@ -482,17 +482,17 @@ class CronController {
                     }
                 }
 
-                // ── 4. Yaklaşan borç çek vadeleri (verildi / odeme_bekleniyor) ──
+                // ── 4. Yaklaşan borç çek vadeleri (portföyde) ──
                 $stmt4 = $this->db->prepare(
                     "SELECT cs.id, COALESCE(c.ad, 'Bilinmeyen Cari') AS cari_adi,
                             cs.tutar, cs.tutar_tl, cs.doviz_kodu, cs.vade_tarihi, cs.tur,
                             DATEDIFF(cs.vade_tarihi, CURDATE()) AS gun_kaldi
-                     FROM cek_senet cs
+                     FROM cek_senetler cs
                      LEFT JOIN cariler c ON c.id = cs.cari_id
                      WHERE cs.sirket_id = :sid
                        AND cs.silindi_mi = 0
-                       AND cs.tur = 'borc'
-                       AND cs.durum IN ('verildi', 'odeme_bekleniyor')
+                       AND cs.tur IN ('borc_ceki', 'borc_senedi')
+                       AND cs.durum = 'portfoyde'
                        AND cs.vade_tarihi BETWEEN CURDATE() AND DATE_ADD(CURDATE(), INTERVAL 3 DAY)
                      ORDER BY cs.vade_tarihi ASC
                      LIMIT 50"
