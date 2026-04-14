@@ -592,6 +592,20 @@ class CronController {
                  'mesaj'  => "68.300 ₺ · Yönder Plastik'ten alacak çek 3 gün gecikti"],
             ],
 
+            // ═══ SET 3: ACİLİYET / UYARI ═══
+            'aciliyet' => [
+                ['baslik' => '🚨 Bugün 3 Çek Vadesi',
+                 'mesaj'  => "Toplam 875.000 ₺ · Altın Tekstil, Zenith Mobilya ve Star Gıda"],
+                ['baslik' => '⛔ Karşılıksız Çek Kaydı',
+                 'mesaj'  => "180.000 ₺ · Demir İnşaat'a ait çekin karşılığı bankada bulunamadı"],
+                ['baslik' => '⏰ 7 Gün Geciken Tahsilat',
+                 'mesaj'  => "98.000 ₺ · Kuzey Yıldızı'ndan alacak çek vadesi 7 gün önceydi"],
+                ['baslik' => '🔴 Bugün Ödenecek Borç Çek',
+                 'mesaj'  => "250.000 ₺ · Mavi Lojistik'e olan borç çeki vadesi bugün"],
+                ['baslik' => '⚠️ Kredi Limiti %95',
+                 'mesaj'  => "Global Tedarik cari hesap limiti 42.500 ₺'ye düştü"],
+            ],
+
             // ═══ SET 2: GELİR-GİDER / KASA ═══
             'gelir-gider' => [
                 ['baslik' => '⚠️ Bu Haftaki Kâr/Zarar',
