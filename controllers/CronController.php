@@ -565,6 +565,74 @@ class CronController {
         ]);
     }
 
+    // ──────────────────────────────────────────────────────────
+    // REKLAM TEST PUSH — Sosyal medya/video screenshot için
+    // Tüm aktif iOS tokenlara 6 sabit bildirim gönderir
+    // SADECE PUSH gönderir, DB'ye bildirim yazmaz (test amaçlı)
+    // ──────────────────────────────────────────────────────────
+    public function reklamTestPush(): void {
+        $this->cronDogrula();
+        require_once BASE_PATH . '/utils/PushHelper.php';
+
+        $bildirimler = [
+            ['baslik' => 'Ziraat Bankası · Bugün Vade',
+             'mesaj'  => "350.000 ₺ · Altın Tekstil A.Ş.'den alacak çekin bugün tahsil edilmeli"],
+            ['baslik' => 'Akbank · Çek Tahsil Edildi',
+             'mesaj'  => "240.500 ₺ · Star Gıda'dan alacak çekiniz hesabınıza geçti"],
+            ['baslik' => 'Garanti BBVA · Vade Hatırlatıcı',
+             'mesaj'  => "125.000 ₺ · Zenith Mobilya'dan alacak çek · 2 gün kaldı"],
+            ['baslik' => 'İş Bankası · Çek Ödendi',
+             'mesaj'  => "180.000 ₺ · Demir İnşaat'a olan borcunuz ödendi"],
+            ['baslik' => 'Yapı Kredi · Vade Hatırlatıcı',
+             'mesaj'  => "95.750 ₺ · Mavi Lojistik'ten alacak çek · 5 gün kaldı"],
+            ['baslik' => 'QNB Finansbank · Geciken Tahsilat',
+             'mesaj'  => "68.300 ₺ · Yönder Plastik'ten alacak çek 3 gün gecikti"],
+        ];
+
+        // Aktif iOS tokenları çek
+        $stmt = $this->db->query("
+            SELECT DISTINCT kullanici_id, token
+            FROM push_tokens
+            WHERE aktif = 1 AND platform = 'ios'
+        ");
+        $tokenlar = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+        $gonderilen = 0;
+        $basarisiz  = 0;
+        $alicilar   = [];
+
+        foreach ($tokenlar as $t) {
+            $kullanici_basarili = 0;
+            foreach ($bildirimler as $b) {
+                $sonuc = PushHelper::gonder(
+                    $t['token'],
+                    $b['baslik'],
+                    $b['mesaj'],
+                    ['url' => '/cek-senet']
+                );
+                if ($sonuc) { $gonderilen++; $kullanici_basarili++; }
+                else        { $basarisiz++; }
+                // APNs rate limit için küçük gecikme
+                usleep(150000); // 0.15 saniye
+            }
+            $alicilar[] = [
+                'kullanici_id' => (int)$t['kullanici_id'],
+                'basarili'     => $kullanici_basarili,
+                'toplam'       => count($bildirimler),
+            ];
+        }
+
+        header('Content-Type: application/json');
+        echo json_encode([
+            'basarili'       => true,
+            'alici_sayisi'   => count($tokenlar),
+            'bildirim_sayisi' => count($bildirimler),
+            'gonderilen'     => $gonderilen,
+            'basarisiz'      => $basarisiz,
+            'alicilar'       => $alicilar,
+        ], JSON_UNESCAPED_UNICODE);
+    }
+
     /** Cari adını max 15 karakter / 2 kelimeye kısaltır (push/bildirim için) */
     private static function cariKisalt(string $ad): string {
         $ad = trim($ad);

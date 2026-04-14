@@ -46,6 +46,11 @@ switch ($islem) {
         $cron->bildirimKontrol();
         break;
 
+    case 'reklam-test-push':
+        if ($metod !== 'GET') { Response::hata('Sadece GET kabul edilir', 405); break; }
+        $cron->reklamTestPush();
+        break;
+
     default:
         Response::bulunamadi("Cron endpoint bulunamadi: " . htmlspecialchars($islem, ENT_QUOTES, 'UTF-8'));
         break;
