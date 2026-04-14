@@ -90,6 +90,7 @@ const useAuthStore = create(
           // Tema store'u güncelle
           useTemaStore.getState().temaAyarla(kullanici.tema_adi || 'paramgo')
           revenueCatBaslat(kullanici.sirket_id).catch((e) => console.error('RevenueCat (baslat):', e))
+          pushTokenKaydet()
         } catch {
           get().tokenlarıTemizle()
           set({ yukleniyor: false, girisYapildi: false })
