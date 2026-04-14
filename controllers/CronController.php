@@ -359,6 +359,7 @@ class CronController {
 
         $sirketler    = $this->aktifSirketleriGetir();
         $olusturulan  = 0;
+        $debug        = [];
 
         foreach ($sirketler as $sirket) {
             try {
@@ -367,7 +368,11 @@ class CronController {
                 // Sahip kullanıcı ID (bildirim gönderilecek kişi)
                 $bildirim_model = new Bildirim();
                 $sahipler = $bildirim_model->sirket_sahipleri($sid);
-                if (empty($sahipler)) continue;
+                if (empty($sahipler)) {
+                    $debug[] = "sid=$sid: sahip yok";
+                    continue;
+                }
+                $debug[] = "sid=$sid: " . count($sahipler) . " sahip";
 
                 // ── 1. Yaklaşan ödeme vadeleri (3 gün, 1 gün, bugün) ──
                 $stmt = $this->db->prepare(
@@ -457,6 +462,7 @@ class CronController {
                 );
                 $stmt3->execute([':sid' => $sid]);
                 $alacak_cekler = $stmt3->fetchAll();
+                if ($sid === 1) $debug[] = "sid=1 alacak_cek: " . count($alacak_cekler);
 
                 foreach ($alacak_cekler as $cek) {
                     $gun      = (int)$cek['gun_kaldi'];
@@ -499,6 +505,7 @@ class CronController {
                 );
                 $stmt4->execute([':sid' => $sid]);
                 $borc_cekler = $stmt4->fetchAll();
+                if ($sid === 1) $debug[] = "sid=1 borc_cek: " . count($borc_cekler);
 
                 foreach ($borc_cekler as $cek) {
                     $gun      = (int)$cek['gun_kaldi'];
@@ -534,6 +541,7 @@ class CronController {
             'basarili'    => true,
             'olusturulan' => $olusturulan,
             'toplam'      => count($sirketler),
+            'debug'       => $debug,
         ]);
     }
 }
