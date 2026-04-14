@@ -588,6 +588,8 @@ class CronController {
                  'mesaj'  => "125.000 ₺ · Zenith Mobilya'dan alacak çek · 2 gün kaldı"],
                 ['baslik' => '💸 İş Bankası · Çek Ödendi',
                  'mesaj'  => "180.000 ₺ · Demir İnşaat'a olan borcunuz ödendi"],
+                ['baslik' => '🚨 QNB Finansbank · Geciken Çek',
+                 'mesaj'  => "68.300 ₺ · Yönder Plastik'ten alacak çek 3 gün gecikti"],
             ],
 
             // ═══ SET 2: GELİR-GİDER / KASA ═══
@@ -598,6 +600,8 @@ class CronController {
                  'mesaj'  => "1.245.680 ₺ bakiye · Bugün 8 işlem · +67.800 ₺ net"],
                 ['baslik' => '🔴 Gider Uyarısı',
                  'mesaj'  => "Yakıt gideri bu ay %32 arttı · 48.600 ₺ ile kategori rekoru"],
+                ['baslik' => '📈 Günlük Gelir Rekoru',
+                 'mesaj'  => "Bugün toplam 142.500 ₺ tahsilat · Son 30 günün en yüksek girişi"],
                 ['baslik' => '📊 Nisan Ayı Özeti Hazır',
                  'mesaj'  => "Net kâr: +₺124.500 · Geçen aya göre %12 düşüş"],
             ],
