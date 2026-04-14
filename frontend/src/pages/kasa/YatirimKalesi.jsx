@@ -301,8 +301,12 @@ function FiyatGuncelleModal({ open, onClose, yatirimlar, onGuncelle, p, renkler 
 }
 
 // ─── Yatırım Kalesi Ana Bileşen ────────────────────────────────────────────
-export default function YatirimKalesi({ yatirimlar, setYatirimlar, p, renkler }) {
+export default function YatirimKalesi({ yatirimlar, setYatirimlar, p, renkler, autoOpenModal = false }) {
   const [modalAcik,      setModalAcik]      = useState(false)
+
+  useEffect(() => {
+    if (autoOpenModal) { setModalAcik(true) }
+  }, [autoOpenModal])
   const [duzenlenen,     setDuzenlenen]     = useState(null)
   const [silOnayId,      setSilOnayId]      = useState(null)
   const [showFiyatModal, setShowFiyatModal] = useState(false)

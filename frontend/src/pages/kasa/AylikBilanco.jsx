@@ -381,9 +381,13 @@ function AyKapanisModal({ open, onClose, kapanislar, onKaydet, yatirimGuncelDege
 }
 
 // ─── Aylık Bilanço ────────────────────────────────────────────────────────────
-export default function AylikBilanco({ kapanislar, setKapanislar, yatirimGuncelDeger = 0, bankaBakiye = 0, p, renkler }) {
+export default function AylikBilanco({ kapanislar, setKapanislar, yatirimGuncelDeger = 0, bankaBakiye = 0, p, renkler, autoOpenModal = false }) {
   const [modalAcik,        setModalAcik]        = useState(false)
   const [duzenlenenKapanis, setDuzenlenenKapanis] = useState(null)
+
+  useEffect(() => {
+    if (autoOpenModal) { setDuzenlenenKapanis(null); setModalAcik(true) }
+  }, [autoOpenModal])
   const [arama,            setArama]            = useState('')
   const [silOnayId,        setSilOnayId]        = useState(null)
   const [sayfa,            setSayfa]            = useState(1)

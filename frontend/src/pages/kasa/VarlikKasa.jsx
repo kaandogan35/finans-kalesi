@@ -5,9 +5,9 @@
  * Bootstrap 5 + Saf React | ParamGo
  */
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { bildirim as toast } from '../../components/ui/CenterAlert'
-import { useLocation } from 'react-router-dom'
+import { useLocation, useNavigate, useSearchParams } from 'react-router-dom'
 import useTemaStore from '../../stores/temaStore'
 import { temaRenkleri } from '../../lib/temaRenkleri'
 import useAuthStore from '../../stores/authStore'
@@ -41,6 +41,27 @@ export default function VarlikKasa() {
 
   const { kullanici } = useAuthStore()
   const location = useLocation()
+  const navigate = useNavigate()
+  const [searchParams] = useSearchParams()
+  const autoOpenModal = searchParams.get('modal') === 'ekle'
+
+  const [islemMenuAcik, setIslemMenuAcik] = useState(false)
+  const islemMenuRef = useRef(null)
+
+  useEffect(() => {
+    const handler = (e) => {
+      if (islemMenuRef.current && !islemMenuRef.current.contains(e.target)) {
+        setIslemMenuAcik(false)
+      }
+    }
+    if (islemMenuAcik) document.addEventListener('mousedown', handler)
+    return () => document.removeEventListener('mousedown', handler)
+  }, [islemMenuAcik])
+
+  const islemGit = (rota) => {
+    setIslemMenuAcik(false)
+    navigate(`${rota}?modal=ekle`)
+  }
 
   // URL'den aktif sekmeyi belirle
   const aktifSekme = location.pathname === '/kasa/bilanco'    ? 'bilanco'
@@ -125,6 +146,51 @@ export default function VarlikKasa() {
             <p className={`${p}-page-sub`}>{sayfa.alt}</p>
           </div>
         </div>
+
+        {/* İşlem Butonu — sadece Kasa Özeti'nde görünür */}
+        {aktifSekme === 'gosterge' && (
+          <div className={`${p}-page-header-right`} ref={islemMenuRef} style={{ position: 'relative' }}>
+            <button
+              className={`${p}-btn-save`}
+              onClick={() => setIslemMenuAcik(o => !o)}
+              style={{ display: 'flex', alignItems: 'center', gap: 6 }}
+            >
+              <i className="bi bi-plus-lg" />
+              <span>İşlem</span>
+            </button>
+
+            {islemMenuAcik && (
+              <div style={{
+                position: 'absolute', top: 'calc(100% + 6px)', right: 0,
+                background: '#fff', border: '1px solid #e5e7eb',
+                borderRadius: 10, boxShadow: '0 8px 24px rgba(0,0,0,0.10)',
+                minWidth: 180, zIndex: 200, overflow: 'hidden',
+              }}>
+                {[
+                  { label: 'Ay Sonu Özeti',  icon: 'bi-journal-text',  rota: '/kasa/bilanco'    },
+                  { label: 'Ortaklar',        icon: 'bi-people-fill',   rota: '/kasa/ortaklar'   },
+                  { label: 'Döviz & Altın',   icon: 'bi-gem',           rota: '/kasa/yatirimlar' },
+                ].map(item => (
+                  <button
+                    key={item.rota}
+                    onClick={() => islemGit(item.rota)}
+                    style={{
+                      display: 'flex', alignItems: 'center', gap: 10,
+                      width: '100%', padding: '11px 16px',
+                      background: 'none', border: 'none', cursor: 'pointer',
+                      fontSize: 14, color: '#374151', textAlign: 'left',
+                    }}
+                    onMouseEnter={e => e.currentTarget.style.background = '#f9fafb'}
+                    onMouseLeave={e => e.currentTarget.style.background = 'none'}
+                  >
+                    <i className={`bi ${item.icon}`} style={{ color: '#10B981', fontSize: 15 }} />
+                    {item.label}
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
       </div>
 
       {yukleniyor ? (
@@ -135,9 +201,9 @@ export default function VarlikKasa() {
       <>
         {/* ─── Sekme İçerikleri (URL tabanlı) ─── */}
         {aktifSekme === 'gosterge' && <GostergePaneli hareketler={hareketler} kapanislar={kapanislar} yatirimGuncelDeger={yatirimGuncelDeger} secilenAy={secilenAy} secilenYil={secilenYil} p={p} renkler={renkler} kasaOzet={kasaOzet} />}
-        {aktifSekme === 'bilanco'  && <div data-tur="aylik-bilanco"><AylikBilanco kapanislar={kapanislar} setKapanislar={setKapanislar} yatirimGuncelDeger={yatirimGuncelDeger} bankaBakiye={kasaOzet?.banka_bakiye ?? 0} p={p} renkler={renkler} /></div>}
-        {aktifSekme === 'ortak'    && <OrtakCarisi ortakHareketler={ortakHareketler} setOrtakHareketler={setOrtakHareketler} p={p} renkler={renkler} />}
-        {aktifSekme === 'yatirim'  && <YatirimKalesi yatirimlar={yatirimlar} setYatirimlar={setYatirimlar} p={p} renkler={renkler} />}
+        {aktifSekme === 'bilanco'  && <div data-tur="aylik-bilanco"><AylikBilanco kapanislar={kapanislar} setKapanislar={setKapanislar} yatirimGuncelDeger={yatirimGuncelDeger} bankaBakiye={kasaOzet?.banka_bakiye ?? 0} p={p} renkler={renkler} autoOpenModal={autoOpenModal} /></div>}
+        {aktifSekme === 'ortak'    && <OrtakCarisi ortakHareketler={ortakHareketler} setOrtakHareketler={setOrtakHareketler} p={p} renkler={renkler} autoOpenModal={autoOpenModal} />}
+        {aktifSekme === 'yatirim'  && <YatirimKalesi yatirimlar={yatirimlar} setYatirimlar={setYatirimlar} p={p} renkler={renkler} autoOpenModal={autoOpenModal} />}
       </>
       )}
     </div>

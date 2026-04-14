@@ -169,8 +169,12 @@ function OrtakModal({ open, onClose, mevcutOrtaklar, onKaydet, p, renkler }) {
 }
 
 // ─── Ortak Carisi Ana Bileşen ───────────────────────────────────────────────
-export default function OrtakCarisi({ ortakHareketler, setOrtakHareketler, p, renkler }) {
+export default function OrtakCarisi({ ortakHareketler, setOrtakHareketler, p, renkler, autoOpenModal = false }) {
   const [modalAcik, setModalAcik] = useState(false)
+
+  useEffect(() => {
+    if (autoOpenModal) setModalAcik(true)
+  }, [autoOpenModal])
   const [arama,     setArama]     = useState('')
   const [silOnayId, setSilOnayId] = useState(null)
   const [sayfa,     setSayfa]     = useState(1)
