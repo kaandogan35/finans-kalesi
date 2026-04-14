@@ -578,16 +578,28 @@ class CronController {
         $set = $_GET['set'] ?? 'banka';
 
         $setler = [
-            // BANKA ÇEKLERİ (4 bildirim — ekran dolu, sığıyor)
+            // ═══ SET 1: BANKA ÇEKLERİ ═══
             'banka' => [
-                ['baslik' => 'Ziraat Bankası · Bugün Vade',
+                ['baslik' => '🔴 Ziraat Bankası · Bugün Vade',
                  'mesaj'  => "350.000 ₺ · Altın Tekstil A.Ş.'den alacak çekin bugün tahsil edilmeli"],
-                ['baslik' => 'Akbank · Çek Tahsil Edildi',
+                ['baslik' => '✅ Akbank · Çek Tahsil Edildi',
                  'mesaj'  => "240.500 ₺ · Star Gıda'dan alacak çekiniz hesabınıza geçti"],
-                ['baslik' => 'Garanti BBVA · Vade Hatırlatıcı',
+                ['baslik' => '⚠️ Garanti BBVA · Vade Hatırlatıcı',
                  'mesaj'  => "125.000 ₺ · Zenith Mobilya'dan alacak çek · 2 gün kaldı"],
-                ['baslik' => 'İş Bankası · Çek Ödendi',
+                ['baslik' => '💸 İş Bankası · Çek Ödendi',
                  'mesaj'  => "180.000 ₺ · Demir İnşaat'a olan borcunuz ödendi"],
+            ],
+
+            // ═══ SET 2: GELİR-GİDER / KASA ═══
+            'gelir-gider' => [
+                ['baslik' => '⚠️ Bu Haftaki Kâr/Zarar',
+                 'mesaj'  => "Gelir: 485.000 ₺ · Gider: 520.000 ₺ · Fark: -35.000 ₺"],
+                ['baslik' => '💰 Günlük Kasa Özeti',
+                 'mesaj'  => "1.245.680 ₺ bakiye · Bugün 8 işlem · +67.800 ₺ net"],
+                ['baslik' => '🔴 Gider Uyarısı',
+                 'mesaj'  => "Yakıt gideri bu ay %32 arttı · 48.600 ₺ ile kategori rekoru"],
+                ['baslik' => '📊 Nisan Ayı Özeti Hazır',
+                 'mesaj'  => "Net kâr: +₺124.500 · Geçen aya göre %12 düşüş"],
             ],
         ];
 
