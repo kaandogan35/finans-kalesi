@@ -151,7 +151,7 @@ export default function VarlikKasa() {
         {aktifSekme === 'gosterge' && (
           <div className={`${p}-page-header-right`} ref={islemMenuRef} style={{ position: 'relative' }}>
             <button
-              className={`${p}-btn-save`}
+              className={`${p}-btn-save ${p}-btn-save-default`}
               onClick={() => setIslemMenuAcik(o => !o)}
               style={{ display: 'flex', alignItems: 'center', gap: 6 }}
             >
