@@ -112,6 +112,16 @@ workflows:
           agvtool new-version -all $PROJECT_BUILD_NUMBER
           echo "Build number set to: $PROJECT_BUILD_NUMBER"
 
+      - name: Force marketing version (App Store Connect icin zorunlu)
+        script: |
+          cd frontend/ios/App
+          # MARKETING_VERSION her build'de zorla 1.0.2 yazilir.
+          # Yeni surum icin BU SATIRDAKI degeri elle degistirin (orn: 1.0.3).
+          agvtool new-marketing-version 1.0.2
+          echo "Marketing version forced to: 1.0.2"
+          echo "=== Dogrulama ==="
+          grep -E "MARKETING_VERSION|CURRENT_PROJECT_VERSION" App.xcodeproj/project.pbxproj | head -4
+
       - name: Set up code signing
         script: |
           # 1. Keychain oluştur
