@@ -26,6 +26,17 @@ workflows:
       node: v22.13.0
       xcode: latest
     scripts:
+      - name: Commit kontrol (HATALI BUILD onleme)
+        script: |
+          echo "=== Bu build hangi commit uzerinde calisiyor? ==="
+          git log -1 --oneline
+          echo "==="
+          echo "=== codemagic.yaml'da force marketing version adimi var mi? ==="
+          grep -c "new-marketing-version" codemagic.yaml || echo "YOK - eski commit!"
+          echo "==="
+          echo "=== pbxproj'da MARKETING_VERSION ne? ==="
+          grep "MARKETING_VERSION" frontend/ios/App/App.xcodeproj/project.pbxproj
+
       - name: Install frontend dependencies
         script: |
           cd frontend
@@ -114,13 +125,23 @@ workflows:
 
       - name: Force marketing version (App Store Connect icin zorunlu)
         script: |
-          cd frontend/ios/App
           # MARKETING_VERSION her build'de zorla 1.0.2 yazilir.
           # Yeni surum icin BU SATIRDAKI degeri elle degistirin (orn: 1.0.3).
-          agvtool new-marketing-version 1.0.2
-          echo "Marketing version forced to: 1.0.2"
-          echo "=== Dogrulama ==="
-          grep -E "MARKETING_VERSION|CURRENT_PROJECT_VERSION" App.xcodeproj/project.pbxproj | head -4
+          MARKET_VER="1.0.2"
+          PBXPROJ="frontend/ios/App/App.xcodeproj/project.pbxproj"
+
+          # 1. agvtool ile dene
+          cd frontend/ios/App
+          agvtool new-marketing-version "$MARKET_VER" || echo "agvtool basarisiz, sed ile devam"
+          cd - > /dev/null
+
+          # 2. Guvenlik icin sed ile de zorla (her MARKETING_VERSION satirini 1.0.2 yap)
+          sed -i '' "s/MARKETING_VERSION = [^;]*;/MARKETING_VERSION = $MARKET_VER;/g" "$PBXPROJ"
+
+          echo "=== Dogrulama (1.0.2 olmali) ==="
+          grep "MARKETING_VERSION" "$PBXPROJ"
+          echo "=== CURRENT_PROJECT_VERSION ==="
+          grep "CURRENT_PROJECT_VERSION" "$PBXPROJ" | head -2
 
       - name: Set up code signing
         script: |
