@@ -5,6 +5,7 @@
  */
 
 import { useState, useEffect, useCallback } from 'react'
+import { createPortal } from 'react-dom'
 import { useNavigate } from 'react-router-dom'
 import { bildirim as toast } from '../../components/ui/CenterAlert'
 import { veresiyeApi } from '../../api/veresiye'
@@ -101,6 +102,17 @@ export default function VeresiyeListesi() {
             <p className={`${p}-page-sub`}>Veresiye satışlarını ve borçları takip et</p>
           </div>
         </div>
+        <div className={`${p}-page-header-right`}>
+          <button
+            type="button"
+            onClick={() => setYeniModalAcik(true)}
+            className={`${p}-cym-btn-new d-flex align-items-center gap-2`}
+            title="Yeni müşteri ekle"
+          >
+            <i className="bi bi-plus-lg" />
+            <span className="d-none d-md-inline">Yeni Müşteri</span>
+          </button>
+        </div>
       </div>
 
       {/* ─── KPI Kartları ─────────────────────────────────────────────── */}
@@ -167,18 +179,7 @@ export default function VeresiyeListesi() {
             {sadeceBorclu && <span className={`${p}-cym-tab-badge ${p}-cym-tab-badge-active ms-1`}>{cariler.length}</span>}
           </button>
 
-          {/* Yeni Müşteri Butonu */}
-          <button
-            type="button"
-            className={`${p}-cym-btn-new ms-auto`}
-            onClick={() => setYeniModalAcik(true)}
-            style={{ minHeight: 44 }}
-          >
-            <i className="bi bi-person-plus me-1" />
-            Yeni Müşteri
-          </button>
-
-          <div>
+          <div className="ms-auto">
             <span style={{ fontSize: 12, color: 'var(--p-text-muted)' }}>
               {cariler.length} kayıt
             </span>
@@ -325,47 +326,57 @@ export default function VeresiyeListesi() {
 
       </div>
 
-      {/* ─── Yeni Müşteri Modalı ──────────────────────────────────────── */}
-      {yeniModalAcik && (
-        <div className={`${p}-modal-overlay`} onClick={() => !yeniKaydediyor && setYeniModalAcik(false)}>
-          <div className={`${p}-modal-box`} onClick={(e) => e.stopPropagation()}>
-            <div className={`${p}-mh-default`}>
-              <div className={`${p}-modal-header-icon`}>
-                <i className="bi bi-person-plus" />
+      {/* ─── Yeni Müşteri Modalı (createPortal ile body'ye render) ────── */}
+      {yeniModalAcik && createPortal(
+        <>
+          <div className={`${p}-modal-overlay`} onClick={() => !yeniKaydediyor && setYeniModalAcik(false)} />
+          <div className={`${p}-modal-center`} role="dialog" aria-modal="true">
+            <div className={`${p}-modal-box`} style={{ maxWidth: 480 }} onClick={(e) => e.stopPropagation()}>
+
+              {/* Başlık */}
+              <div className={`${p}-modal-header ${p}-mh-default`}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                  <div className={`${p}-modal-icon ${p}-modal-icon-green`}>
+                    <i className="bi bi-person-plus" />
+                  </div>
+                  <div>
+                    <h2 className={`${p}-modal-title`}>Yeni Müşteri</h2>
+                    <p className={`${p}-modal-sub`}>Veresiye defterine yeni müşteri ekle</p>
+                  </div>
+                </div>
+                <button type="button" onClick={() => !yeniKaydediyor && setYeniModalAcik(false)} className={`${p}-modal-close`} aria-label="Kapat">
+                  <i className="bi bi-x-lg" />
+                </button>
               </div>
-              <div className={`${p}-modal-header-text`}>
-                <h2 className={`${p}-modal-title`}>Yeni Müşteri</h2>
-                <p className={`${p}-modal-subtitle`}>Veresiye defterine yeni müşteri ekle</p>
-              </div>
-              <button onClick={() => !yeniKaydediyor && setYeniModalAcik(false)} className={`${p}-modal-close`} type="button" aria-label="Kapat">
-                <i className="bi bi-x-lg" />
-              </button>
-            </div>
-            <div className={`${p}-modal-body`}>
-              <label className={`${p}-kasa-input-label`}>Müşteri Adı *</label>
-              <input
-                type="text"
-                className={`${p}-kasa-input`}
-                placeholder="Örn: Ahmet Yılmaz"
-                value={yeniAdi}
-                onChange={(e) => setYeniAdi(e.target.value)}
-                autoFocus
-                onKeyDown={(e) => { if (e.key === 'Enter') yeniMusteriKaydet() }}
-              />
-              <p style={{ fontSize: 12, color: 'var(--p-text-muted)', marginTop: 8 }}>
-                Müşteri eklenince detay sayfasına yönlendirileceksin. Oradan satış veya ödeme ekleyebilirsin.
-              </p>
-            </div>
-            <div className={`${p}-modal-footer`}>
-              <button type="button" className={`${p}-btn-cancel`} onClick={() => setYeniModalAcik(false)} disabled={yeniKaydediyor}>
-                İptal
-              </button>
-              <button type="button" className={`${p}-btn-save`} onClick={yeniMusteriKaydet} disabled={yeniKaydediyor}>
-                {yeniKaydediyor ? 'Kaydediliyor...' : 'Kaydet & Aç'}
-              </button>
+
+              <form onSubmit={(e) => { e.preventDefault(); yeniMusteriKaydet() }} style={{ display: 'flex', flexDirection: 'column', flex: '1 1 auto', minHeight: 0, overflow: 'hidden' }}>
+                <div className={`${p}-modal-body`}>
+                  <label className={`${p}-kasa-input-label`}>Müşteri Adı *</label>
+                  <input
+                    type="text"
+                    className={`${p}-kasa-input`}
+                    placeholder="Örn: Ahmet Yılmaz"
+                    value={yeniAdi}
+                    onChange={(e) => setYeniAdi(e.target.value)}
+                    autoFocus
+                  />
+                  <p style={{ fontSize: 12, color: 'var(--p-text-muted)', marginTop: 8 }}>
+                    Müşteri eklenince detay sayfasına yönlendirileceksin. Oradan satış veya ödeme ekleyebilirsin.
+                  </p>
+                </div>
+                <div className={`${p}-modal-footer`}>
+                  <button type="button" className={`${p}-btn-cancel`} onClick={() => setYeniModalAcik(false)} disabled={yeniKaydediyor}>
+                    İptal
+                  </button>
+                  <button type="submit" className={`${p}-btn-save`} disabled={yeniKaydediyor}>
+                    {yeniKaydediyor ? 'Kaydediliyor...' : 'Kaydet & Aç'}
+                  </button>
+                </div>
+              </form>
             </div>
           </div>
-        </div>
+        </>,
+        document.body
       )}
 
     </div>

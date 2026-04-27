@@ -78,24 +78,28 @@ export default function GirisYap() {
   }
 
   // Social Login — @capgo/capacitor-social-login (Cap 8 uyumlu)
-  useEffect(() => {
-    if (!Capacitor.isNativePlatform()) return
-    import('@capgo/capacitor-social-login').then(({ SocialLogin }) => {
-      SocialLogin.initialize({
-        google: {
-          iOSClientId: GOOGLE_IOS_CLIENT_ID,
-          webClientId: GOOGLE_WEB_CLIENT_ID,
-        },
-        apple: {},
-      }).catch((e) => console.error('SocialLogin.initialize hata:', e))
+  // KRİTİK: useEffect içinde fire-and-forget initialize race condition yaratıyordu —
+  // initialize henüz bitmeden kullanıcı butona basınca "Cannot find provider 'google'.
+  // Provider was not initialized." hatası geliyordu (Capgo issue #143/#197).
+  // Çözüm: Initialize'ı login fonksiyonu içinde await et — idempotent olduğu için
+  // tekrar çağrılması zararsız, ama provider'ın hazır olması garanti.
+  const sosyalInit = async () => {
+    const { SocialLogin } = await import('@capgo/capacitor-social-login')
+    await SocialLogin.initialize({
+      google: {
+        iOSClientId: GOOGLE_IOS_CLIENT_ID,
+        webClientId: GOOGLE_WEB_CLIENT_ID,
+      },
+      apple: {},
     })
-  }, [])
+    return SocialLogin
+  }
 
   const handleAppleGiris = async () => {
     if (sosyalYukleniyor) return
     setSosyalYukleniyor('apple')
     try {
-      const { SocialLogin } = await import('@capgo/capacitor-social-login')
+      const SocialLogin = await sosyalInit()
       const result = await SocialLogin.login({
         provider: 'apple',
         options: { scopes: ['email', 'name'] },
@@ -123,7 +127,7 @@ export default function GirisYap() {
     if (sosyalYukleniyor) return
     setSosyalYukleniyor('google')
     try {
-      const { SocialLogin } = await import('@capgo/capacitor-social-login')
+      const SocialLogin = await sosyalInit()
       const result = await SocialLogin.login({
         provider: 'google',
         options: { scopes: ['email', 'profile'] },

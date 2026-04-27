@@ -41,24 +41,24 @@ export default function KayitOl() {
 
   const [sosyalYukleniyor, setSosyalYukleniyor] = useState('')
 
-  useEffect(() => {
-    if (!Capacitor.isNativePlatform()) return
-    import('@capgo/capacitor-social-login').then(({ SocialLogin }) => {
-      SocialLogin.initialize({
-        google: {
-          iOSClientId: GOOGLE_IOS_CLIENT_ID,
-          webClientId: GOOGLE_WEB_CLIENT_ID,
-        },
-        apple: {},
-      }).catch((e) => console.error('SocialLogin.initialize hata:', e))
+  // Initialize'i login fonksiyonu içinde await et — Capgo race condition fix
+  const sosyalInit = async () => {
+    const { SocialLogin } = await import('@capgo/capacitor-social-login')
+    await SocialLogin.initialize({
+      google: {
+        iOSClientId: GOOGLE_IOS_CLIENT_ID,
+        webClientId: GOOGLE_WEB_CLIENT_ID,
+      },
+      apple: {},
     })
-  }, [])
+    return SocialLogin
+  }
 
   const handleAppleGiris = async () => {
     if (sosyalYukleniyor) return
     setSosyalYukleniyor('apple')
     try {
-      const { SocialLogin } = await import('@capgo/capacitor-social-login')
+      const SocialLogin = await sosyalInit()
       const result = await SocialLogin.login({ provider: 'apple', options: { scopes: ['email', 'name'] } })
       const { idToken, profile } = result.result
       const res = await authApi.appleGiris(idToken, profile?.givenName || '', profile?.familyName || '', profile?.email || '')
@@ -77,7 +77,7 @@ export default function KayitOl() {
     if (sosyalYukleniyor) return
     setSosyalYukleniyor('google')
     try {
-      const { SocialLogin } = await import('@capgo/capacitor-social-login')
+      const SocialLogin = await sosyalInit()
       const result = await SocialLogin.login({ provider: 'google', options: { scopes: ['email', 'profile'] } })
       const { idToken } = result.result
       const res = await authApi.googleGiris(idToken)
