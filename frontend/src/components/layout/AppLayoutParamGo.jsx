@@ -1,4 +1,5 @@
 import { useState, useEffect, useMemo, useRef, useCallback } from 'react'
+import { createPortal } from 'react-dom'
 import { Outlet, NavLink, Link, useNavigate, useLocation } from 'react-router-dom'
 import { Capacitor } from '@capacitor/core'
 import { useSwipeable } from 'react-swipeable'
@@ -6,6 +7,7 @@ import useAuthStore from '../../stores/authStore'
 import useBildirimStore from '../../stores/bildirimStore'
 import { guvenlikApi } from '../../api/guvenlik'
 import { bildirim as toast } from '../ui/CenterAlert'
+import { formatTelefon, telefonHam, telefonGecerliMi } from '../../utils/telefon'
 import '../../temalar/paramgo.css'
 import ParamGoLogo from '../../logo/ParamGoLogo'
 import UpgradeBildirim from '../UpgradeBildirim'
@@ -96,13 +98,18 @@ export default function AppLayoutParamGo() {
     if (kullanici?.telefon_eksik) setTelefonEksikModal(true)
   }, [kullanici?.telefon_eksik])
 
+  const telefonEksikGecerli = telefonGecerliMi(telefonEksikInput)
+
   const telefonEksikKaydet = async () => {
-    if (!telefonEksikInput.trim()) { toast.error('Telefon numarası zorunludur'); return }
+    if (!telefonEksikGecerli) {
+      toast.error('Geçerli bir cep telefonu girin (11 rakam, 0 ile başlamalı)')
+      return
+    }
     setTelefonEksikKayit(true)
     try {
       await guvenlikApi.profilGuncelle({
         ad_soyad: kullanici?.ad_soyad || 'ParamGo Kullanıcısı',
-        telefon: telefonEksikInput.trim(),
+        telefon: telefonHam(telefonEksikInput),  // backend'e sadece rakamlar
       })
       kullaniciGuncelle({ telefon_eksik: false })
       setTelefonEksikModal(false)
@@ -456,50 +463,58 @@ export default function AppLayoutParamGo() {
       </div>
 
       {/* ── Telefon Eksik Modal — Apple/Google sosyal giriş ─── */}
-      {telefonEksikModal && (
-        <div className="p-modal-overlay">
-          <div className="p-modal-box" style={{ maxWidth: 420 }}>
-            <div className="p-modal-header mh-default">
-              <div className="d-flex align-items-center gap-3">
-                <div style={{
-                  width: 36, height: 36, borderRadius: 10,
-                  background: 'rgba(16,185,129,0.09)',
-                  border: '1px solid rgba(16,185,129,0.18)',
-                  display: 'flex', alignItems: 'center', justifyContent: 'center',
-                }}>
-                  <i className="bi bi-telephone-fill" style={{ fontSize: 16, color: '#10B981', opacity: 0.35 }} />
-                </div>
-                <div>
-                  <p style={{ margin: 0, fontSize: 15, fontWeight: 800, color: '#111827' }}>Telefon Numaranızı Ekleyin</p>
-                  <p style={{ margin: 0, fontSize: 11.5, color: '#9CA3AF' }}>Hesabınızla ilgili size ulaşabilmemiz için</p>
+      {telefonEksikModal && createPortal(
+        <>
+          <div className="p-modal-overlay" />
+          <div className="p-modal-center" role="dialog" aria-modal="true">
+            <div className="p-modal-box" style={{ maxWidth: 420 }}>
+              <div className="p-modal-header p-mh-default">
+                <div className="d-flex align-items-center gap-3">
+                  <div className="p-modal-icon p-modal-icon-green">
+                    <i className="bi bi-telephone-fill" />
+                  </div>
+                  <div>
+                    <h2 className="p-modal-title">Telefon Numaranızı Ekleyin</h2>
+                    <p className="p-modal-sub">Hesabınızla ilgili size ulaşabilmemiz için</p>
+                  </div>
                 </div>
               </div>
-            </div>
-            <div className="p-modal-body">
-              <label className="p-kasa-input-label">Cep Telefonu *</label>
-              <input
-                className="p-kasa-input"
-                placeholder="0530 123 45 67"
-                value={telefonEksikInput}
-                onChange={e => setTelefonEksikInput(e.target.value)}
-                onKeyDown={e => e.key === 'Enter' && telefonEksikKaydet()}
-                autoFocus
-              />
-            </div>
-            <div className="p-modal-footer d-flex justify-content-end">
-              <button
-                className="p-btn-save"
-                onClick={telefonEksikKaydet}
-                disabled={telefonEksikKayit || !telefonEksikInput.trim()}
+              <form
+                onSubmit={(e) => { e.preventDefault(); telefonEksikKaydet() }}
+                style={{ display: 'flex', flexDirection: 'column', flex: '1 1 auto', minHeight: 0, overflow: 'hidden' }}
               >
-                {telefonEksikKayit
-                  ? <><span className="spinner-border spinner-border-sm me-1" />Kaydediliyor...</>
-                  : <><i className="bi bi-check2-circle me-1" />Kaydet ve Devam Et</>
-                }
-              </button>
+                <div className="p-modal-body">
+                  <label className="p-kasa-input-label">Cep Telefonu *</label>
+                  <input
+                    className="p-kasa-input"
+                    placeholder="0530 123 45 67"
+                    value={formatTelefon(telefonEksikInput)}
+                    onChange={(e) => setTelefonEksikInput(telefonHam(e.target.value))}
+                    inputMode="numeric"
+                    type="tel"
+                    autoComplete="tel"
+                    pattern="[0-9 ]*"
+                    maxLength={13}
+                    autoFocus
+                  />
+                </div>
+                <div className="p-modal-footer d-flex justify-content-end">
+                  <button
+                    type="submit"
+                    className="p-btn-save"
+                    disabled={telefonEksikKayit || !telefonEksikGecerli}
+                  >
+                    {telefonEksikKayit
+                      ? <><span className="spinner-border spinner-border-sm me-1" />Kaydediliyor...</>
+                      : <><i className="bi bi-check2-circle me-1" />Kaydet ve Devam Et</>
+                    }
+                  </button>
+                </div>
+              </form>
             </div>
           </div>
-        </div>
+        </>,
+        document.body
       )}
 
       {/* ── Oturum Uyarı Modalı ─────────────────────────────── */}

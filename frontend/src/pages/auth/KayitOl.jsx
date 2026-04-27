@@ -12,6 +12,7 @@ import { authApi } from '../../api/auth'
 import useAuthStore from '../../stores/authStore'
 import useTemaStore from '../../stores/temaStore'
 import ParamGoLogo from '../../logo/ParamGoLogo'
+import { formatTelefon, telefonHam } from '../../utils/telefon'
 
 const isNative = Capacitor.isNativePlatform() || new URLSearchParams(window.location.search).has('native')
 const isIOS = Capacitor.getPlatform() === 'ios'
@@ -109,7 +110,12 @@ export default function KayitOl() {
   const [adim, setAdim]               = useState(1)
 
   const handleChange = (e) => {
-    setForm((prev) => ({ ...prev, [e.target.name]: e.target.value }))
+    let val = e.target.value
+    // Telefon alanı: sadece rakamlar tutulur, 11 ile sınırlanır
+    if (e.target.name === 'telefon') {
+      val = telefonHam(val)
+    }
+    setForm((prev) => ({ ...prev, [e.target.name]: val }))
     if (hata) setHata('')
   }
 
@@ -214,9 +220,10 @@ export default function KayitOl() {
                 <div className="pm-auth-field">
                   <div className="pm-auth-input-wrap">
                     <i className="bi bi-telephone pm-auth-input-icon" />
-                    <input type="tel" name="telefon" value={form.telefon}
+                    <input type="tel" name="telefon" value={formatTelefon(form.telefon)}
                       onChange={handleChange} placeholder="Cep telefonu (0530 123 45 67)"
-                      autoComplete="tel" className="pm-auth-input" />
+                      autoComplete="tel" inputMode="numeric" maxLength={13}
+                      className="pm-auth-input" />
                   </div>
                 </div>
                 <button type="button" className="pm-auth-btn-primary" onClick={ilerle}>
@@ -412,9 +419,10 @@ export default function KayitOl() {
                       <label className={`${p}-giris-label`}>Cep Telefonu</label>
                       <div className={`${p}-giris-alan`}>
                         <span className={`${p}-giris-alan-ikon`}><i className="bi bi-telephone" /></span>
-                        <input type="tel" name="telefon" value={form.telefon}
+                        <input type="tel" name="telefon" value={formatTelefon(form.telefon)}
                           onChange={handleChange} placeholder="0530 123 45 67"
-                          autoComplete="tel" className={`${p}-giris-input`} />
+                          autoComplete="tel" inputMode="numeric" maxLength={13}
+                          className={`${p}-giris-input`} />
                       </div>
                     </div>
                     <button type="button" className={`${p}-giris-btn`} onClick={ilerle}>
