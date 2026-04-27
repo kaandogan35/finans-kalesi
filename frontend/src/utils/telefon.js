@@ -12,9 +12,25 @@ export function formatTelefon(deger) {
   return sayilar.slice(0, 4) + ' ' + sayilar.slice(4, 7) + ' ' + sayilar.slice(7, 9) + ' ' + sayilar.slice(9, 11)
 }
 
-/** Sadece rakamları döndürür (11 karakter max) — backend'e gönderilirken kullan. */
+/**
+ * Sadece rakamları döndürür (11 karakter max).
+ * Kullanıcı dostu normalleştirme:
+ *   "+90 530 ..."  → "0530..."   (90 önekini at, başa 0 koy)
+ *   "905 30 ..."   → "0530..."   (90 önekini at)
+ *   "530 ..."      → "0530..."   (5 ile başlıyorsa başa 0 koy)
+ *   "0530 ..."     → "0530..."   (zaten doğru)
+ */
 export function telefonHam(deger) {
-  return String(deger ?? '').replace(/\D/g, '').slice(0, 11)
+  let sayilar = String(deger ?? '').replace(/\D/g, '')
+  // Uluslararası önek: 90 ile başlıyorsa at, başına 0 koy
+  if (sayilar.startsWith('90') && sayilar.length > 10) {
+    sayilar = '0' + sayilar.slice(2)
+  }
+  // TR cep 5 ile başlıyorsa başa 0 koy
+  else if (sayilar.length > 0 && sayilar[0] === '5') {
+    sayilar = '0' + sayilar
+  }
+  return sayilar.slice(0, 11)
 }
 
 /** 11 rakamlı 05 ile başlayan geçerli mi? */
