@@ -287,7 +287,9 @@ function TekrarlayanModal({
     <>
       <div className={`${p}-modal-overlay`} />
       <div className={`${p}-modal-center`} role="dialog" aria-modal="true">
-        <div className={`${p}-modal-box`} style={{ maxWidth: 580, maxHeight: '90vh', overflowY: 'auto' }}>
+        {/* CSS p-modal-box zaten flex-column + max-height 90vh + overflow:hidden uyguluyor.
+            Inline overflowY:auto KALDIRILDI — child flex (modal-body) scroll edebilsin diye. */}
+        <div className={`${p}-modal-box`} style={{ maxWidth: 580 }}>
 
           {/* Başlık */}
           <div className={`${p}-modal-header ${p}-mh-default`}>
@@ -312,7 +314,9 @@ function TekrarlayanModal({
             </button>
           </div>
 
-          <form onSubmit={kaydet}>
+          {/* Form etiketi flex container olmazsa içindeki .p-modal-body'nin
+              flex:1+overflow:auto'su devreye girmez → modal scroll etmez. */}
+          <form onSubmit={kaydet} style={{ display: 'flex', flexDirection: 'column', flex: '1 1 auto', minHeight: 0, overflow: 'hidden' }}>
             <div className={`${p}-modal-body`}>
 
               {modalHata && (

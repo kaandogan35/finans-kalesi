@@ -48,7 +48,6 @@ export default function KayitOl() {
         google: {
           iOSClientId: GOOGLE_IOS_CLIENT_ID,
           webClientId: GOOGLE_WEB_CLIENT_ID,
-          mode: 'online',
         },
         apple: {},
       }).catch((e) => console.error('SocialLogin.initialize hata:', e))
@@ -88,7 +87,14 @@ export default function KayitOl() {
         navigate(res.data.veri.kullanici?.yeni_kayit ? '/welcome' : '/dashboard')
       } else { toast.error(res.data?.hata || 'Google ile giriş başarısız.') }
     } catch (err) {
-      if (err?.message !== 'USER_CANCELLED') toast.error('Google ile giriş yapılamadı.')
+      console.error('Google login hatası:', err)
+      const msg = err?.message || ''
+      if (msg === 'USER_CANCELLED' || msg.includes('cancel')) {
+        // sessiz
+      } else {
+        const detay = msg || err?.code || JSON.stringify(err).slice(0, 100)
+        toast.error(`Google: ${detay}`)
+      }
     } finally { setSosyalYukleniyor('') }
   }
 
