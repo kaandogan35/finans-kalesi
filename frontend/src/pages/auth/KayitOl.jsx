@@ -90,7 +90,14 @@ export default function KayitOl() {
     const _t = setTimeout(() => { setSosyalYukleniyor(''); toast.error('Google: zaman aşımı, tekrar deneyin.') }, 30000)
     try {
       const SocialLogin = await sosyalInit()
-      const result = await SocialLogin.login({ provider: 'google', options: { scopes: ['email', 'profile'] } })
+      const result = await SocialLogin.login({
+        provider: 'google',
+        options: {
+          scopes: ['email', 'profile'],
+          forcePrompt: true,
+          filterByAuthorizedAccounts: false,
+        },
+      })
       const { idToken } = result.result
       const res = await authApi.googleGiris(idToken)
       if (res.data?.basarili) {

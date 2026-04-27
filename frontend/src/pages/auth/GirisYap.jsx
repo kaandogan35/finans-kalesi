@@ -144,7 +144,15 @@ export default function GirisYap() {
       const SocialLogin = await sosyalInit()
       const result = await SocialLogin.login({
         provider: 'google',
-        options: { scopes: ['email', 'profile'] },
+        options: {
+          scopes: ['email', 'profile'],
+          // Capgo plugin Android'de Credential Manager API kullanıyor — yeni
+          // cihazda/hesapta filterByAuthorizedAccounts=true varsayılan ise
+          // "yetkili hesap yok" → UI hiç açılmıyor, plugin stuck'a giriyor.
+          // forcePrompt=true zorla hesap seçiciyi açar, filter'i kapatır.
+          forcePrompt: true,
+          filterByAuthorizedAccounts: false,
+        },
       })
       const { idToken } = result.result
       const res = await authApi.googleGiris(idToken)
