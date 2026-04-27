@@ -107,11 +107,14 @@ export default function AppLayoutParamGo() {
     }
     setTelefonEksikKayit(true)
     try {
-      await guvenlikApi.profilGuncelle({
+      const yanit = await guvenlikApi.profilGuncelle({
         ad_soyad: kullanici?.ad_soyad || 'ParamGo Kullanıcısı',
         telefon: telefonHam(telefonEksikInput),  // backend'e sadece rakamlar
       })
-      kullaniciGuncelle({ telefon_eksik: false })
+      // Backend +905XXXXXXXXX formatında dönüyor — store'a da yaz, profil sayfası
+      // anında doğru gösterebilsin (yoksa flag false ama telefon alanı boş kalıyordu).
+      const yeniTelefon = yanit?.data?.veri?.telefon ?? telefonHam(telefonEksikInput)
+      kullaniciGuncelle({ telefon_eksik: false, telefon: yeniTelefon })
       setTelefonEksikModal(false)
       toast.success('Telefon numaranız kaydedildi')
     } catch (e) {
