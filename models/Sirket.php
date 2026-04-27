@@ -51,6 +51,15 @@ class Sirket {
     }
 
     /**
+     * Firma adını güncelle
+     */
+    public function firma_adi_guncelle(int $sirket_id, string $firma_adi): bool {
+        $sql = "UPDATE sirketler SET firma_adi = ? WHERE id = ?";
+        $stmt = $this->db->prepare($sql);
+        return $stmt->execute([$firma_adi, $sirket_id]);
+    }
+
+    /**
      * Sirket temasini guncelle
      */
     public function tema_guncelle($sirket_id, $tema_adi) {

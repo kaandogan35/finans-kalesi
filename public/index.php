@@ -262,8 +262,8 @@ try {
             break;
     }
 
-} catch (Exception $e) {
-    $hata_mesaj = 'Beklenmeyen bir hata olustu';
-    error_log('ParamGo HATA: ' . $e->getMessage() . ' | ' . $e->getFile() . ':' . $e->getLine());
-    Response::sunucu_hatasi($hata_mesaj);
+} catch (Throwable $e) {
+    // Production: kullanıcıya genel mesaj, error_log'a tam detay
+    error_log('ParamGo HATA: ' . $e->getMessage() . ' | ' . $e->getFile() . ':' . $e->getLine() . ' | ' . $e->getTraceAsString());
+    Response::sunucu_hatasi('Beklenmeyen bir hata olustu');
 }

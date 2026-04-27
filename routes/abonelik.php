@@ -12,6 +12,7 @@ require_once BASE_PATH . '/models/Abonelik.php';
 require_once BASE_PATH . '/middleware/PlanKontrol.php';
 require_once BASE_PATH . '/controllers/AbonelikController.php';
 require_once BASE_PATH . '/controllers/WebhookController.php';
+require_once BASE_PATH . '/utils/IyzicoHelper.php';
 
 $abonelik_ctrl = new AbonelikController($db);
 $webhook_ctrl  = new WebhookController($db);
@@ -54,6 +55,24 @@ if ($alt_modul === 'abonelik') {
     // POST /api/abonelik/iap-dogrula — iOS IAP sonrası plan aktivasyonu
     if ($metod === 'POST' && $islem === 'iap-dogrula') {
         $abonelik_ctrl->iapDogrula();
+        exit;
+    }
+
+    // POST /api/abonelik/iyzico-iptal — Web aboneliği iptal et
+    if ($metod === 'POST' && $islem === 'iyzico-iptal') {
+        $abonelik_ctrl->iyzicoIptal();
+        exit;
+    }
+
+    // POST /api/abonelik/iyzico-dogrula — Manuel doğrulama (webhook beklemeden)
+    if ($metod === 'POST' && $islem === 'iyzico-dogrula') {
+        $abonelik_ctrl->iyzicoDogrula($girdi);
+        exit;
+    }
+
+    // POST /api/abonelik/iyzico-aktive — Abonelik referans kodu ile manuel aktivasyon
+    if ($metod === 'POST' && $islem === 'iyzico-aktive') {
+        $abonelik_ctrl->iyzicoAktive($girdi);
         exit;
     }
 

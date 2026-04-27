@@ -81,7 +81,7 @@ function SilOnayModal({ kullanici, onOnayla, onIptal }) {
 }
 
 // ─── Ana Bileşen ──────────────────────────────────────────────────────────────
-export default function KullaniciYonetimi() {
+export default function KullaniciYonetimi({ embedded = false }) {
   const { kullanici: mevcutKullanici } = useAuthStore()
   const { izinVarMi, planAdi } = usePlanKontrol()
   const { sinirler, yenidenYukle: sinirYukle } = useSinirler()
@@ -144,8 +144,8 @@ export default function KullaniciYonetimi() {
   return (
     <div className="kuy-wrap">
       {/* ── Sayfa Başlığı ── */}
-      <div className="kuy-header-card">
-        <div className="d-flex align-items-start justify-content-between gap-3 flex-wrap">
+      {!embedded && (
+        <div className="kuy-header-card">
           <div className="d-flex align-items-center gap-3">
             <div style={{
               width: 44, height: 44, borderRadius: 12,
@@ -164,57 +164,41 @@ export default function KullaniciYonetimi() {
               </p>
             </div>
           </div>
-
-          <button
-            className="kuy-add-btn"
-            onClick={handleEkleClick}
-            disabled={limitDolu && izinVarMi('cok_kullanici')}
-          >
-            <i className="bi bi-person-plus-fill" style={{ fontSize: 14 }} />
-            Yeni Kullanıcı
-          </button>
         </div>
+      )}
 
-        {/* Limit göstergesi */}
-        {kSinir && (
-          <div className="mt-3" style={{ maxWidth: 280 }}>
-            <div className="d-flex justify-content-between align-items-center mb-1">
-              <span style={{ fontSize: 11, color: '#6B7280', fontWeight: 600, fontFamily: 'Outfit, sans-serif' }}>
-                Kullanıcı Kapasitesi
-              </span>
-              <span style={{
-                fontSize: 11, fontWeight: 700, fontFamily: 'Outfit, sans-serif',
-                color: limitDolu ? '#ef4444' : '#059669',
-              }}>
-                {kSinir.mevcut} / {kSinir.sinir}
-              </span>
-            </div>
-            <div className="kuy-limit-bar">
-              <div
-                className="kuy-limit-fill"
-                style={{
+      {/* Buton + limit — embedded modda da görünür */}
+      <div className="d-flex align-items-center justify-content-between gap-3 flex-wrap mb-3">
+        <div>
+          {kSinir && (
+            <div>
+              <div className="d-flex align-items-center gap-2 mb-1">
+                <span style={{ fontSize: 11, color: '#6B7280', fontWeight: 600, fontFamily: 'Outfit, sans-serif' }}>Kullanıcı Kapasitesi</span>
+                <span style={{ fontSize: 11, fontWeight: 700, fontFamily: 'Outfit, sans-serif', color: limitDolu ? '#ef4444' : '#059669' }}>
+                  {kSinir.mevcut} / {kSinir.sinir}
+                </span>
+              </div>
+              <div className="kuy-limit-bar" style={{ maxWidth: 200 }}>
+                <div className="kuy-limit-fill" style={{
                   width: `${Math.min(kSinir.yuzde, 100)}%`,
-                  background: limitDolu
-                    ? 'linear-gradient(90deg, #ef4444, #f87171)'
-                    : kSinir.yuzde >= 80
-                      ? 'linear-gradient(90deg, #f59e0b, #fbbf24)'
-                      : 'linear-gradient(90deg, #10B981, #34d399)',
-                }}
-              />
+                  background: limitDolu ? 'linear-gradient(90deg, #ef4444, #f87171)' : kSinir.yuzde >= 80 ? 'linear-gradient(90deg, #f59e0b, #fbbf24)' : 'linear-gradient(90deg, #10B981, #34d399)',
+                }} />
+              </div>
+              {limitDolu && (
+                <p style={{ fontSize: 10.5, color: '#ef4444', margin: '4px 0 0', fontFamily: 'Outfit, sans-serif' }}>
+                  Limit doldu.{' '}
+                  <button onClick={() => setPlanModalAcik(true)} style={{ background: 'none', border: 'none', color: '#10B981', fontWeight: 700, cursor: 'pointer', fontSize: 10.5, fontFamily: 'Outfit, sans-serif', padding: 0 }}>
+                    Plan Yükselt →
+                  </button>
+                </p>
+              )}
             </div>
-            {limitDolu && (
-              <p style={{ fontSize: 10.5, color: '#ef4444', margin: '4px 0 0', fontFamily: 'Outfit, sans-serif' }}>
-                Limit doldu — daha fazla kullanıcı için planı yükseltin.{' '}
-                <button
-                  onClick={() => setPlanModalAcik(true)}
-                  style={{ background: 'none', border: 'none', color: '#10B981', fontWeight: 700, cursor: 'pointer', fontSize: 10.5, fontFamily: 'Outfit, sans-serif', padding: 0 }}
-                >
-                  Plan Yükselt →
-                </button>
-              </p>
-            )}
-          </div>
-        )}
+          )}
+        </div>
+        <button className="kuy-add-btn" onClick={handleEkleClick} disabled={limitDolu && izinVarMi('cok_kullanici')}>
+          <i className="bi bi-person-plus-fill" style={{ fontSize: 14 }} />
+          Yeni Kullanıcı
+        </button>
       </div>
 
       {/* ── Ücretsiz Plan Uyarısı ── */}

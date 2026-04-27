@@ -115,21 +115,40 @@ class AbonelikController {
     }
 
     /**
-     * Plan yükseltme talebi
-     * Şimdilik placeholder — gerçek ödeme entegrasyonu sonraki aşamada
+     * Plan yükseltme — iyzico Checkout Form başlat (Web)
+     * POST /api/abonelik/yukselt
+     * Header: X-Platform: web
      */
     public function yukselt(array $girdi): void {
         $payload = AuthMiddleware::dogrula();
 
-        // Yalnızca şirket sahibi plan değiştirebilir
+        // iOS cihazdan gelirse Apple IAP'a yönlendir
+        $platform = $_SERVER['HTTP_X_PLATFORM'] ?? 'web';
+        if ($platform === 'ios') {
+            Response::hata('iOS ödemeleri uygulama üzerinden yapılır', 400);
+            return;
+        }
+
         if ($payload['rol'] !== 'sahip') {
             Response::hata('Plan değiştirme yetkiniz yok', 403);
             return;
         }
 
-        // Zorunlu alanlar
-        $plan_adi = $girdi['plan_adi'] ?? null;
+        $sirket_id    = (int) $payload['sirket_id'];
+        $plan_adi     = $girdi['plan_adi'] ?? null;
         $odeme_donemi = $girdi['odeme_donemi'] ?? null;
+
+        // Duplicate koruma — kullanıcının zaten aktif (deneme dışı) planı varsa engelle
+        $mevcut_plan = $this->abonelik_model->sirketPlanBilgisi($sirket_id);
+        $aktif_plan = $mevcut_plan['abonelik_plani'] ?? 'deneme';
+        if ($aktif_plan && $aktif_plan !== 'deneme') {
+            error_log("yukselt: zaten aktif plan var sirket={$sirket_id} plan={$aktif_plan}");
+            Response::hata(
+                'Zaten aktif bir aboneliğiniz var (' . $aktif_plan . '). Plan değiştirmek için önce mevcut aboneliği iptal edin.',
+                400
+            );
+            return;
+        }
 
         if (!in_array($plan_adi, ['standart', 'kurumsal'], true)) {
             Response::dogrulama_hatasi(['plan_adi' => 'Geçerli plan: standart veya kurumsal']);
@@ -141,16 +160,298 @@ class AbonelikController {
             return;
         }
 
-        // TODO: Ödeme sağlayıcısına yönlendirme buraya eklenecek
-        $fiyat = Abonelik::FIYATLAR[$plan_adi][$odeme_donemi];
+        // Kullanıcı + şirket bilgilerini DB'den al
+        $stmt = $this->db->prepare("
+            SELECT k.ad_soyad, k.email, k.telefon,
+                   s.firma_adi, s.adres AS sirket_adres
+            FROM kullanicilar k
+            JOIN sirketler s ON s.id = k.sirket_id
+            WHERE k.id = :kullanici_id AND k.sirket_id = :sirket_id
+            LIMIT 1
+        ");
+        $stmt->execute([':kullanici_id' => (int)$payload['sub'], ':sirket_id' => $sirket_id]);
+        $kullanici = $stmt->fetch();
+
+        if (!$kullanici) {
+            Response::hata('Kullanıcı bulunamadı', 404);
+            return;
+        }
+
+        // ad_soyad'ı ad + soyad'a böl
+        $ad_soyad = trim($kullanici['ad_soyad'] ?? '');
+        $parcalar = preg_split('/\s+/', $ad_soyad, 2);
+        $ad    = $parcalar[0] ?? 'Ad';
+        $soyad = $parcalar[1] ?? 'Soyad';
+
+        // Telefon zorunlu — iyzico anti-fraud dummy numaraları reddediyor
+        $telefon_ham = trim($kullanici['telefon'] ?? '');
+        $telefon_rakam = preg_replace('/\D/', '', $telefon_ham);
+        if (strlen($telefon_rakam) < 10) {
+            error_log("yukselt: telefon eksik sirket={$sirket_id} email={$kullanici['email']}");
+            Response::hata(
+                'Abonelik için profilinizde geçerli bir telefon numarası kayıtlı olmalı. Lütfen önce Personelim sayfasından telefon numarası ekleyin.',
+                400
+            );
+            return;
+        }
+
+        // Adres: gerçek adres yoksa firma adıyla unique bir adres üret
+        $sirket_adres = trim($kullanici['sirket_adres'] ?? '');
+        $firma_adi    = trim($kullanici['firma_adi'] ?? 'ParamGo Müşterisi');
+        $adres = $sirket_adres ?: ($firma_adi . ' (Adres bilgisi profilden eklenmemiştir)');
+
+        $musteri = [
+            'sirket_id' => $sirket_id,
+            'ad'        => $ad,
+            'soyad'     => $soyad,
+            'email'     => $kullanici['email'],
+            'telefon'   => $kullanici['telefon'],
+            'tc_kimlik' => '11111111111',
+            'firma_adi' => $firma_adi,
+            'adres'     => $adres,
+        ];
+
+        $callback_url = 'https://paramgo.com/odeme-tamamlandi.php?plan=' . $plan_adi . '&donem=' . $odeme_donemi;
+
+        try {
+            $sonuc = IyzicoHelper::checkoutBaslat($plan_adi, $odeme_donemi, $musteri, $callback_url);
+        } catch (\Throwable $e) {
+            error_log('iyzico yukselt hatasi: ' . $e->getMessage() . ' sirket=' . $sirket_id . ' | ' . $e->getFile() . ':' . $e->getLine());
+            Response::hata('Ödeme sistemi şu an yanıt vermiyor, lütfen tekrar deneyin', 503);
+            return;
+        }
 
         Response::basarili([
-            'mesaj'        => 'Ödeme sistemi yakında entegre edilecek.',
-            'plan_adi'     => $plan_adi,
-            'odeme_donemi' => $odeme_donemi,
-            'tutar'        => $fiyat,
-            'durum'        => 'bekliyor_entegrasyon',
-        ], 'Plan yükseltme talebi alındı');
+            'token'        => $sonuc['token'],
+            'form_content' => $sonuc['form_content'],
+        ], 'Ödeme sayfası hazırlandı');
+    }
+
+    /**
+     * iyzico Manuel Doğrulama — Webhook beklemeden plan aktif et
+     * POST /api/abonelik/iyzico-dogrula
+     *
+     * Frontend ödeme bittikten sonra bu endpointi çağırır.
+     * Eğer iyzico'da abonelik aktifse, plan'ı backend'de aktive eder.
+     */
+    public function iyzicoDogrula(array $girdi): void {
+        $payload = AuthMiddleware::dogrula();
+        if ($payload['rol'] !== 'sahip') {
+            Response::hata('Yetkiniz yok', 403);
+            return;
+        }
+
+        $sirket_id = (int) $payload['sirket_id'];
+        $token     = $girdi['token'] ?? '';
+
+        if (!$token) {
+            Response::dogrulama_hatasi(['token' => 'Ödeme tokenı gerekli']);
+            return;
+        }
+
+        try {
+            $sonuc = IyzicoHelper::checkoutSonucSorgula($token);
+        } catch (\Throwable $e) {
+            error_log('iyzico dogrula hatasi: ' . $e->getMessage());
+            Response::hata('iyzico bağlantı hatası: ' . $e->getMessage(), 500);
+            return;
+        }
+
+        if (!($sonuc['basarili'] ?? false)) {
+            Response::hata($sonuc['hata'] ?? 'Doğrulama başarısız', 400);
+            return;
+        }
+
+        $abonelik_ref = $sonuc['abonelik_ref'] ?? '';
+        $musteri_ref  = $sonuc['musteri_ref']  ?? '';
+        $plan_kodu    = $sonuc['plan_kodu']    ?? '';
+
+        if (!$abonelik_ref) {
+            Response::hata('Abonelik henüz oluşturulmadı, biraz bekleyip tekrar deneyin', 404);
+            return;
+        }
+
+        // Plan kodunu plan_adi + odeme_donemi'ne çevir
+        $plan_adi = '';
+        $odeme_donemi = '';
+        foreach (IyzicoHelper::PLAN_KODLARI as $p => $donemler) {
+            foreach ($donemler as $d => $kod) {
+                if ($kod === $plan_kodu) {
+                    $plan_adi = $p;
+                    $odeme_donemi = $d;
+                    break 2;
+                }
+            }
+        }
+
+        if (!$plan_adi) {
+            error_log('iyzico dogrula: plan_kodu eslesmedi=' . $plan_kodu);
+            Response::hata('Plan tanınamadı', 500);
+            return;
+        }
+
+        // Bitiş tarihi
+        $bitis = $odeme_donemi === 'yillik'
+            ? date('Y-m-d H:i:s', strtotime('+1 year'))
+            : date('Y-m-d H:i:s', strtotime('+1 month'));
+
+        $abonelik_id = $this->abonelik_model->planGuncelle(
+            $sirket_id, $plan_adi, $odeme_donemi, 'iyzico', $bitis
+        );
+
+        $this->abonelik_model->iyzicoReferansKaydet($sirket_id, $musteri_ref, $abonelik_ref);
+
+        // Yeni JWT
+        $kullanici_bilgi = [
+            'id'        => (int) $payload['sub'],
+            'sirket_id' => $sirket_id,
+            'rol'       => $payload['rol'],
+            'tema_adi'  => $payload['tema_adi'] ?? 'paramgo',
+            'plan'      => $plan_adi,
+            'yetkiler'  => $payload['yetkiler'] ?? null,
+        ];
+
+        $access_token = JWTHelper::access_token_olustur($kullanici_bilgi);
+        $refresh_data = JWTHelper::refresh_token_olustur($kullanici_bilgi);
+
+        Response::basarili([
+            'plan'     => $plan_adi,
+            'tokenlar' => [
+                'access_token'  => $access_token,
+                'refresh_token' => $refresh_data['token'],
+            ],
+        ], 'Aboneliğiniz aktifleştirildi');
+    }
+
+    /**
+     * iyzico — Abonelik referans kodu ile manuel aktivasyon
+     * POST /api/abonelik/iyzico-aktive { abonelik_ref }
+     *
+     * Kullanıcı iyzico panelinden abonelik referans kodunu kopyalayıp girer.
+     * Backend bu kodu iyzico'da sorgular, aktifse plan'ı bizim sistemde aktive eder.
+     */
+    public function iyzicoAktive(array $girdi): void {
+        $payload = AuthMiddleware::dogrula();
+        if ($payload['rol'] !== 'sahip') {
+            Response::hata('Yetkiniz yok', 403);
+            return;
+        }
+
+        $sirket_id    = (int) $payload['sirket_id'];
+        $abonelik_ref = trim($girdi['abonelik_ref'] ?? '');
+
+        if (!$abonelik_ref) {
+            Response::dogrulama_hatasi(['abonelik_ref' => 'Abonelik referans kodu gerekli']);
+            return;
+        }
+
+        try {
+            $detay = IyzicoHelper::abonelikDetay($abonelik_ref);
+        } catch (\Throwable $e) {
+            error_log('iyzico aktive hatasi: ' . $e->getMessage());
+            Response::hata('iyzico bağlantı hatası: ' . $e->getMessage(), 500);
+            return;
+        }
+
+        if (!($detay['basarili'] ?? false)) {
+            Response::hata($detay['hata'] ?? 'Abonelik bulunamadı', 404);
+            return;
+        }
+
+        if (($detay['durum'] ?? '') !== 'ACTIVE') {
+            Response::hata('Abonelik aktif değil. Durum: ' . ($detay['durum'] ?? 'bilinmiyor'), 400);
+            return;
+        }
+
+        $plan_kodu = $detay['plan_kodu'] ?? '';
+        $musteri_ref = $detay['musteri_ref'] ?? '';
+
+        // Plan kodunu plan_adi + odeme_donemi'ne çevir
+        $plan_adi = '';
+        $odeme_donemi = '';
+        foreach (IyzicoHelper::PLAN_KODLARI as $p => $donemler) {
+            foreach ($donemler as $d => $kod) {
+                if ($kod === $plan_kodu) {
+                    $plan_adi = $p;
+                    $odeme_donemi = $d;
+                    break 2;
+                }
+            }
+        }
+
+        if (!$plan_adi) {
+            error_log('iyzico aktive: plan_kodu eslesmedi=' . $plan_kodu);
+            Response::hata('Plan kodu tanınamadı: ' . $plan_kodu, 500);
+            return;
+        }
+
+        $bitis = $odeme_donemi === 'yillik'
+            ? date('Y-m-d H:i:s', strtotime('+1 year'))
+            : date('Y-m-d H:i:s', strtotime('+1 month'));
+
+        $abonelik_id = $this->abonelik_model->planGuncelle(
+            $sirket_id, $plan_adi, $odeme_donemi, 'iyzico', $bitis
+        );
+
+        if ($musteri_ref) {
+            $this->abonelik_model->iyzicoReferansKaydet($sirket_id, $musteri_ref, $abonelik_ref);
+        }
+
+        $kullanici_bilgi = [
+            'id'        => (int) $payload['sub'],
+            'sirket_id' => $sirket_id,
+            'rol'       => $payload['rol'],
+            'tema_adi'  => $payload['tema_adi'] ?? 'paramgo',
+            'plan'      => $plan_adi,
+            'yetkiler'  => $payload['yetkiler'] ?? null,
+        ];
+
+        $access_token = JWTHelper::access_token_olustur($kullanici_bilgi);
+        $refresh_data = JWTHelper::refresh_token_olustur($kullanici_bilgi);
+
+        Response::basarili([
+            'plan'     => $plan_adi,
+            'tokenlar' => [
+                'access_token'  => $access_token,
+                'refresh_token' => $refresh_data['token'],
+            ],
+        ], 'Aboneliğiniz başarıyla aktifleştirildi');
+    }
+
+    /**
+     * iyzico abonelik iptal
+     * POST /api/abonelik/iyzico-iptal
+     */
+    public function iyzicoIptal(): void {
+        $payload = AuthMiddleware::dogrula();
+
+        if ($payload['rol'] !== 'sahip') {
+            Response::hata('Abonelik iptal yetkiniz yok', 403);
+            return;
+        }
+
+        $sirket_id = (int) $payload['sirket_id'];
+        $abonelik  = $this->abonelik_model->guncelPlan($sirket_id);
+
+        if (!$abonelik || ($abonelik['odeme_kanali'] ?? '') !== 'iyzico') {
+            Response::hata('Aktif iyzico aboneliği bulunamadı', 404);
+            return;
+        }
+
+        $iyzico_ref = $abonelik['iyzico_abonelik_kodu'] ?? null;
+        if (!$iyzico_ref) {
+            Response::hata('iyzico abonelik kodu eksik', 500);
+            return;
+        }
+
+        $basarili = IyzicoHelper::abonelikIptal($iyzico_ref);
+        if (!$basarili) {
+            Response::hata('Abonelik iptal edilemedi, lütfen destek ile iletişime geçin', 500);
+            return;
+        }
+
+        error_log("iyzico iptal: sirket={$sirket_id} ref={$iyzico_ref}");
+        Response::basarili([], 'Aboneliğiniz dönem sonunda iptal edilecek');
     }
 
     /**

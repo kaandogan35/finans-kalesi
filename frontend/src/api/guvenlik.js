@@ -36,6 +36,10 @@ export const guvenlikApi = {
   loglar: (params = {}) =>
     api.get('/guvenlik/log', { params }),
 
+  // Profil güncelleme (ad_soyad + telefon)
+  profilGuncelle: (veri) =>
+    api.put('/auth/profil', veri),
+
   // KVKK veri dışa aktarma
   veriDisaAktar: (sifre) =>
     api.post('/guvenlik/veri-disa-aktar', { sifre }),

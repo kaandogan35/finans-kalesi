@@ -49,7 +49,7 @@ function zamanOnce(tarih) {
 // ANA BİLEŞEN
 // ═══════════════════════════════════════════════════════════════
 
-export default function BildirimlerEkrani() {
+export default function BildirimlerEkrani({ embedded = false }) {
   const aktifTema = useTemaStore((s) => s.aktifTema)
   const p = { paramgo: 'p' }[aktifTema] || 'p'
   const [aktifSekme, setAktifSekme] = useState('bildirimler')
@@ -57,17 +57,19 @@ export default function BildirimlerEkrani() {
   return (
     <div className={`${p}-page-root`} style={{ maxWidth: 900, margin: '0 auto' }}>
       {/* Sayfa Header */}
-      <div className={`${p}-page-header`}>
-        <div className={`${p}-page-header-left`}>
-          <div className={`${p}-page-header-icon`}>
-            <i className="bi bi-bell-fill" />
-          </div>
-          <div>
-            <h1 className={`${p}-page-title`}>Bildirimler</h1>
-            <p className={`${p}-page-sub`}>Tüm bildirimlerinizi görüntüleyin ve tercihlerinizi yönetin</p>
+      {!embedded && (
+        <div className={`${p}-page-header`}>
+          <div className={`${p}-page-header-left`}>
+            <div className={`${p}-page-header-icon`}>
+              <i className="bi bi-bell-fill" />
+            </div>
+            <div>
+              <h1 className={`${p}-page-title`}>Bildirimler</h1>
+              <p className={`${p}-page-sub`}>Tüm bildirimlerinizi görüntüleyin ve tercihlerinizi yönetin</p>
+            </div>
           </div>
         </div>
-      </div>
+      )}
 
       {/* Sekmeler */}
       <div className="bld-tabs">

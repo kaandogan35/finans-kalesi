@@ -1,6 +1,6 @@
 # CANLI-DEPLOY.md — ParamGo Deploy Rehberi
 # Her deploy öncesi bu dosyayı oku. Tüm bilgiler bağlayıcıdır.
-# Son Güncelleme: 25 Mart 2026
+# Son Güncelleme: 14 Nisan 2026
 
 ---
 
@@ -58,68 +58,88 @@
     │   ├── app.php
     │   └── database.php
     │
-    ├── controllers/
+    ├── controllers/ (21 dosya)
+    │   ├── AbonelikController.php
     │   ├── AuthController.php
+    │   ├── AyarlarController.php
+    │   ├── BildirimController.php
     │   ├── CariController.php
     │   ├── CekSenetController.php
-    │   ├── OdemeTakipController.php
-    │   ├── KasaController.php
-    │   ├── DashboardController.php
-    │   ├── AbonelikController.php
     │   ├── CronController.php
+    │   ├── DashboardController.php
+    │   ├── GuvenlikController.php
+    │   ├── KasaController.php
+    │   ├── KategoriController.php
+    │   ├── KullaniciController.php
+    │   ├── OdemeTakipController.php
+    │   ├── OnboardingController.php
+    │   ├── PushTokenController.php
+    │   ├── RaporController.php
+    │   ├── SinirController.php
+    │   ├── TekrarlayanIslemController.php
     │   ├── TurController.php
     │   ├── VeresiyeController.php
-    │   ├── KullaniciController.php
-    │   ├── GuvenlikController.php
-    │   ├── BildirimController.php
-    │   └── RaporController.php
+    │   └── WebhookController.php
     │
-    ├── middleware/
+    ├── middleware/ (5 dosya)
     │   ├── AuthMiddleware.php
     │   ├── CorsMiddleware.php
     │   ├── PlanKontrol.php
     │   ├── SinirKontrol.php
     │   └── YetkiKontrol.php
     │
-    ├── models/
-    │   ├── Kullanici.php
-    │   ├── Sirket.php
+    ├── models/ (14 dosya)
     │   ├── Abonelik.php
-    │   ├── Kasa.php
     │   ├── Bildirim.php
+    │   ├── CariHareket.php
+    │   ├── CariKart.php
+    │   ├── CekSenet.php
     │   ├── Guvenlik.php
+    │   ├── Kasa.php
+    │   ├── Kategori.php
+    │   ├── Kullanici.php
+    │   ├── OdemeTakip.php
     │   ├── Rapor.php
+    │   ├── Sirket.php
+    │   ├── TekrarlayanIslem.php
     │   └── Veresiye.php
     │
-    ├── routes/
+    ├── routes/ (20 dosya)
+    │   ├── abonelik.php
     │   ├── auth.php
+    │   ├── ayarlar.php
+    │   ├── bildirimler.php
     │   ├── cari.php
     │   ├── cek_senet.php
-    │   ├── odeme.php
-    │   ├── kasa.php
-    │   ├── dashboard.php
-    │   ├── ayarlar.php
-    │   ├── abonelik.php
-    │   ├── sinir.php
     │   ├── cron.php
-    │   ├── tur.php
-    │   ├── veresiye.php
-    │   ├── kullanicilar.php
+    │   ├── dashboard.php
     │   ├── guvenlik.php
-    │   ├── bildirimler.php
-    │   └── raporlar.php
+    │   ├── kasa.php
+    │   ├── kategoriler.php
+    │   ├── kullanicilar.php
+    │   ├── odeme.php
+    │   ├── onboarding.php
+    │   ├── push_token.php
+    │   ├── raporlar.php
+    │   ├── sinir.php
+    │   ├── tekrarlayan_islem.php
+    │   ├── tur.php
+    │   └── veresiye.php
     │
-    ├── utils/
+    ├── utils/ (14 dosya)
+    │   ├── BildirimOlusturucu.php
     │   ├── JWTHelper.php
-    │   ├── SistemKripto.php
-    │   ├── Response.php
-    │   ├── SistemLog.php
-    │   ├── RateLimiter.php
-    │   ├── SmtpHelper.php
+    │   ├── KriptoHelper.php
     │   ├── MailHelper.php
     │   ├── MailSablonlar.php
+    │   ├── PushHelper.php           ← APNs push gönderici
+    │   ├── RateLimiter.php
+    │   ├── Response.php
+    │   ├── RevenueCatHelper.php     ← RevenueCat REST senkronizasyon
+    │   ├── SistemKripto.php
+    │   ├── SistemLog.php
+    │   ├── SmtpHelper.php
     │   ├── TOTPHelper.php
-    │   ├── BildirimOlusturucu.php
     │   └── WhatsappHelper.php
     │
     ├── cron/                                 ← Otomatik zamanlı görevler
@@ -204,7 +224,7 @@ define('BASE_PATH', dirname(__DIR__));
 
 | Değişen Dosya | Web (Hosting) | Mobil (Codemagic) | Nasıl? |
 |---------------|:---:|:---:|--------|
-| `controllers/`, `models/`, `routes/`, `middleware/`, `utils/`, `cron/` | ✅ | ❌ | SFTP otomatik |
+| `controllers/`, `models/`, `routes/`, `middleware/`, `utils/`, `cron/` | ✅ | ❌ | **WinSCP manuel** (SFTP watcher çalışmıyor) |
 | `frontend/src/**` (React kodu) | ✅ | ✅ | Build → WinSCP + GitHub push |
 | `public/index-canli.php` | ✅ | ❌ | WinSCP → `public_html/index.php` |
 | `public/.htaccess` | ✅ | ❌ | WinSCP → `public_html/.htaccess` |
@@ -272,7 +292,7 @@ Birini unutursan web ile mobil farklı sürüm gösterir.
 | `CM_PROVISIONING_PROFILE` | ParamGo_AppStore.mobileprovision (base64) |
 
 ### Mobilde API URL
-Mobil uygulama `https://kaandogan.com.tr/api` adresini kullanır (axios.js'de Capacitor.isNativePlatform() ile belirlenir). Backend'de değişiklik yapıldığında mobil de otomatik yansır — sadece frontend değişiklikleri yeni build gerektirir.
+Mobil uygulama `https://paramgo.com/api` adresini kullanır (axios.js'de Capacitor.isNativePlatform() ile belirlenir). Backend'de değişiklik yapıldığında mobil de otomatik yansır — sadece frontend değişiklikleri yeni build gerektirir.
 
 ### Git Push Komutu (Mobil Deploy İçin)
 ```bash

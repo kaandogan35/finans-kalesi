@@ -52,14 +52,14 @@ export default function PaywallKoruyucu() {
     return () => clearTimeout(t)
   }, [kullanici])
 
-  // 2) 403 PLAN_GEREKLI event dinleyicisi
-  //    Backend zaten eski/yeni ayrımı yapıyor, eski kullanıcıya 403 döndürmüyor.
-  //    Ama fazladan kontrol — event geldiğinde yeni sistem kullanıcısı olmalı.
+  // 2) 403 PLAN_GEREKLI / DENEME_SURESI_DOLDU event dinleyicisi
   useEffect(() => {
-    const handleAc = () => {
+    const handleAc = (e) => {
       if (!Capacitor.isNativePlatform()) return
       if (kullanici?.plan !== 'deneme') return
-      if (kullanici?.yeni_sistem_kullanici !== true) return
+      const kod = e?.detail?.kod
+      // Yeni kullanıcı (PLAN_GEREKLI) veya süresi dolmuş eski kullanıcı (DENEME_SURESI_DOLDU)
+      if (kullanici?.yeni_sistem_kullanici !== true && kod !== 'DENEME_SURESI_DOLDU') return
       setAcik(true)
       sessionStorage.setItem(PAYWALL_OTURUM_KEY, '1')
     }

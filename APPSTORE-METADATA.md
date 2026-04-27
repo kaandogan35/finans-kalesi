@@ -101,8 +101,8 @@ https://paramgo.com
 ---
 
 ## YAŞ SINIRI
-- **iOS:** 17+ (Finansal veri içerir)
-- **Android:** Teen (13+) / Everyone (içeriğe göre IARC anketi doldurulacak)
+- **iOS:** 4+ (v1.0'da kullanıldı — finansal içerik ama içerik filtresi gerektirmiyor)
+- **Android:** Everyone / Teen (IARC anketine göre, Google Play önerisi Everyone)
 
 ---
 

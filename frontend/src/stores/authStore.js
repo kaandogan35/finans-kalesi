@@ -125,6 +125,14 @@ const useAuthStore = create(
       },
 
       /**
+       * Profil güncelleme sonrası kullanıcı adı ve telefonunu store'da güncelle
+       */
+      kullaniciGuncelle: (alanlar) => {
+        const { kullanici } = get()
+        if (kullanici) set({ kullanici: { ...kullanici, ...alanlar } })
+      },
+
+      /**
        * IAP satın alımı sonrası planı ve tokenleri güncelle
        * Backend'den gelen yeni JWT'ler ve plan bilgisi ile store güncellenir
        */

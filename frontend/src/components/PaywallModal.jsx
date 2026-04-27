@@ -16,6 +16,7 @@
  */
 
 import { useState, useEffect, useCallback } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { Capacitor } from '@capacitor/core'
 import useAuthStore from '../stores/authStore'
 import { abonelikApi } from '../api/abonelik'
@@ -29,6 +30,7 @@ const URUN_ID = 'com.paramgo.app.standart.aylik'
 const STANDART_AYLIK_FIYAT = '₺399,99'
 
 export default function PaywallModal({ goster, onKapat, onBasarili }) {
+  const navigate = useNavigate()
   const { iapPlanGuncelle } = useAuthStore()
 
   const [yukleniyor, setYukleniyor] = useState(true)
@@ -36,6 +38,17 @@ export default function PaywallModal({ goster, onKapat, onBasarili }) {
   const [geriYukleniyor, setGeriYukleniyor] = useState(false)
   const [paket, setPaket] = useState(null)
   const [trialUygun, setTrialUygun] = useState(false)  // Kullanıcı free trial almaya uygun mu?
+
+  // Web dalı — iOS'ta değilse iyzico akışı kullanılır
+  const isWeb = !Capacitor.isNativePlatform()
+  const [secilenPlan, setSecilenPlan] = useState('standart')
+  const [secilenDonem, setSecilenDonem] = useState('aylik')
+
+  // Web fiyatları (iyzico — KDV hariç)
+  const WEB_FIYATLAR = {
+    standart: { aylik: 360, yillik: 3600 },
+    kurumsal: { aylik: 540, yillik: 5400 },
+  }
 
   // Offering'i ve eligibility'yi yükle
   useEffect(() => {
@@ -102,7 +115,55 @@ export default function PaywallModal({ goster, onKapat, onBasarili }) {
     return () => { iptal = true }
   }, [goster])
 
-  // Satın al
+  // Web — iyzico Checkout Form'a yönlendir
+  const webOdemeyeGec = useCallback(async () => {
+    if (satinAliniyor) return
+    setSatinAliniyor(true)
+    try {
+      const res = await abonelikApi.yukselt({
+        plan_adi:     secilenPlan,
+        odeme_donemi: secilenDonem,
+      })
+      const formContent = res?.data?.veri?.form_content
+      if (!formContent) {
+        toast.error('Ödeme sayfası alınamadı, tekrar deneyin')
+        setSatinAliniyor(false)
+        return
+      }
+      // iyzico formunu kendi sunucumuzdaki güvenli sayfada aç
+      const tutar = WEB_FIYATLAR[secilenPlan][secilenDonem].toLocaleString('tr-TR')
+      const planAd = secilenPlan === 'kurumsal' ? 'Kurumsal' : 'Standart'
+
+      const form = document.createElement('form')
+      form.method = 'POST'
+      form.action = '/odeme.php'
+      // Same-tab redirect — popup engelleyici yok, mobilde garantili çalışır
+      form.style.display = 'none'
+
+      const ekle = (ad, deger) => {
+        const i = document.createElement('input')
+        i.type = 'hidden'
+        i.name = ad
+        i.value = deger
+        form.appendChild(i)
+      }
+      ekle('form_content', formContent)
+      ekle('plan_adi', planAd)
+      ekle('tutar', tutar)
+
+      document.body.appendChild(form)
+      form.submit()
+      document.body.removeChild(form)
+
+      setSatinAliniyor(false)
+    } catch (e) {
+      const mesaj = e?.response?.data?.hata || 'Ödeme başlatılamadı'
+      toast.error(mesaj)
+      setSatinAliniyor(false)
+    }
+  }, [satinAliniyor, secilenPlan, secilenDonem])
+
+  // Satın al (iOS)
   const satinAl = useCallback(async () => {
     if (satinAliniyor || !paket) return
     setSatinAliniyor(true)
@@ -256,7 +317,92 @@ export default function PaywallModal({ goster, onKapat, onBasarili }) {
               ))}
             </ul>
 
-            {/* Fiyat bloğu — Apple 3.1.2: fiyat büyük ve net */}
+            {/* Web — Plan + Dönem Seçimi */}
+            {isWeb && (
+              <>
+                {/* Plan seçimi (Standart / Kurumsal) */}
+                <div style={{ display: 'flex', gap: 8, marginBottom: 10 }}>
+                  {['standart', 'kurumsal'].map(p => (
+                    <button
+                      key={p}
+                      type="button"
+                      onClick={() => setSecilenPlan(p)}
+                      style={{
+                        flex: 1,
+                        padding: '10px 8px',
+                        borderRadius: 10,
+                        border: secilenPlan === p ? '2px solid #10B981' : '1.5px solid #E5E7EB',
+                        background: secilenPlan === p ? 'rgba(16,185,129,0.08)' : '#fff',
+                        fontWeight: 700,
+                        fontSize: 13,
+                        color: secilenPlan === p ? '#065F46' : '#374151',
+                        cursor: 'pointer',
+                        textTransform: 'capitalize',
+                      }}
+                    >
+                      {p}
+                    </button>
+                  ))}
+                </div>
+
+                {/* Dönem seçimi (Aylık / Yıllık) */}
+                <div style={{ display: 'flex', gap: 8, marginBottom: 14 }}>
+                  {[
+                    { id: 'aylik', label: 'Aylık' },
+                    { id: 'yillik', label: 'Yıllık (%17 indirim)' },
+                  ].map(d => (
+                    <button
+                      key={d.id}
+                      type="button"
+                      onClick={() => setSecilenDonem(d.id)}
+                      style={{
+                        flex: 1,
+                        padding: '10px 8px',
+                        borderRadius: 10,
+                        border: secilenDonem === d.id ? '2px solid #10B981' : '1.5px solid #E5E7EB',
+                        background: secilenDonem === d.id ? 'rgba(16,185,129,0.08)' : '#fff',
+                        fontWeight: 700,
+                        fontSize: 12.5,
+                        color: secilenDonem === d.id ? '#065F46' : '#374151',
+                        cursor: 'pointer',
+                      }}
+                    >
+                      {d.label}
+                    </button>
+                  ))}
+                </div>
+
+                {/* Fiyat bloğu — Web */}
+                <div style={{
+                  textAlign: 'center',
+                  padding: '18px 16px',
+                  background: 'linear-gradient(135deg, rgba(16,185,129,0.06), rgba(5,150,105,0.04))',
+                  border: '1.5px solid rgba(16,185,129,0.22)',
+                  borderRadius: 12,
+                  marginBottom: 18,
+                }}>
+                  <div style={{
+                    fontSize: 30,
+                    fontWeight: 800,
+                    color: '#111827',
+                    lineHeight: 1.1,
+                    letterSpacing: '-0.5px',
+                  }}>
+                    ₺{WEB_FIYATLAR[secilenPlan][secilenDonem].toLocaleString('tr-TR')}
+                    <span style={{ fontSize: 13, fontWeight: 600, color: '#6B7280', marginLeft: 4 }}>
+                      + KDV / {secilenDonem === 'yillik' ? 'yıl' : 'ay'}
+                    </span>
+                  </div>
+                  <div style={{ fontSize: 12.5, color: '#059669', fontWeight: 600, marginTop: 6 }}>
+                    <i className="bi bi-gift-fill" style={{ marginRight: 5 }} />
+                    İlk 7 gün ücretsiz — istediğiniz zaman iptal edebilirsiniz
+                  </div>
+                </div>
+              </>
+            )}
+
+            {/* iOS — Fiyat bloğu (Apple 3.1.2: fiyat büyük ve net) */}
+            {!isWeb && (
             <div style={{
               textAlign: 'center',
               padding: '18px 16px',
@@ -301,22 +447,28 @@ export default function PaywallModal({ goster, onKapat, onBasarili }) {
                 </div>
               )}
             </div>
+            )}
 
             {/* Ana buton */}
             <button
               type="button"
               className="p-btn-save p-btn-save-green"
-              onClick={satinAl}
-              disabled={yukleniyor || satinAliniyor || geriYukleniyor || !paket}
+              onClick={isWeb ? webOdemeyeGec : satinAl}
+              disabled={satinAliniyor || geriYukleniyor || (!isWeb && (yukleniyor || !paket))}
               style={{ width: '100%', padding: '14px 18px', fontSize: 15, fontWeight: 700 }}
             >
               {satinAliniyor ? (
                 <>
                   <span className="spinner-border spinner-border-sm me-2" />
-                  İşleniyor...
+                  {isWeb ? 'Ödeme sayfasına yönlendiriliyor...' : 'İşleniyor...'}
                 </>
-              ) : yukleniyor ? (
+              ) : (!isWeb && yukleniyor) ? (
                 'Yükleniyor...'
+              ) : isWeb ? (
+                <>
+                  <i className="bi bi-credit-card-2-front me-2" />
+                  7 Gün Ücretsiz Başlat
+                </>
               ) : trialUygun ? (
                 <>
                   <i className="bi bi-gift me-2" />
@@ -330,7 +482,8 @@ export default function PaywallModal({ goster, onKapat, onBasarili }) {
               )}
             </button>
 
-            {/* Geri yükle butonu */}
+            {/* Geri yükle butonu — sadece iOS */}
+            {!isWeb && (
             <button
               type="button"
               onClick={geriYukle}
@@ -349,6 +502,7 @@ export default function PaywallModal({ goster, onKapat, onBasarili }) {
             >
               {geriYukleniyor ? 'Yükleniyor...' : 'Satın Alımları Geri Yükle'}
             </button>
+            )}
 
             {/* "Şimdi değil" linki */}
             <button
@@ -408,9 +562,19 @@ export default function PaywallModal({ goster, onKapat, onBasarili }) {
               textAlign: 'center',
               lineHeight: 1.5,
             }}>
-              Abonelik otomatik olarak yenilenir. Yenilemeyi durdurmak için{' '}
-              bitiş tarihinden en az 24 saat önce Apple ID ayarlarınızdan iptal edin.{' '}
-              Ödeme, satın alma onayı sırasında Apple ID hesabınızdan tahsil edilir.
+              {isWeb ? (
+                <>
+                  Abonelik otomatik olarak yenilenir. İstediğiniz zaman{' '}
+                  hesap ayarlarınızdan iptal edebilirsiniz.{' '}
+                  Ödeme iyzico güvenli ödeme altyapısı ile tahsil edilir.
+                </>
+              ) : (
+                <>
+                  Abonelik otomatik olarak yenilenir. Yenilemeyi durdurmak için{' '}
+                  bitiş tarihinden en az 24 saat önce Apple ID ayarlarınızdan iptal edin.{' '}
+                  Ödeme, satın alma onayı sırasında Apple ID hesabınızdan tahsil edilir.
+                </>
+              )}
             </p>
 
           </div>

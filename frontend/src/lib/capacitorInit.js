@@ -108,13 +108,6 @@ export async function capacitorBaslat() {
 }
 
 
-export function platformBilgi() {
-  return {
-    native: Capacitor.isNativePlatform(),
-    platform: Capacitor.getPlatform(),
-  }
-}
-
 /**
  * RevenueCat SDK'yı başlat
  * Giriş yaptıktan sonra sirket_id ile çağrılır.

@@ -37,25 +37,36 @@ class AuthController {
         }
 
         // 1. Zorunlu alanlari kontrol et
-        $gerekli = ['firma_adi', 'ad_soyad', 'email', 'sifre'];
+        $gerekli = ['firma_adi', 'ad_soyad', 'email', 'telefon', 'sifre'];
         $eksik = [];
-        
+
         foreach ($gerekli as $alan) {
             if (empty($girdi[$alan])) {
                 $eksik[$alan] = "$alan alani zorunludur";
             }
         }
-        
+
         if (!empty($eksik)) {
             Response::dogrulama_hatasi($eksik);
             return;
         }
-        
+
         // 2. E-posta formati kontrol
         if (!filter_var($girdi['email'], FILTER_VALIDATE_EMAIL)) {
             Response::dogrulama_hatasi(['email' => 'Geçerli bir e-posta adresi girin']);
             return;
         }
+
+        // 2b. Telefon formatı kontrol — TR cep numarası
+        $tel_rakam = preg_replace('/\D/', '', $girdi['telefon']);
+        $tel_tr = $tel_rakam;
+        if (str_starts_with($tel_tr, '90')) $tel_tr = substr($tel_tr, 2);
+        elseif (str_starts_with($tel_tr, '0')) $tel_tr = substr($tel_tr, 1);
+        if (strlen($tel_tr) !== 10 || !str_starts_with($tel_tr, '5')) {
+            Response::dogrulama_hatasi(['telefon' => 'Geçerli bir cep telefonu girin (örn: 0530 123 45 67)']);
+            return;
+        }
+        $girdi['telefon'] = '+90' . $tel_tr;
         
         // 3. Sifre uzunlugu (en az 8 karakter)
         if (strlen($girdi['sifre']) < 8) {
@@ -85,6 +96,7 @@ class AuthController {
                 'sirket_id' => $sirket_id,
                 'ad_soyad'  => $girdi['ad_soyad'],
                 'email'     => $girdi['email'],
+                'telefon'   => $girdi['telefon'],   // iyzico için zorunlu
                 'sifre'     => $girdi['sifre'],
                 'rol'       => 'sahip'  // Ilk kullanici = sirket sahibi
             ]);
@@ -650,6 +662,7 @@ class AuthController {
         $kullanici['tema_adi']              = $sirket['tema_adi'] ?? 'paramgo';
         $kullanici['plan']                  = $sirket['abonelik_plani'] ?? 'deneme';
         $kullanici['deneme_bitis']          = $sirket['deneme_bitis'] ?? null;
+        $kullanici['firma_adi']             = $sirket['firma_adi'] ?? '';
         $kullanici['onboarding_tamamlandi'] = (int)($sirket['onboarding_tamamlandi'] ?? 0);
 
         // Yeni abonelik sistemi kullanıcısı mı? (2026-04-13 sonrası kayıt)
@@ -659,6 +672,74 @@ class AuthController {
 
         unset($kullanici['sifre_hash']);
         Response::basarili(['kullanici' => $kullanici]);
+    }
+
+    /**
+     * PUT /api/auth/profil
+     * Kullanıcı kendi adını ve telefon numarasını günceller
+     */
+    public function profilGuncelle($girdi) {
+        $payload      = AuthMiddleware::dogrula();
+        $kullanici_id = (int)$payload['sub'];
+        $sirket_id    = (int)$payload['sirket_id'];
+
+        $ad_soyad = trim($girdi['ad_soyad'] ?? '');
+        if (empty($ad_soyad)) {
+            Response::dogrulama_hatasi(['ad_soyad' => 'Ad soyad zorunludur']);
+            return;
+        }
+        if (mb_strlen($ad_soyad) > 100) {
+            Response::dogrulama_hatasi(['ad_soyad' => 'Ad soyad en fazla 100 karakter olabilir']);
+            return;
+        }
+
+        $telefon = null;
+        if (!empty(trim($girdi['telefon'] ?? ''))) {
+            $tel_rakam = preg_replace('/\D/', '', $girdi['telefon']);
+            $tel_tr    = $tel_rakam;
+            if (str_starts_with($tel_tr, '90')) $tel_tr = substr($tel_tr, 2);
+            elseif (str_starts_with($tel_tr, '0')) $tel_tr = substr($tel_tr, 1);
+            if (strlen($tel_tr) !== 10 || !str_starts_with($tel_tr, '5')) {
+                Response::dogrulama_hatasi(['telefon' => 'Geçerli bir cep telefonu girin (örn: 0530 123 45 67)']);
+                return;
+            }
+            $telefon = '+90' . $tel_tr;
+        }
+
+        $mevcut = $this->kullanici_model->id_ile_bul($kullanici_id);
+        if (!$mevcut || (int)$mevcut['sirket_id'] !== $sirket_id) {
+            Response::bulunamadi('Kullanıcı bulunamadı');
+            return;
+        }
+
+        $firma_adi = trim($girdi['firma_adi'] ?? '');
+        if (!empty($firma_adi) && mb_strlen($firma_adi) > 150) {
+            Response::dogrulama_hatasi(['firma_adi' => 'Firma adı en fazla 150 karakter olabilir']);
+            return;
+        }
+
+        $sonuc = $this->kullanici_model->guncelle($kullanici_id, $sirket_id, [
+            'ad_soyad' => $ad_soyad,
+            'telefon'  => $telefon,
+            'rol'      => $mevcut['rol'],
+            'yetkiler' => $mevcut['yetkiler'],
+            'aktif_mi' => $mevcut['aktif_mi'],
+        ]);
+
+        if (!$sonuc) {
+            Response::hata('Profil güncellenemedi', 500);
+            return;
+        }
+
+        if (!empty($firma_adi)) {
+            $this->sirket_model->firma_adi_guncelle($sirket_id, $firma_adi);
+        }
+
+        Response::basarili([
+            'ad_soyad'  => $ad_soyad,
+            'telefon'   => $telefon,
+            'firma_adi' => !empty($firma_adi) ? $firma_adi : null,
+        ], 'Profil güncellendi');
     }
 
     /**
@@ -784,6 +865,7 @@ class AuthController {
                     'tema_adi'              => $kullanici['tema_adi'],
                     'plan'                  => $kullanici['plan'],
                     'onboarding_tamamlandi' => $kullanici['onboarding_tamamlandi'],
+                    'telefon_eksik'         => empty(trim($kullanici['telefon'] ?? '')),
                 ],
                 'tokenlar' => [
                     'access_token'  => $access_token,
@@ -929,6 +1011,7 @@ class AuthController {
                     'tema_adi'              => $kullanici['tema_adi'],
                     'plan'                  => $kullanici['plan'],
                     'onboarding_tamamlandi' => $kullanici['onboarding_tamamlandi'],
+                    'telefon_eksik'         => empty(trim($kullanici['telefon'] ?? '')),
                 ],
                 'tokenlar' => [
                     'access_token'  => $access_token,

@@ -112,20 +112,4 @@ const ParamGoLogo = ({ variant = 'light', size = 'md', className = '' }) => {
   );
 };
 
-// Favicon için minimal SVG (16x16 / 32x32)
-export const ParamGoFavicon = () => (
-  <svg width="32" height="32" viewBox="0 0 120 120" fill="none" xmlns="http://www.w3.org/2000/svg">
-    <defs>
-      <linearGradient id="fav-grad" x1="0" y1="0" x2="120" y2="120" gradientUnits="userSpaceOnUse">
-        <stop offset="0%" stopColor="#10B981" />
-        <stop offset="100%" stopColor="#059669" />
-      </linearGradient>
-    </defs>
-    <rect width="120" height="120" rx="28" fill="url(#fav-grad)" />
-    <path d="M38 88V36H62C70.837 36 78 43.163 78 52C78 60.837 70.837 68 62 68H38" stroke="#fff" strokeWidth="10" strokeLinecap="round" strokeLinejoin="round" fill="none" />
-    <path d="M68 62L82 48M82 48L68 34M82 48H56" stroke="#fff" strokeWidth="8" strokeLinecap="round" strokeLinejoin="round" opacity="0.6" />
-  </svg>
-);
-
-export { LogoIcon };
 export default ParamGoLogo;

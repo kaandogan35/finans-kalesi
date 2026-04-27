@@ -13,7 +13,8 @@ import useTemaStore from '../../stores/temaStore'
 import ParamGoLogo from '../../logo/ParamGoLogo'
 import { authApi } from '../../api/auth'
 
-const GOOGLE_CLIENT_ID = '505947540272-fuvn80vu0q2bjcgbihea1sm7b4jininv.apps.googleusercontent.com'
+const GOOGLE_IOS_CLIENT_ID = '505947540272-fuvn80vu0q2bjcgbihea1sm7b4jininv.apps.googleusercontent.com'
+const GOOGLE_ANDROID_CLIENT_ID = '268506330818-ugvjdtcg33kig40lf7io202idgt0cjal.apps.googleusercontent.com'
 
 const isNative = Capacitor.isNativePlatform() || new URLSearchParams(window.location.search).has('native')
 const isIOS = Capacitor.getPlatform() === 'ios'
@@ -78,7 +79,10 @@ export default function GirisYap() {
     if (!Capacitor.isNativePlatform()) return
     import('@capgo/capacitor-social-login').then(({ SocialLogin }) => {
       SocialLogin.initialize({
-        google: { iOSClientId: GOOGLE_CLIENT_ID },
+        google: {
+          iOSClientId: GOOGLE_IOS_CLIENT_ID,
+          androidClientId: GOOGLE_ANDROID_CLIENT_ID,
+        },
         apple: {},
       }).catch(() => {})
     })
@@ -222,17 +226,19 @@ export default function GirisYap() {
           <div className="pm-auth-divider"><span>sosyal giriş</span></div>
 
           <div className="pm-auth-social-row">
-            <button
-              type="button"
-              className="pm-auth-btn-social pm-auth-btn-apple"
-              onClick={handleAppleGiris}
-              disabled={!!sosyalYukleniyor}
-            >
-              {sosyalYukleniyor === 'apple'
-                ? <><i className="bi bi-arrow-repeat pm-spin" /> Bekleniyor...</>
-                : <><i className="bi bi-apple" /> Apple ile Giriş Yap</>
-              }
-            </button>
+            {isIOS && (
+              <button
+                type="button"
+                className="pm-auth-btn-social pm-auth-btn-apple"
+                onClick={handleAppleGiris}
+                disabled={!!sosyalYukleniyor}
+              >
+                {sosyalYukleniyor === 'apple'
+                  ? <><i className="bi bi-arrow-repeat pm-spin" /> Bekleniyor...</>
+                  : <><i className="bi bi-apple" /> Apple ile Giriş Yap</>
+                }
+              </button>
+            )}
             {!isIOS && (
               <button
                 type="button"

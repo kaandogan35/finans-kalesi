@@ -1,6 +1,6 @@
 # CLAUDE.md — ParamGo Proje Anayasası
 # Bu dosya her oturumun başında otomatik okunur. Tüm kurallar bağlayıcıdır.
-# Son Güncelleme: 15 Mart 2026 — Oturum #10
+# Son Güncelleme: 16 Nisan 2026 — v1.0.1 App Store'dan onay aldı ✅
 
 ---
 
@@ -18,9 +18,9 @@
 Niş: Çek + Kasa + Cari takibi — muhasebe bilgisi gerektirmeden.
 Canlı: https://paramgo.com
 
-**Hedef platformlar:** Web ✅ → iOS (Store onayında) → Android (sırada)
-**Tamamlanan modüller:** Cari + Çek/Senet + Ödeme Takip + Kasa + Vade Hesaplayıcı + Dashboard + Raporlar
-**Güncel durum:** iOS App Store onay sürecinde (v1.0)
+**Hedef platformlar:** Web ✅ → iOS ✅ (v1.0 + v1.0.1 onaylandı) → Android (sırada)
+**Tamamlanan modüller:** Cari + Çek/Senet + Ödeme Takip + Kasa + Vade Hesaplayıcı + Dashboard + Raporlar + Veresiye + Kategoriler + Tekrarlayan İşlemler + Onboarding + Bildirimler + Push (APNs) + Abonelik (Apple IAP + RevenueCat)
+**Güncel durum:** v1.0.1 App Store'dan onay aldı ✅ — Welcome ekranları + PaywallModal + 7 gün trial + revenue leak koruması canlıda
 
 ---
 
@@ -199,7 +199,7 @@ finans-kalesi/
 ├── middleware/       5 dosya (Auth, Cors, PlanKontrol, SinirKontrol, YetkiKontrol)
 ├── models/          14 model
 ├── routes/          19 route dosyası
-├── utils/           12 dosya (JWT, Kripto, Mail, TOTP, Whatsapp vb.)
+├── utils/           14 dosya (JWT, Kripto, Mail, TOTP, Whatsapp, Push, RevenueCat vb.)
 ├── cron/            Zamanlanmış görevler
 ├── database/        Schema + 6 migration
 ├── public/          index.php, .htaccess, .well-known/, gizlilik/destek/kullanim-sartlari.html, frontend-build/
@@ -217,7 +217,7 @@ finans-kalesi/
 ---
 
 ## TAMAMLANAN BACKEND MODÜLLERİ ✅
-20 controller, 14 model, 19 route. Değiştirilmeden önce onay istenir.
+21 controller, 14 model, 20 route. Değiştirilmeden önce onay istenir.
 
 | Modül | Controller | Route |
 |-------|-----------|-------|
@@ -227,11 +227,12 @@ finans-kalesi/
 | Ödeme Takip | OdemeTakipController.php | routes/odeme.php |
 | Kasa | KasaController.php | routes/kasa.php |
 | Dashboard | DashboardController.php | routes/dashboard.php |
-| Abonelik | AbonelikController.php | routes/abonelik.php |
+| Abonelik (Apple IAP + RevenueCat) | AbonelikController.php | routes/abonelik.php |
 | Sınır | SinirController.php | routes/sinir.php |
 | Raporlar | RaporController.php | routes/raporlar.php |
 | Kullanıcılar | KullaniciController.php | routes/kullanicilar.php |
 | Bildirimler | BildirimController.php | routes/bildirimler.php |
+| Push Token (APNs) | PushTokenController.php | routes/push_token.php |
 | Güvenlik | GuvenlikController.php | routes/guvenlik.php |
 | Veresiye | VeresiyeController.php | routes/veresiye.php |
 | Kategoriler | KategoriController.php | routes/kategoriler.php |
@@ -240,4 +241,4 @@ finans-kalesi/
 | Türler | TurController.php | routes/tur.php |
 | Ayarlar | AyarlarController.php | routes/ayarlar.php |
 | Cron | CronController.php | routes/cron.php |
-| Webhook | WebhookController.php | routes/abonelik.php |
+| Webhook (RevenueCat) | WebhookController.php | routes/abonelik.php |

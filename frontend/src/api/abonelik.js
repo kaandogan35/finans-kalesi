@@ -23,4 +23,13 @@ export const abonelikApi = {
    * Yanıt: { plan, tokenlar: { access_token, refresh_token } }
    */
   iapDogrula: () => api.post('/abonelik/iap-dogrula'),
+
+  /** Web — iyzico aboneliği iptal et */
+  iyzicoIptal: () => api.post('/abonelik/iyzico-iptal'),
+
+  /** Web — Manuel doğrulama: token ile iyzico'dan abonelik durumunu çek ve plan'ı aktive et */
+  iyzicoDogrula: (token) => api.post('/abonelik/iyzico-dogrula', { token }),
+
+  /** Web — Abonelik referans kodu ile manuel aktivasyon (kullanıcı iyzico panelden kopyalar) */
+  iyzicoAktive: (abonelik_ref) => api.post('/abonelik/iyzico-aktive', { abonelik_ref }),
 }

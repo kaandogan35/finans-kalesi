@@ -4,6 +4,8 @@ import { Capacitor } from '@capacitor/core'
 import { useSwipeable } from 'react-swipeable'
 import useAuthStore from '../../stores/authStore'
 import useBildirimStore from '../../stores/bildirimStore'
+import { guvenlikApi } from '../../api/guvenlik'
+import { bildirim as toast } from '../ui/CenterAlert'
 import '../../temalar/paramgo.css'
 import ParamGoLogo from '../../logo/ParamGoLogo'
 import UpgradeBildirim from '../UpgradeBildirim'
@@ -81,8 +83,39 @@ export default function AppLayoutParamGo() {
   const userDropdownRef = useRef(null)
   const contentRef = useRef(null)
 
-  const kullanici = useAuthStore((s) => s.kullanici)
-  const cikisYap  = useAuthStore((s) => s.cikisYap)
+  const kullanici        = useAuthStore((s) => s.kullanici)
+  const kullaniciGuncelle = useAuthStore((s) => s.kullaniciGuncelle)
+  const cikisYap         = useAuthStore((s) => s.cikisYap)
+
+  // Telefon eksik modal state (Apple/Google ile kayıt olup telefon girmeyenler)
+  const [telefonEksikModal, setTelefonEksikModal] = useState(false)
+  const [telefonEksikInput, setTelefonEksikInput] = useState('')
+  const [telefonEksikKayit, setTelefonEksikKayit] = useState(false)
+
+  useEffect(() => {
+    if (kullanici?.telefon_eksik) setTelefonEksikModal(true)
+  }, [kullanici?.telefon_eksik])
+
+  const telefonEksikKaydet = async () => {
+    if (!telefonEksikInput.trim()) { toast.error('Telefon numarası zorunludur'); return }
+    setTelefonEksikKayit(true)
+    try {
+      await guvenlikApi.profilGuncelle({
+        ad_soyad: kullanici?.ad_soyad || 'ParamGo Kullanıcısı',
+        telefon: telefonEksikInput.trim(),
+      })
+      kullaniciGuncelle({ telefon_eksik: false })
+      setTelefonEksikModal(false)
+      toast.success('Telefon numaranız kaydedildi')
+    } catch (e) {
+      const hata = e?.response?.data?.dogrulama?.telefon
+        || e?.response?.data?.hata
+        || 'Telefon kaydedilemedi'
+      toast.error(hata)
+    } finally {
+      setTelefonEksikKayit(false)
+    }
+  }
   const navigate  = useNavigate()
   const location  = useLocation()
   const okunmamisSayisi = useBildirimStore((s) => s.okunmamisSayisi)
@@ -306,28 +339,6 @@ export default function AppLayoutParamGo() {
             )}
             {sidebarCollapsed && <div className="p-nav-divider" />}
 
-            {kullanici?.rol === 'sahip' && (
-              <>
-                <NavLink
-                  to="/kullanicilar"
-                  className={({ isActive }) => `p-nav-btn${isActive ? ' p-nav-active' : ''}`}
-                  onClick={() => setSidebarOpen(false)}
-                  title={sidebarCollapsed ? 'Personelim' : undefined}
-                >
-                  <i className="bi bi-person-gear p-nav-icon" aria-hidden="true" />
-                  {!sidebarCollapsed && <span>Personelim</span>}
-                </NavLink>
-                <NavLink
-                  to="/guvenlik"
-                  className={({ isActive }) => `p-nav-btn${isActive ? ' p-nav-active' : ''}`}
-                  onClick={() => setSidebarOpen(false)}
-                  title={sidebarCollapsed ? 'Güvenlik' : undefined}
-                >
-                  <i className="bi bi-shield-lock p-nav-icon" aria-hidden="true" />
-                  {!sidebarCollapsed && <span>Güvenlik</span>}
-                </NavLink>
-              </>
-            )}
             <NavLink
               to="/raporlar"
               className={({ isActive }) => `p-nav-btn${isActive ? ' p-nav-active' : ''}`}
@@ -338,21 +349,6 @@ export default function AppLayoutParamGo() {
               {!sidebarCollapsed && <span>Raporlarım</span>}
             </NavLink>
             <NavLink
-              to="/bildirimler"
-              className={({ isActive }) => `p-nav-btn${isActive ? ' p-nav-active' : ''}`}
-              onClick={() => setSidebarOpen(false)}
-              title={sidebarCollapsed ? 'Bildirimler' : undefined}
-            >
-              <i className="bi bi-bell p-nav-icon" aria-hidden="true" />
-              {!sidebarCollapsed && <span style={{ flex: 1 }}>Bildirimler</span>}
-              {!sidebarCollapsed && okunmamisSayisi > 0 && (
-                <span className="p-nav-badge">{okunmamisSayisi > 99 ? '99+' : okunmamisSayisi}</span>
-              )}
-              {sidebarCollapsed && okunmamisSayisi > 0 && (
-                <span className="p-nav-badge-dot" />
-              )}
-            </NavLink>
-            <NavLink
               to="/abonelik"
               className={({ isActive }) => `p-nav-btn${isActive ? ' p-nav-active' : ''}`}
               onClick={() => setSidebarOpen(false)}
@@ -360,6 +356,21 @@ export default function AppLayoutParamGo() {
             >
               <i className="bi bi-credit-card p-nav-icon" aria-hidden="true" />
               {!sidebarCollapsed && <span>Aboneliğim</span>}
+            </NavLink>
+            <NavLink
+              to="/ayarlar"
+              className={({ isActive }) => `p-nav-btn${isActive ? ' p-nav-active' : ''}`}
+              onClick={() => setSidebarOpen(false)}
+              title={sidebarCollapsed ? 'Ayarlar' : undefined}
+            >
+              <i className="bi bi-gear p-nav-icon" aria-hidden="true" />
+              {!sidebarCollapsed && <span style={{ flex: 1 }}>Ayarlar</span>}
+              {!sidebarCollapsed && okunmamisSayisi > 0 && (
+                <span className="p-nav-badge">{okunmamisSayisi > 99 ? '99+' : okunmamisSayisi}</span>
+              )}
+              {sidebarCollapsed && okunmamisSayisi > 0 && (
+                <span className="p-nav-badge-dot" />
+              )}
             </NavLink>
           </>
         </nav>
@@ -369,12 +380,12 @@ export default function AppLayoutParamGo() {
           {userDropdownOpen && (
             <div className="p-user-dropdown">
               <NavLink
-                to="/ayarlar/tema"
+                to="/ayarlar"
                 className="p-user-dropdown-item"
                 onClick={() => { setSidebarOpen(false); setUserDropdownOpen(false) }}
               >
-                <i className="bi bi-palette" aria-hidden="true" />
-                <span>Tema Ayarları</span>
+                <i className="bi bi-gear" aria-hidden="true" />
+                <span>Ayarlar</span>
               </NavLink>
               <div className="p-user-dropdown-sep" />
               <button
@@ -443,6 +454,53 @@ export default function AppLayoutParamGo() {
         </main>
 
       </div>
+
+      {/* ── Telefon Eksik Modal — Apple/Google sosyal giriş ─── */}
+      {telefonEksikModal && (
+        <div className="p-modal-overlay">
+          <div className="p-modal-box" style={{ maxWidth: 420 }}>
+            <div className="p-modal-header mh-default">
+              <div className="d-flex align-items-center gap-3">
+                <div style={{
+                  width: 36, height: 36, borderRadius: 10,
+                  background: 'rgba(16,185,129,0.09)',
+                  border: '1px solid rgba(16,185,129,0.18)',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                }}>
+                  <i className="bi bi-telephone-fill" style={{ fontSize: 16, color: '#10B981', opacity: 0.35 }} />
+                </div>
+                <div>
+                  <p style={{ margin: 0, fontSize: 15, fontWeight: 800, color: '#111827' }}>Telefon Numaranızı Ekleyin</p>
+                  <p style={{ margin: 0, fontSize: 11.5, color: '#9CA3AF' }}>Hesabınızla ilgili size ulaşabilmemiz için</p>
+                </div>
+              </div>
+            </div>
+            <div className="p-modal-body">
+              <label className="p-kasa-input-label">Cep Telefonu *</label>
+              <input
+                className="p-kasa-input"
+                placeholder="0530 123 45 67"
+                value={telefonEksikInput}
+                onChange={e => setTelefonEksikInput(e.target.value)}
+                onKeyDown={e => e.key === 'Enter' && telefonEksikKaydet()}
+                autoFocus
+              />
+            </div>
+            <div className="p-modal-footer d-flex justify-content-end">
+              <button
+                className="p-btn-save"
+                onClick={telefonEksikKaydet}
+                disabled={telefonEksikKayit || !telefonEksikInput.trim()}
+              >
+                {telefonEksikKayit
+                  ? <><span className="spinner-border spinner-border-sm me-1" />Kaydediliyor...</>
+                  : <><i className="bi bi-check2-circle me-1" />Kaydet ve Devam Et</>
+                }
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* ── Oturum Uyarı Modalı ─────────────────────────────── */}
       <OturumUyari />

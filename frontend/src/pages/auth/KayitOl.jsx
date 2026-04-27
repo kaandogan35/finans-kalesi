@@ -16,7 +16,8 @@ import ParamGoLogo from '../../logo/ParamGoLogo'
 const isNative = Capacitor.isNativePlatform() || new URLSearchParams(window.location.search).has('native')
 const isIOS = Capacitor.getPlatform() === 'ios'
 const prefixMap = { paramgo: 'p' }
-const GOOGLE_CLIENT_ID = '505947540272-fuvn80vu0q2bjcgbihea1sm7b4jininv.apps.googleusercontent.com'
+const GOOGLE_IOS_CLIENT_ID = '505947540272-fuvn80vu0q2bjcgbihea1sm7b4jininv.apps.googleusercontent.com'
+const GOOGLE_ANDROID_CLIENT_ID = '268506330818-ugvjdtcg33kig40lf7io202idgt0cjal.apps.googleusercontent.com'
 
 const AVANTAJLAR = [
   { ikon: 'bi-people-fill',            baslik: 'Cari Hesaplar',     aciklama: '25 cari — ücretsiz sonsuza kadar' },
@@ -42,7 +43,13 @@ export default function KayitOl() {
   useEffect(() => {
     if (!Capacitor.isNativePlatform()) return
     import('@capgo/capacitor-social-login').then(({ SocialLogin }) => {
-      SocialLogin.initialize({ google: { iOSClientId: GOOGLE_CLIENT_ID }, apple: {} }).catch(() => {})
+      SocialLogin.initialize({
+        google: {
+          iOSClientId: GOOGLE_IOS_CLIENT_ID,
+          androidClientId: GOOGLE_ANDROID_CLIENT_ID,
+        },
+        apple: {},
+      }).catch(() => {})
     })
   }, [])
 
@@ -84,7 +91,7 @@ export default function KayitOl() {
   }
 
   const [form, setForm] = useState({
-    firma_adi: '', ad_soyad: '', email: '', sifre: '', sifre_tekrar: '',
+    firma_adi: '', ad_soyad: '', email: '', telefon: '', sifre: '', sifre_tekrar: '',
   })
   const [sifreGoster, setSifreGoster] = useState(false)
   const [yukleniyor, setYukleniyor]   = useState(false)
@@ -101,6 +108,12 @@ export default function KayitOl() {
     if (!form.ad_soyad.trim())  { setHata('Ad soyad zorunludur.');  return false }
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
     if (!form.email.trim() || !emailRegex.test(form.email.trim())) { setHata('Geçerli bir e-posta girin.'); return false }
+    // Telefon: TR cep formatı 5XX XXX XX XX (10 hane, 5 ile başlar)
+    const telRakam = (form.telefon || '').replace(/\D/g, '')
+    const telTr = telRakam.startsWith('90') ? telRakam.slice(2) : (telRakam.startsWith('0') ? telRakam.slice(1) : telRakam)
+    if (telTr.length !== 10 || !telTr.startsWith('5')) {
+      setHata('Geçerli bir cep telefonu girin (örn: 0530 123 45 67).'); return false
+    }
     return true
   }
 
@@ -113,7 +126,12 @@ export default function KayitOl() {
     if (form.sifre !== form.sifre_tekrar) { setHata('Şifreler eşleşmiyor.'); return }
     setYukleniyor(true); setHata('')
     try {
-      await authApi.kayit({ firma_adi: form.firma_adi, ad_soyad: form.ad_soyad, email: form.email, sifre: form.sifre })
+      // Telefonu +905XXXXXXXXX formatına normalize et
+      const telRakamSon = form.telefon.replace(/\D/g, '')
+      const telNorm = telRakamSon.startsWith('90')
+        ? '+' + telRakamSon
+        : '+90' + (telRakamSon.startsWith('0') ? telRakamSon.slice(1) : telRakamSon)
+      await authApi.kayit({ firma_adi: form.firma_adi, ad_soyad: form.ad_soyad, email: form.email, telefon: telNorm, sifre: form.sifre })
       await girisYap(form.email, form.sifre)
       toast.success('Hesabınız oluşturuldu! Hoş geldiniz.')
       navigate('/welcome')  // Mail kayıt: yeni kullanıcı → Welcome
@@ -183,6 +201,14 @@ export default function KayitOl() {
                       autoComplete="email" className="pm-auth-input" />
                   </div>
                 </div>
+                <div className="pm-auth-field">
+                  <div className="pm-auth-input-wrap">
+                    <i className="bi bi-telephone pm-auth-input-icon" />
+                    <input type="tel" name="telefon" value={form.telefon}
+                      onChange={handleChange} placeholder="Cep telefonu (0530 123 45 67)"
+                      autoComplete="tel" className="pm-auth-input" />
+                  </div>
+                </div>
                 <button type="button" className="pm-auth-btn-primary" onClick={ilerle}>
                   Devam Et
                 </button>
@@ -232,12 +258,14 @@ export default function KayitOl() {
           <div className="pm-auth-divider"><span>sosyal giriş</span></div>
 
           <div className="pm-auth-social-row">
-            <button type="button" className="pm-auth-btn-social pm-auth-btn-apple"
-              onClick={handleAppleGiris} disabled={!!sosyalYukleniyor}>
-              {sosyalYukleniyor === 'apple'
-                ? <><i className="bi bi-arrow-repeat pm-spin" /> Bekleniyor...</>
-                : <><i className="bi bi-apple" /> Apple ile Devam Et</>}
-            </button>
+            {isIOS && (
+              <button type="button" className="pm-auth-btn-social pm-auth-btn-apple"
+                onClick={handleAppleGiris} disabled={!!sosyalYukleniyor}>
+                {sosyalYukleniyor === 'apple'
+                  ? <><i className="bi bi-arrow-repeat pm-spin" /> Bekleniyor...</>
+                  : <><i className="bi bi-apple" /> Apple ile Devam Et</>}
+              </button>
+            )}
             {!isIOS && (
               <button type="button" className="pm-auth-btn-social pm-auth-btn-google"
                 onClick={handleGoogleGiris} disabled={!!sosyalYukleniyor}>
@@ -361,13 +389,22 @@ export default function KayitOl() {
                           autoComplete="name" className={`${p}-giris-input`} />
                       </div>
                     </div>
-                    <div className="mb-4">
+                    <div className="mb-3">
                       <label className={`${p}-giris-label`}>E-posta Adresi</label>
                       <div className={`${p}-giris-alan`}>
                         <span className={`${p}-giris-alan-ikon`}><i className="bi bi-envelope" /></span>
                         <input type="email" name="email" value={form.email}
                           onChange={handleChange} placeholder="ornek@firma.com"
                           autoComplete="email" className={`${p}-giris-input`} />
+                      </div>
+                    </div>
+                    <div className="mb-4">
+                      <label className={`${p}-giris-label`}>Cep Telefonu</label>
+                      <div className={`${p}-giris-alan`}>
+                        <span className={`${p}-giris-alan-ikon`}><i className="bi bi-telephone" /></span>
+                        <input type="tel" name="telefon" value={form.telefon}
+                          onChange={handleChange} placeholder="0530 123 45 67"
+                          autoComplete="tel" className={`${p}-giris-input`} />
                       </div>
                     </div>
                     <button type="button" className={`${p}-giris-btn`} onClick={ilerle}>

@@ -21,21 +21,129 @@ class WebhookController {
     }
 
     /**
-     * Web ödeme webhook'u (Stripe veya İyzico)
+     * iyzico Webhook — Abonelik ödeme bildirimlerini işle
+     * POST /api/webhook/web
      *
-     * TODO: Entegrasyon adımları
-     *   1. $this->web_imza_dogrula() — HMAC signature kontrolü
-     *   2. Event tipini belirle (payment_intent.succeeded vb.)
-     *   3. Metadata'dan sirket_id al
-     *   4. planı aktive et: $this->abonelik_model->planGuncelle(...)
-     *   5. Ödemeyi kaydet: $this->abonelik_model->odemeKaydet(...)
+     * iyzico şu event'leri gönderir:
+     *   subscription.order.success → Ödeme başarılı (ilk veya yenileme)
+     *   subscription.order.failure → Ödeme başarısız
      */
     public function webOdeme(array $girdi): void {
-        // GÜVENLİK: İmza doğrulaması olmadan webhook işlenmez
-        // Ödeme entegrasyonu yapılana kadar tüm istekleri reddet
-        error_log('Webhook/web REDDEDILDI — imza dogrulama henuz aktif degil: ' . substr(json_encode($girdi), 0, 200));
-        http_response_code(403);
-        echo json_encode(['basarili' => false, 'hata' => 'Webhook dogrulama aktif degil']);
+        $ham_body  = file_get_contents('php://input');
+        $sigV3     = $_SERVER['HTTP_X_IYZ_SIGNATURE_V3'] ?? null;
+        $rnd       = $_SERVER['HTTP_X_IYZ_RND']          ?? null;
+        $sigV1     = $_SERVER['HTTP_X_IYZ_SIGNATURE']    ?? null;
+
+        // V3 öncelikli, V1 geriye uyumlu doğrulama
+        $imza = IyzicoHelper::webhookImzaDogrula($ham_body, $sigV3, $rnd, $sigV1);
+
+        if (!$imza['gecerli']) {
+            error_log(
+                'iyzico webhook: gecersiz imza ['
+                . $imza['versiyon'] . '] — '
+                . 'V3=' . substr($sigV3 ?? '', 0, 24)
+                . ' RND=' . substr($rnd ?? '', 0, 24)
+                . ' V1=' . substr($sigV1 ?? '', 0, 24)
+                . ' body=' . substr($ham_body, 0, 200)
+            );
+            http_response_code(401);
+            echo json_encode(['basarili' => false, 'hata' => 'Geçersiz imza']);
+            return;
+        }
+
+        error_log('iyzico webhook: gecerli imza [' . $imza['versiyon'] . '] event=' . ($girdi['iyziEventType'] ?? 'bilinmiyor'));
+
+        $event_tipi    = $girdi['iyziEventType']           ?? '';
+        $abonelik_ref  = $girdi['subscriptionReferenceCode'] ?? '';
+        $musteri_ref   = $girdi['customerReferenceCode']    ?? '';
+        $odeme_ref     = $girdi['paymentReferenceCode']     ?? '';
+        $plan_ref      = $girdi['pricingPlanReferenceCode'] ?? '';
+
+        error_log("iyzico webhook: event={$event_tipi} abonelik={$abonelik_ref}");
+
+        switch ($event_tipi) {
+
+            case 'subscription.order.success':
+                // Hangi plan? conversationId'den çekiyoruz: "pg-{sirket_id}-{timestamp}"
+                $conv_id   = $girdi['conversationId'] ?? '';
+                $sirket_id = $this->sirketIdCikar($conv_id);
+
+                if (!$sirket_id) {
+                    // conversationId ile bulunamadı — iyzico_musteri_id ile bul
+                    $sirket_id = $this->abonelik_model->sirketIdIyzicoDan($musteri_ref);
+                }
+
+                if (!$sirket_id) {
+                    error_log("iyzico webhook: sirket bulunamadi abonelik={$abonelik_ref} musteri={$musteri_ref}");
+                    http_response_code(200);
+                    echo json_encode(['basarili' => true]);
+                    return;
+                }
+
+                // Aynı ödeme referansı daha önce işlendi mi? (duplicate koruması)
+                if ($this->abonelik_model->iyzicoOdemeIslendiMi($odeme_ref)) {
+                    error_log("iyzico webhook: duplicate odeme ref={$odeme_ref}");
+                    http_response_code(200);
+                    echo json_encode(['basarili' => true]);
+                    return;
+                }
+
+                // Plan ve dönem bilgisi — pricingPlanReferenceCode'dan eşleştir
+                [$plan_adi, $odeme_donemi] = $this->abonelik_model->planBilgisiIyzicoDan($sirket_id, $plan_ref);
+
+                if (!$plan_adi) {
+                    error_log("iyzico webhook: plan belirlenemedi abonelik={$abonelik_ref}");
+                    http_response_code(200);
+                    echo json_encode(['basarili' => true]);
+                    return;
+                }
+
+                // Bitiş tarihi hesapla
+                $bitis = $odeme_donemi === 'yillik'
+                    ? date('Y-m-d H:i:s', strtotime('+1 year'))
+                    : date('Y-m-d H:i:s', strtotime('+1 month'));
+
+                $abonelik_id = $this->abonelik_model->planGuncelle(
+                    $sirket_id, $plan_adi, $odeme_donemi, 'iyzico', $bitis
+                );
+
+                // iyzico referanslarını kaydet
+                $this->abonelik_model->iyzicoReferansKaydet($sirket_id, $musteri_ref, $abonelik_ref);
+
+                $tutar = IyzicoHelper::WEB_FIYATLAR[$plan_adi][$odeme_donemi] ?? 0;
+                $this->abonelik_model->odemeKaydet($sirket_id, $abonelik_id, [
+                    'plan_adi'     => $plan_adi,
+                    'odeme_donemi' => $odeme_donemi,
+                    'odeme_kanali' => 'iyzico',
+                    'tutar'        => $tutar,
+                    'para_birimi'  => 'TRY',
+                    'referans_no'  => $odeme_ref,
+                    'durum'        => 'tamamlandi',
+                    'odeme_tarihi' => date('Y-m-d H:i:s'),
+                ]);
+
+                error_log("iyzico webhook: plan aktif sirket={$sirket_id} plan={$plan_adi}/{$odeme_donemi}");
+                break;
+
+            case 'subscription.order.failure':
+                error_log("iyzico webhook: odeme basarisiz abonelik={$abonelik_ref} musteri={$musteri_ref}");
+                break;
+
+            default:
+                error_log("iyzico webhook: bilinmeyen event={$event_tipi}");
+                break;
+        }
+
+        http_response_code(200);
+        echo json_encode(['basarili' => true]);
+    }
+
+    private function sirketIdCikar(string $conv_id): int {
+        // Format: pg-{sirket_id}-{timestamp}
+        if (preg_match('/^pg-(\d+)-\d+$/', $conv_id, $m)) {
+            return (int) $m[1];
+        }
+        return 0;
     }
 
     /**

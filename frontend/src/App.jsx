@@ -41,11 +41,14 @@ import Giderler            from './pages/giderler/Giderler'
 const OdemeTakip           = lazy(() => import('./pages/odeme-takip/OdemeTakip'))
 const TekrarlayanIslemler  = lazy(() => import('./pages/tekrarlayan-islemler/TekrarlayanIslemler'))
 const VadeHesaplayici      = lazy(() => import('./pages/vade-hesaplayici/VadeHesaplayici'))
-const TemaSecimi           = lazy(() => import('./pages/ayarlar/TemaSecimi'))
+const Ayarlar              = lazy(() => import('./pages/ayarlar/Ayarlar'))
 const PlanSecim            = lazy(() => import('./pages/abonelik/PlanSecim'))
+const OdemeBasarili        = lazy(() => import('./pages/abonelik/OdemeBasarili'))
+const OdemeSayfasi         = lazy(() => import('./pages/abonelik/OdemeSayfasi'))
 const KullaniciYonetimi    = lazy(() => import('./pages/kullanicilar/KullaniciYonetimi'))
 const GuvenlikEkrani       = lazy(() => import('./pages/guvenlik/GuvenlikEkrani'))
 const BildirimlerEkrani    = lazy(() => import('./pages/bildirimler/BildirimlerEkrani'))
+
 const VeresiyeListesi      = lazy(() => import('./pages/veresiye/VeresiyeListesi'))
 const VeresiyeDetay        = lazy(() => import('./pages/veresiye/VeresiyeDetay'))
 const RaporlarEkrani       = lazy(() => import('./pages/raporlar/RaporlarEkrani'))
@@ -194,14 +197,17 @@ export default function App() {
 
             {/* Sahip only */}
             <Route element={<SahipKoruma />}>
-              <Route path="/kullanicilar"          element={<KullaniciYonetimi />} />
-              <Route path="/guvenlik"              element={<GuvenlikEkrani />} />
               <Route path="/abonelik"              element={<PlanSecim />} />
+              <Route path="/abonelik/basarili"     element={<OdemeBasarili />} />
+              <Route path="/abonelik/odeme"        element={<OdemeSayfasi />} />
             </Route>
 
-            <Route path="/bildirimler"             element={<BildirimlerEkrani />} />
-            <Route path="/raporlar"               element={<RaporlarEkrani />} />
-            <Route path="/ayarlar/tema"            element={<TemaSecimi />} />
+            <Route path="/ayarlar"                 element={<Ayarlar />} />
+            <Route path="/raporlar"                element={<RaporlarEkrani />} />
+            {/* Eski URL'ler — geriye dönük uyumluluk */}
+            <Route path="/kullanicilar"            element={<Navigate to="/ayarlar" replace />} />
+            <Route path="/guvenlik"                element={<Navigate to="/ayarlar" replace />} />
+            <Route path="/bildirimler"             element={<Navigate to="/ayarlar" replace />} />
           </Route>
           </Route> {/* OnboardingKoruma */}
         </Route>

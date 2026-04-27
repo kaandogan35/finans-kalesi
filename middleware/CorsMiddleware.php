@@ -38,6 +38,7 @@ class CorsMiddleware {
                 'https://paramgo.com',
                 'capacitor://localhost',
                 'http://localhost',
+                'https://localhost',
             ];
 
             if ($gelen_origin && in_array($gelen_origin, $izinli_originler, true)) {

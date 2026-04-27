@@ -379,4 +379,57 @@ class Abonelik {
             ],
         ];
     }
+
+    // ─────────────────────────────────────────
+    // iyzico YARDIMCILARI
+    // ─────────────────────────────────────────
+
+    public function sirketIdIyzicoDan(string $musteri_ref): int {
+        $stmt = $this->db->prepare("
+            SELECT id FROM sirketler
+            WHERE iyzico_musteri_id = :ref
+            LIMIT 1
+        ");
+        $stmt->execute([':ref' => $musteri_ref]);
+        return (int) ($stmt->fetchColumn() ?: 0);
+    }
+
+    public function iyzicoOdemeIslendiMi(string $odeme_ref): bool {
+        if (!$odeme_ref) return false;
+        $stmt = $this->db->prepare("
+            SELECT COUNT(*) FROM abonelik_odemeleri
+            WHERE referans_no = :ref AND odeme_kanali = 'iyzico'
+        ");
+        $stmt->execute([':ref' => $odeme_ref]);
+        return (int) $stmt->fetchColumn() > 0;
+    }
+
+    public function planBilgisiIyzicoDan(int $sirket_id, string $abonelik_ref): array {
+        // iyzico plan referans kodundan plan + dönem eşleştir
+        // IyzicoHelper::PLAN_KODLARI ile eşleştiriliyor (hardcoded UUID'ler)
+        require_once __DIR__ . '/../utils/IyzicoHelper.php';
+        foreach (IyzicoHelper::PLAN_KODLARI as $plan => $donemler) {
+            foreach ($donemler as $donem => $kod) {
+                if ($kod === $abonelik_ref) {
+                    return [$plan, $donem];
+                }
+            }
+        }
+        // Eşleşme yoksa boş dön
+        return ['', ''];
+    }
+
+    public function iyzicoReferansKaydet(int $sirket_id, string $musteri_ref, string $abonelik_ref): void {
+        $stmt = $this->db->prepare("
+            UPDATE sirketler
+            SET iyzico_musteri_id    = :musteri_ref,
+                iyzico_abonelik_kodu = :abonelik_ref
+            WHERE id = :sirket_id
+        ");
+        $stmt->execute([
+            ':musteri_ref'  => $musteri_ref,
+            ':abonelik_ref' => $abonelik_ref,
+            ':sirket_id'    => $sirket_id,
+        ]);
+    }
 }

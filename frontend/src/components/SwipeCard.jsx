@@ -8,7 +8,7 @@ import { useState, useEffect, useRef } from 'react'
 
 const SWIPE_SNAP = 208 // maks 4 buton × 52px
 
-export function useSwipe(ref, { onSwipeLeft, threshold = 60 } = {}) {
+function useSwipe(ref, { onSwipeLeft, threshold = 60 } = {}) {
   const startX = useRef(0)
   const currentX = useRef(0)
   const swiping = useRef(false)
@@ -121,13 +121,13 @@ const AVATAR_PALETI = [
   { bg: '#e0f2fe', border: '#7dd3fc', text: '#0c4a6e' },
 ]
 
-export function stringToColor(str) {
+function stringToColor(str) {
   let hash = 0
   for (let i = 0; i < str.length; i++) hash = str.charCodeAt(i) + ((hash << 5) - hash)
   return AVATAR_PALETI[Math.abs(hash) % AVATAR_PALETI.length]
 }
 
-export function getInitials(name) {
+function getInitials(name) {
   if (!name) return '?'
   const parts = name.trim().split(/\s+/)
   if (parts.length >= 2) return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase()

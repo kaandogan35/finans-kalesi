@@ -5,19 +5,27 @@
  */
 
 import { useState, useEffect, useCallback } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { Capacitor } from '@capacitor/core'
 import { bildirim as toast } from '../../components/ui/CenterAlert'
 import useAuthStore from '../../stores/authStore'
 import api from '../../api/axios'
 import { abonelikApi } from '../../api/abonelik'
+import { guvenlikApi } from '../../api/guvenlik'
 import { usePlanKontrol } from '../../hooks/usePlanKontrol'
 
 const IOS_MU = Capacitor.isNativePlatform()
 
-const FIYATLAR = {
+// Platform'a göre fiyat — iOS App Store IAP / Web iyzico
+const FIYATLAR_IOS = {
   standart: { aylik: 399.99, yillik: 3999.99 },
   kurumsal: { aylik: 599.99, yillik: 5999.99 },
 }
+const FIYATLAR_WEB = {
+  standart: { aylik: 360, yillik: 3600 },
+  kurumsal: { aylik: 540, yillik: 5400 },
+}
+const FIYATLAR = Capacitor.isNativePlatform() ? FIYATLAR_IOS : FIYATLAR_WEB
 
 // App Store ürün ID'leri (RevenueCat'te tanımlı olanlarla aynı olmalı)
 const URUN_IDS = {
@@ -45,8 +53,9 @@ const KANAL_MAP = { web: 'Web', apple: 'App Store', google: 'Google Play' }
 
 export default function PlanSecim() {
   const p = 'p'
+  const navigate = useNavigate()
   const { plan: jwtPlan } = usePlanKontrol()
-  const { iapPlanGuncelle } = useAuthStore()
+  const { iapPlanGuncelle, kullanici } = useAuthStore()
 
   const [yukleniyor, setYukleniyor] = useState(true)
   const [gecmisYukleniyor, setGecmisYukleniyor] = useState(true)
@@ -55,6 +64,9 @@ export default function PlanSecim() {
   const [yillik, setYillik] = useState(false)
   const [iapYukleniyor, setIapYukleniyor] = useState(false)
   const [satinAlinanPlan, setSatinAlinanPlan] = useState(null)
+  const [telefonModal, setTelefonModal] = useState({ acik: false, planId: null, donem: null })
+  const [telefonInput, setTelefonInput] = useState('')
+  const [telefonKayit, setTelefonKayit] = useState(false)
 
   useEffect(() => {
     const durumAl = async () => {
@@ -75,9 +87,44 @@ export default function PlanSecim() {
         setGecmisYukleniyor(false)
       }
     }
+    // iyzico bekleyen ödeme tokenı varsa otomatik doğrulama yap
+    const bekleyenToken = localStorage.getItem('iyzico_bekleyen_token')
+    if (bekleyenToken) {
+      ;(async () => {
+        toast.info('Aboneliğiniz aktifleştiriliyor...')
+        // 5 deneme x 4 sn bekle (iyzico'nun aboneliği oluşturması zaman alabilir)
+        for (let i = 0; i < 5; i++) {
+          try {
+            const r = await abonelikApi.iyzicoDogrula(bekleyenToken)
+            const { plan: yeniPlan, tokenlar } = r.data.veri
+            iapPlanGuncelle(yeniPlan, tokenlar)
+            localStorage.removeItem('iyzico_bekleyen_token')
+            toast.success('Aboneliğiniz aktifleştirildi!')
+            // Durumu yenile
+            try {
+              const res = await abonelikApi.durum()
+              setDurum(res.data.veri)
+            } catch { /* sessiz */ }
+            return
+          } catch (e) {
+            const kod = e?.response?.status
+            if (kod === 404) {
+              await new Promise(r => setTimeout(r, 4000))
+              continue
+            }
+            // Diğer hatalarda dur
+            console.error('iyzico doğrulama hatası:', e?.response?.data || e?.message)
+            break
+          }
+        }
+        // 5 deneme sonunda hâlâ olmadıysa token'ı temizle
+        localStorage.removeItem('iyzico_bekleyen_token')
+      })()
+    }
+
     durumAl()
     gecmisAl()
-  }, [])
+  }, [iapPlanGuncelle])
 
   // O9: Uygulama arka plandan ön plana gelince aktif abonelik kontrolü
   // iOS WebView satın alma sırasında öldürülebilir — geri dönüşte senkronize et
@@ -101,6 +148,80 @@ export default function PlanSecim() {
     window.addEventListener('app:resume', resumeKontrol)
     return () => window.removeEventListener('app:resume', resumeKontrol)
   }, [iapPlanGuncelle])
+
+  // Web iyzico ödeme başlat — telefon yoksa modal aç, kaydet, tekrar dene
+  const yukseltBaslat = useCallback(async (planId, donem) => {
+    if (iapYukleniyor) return
+    if (localStorage.getItem('iyzico_bekleyen_token')) {
+      toast.info('Bekleyen bir ödeme var. Lütfen önce onu tamamlayın veya birkaç dakika bekleyip tekrar deneyin.')
+      return
+    }
+    setIapYukleniyor(true)
+    setSatinAlinanPlan(planId)
+    try {
+      const res = await abonelikApi.yukselt({ plan_adi: planId, odeme_donemi: donem })
+      const formContent = res?.data?.veri?.form_content
+      const odemeToken = res?.data?.veri?.token
+      if (!formContent) {
+        toast.error('Ödeme sayfası alınamadı, tekrar deneyin')
+        return
+      }
+      if (odemeToken) localStorage.setItem('iyzico_bekleyen_token', odemeToken)
+      const tutar = (donem === 'yillik'
+        ? FIYATLAR[planId].yillik
+        : FIYATLAR[planId].aylik
+      ).toLocaleString('tr-TR')
+      const form = document.createElement('form')
+      form.method = 'POST'
+      form.action = '/odeme.php'
+      form.style.display = 'none'
+      const ekle = (ad, deger) => {
+        const i = document.createElement('input')
+        i.type = 'hidden'
+        i.name = ad
+        i.value = deger
+        form.appendChild(i)
+      }
+      ekle('form_content', formContent)
+      ekle('plan_adi', planId === 'standart' ? 'Standart' : 'Kurumsal')
+      ekle('tutar', tutar)
+      document.body.appendChild(form)
+      form.submit()
+      document.body.removeChild(form)
+    } catch (e) {
+      const hata = e?.response?.data?.hata || ''
+      if (e?.response?.status === 400 && hata.toLowerCase().includes('telefon')) {
+        setTelefonInput('')
+        setTelefonModal({ acik: true, planId, donem })
+      } else {
+        toast.error(hata || ('HTTP ' + (e?.response?.status || '?') + ': ' + (e?.message || 'Bilinmeyen hata')))
+      }
+    } finally {
+      setIapYukleniyor(false)
+      setSatinAlinanPlan(null)
+    }
+  }, [iapYukleniyor])
+
+  const telefonKaydetVeDevam = async () => {
+    if (!telefonInput.trim()) { toast.error('Telefon numarası zorunludur'); return }
+    setTelefonKayit(true)
+    const { planId, donem } = telefonModal
+    try {
+      await guvenlikApi.profilGuncelle({
+        ad_soyad: kullanici?.ad_soyad || 'ParamGo Kullanıcısı',
+        telefon: telefonInput.trim(),
+      })
+      setTelefonModal({ acik: false, planId: null, donem: null })
+      await yukseltBaslat(planId, donem)
+    } catch (e) {
+      const hata = e?.response?.data?.dogrulama?.telefon
+        || e?.response?.data?.hata
+        || 'Telefon kaydedilemedi'
+      toast.error(hata)
+    } finally {
+      setTelefonKayit(false)
+    }
+  }
 
   // iOS IAP satın alma
   const iapSatinAl = useCallback(async (planId) => {
@@ -337,6 +458,21 @@ export default function PlanSecim() {
           </div>
           <div className={`${p}-abn-page-sub`}>Planınızı yönetin, işletmenizi büyütün</div>
         </div>
+
+        {/* iyzico Manuel Aktivasyon — Sadece deneme planındakiler için göster */}
+        {!IOS_MU && (jwtPlan === 'deneme' || !jwtPlan) && (
+          <ManuelAktivasyon
+            iapPlanGuncelle={iapPlanGuncelle}
+            onBasarili={async () => {
+              try {
+                const durumRes = await abonelikApi.durum()
+                setDurum(durumRes.data.veri)
+                const gecmisRes = await abonelikApi.gecmis()
+                setGecmis(gecmisRes.data.veri.gecmis || [])
+              } catch { /* sessiz */ }
+            }}
+          />
+        )}
 
         {/* DENEME SÜRESİ BANNER */}
         {plan === 'deneme' && !yukleniyor && (
@@ -723,10 +859,20 @@ export default function PlanSecim() {
                       ) : (
                         <button
                           className={`abn-btn ${pl.id === 'standart' ? 'yesil-standart' : 'yesil-kurumsal'}`}
-                          onClick={() => toast.info('Ödeme sistemi yakında entegre edilecek. Detaylar için bizimle iletişime geçin.')}
+                          disabled={iapYukleniyor}
+                          onClick={() => yukseltBaslat(pl.id, yillik ? 'yillik' : 'aylik')}
                         >
-                          <i className="bi bi-arrow-up-circle me-2" />
-                          {pl.ad}&#39;a Geç
+                          {iapYukleniyor && satinAlinanPlan === pl.id ? (
+                            <>
+                              <span className="spinner-border spinner-border-sm me-2" />
+                              Yönlendiriliyor...
+                            </>
+                          ) : (
+                            <>
+                              <i className="bi bi-arrow-up-circle me-2" />
+                              {pl.ad}&#39;a Geç
+                            </>
+                          )}
                         </button>
                       )}
 
@@ -744,6 +890,62 @@ export default function PlanSecim() {
               </span>
             </div>
           </>
+        )}
+
+        {/* TELEFON MODAL — Apple/Google ile kayıt olup telefon girilmemişse */}
+        {telefonModal.acik && (
+          <div className="p-modal-overlay">
+            <div className="p-modal-box" style={{ maxWidth: 420 }}>
+              <div className="p-modal-header mh-default">
+                <div className="d-flex align-items-center gap-3">
+                  <div style={{
+                    width: 36, height: 36, borderRadius: 10,
+                    background: 'rgba(16,185,129,0.09)',
+                    border: '1px solid rgba(16,185,129,0.18)',
+                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  }}>
+                    <i className="bi bi-telephone-fill" style={{ fontSize: 16, color: '#10B981', opacity: 0.35 }} />
+                  </div>
+                  <div>
+                    <p style={{ margin: 0, fontSize: 15, fontWeight: 800, color: '#111827' }}>Telefon Numarası Gerekli</p>
+                    <p style={{ margin: 0, fontSize: 11.5, color: '#9CA3AF' }}>Abonelik için bir kez girilmesi yeterli</p>
+                  </div>
+                </div>
+              </div>
+              <div className="p-modal-body">
+                <label className="p-kasa-input-label">Cep Telefonu *</label>
+                <input
+                  className="p-kasa-input"
+                  placeholder="0530 123 45 67"
+                  value={telefonInput}
+                  onChange={e => setTelefonInput(e.target.value)}
+                  onKeyDown={e => e.key === 'Enter' && telefonKaydetVeDevam()}
+                  autoFocus
+                />
+              </div>
+              <div className="p-modal-footer d-flex justify-content-end gap-2">
+                <button
+                  onClick={() => setTelefonModal({ acik: false, planId: null, donem: null })}
+                  style={{
+                    padding: '9px 18px', borderRadius: 10,
+                    border: '1px solid #E5E7EB', background: '#ffffff',
+                    color: '#374151', fontWeight: 600, fontSize: 13,
+                    cursor: 'pointer', fontFamily: 'Outfit, sans-serif',
+                  }}
+                >İptal</button>
+                <button
+                  className="p-btn-save"
+                  onClick={telefonKaydetVeDevam}
+                  disabled={telefonKayit || !telefonInput.trim()}
+                >
+                  {telefonKayit
+                    ? <><span className="spinner-border spinner-border-sm me-1" />Kaydediliyor...</>
+                    : <><i className="bi bi-check2-circle me-1" />Kaydet ve Devam Et</>
+                  }
+                </button>
+              </div>
+            </div>
+          </div>
         )}
 
         {/* ÖDEME GEÇMİŞİ */}
@@ -792,5 +994,113 @@ export default function PlanSecim() {
         </div>
 
       </div>
+  )
+}
+
+// iyzico'da abonelik açtıysa ama plan henüz aktive olmadıysa
+// kullanıcı abonelik referans kodunu girip manuel aktive eder
+function ManuelAktivasyon({ iapPlanGuncelle, onBasarili }) {
+  const [acik, setAcik] = useState(false)
+  const [kod, setKod] = useState('')
+  const [yukleniyor, setYukleniyor] = useState(false)
+
+  const aktive = async () => {
+    const temizKod = kod.trim()
+    if (!temizKod) {
+      toast.error('Lütfen abonelik referans kodunu girin')
+      return
+    }
+    setYukleniyor(true)
+    try {
+      const r = await abonelikApi.iyzicoAktive(temizKod)
+      const { plan: yeniPlan, tokenlar } = r.data.veri
+      iapPlanGuncelle(yeniPlan, tokenlar)
+      toast.success('Aboneliğiniz aktifleştirildi!')
+      setKod('')
+      setAcik(false)
+      // Sayfayı yenile (reload yerine durum tekrar fetch)
+      onBasarili?.()
+    } catch (e) {
+      const mesaj = e?.response?.data?.hata || 'Aktivasyon başarısız'
+      toast.error(mesaj)
+    } finally {
+      setYukleniyor(false)
+    }
+  }
+
+  return (
+    <div style={{
+      background: '#FFFBEB',
+      border: '1px solid #FCD34D',
+      borderRadius: 12,
+      padding: 14,
+      marginBottom: 20,
+      fontSize: 13,
+    }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 8, color: '#92400E' }}>
+        <i className="bi bi-info-circle-fill" style={{ fontSize: 16 }} />
+        <strong>iyzico'da abonelik açtınız mı?</strong>
+        <button
+          type="button"
+          onClick={() => setAcik(v => !v)}
+          style={{
+            marginLeft: 'auto',
+            background: 'transparent',
+            border: '1px solid #D97706',
+            color: '#92400E',
+            padding: '4px 10px',
+            borderRadius: 6,
+            fontSize: 12,
+            fontWeight: 600,
+            cursor: 'pointer',
+          }}
+        >
+          {acik ? 'Kapat' : 'Manuel Aktive Et'}
+        </button>
+      </div>
+
+      {acik && (
+        <div style={{ marginTop: 12 }}>
+          <div style={{ fontSize: 12, color: '#78350F', marginBottom: 8, lineHeight: 1.5 }}>
+            iyzico panelinden <strong>Abonelikler</strong> sayfasına gidin, abone olduğunuz kaydın
+            <strong> Referans Kodu</strong>'nu kopyalayıp aşağıya yapıştırın.
+          </div>
+          <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+            <input
+              type="text"
+              value={kod}
+              onChange={(e) => setKod(e.target.value)}
+              placeholder="Örnek: 76b92b7b-1987-45dd-a715-34e18e61143f"
+              style={{
+                flex: 1,
+                minWidth: 280,
+                padding: '10px 12px',
+                border: '1px solid #D1D5DB',
+                borderRadius: 8,
+                fontSize: 13,
+                fontFamily: 'monospace',
+              }}
+            />
+            <button
+              type="button"
+              onClick={aktive}
+              disabled={yukleniyor || !kod.trim()}
+              style={{
+                padding: '10px 18px',
+                background: yukleniyor || !kod.trim() ? '#9CA3AF' : '#10B981',
+                color: '#fff',
+                border: 'none',
+                borderRadius: 8,
+                fontSize: 13,
+                fontWeight: 700,
+                cursor: yukleniyor || !kod.trim() ? 'not-allowed' : 'pointer',
+              }}
+            >
+              {yukleniyor ? 'Doğrulanıyor...' : 'Aktive Et'}
+            </button>
+          </div>
+        </div>
+      )}
+    </div>
   )
 }

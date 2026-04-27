@@ -77,6 +77,14 @@ switch ($islem) {
         $auth->sifreSifirla($girdi);
         break;
 
+    case 'profil':
+        if ($metod !== 'PUT') {
+            Response::hata('Bu endpoint sadece PUT kabul eder', 405);
+            break;
+        }
+        $auth->profilGuncelle($girdi);
+        break;
+
     case 'hesap-sil':
         if ($metod !== 'DELETE') {
             Response::hata('Bu endpoint sadece DELETE kabul eder', 405);

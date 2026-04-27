@@ -52,7 +52,6 @@ const SEKMELER = [
   { id: 'sifre',         label: 'Şifre Politikası',  icon: 'bi-key' },
   { id: 'ip',            label: 'IP Kuralları',       icon: 'bi-globe2' },
   { id: 'loglar',        label: 'Denetim Logları',    icon: 'bi-journal-text' },
-  { id: 'hesabim',       label: 'Hesabım',            icon: 'bi-person-x' },
 ]
 
 
@@ -811,8 +810,36 @@ function HesabimSekme() {
   const [sifre, setSifre]         = useState('')
   const [onay, setOnay]           = useState(false)
   const [siliniyor, setSiliniyor] = useState(false)
-  const { kullanici, cikisYap }   = useAuthStore()
+  const { kullanici, cikisYap, kullaniciGuncelle } = useAuthStore()
   const navigate                  = useNavigate()
+
+  // Profil düzenleme
+  const [duzenleme, setDuzenleme] = useState(false)
+  const [profil, setProfil]       = useState({ ad_soyad: '', telefon: '' })
+  const [kaydediyor, setKaydediyor] = useState(false)
+
+  const duzenlemeyiAc = () => {
+    setProfil({
+      ad_soyad: kullanici?.ad_soyad || '',
+      telefon:  kullanici?.telefon || '',
+    })
+    setDuzenleme(true)
+  }
+
+  const profilKaydet = async () => {
+    if (!profil.ad_soyad.trim()) { toast.error('Ad soyad zorunludur'); return }
+    setKaydediyor(true)
+    try {
+      const res = await guvenlikApi.profilGuncelle(profil)
+      if (res.data?.basarili) {
+        kullaniciGuncelle({ ad_soyad: res.data.veri.ad_soyad, telefon: res.data.veri.telefon })
+        toast.success('Profil güncellendi')
+        setDuzenleme(false)
+      }
+    } catch (e) {
+      toast.error(e?.response?.data?.hata || 'Profil güncellenemedi')
+    } finally { setKaydediyor(false) }
+  }
 
   const hesapSil = async () => {
     if (!sifre) { toast.error('Şifrenizi girin'); return }
@@ -837,27 +864,75 @@ function HesabimSekme() {
     <div>
       {/* Hesap Bilgileri */}
       <div className="gvn-card mb-3">
-        <p style={{ fontSize: 14, fontWeight: 700, color: '#111827', margin: '0 0 12px' }}>
-          <i className="bi bi-person-circle me-2" style={{ color: '#10B981' }} />
-          Hesap Bilgileri
-        </p>
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-          <div style={{ display: 'flex', gap: 12 }}>
-            <span style={{ fontSize: 12, color: '#9CA3AF', width: 80 }}>Ad Soyad</span>
-            <span style={{ fontSize: 13, fontWeight: 600, color: '#111827' }}>{kullanici?.ad_soyad || '—'}</span>
-          </div>
-          <div style={{ display: 'flex', gap: 12 }}>
-            <span style={{ fontSize: 12, color: '#9CA3AF', width: 80 }}>E-posta</span>
-            <span style={{ fontSize: 13, color: '#374151' }}>{kullanici?.email || '—'}</span>
-          </div>
-          <div style={{ display: 'flex', gap: 12 }}>
-            <span style={{ fontSize: 12, color: '#9CA3AF', width: 80 }}>Rol</span>
-            <span style={{ fontSize: 12, fontWeight: 600, color: '#059669',
-              background: 'rgba(16,185,129,0.08)', padding: '2px 8px', borderRadius: 6 }}>
-              {kullanici?.rol || '—'}
-            </span>
-          </div>
+        <div className="d-flex align-items-center justify-content-between mb-3">
+          <p style={{ fontSize: 14, fontWeight: 700, color: '#111827', margin: 0 }}>
+            <i className="bi bi-person-circle me-2" style={{ color: '#10B981' }} />
+            Hesap Bilgileri
+          </p>
+          {!duzenleme && (
+            <button className="gvn-btn-outline" onClick={duzenlemeyiAc} style={{ fontSize: 12 }}>
+              <i className="bi bi-pencil" style={{ fontSize: 11 }} /> Düzenle
+            </button>
+          )}
         </div>
+
+        {duzenleme ? (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+            <div>
+              <label className="gvn-label">Ad Soyad</label>
+              <input
+                className="gvn-input"
+                type="text"
+                value={profil.ad_soyad}
+                onChange={e => setProfil(p => ({ ...p, ad_soyad: e.target.value }))}
+                placeholder="Ad Soyad"
+                style={{ maxWidth: 300 }}
+              />
+            </div>
+            <div>
+              <label className="gvn-label">Cep Telefonu</label>
+              <input
+                className="gvn-input"
+                type="tel"
+                value={profil.telefon}
+                onChange={e => setProfil(p => ({ ...p, telefon: e.target.value }))}
+                placeholder="0530 123 45 67"
+                style={{ maxWidth: 300 }}
+              />
+            </div>
+            <div className="d-flex gap-2">
+              <button className="gvn-btn-primary" onClick={profilKaydet} disabled={kaydediyor}>
+                <i className="bi bi-check2" style={{ fontSize: 13 }} />
+                {kaydediyor ? 'Kaydediliyor...' : 'Kaydet'}
+              </button>
+              <button className="gvn-btn-outline" onClick={() => setDuzenleme(false)}>
+                İptal
+              </button>
+            </div>
+          </div>
+        ) : (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+            <div style={{ display: 'flex', gap: 12 }}>
+              <span style={{ fontSize: 12, color: '#9CA3AF', width: 90 }}>Ad Soyad</span>
+              <span style={{ fontSize: 13, fontWeight: 600, color: '#111827' }}>{kullanici?.ad_soyad || '—'}</span>
+            </div>
+            <div style={{ display: 'flex', gap: 12 }}>
+              <span style={{ fontSize: 12, color: '#9CA3AF', width: 90 }}>E-posta</span>
+              <span style={{ fontSize: 13, color: '#374151' }}>{kullanici?.email || '—'}</span>
+            </div>
+            <div style={{ display: 'flex', gap: 12 }}>
+              <span style={{ fontSize: 12, color: '#9CA3AF', width: 90 }}>Telefon</span>
+              <span style={{ fontSize: 13, color: '#374151' }}>{kullanici?.telefon || '—'}</span>
+            </div>
+            <div style={{ display: 'flex', gap: 12 }}>
+              <span style={{ fontSize: 12, color: '#9CA3AF', width: 90 }}>Rol</span>
+              <span style={{ fontSize: 12, fontWeight: 600, color: '#059669',
+                background: 'rgba(16,185,129,0.08)', padding: '2px 8px', borderRadius: 6 }}>
+                {kullanici?.rol || '—'}
+              </span>
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Tehlikeli Alan — Hesap Silme */}
@@ -918,7 +993,7 @@ function HesabimSekme() {
 }
 
 // ─── Ana Bileşen ────────────────────────────────────────────────────────────────
-export default function GuvenlikEkrani() {
+export default function GuvenlikEkrani({ embedded = false }) {
   const [aktifSekme, setAktifSekme] = useState('oturumlar')
 
   const sekmeIcerik = {
@@ -928,32 +1003,33 @@ export default function GuvenlikEkrani() {
     'sifre':         <SifrePolitikasi />,
     'ip':            <IpKurallar />,
     'loglar':        <DenetimLoglar />,
-    'hesabim':       <HesabimSekme />,
   }
 
   return (
     <div className="gvn-wrap">
       {/* ── Sayfa Başlığı ── */}
-      <div className="gvn-header-card">
-        <div className="d-flex align-items-center gap-3">
-          <div style={{
-            width: 44, height: 44, borderRadius: 12,
-            background: 'linear-gradient(135deg, rgba(16,185,129,0.12), rgba(5,150,105,0.06))',
-            border: '1px solid rgba(16,185,129,0.2)',
-            display: 'flex', alignItems: 'center', justifyContent: 'center',
-          }}>
-            <i className="bi bi-shield-lock-fill" style={{ fontSize: 20, color: '#10B981', opacity: 0.35 }} />
-          </div>
-          <div>
-            <h1 style={{ fontSize: 18, fontWeight: 800, color: '#111827', margin: '0 0 2px', letterSpacing: '-0.4px' }}>
-              Güvenlik Merkezi
-            </h1>
-            <p style={{ fontSize: 12, color: '#6B7280', margin: 0 }}>
-              Oturumlar, giriş geçmişi, iki faktörlü doğrulama ve güvenlik politikalarını yönetin
-            </p>
+      {!embedded && (
+        <div className="gvn-header-card">
+          <div className="d-flex align-items-center gap-3">
+            <div style={{
+              width: 44, height: 44, borderRadius: 12,
+              background: 'linear-gradient(135deg, rgba(16,185,129,0.12), rgba(5,150,105,0.06))',
+              border: '1px solid rgba(16,185,129,0.2)',
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+            }}>
+              <i className="bi bi-shield-lock-fill" style={{ fontSize: 20, color: '#10B981', opacity: 0.35 }} />
+            </div>
+            <div>
+              <h1 style={{ fontSize: 18, fontWeight: 800, color: '#111827', margin: '0 0 2px', letterSpacing: '-0.4px' }}>
+                Güvenlik Merkezi
+              </h1>
+              <p style={{ fontSize: 12, color: '#6B7280', margin: 0 }}>
+                Oturumlar, giriş geçmişi, iki faktörlü doğrulama ve güvenlik politikalarını yönetin
+              </p>
+            </div>
           </div>
         </div>
-      </div>
+      )}
 
       {/* ── Tab Navigasyonu ── */}
       <div className="gvn-tabs">

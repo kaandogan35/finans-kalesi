@@ -130,9 +130,16 @@ class RevenueCatHelper {
             $abonelik_model = new Abonelik($db);
             $mevcut = $abonelik_model->guncelPlan($sirket_id);
             $mevcut_plan = $mevcut['plan_adi'] ?? 'deneme';
+            $mevcut_kanal = $mevcut['odeme_kanali'] ?? null;
 
             // Sadece ücretli plan → RC ile doğrulama gerekli
             if (!in_array($mevcut_plan, ['standart', 'kurumsal'], true)) {
+                return false;
+            }
+
+            // iyzico (web) abonelikleri RC ile senkronize edilmez
+            // RC sadece Apple IAP için geçerlidir
+            if ($mevcut_kanal === 'iyzico' || $mevcut_kanal === 'web') {
                 return false;
             }
 
