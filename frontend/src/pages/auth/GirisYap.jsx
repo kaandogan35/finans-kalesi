@@ -43,6 +43,9 @@ export default function GirisYap() {
   const [hata, setHata]               = useState('')
   const [sosyalYukleniyor, setSosyalYukleniyor] = useState('')
 
+  // Sayfa açıldığında stuck "Bekleniyor..." takılı kalmasın
+  useEffect(() => { setSosyalYukleniyor('') }, [])
+
   // Auth ekranı koyu (#0B1120) — status bar ikonları beyaz olmalı
   useEffect(() => {
     if (!Capacitor.isNativePlatform()) return
@@ -103,8 +106,10 @@ export default function GirisYap() {
   }
 
   const handleAppleGiris = async () => {
+    if (sosyalYukleniyor === 'apple') { setSosyalYukleniyor(''); return }
     if (sosyalYukleniyor) return
     setSosyalYukleniyor('apple')
+    const _t = setTimeout(() => { setSosyalYukleniyor(''); toast.error('Apple: zaman aşımı.') }, 30000)
     try {
       const SocialLogin = await sosyalInit()
       const result = await SocialLogin.login({
@@ -127,12 +132,14 @@ export default function GirisYap() {
       }
     } catch (err) {
       if (err?.message !== 'USER_CANCELLED') toast.error('Apple ile giriş yapılamadı.')
-    } finally { setSosyalYukleniyor('') }
+    } finally { clearTimeout(_t); setSosyalYukleniyor('') }
   }
 
   const handleGoogleGiris = async () => {
+    if (sosyalYukleniyor === 'google') { setSosyalYukleniyor(''); return }
     if (sosyalYukleniyor) return
     setSosyalYukleniyor('google')
+    const _t = setTimeout(() => { setSosyalYukleniyor(''); toast.error('Google: zaman aşımı, tekrar deneyin.') }, 30000)
     try {
       const SocialLogin = await sosyalInit()
       const result = await SocialLogin.login({
@@ -158,7 +165,7 @@ export default function GirisYap() {
         const detay = msg || err?.code || JSON.stringify(err).slice(0, 100)
         toast.error(`Google: ${detay}`)
       }
-    } finally { setSosyalYukleniyor('') }
+    } finally { clearTimeout(_t); setSosyalYukleniyor('') }
   }
 
   /* ═══════ MOBİL — Dark native giriş ekranı ═══════ */

@@ -41,6 +41,9 @@ export default function KayitOl() {
 
   const [sosyalYukleniyor, setSosyalYukleniyor] = useState('')
 
+  // Sayfa her açıldığında state'i resetle — önceki stuck "Bekleniyor..." takılı kalmasın
+  useEffect(() => { setSosyalYukleniyor('') }, [])
+
   // Initialize'i login fonksiyonu içinde await et — Capgo race condition fix
   // Apple sadece iOS'ta — Android'de redirectUrl zorunluluğundan dolayı çıkarıldı
   const sosyalInit = async () => {
@@ -60,8 +63,10 @@ export default function KayitOl() {
   }
 
   const handleAppleGiris = async () => {
+    if (sosyalYukleniyor === 'apple') { setSosyalYukleniyor(''); return }
     if (sosyalYukleniyor) return
     setSosyalYukleniyor('apple')
+    const _t = setTimeout(() => { setSosyalYukleniyor(''); toast.error('Apple: zaman aşımı.') }, 30000)
     try {
       const SocialLogin = await sosyalInit()
       const result = await SocialLogin.login({ provider: 'apple', options: { scopes: ['email', 'name'] } })
@@ -75,12 +80,14 @@ export default function KayitOl() {
       } else { toast.error(res.data?.hata || 'Apple ile giriş başarısız.') }
     } catch (err) {
       if (err?.message !== 'USER_CANCELLED') toast.error('Apple ile giriş yapılamadı.')
-    } finally { setSosyalYukleniyor('') }
+    } finally { clearTimeout(_t); setSosyalYukleniyor('') }
   }
 
   const handleGoogleGiris = async () => {
+    if (sosyalYukleniyor === 'google') { setSosyalYukleniyor(''); return }
     if (sosyalYukleniyor) return
     setSosyalYukleniyor('google')
+    const _t = setTimeout(() => { setSosyalYukleniyor(''); toast.error('Google: zaman aşımı, tekrar deneyin.') }, 30000)
     try {
       const SocialLogin = await sosyalInit()
       const result = await SocialLogin.login({ provider: 'google', options: { scopes: ['email', 'profile'] } })
@@ -100,7 +107,7 @@ export default function KayitOl() {
         const detay = msg || err?.code || JSON.stringify(err).slice(0, 100)
         toast.error(`Google: ${detay}`)
       }
-    } finally { setSosyalYukleniyor('') }
+    } finally { clearTimeout(_t); setSosyalYukleniyor('') }
   }
 
   const [form, setForm] = useState({
