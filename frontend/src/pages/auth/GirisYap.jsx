@@ -14,7 +14,10 @@ import ParamGoLogo from '../../logo/ParamGoLogo'
 import { authApi } from '../../api/auth'
 
 const GOOGLE_IOS_CLIENT_ID = '505947540272-fuvn80vu0q2bjcgbihea1sm7b4jininv.apps.googleusercontent.com'
-const GOOGLE_ANDROID_CLIENT_ID = '268506330818-ugvjdtcg33kig40lf7io202idgt0cjal.apps.googleusercontent.com'
+// Capgo plugin Android'de "Web Client ID" istiyor (client_type=3 google-services.json'da).
+// Bu ID Android client değil, OAuth 2.0 Web Client. SHA-1 doğrulaması için Android client
+// google-services.json içinde tanımlı (client_type=1, 3 SHA-1 ile).
+const GOOGLE_WEB_CLIENT_ID = '268506330818-ugvjdtcg33kig40lf7io202idgt0cjal.apps.googleusercontent.com'
 
 const isNative = Capacitor.isNativePlatform() || new URLSearchParams(window.location.search).has('native')
 const isIOS = Capacitor.getPlatform() === 'ios'
@@ -81,10 +84,11 @@ export default function GirisYap() {
       SocialLogin.initialize({
         google: {
           iOSClientId: GOOGLE_IOS_CLIENT_ID,
-          androidClientId: GOOGLE_ANDROID_CLIENT_ID,
+          webClientId: GOOGLE_WEB_CLIENT_ID,
+          mode: 'online',
         },
         apple: {},
-      }).catch(() => {})
+      }).catch((e) => console.error('SocialLogin.initialize hata:', e))
     })
   }, [])
 

@@ -49,6 +49,11 @@ class CariController {
 
     // ─── POST /api/cariler ───
     public function olustur($payload, $girdi) {
+        // Plan/deneme kontrolü try DIŞINDA — Response::json+exit'in catch tarafından
+        // yutulmaması ve 403 PLAN_GEREKLI'nin frontend'e net ulaşması için kritik.
+        PlanKontrol::yazmaKontrol($payload);
+        SinirKontrol::kontrol($payload, 'cari');
+
         try {
             $veri = $girdi;
 
@@ -62,9 +67,6 @@ class CariController {
                 Response::dogrulama_hatasi(array('cari_turu' => 'Geçerli değerler: musteri, tedarikci, her_ikisi'));
                 return;
             }
-
-            // Plan sınırı kontrolü
-            SinirKontrol::kontrol($payload, 'cari');
 
             $cari = $this->cariKart->olustur($payload['sirket_id'], $veri);
             Response::basarili($cari, 'Cari kart olusturuldu', 201);

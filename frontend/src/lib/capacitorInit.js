@@ -29,26 +29,39 @@ export async function capacitorBaslat() {
   } catch {}
 
   // ─── Keyboard — Modal'ı klavye üstüne taşı ───────────
+  // iOS: Capacitor keyboard plugin webview'i resize etmez (config: resize 'none').
+  //      JS transform ile modal-box'ı yukarı kaydırırız.
+  // Android: AndroidManifest.xml içinde windowSoftInputMode="adjustPan" → OS
+  //      otomatik olarak focused input'u görünür kılmak için PENCEREYİ yukarı
+  //      kaydırır. Bunun üstüne JS transform shift uygularsak ÇİFT KAYDIRMA olur,
+  //      modal başlığı ekran dışına çıkar. Bu yüzden Android'de transform
+  //      shift'i atla — sadece scrollIntoView ile inputu modal içinde görünür yap.
   try {
     const { Keyboard } = await import('@capacitor/keyboard')
+    const isAndroid = Capacitor.getPlatform() === 'android'
 
     Keyboard.addListener('keyboardWillShow', ({ keyboardHeight }) => {
       document.body.classList.add('keyboard-open')
       document.documentElement.style.setProperty('--keyboard-h', `${keyboardHeight}px`)
 
-      // RAF + 150ms: klavye animasyonu yerleştikten sonra layout oku
       setTimeout(() => requestAnimationFrame(() => {
         const el = document.activeElement
         if (!el || !['INPUT', 'TEXTAREA', 'SELECT'].includes(el.tagName)) return
 
-        // Fullscreen modallarda modal-box'ı hareket ettirme:
-        // CSS max-height zaten küçülür, p-modal-body scroll eder → scrollIntoView yeterli
+        // Android: OS adjustPan zaten kaydırıyor → sadece input'u modal içinde
+        // görünür yap, modal-box'a transform UYGULAMA.
+        if (isAndroid) {
+          el.scrollIntoView({ behavior: 'smooth', block: 'nearest' })
+          return
+        }
+
+        // iOS — Fullscreen modallarda kutuyu hareket ettirme, scroll yeterli
         if (el.closest('[class*="modal-fullscreen"]')) {
           el.scrollIntoView({ behavior: 'smooth', block: 'nearest' })
           return
         }
 
-        // Diğer modallarda (bottom sheet, ortalanmış) kutuyu yukarı kaydır
+        // iOS — bottom sheet / ortalanmış modal: kutuyu yukarı kaydır
         const modalBox = el.closest('[class*="modal-box"], .sgm-box, .kum-box')
         if (!modalBox) return
 
@@ -67,6 +80,9 @@ export async function capacitorBaslat() {
     Keyboard.addListener('keyboardWillHide', () => {
       document.body.classList.remove('keyboard-open')
       document.documentElement.style.removeProperty('--keyboard-h')
+
+      // Android'de transform uygulamadık, temizleme de gereksiz
+      if (isAndroid) return
 
       requestAnimationFrame(() => {
         document.querySelectorAll('[class*="modal-box"], .sgm-box, .kum-box').forEach(box => {
@@ -124,10 +140,13 @@ export async function revenueCatBaslat(sirketId) {
   if (_rcBaslatilmisSirketId === sirketId) return
   try {
     const { Purchases } = await import('@revenuecat/purchases-capacitor')
-    const apiKey = import.meta.env.VITE_REVENUECAT_IOS_KEY
+    const platform = Capacitor.getPlatform()
+    const apiKey = platform === 'android'
+      ? import.meta.env.VITE_REVENUECAT_ANDROID_KEY
+      : import.meta.env.VITE_REVENUECAT_IOS_KEY
     if (!apiKey) {
       // K3: hata fırlat — sessizce dönme
-      throw new Error('VITE_REVENUECAT_IOS_KEY tanımlı değil')
+      throw new Error(`VITE_REVENUECAT_${platform.toUpperCase()}_KEY tanımlı değil`)
     }
     if (!_rcKuruldu) {
       // İlk başlatma — configure

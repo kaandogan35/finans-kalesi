@@ -17,7 +17,8 @@ const isNative = Capacitor.isNativePlatform() || new URLSearchParams(window.loca
 const isIOS = Capacitor.getPlatform() === 'ios'
 const prefixMap = { paramgo: 'p' }
 const GOOGLE_IOS_CLIENT_ID = '505947540272-fuvn80vu0q2bjcgbihea1sm7b4jininv.apps.googleusercontent.com'
-const GOOGLE_ANDROID_CLIENT_ID = '268506330818-ugvjdtcg33kig40lf7io202idgt0cjal.apps.googleusercontent.com'
+// Capgo plugin Android'de Web Client ID istiyor (google-services.json client_type=3)
+const GOOGLE_WEB_CLIENT_ID = '268506330818-ugvjdtcg33kig40lf7io202idgt0cjal.apps.googleusercontent.com'
 
 const AVANTAJLAR = [
   { ikon: 'bi-people-fill',            baslik: 'Cari Hesaplar',     aciklama: '25 cari — ücretsiz sonsuza kadar' },
@@ -46,10 +47,11 @@ export default function KayitOl() {
       SocialLogin.initialize({
         google: {
           iOSClientId: GOOGLE_IOS_CLIENT_ID,
-          androidClientId: GOOGLE_ANDROID_CLIENT_ID,
+          webClientId: GOOGLE_WEB_CLIENT_ID,
+          mode: 'online',
         },
         apple: {},
-      }).catch(() => {})
+      }).catch((e) => console.error('SocialLogin.initialize hata:', e))
     })
   }, [])
 

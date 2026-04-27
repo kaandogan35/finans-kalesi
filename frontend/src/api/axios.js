@@ -52,16 +52,28 @@ api.interceptors.response.use(
     const originalRequest = error.config
 
     // 403 Plan gerekli → Paywall event'i yayınla (PaywallKoruyucu dinler)
-    // Backend iOS'ta deneme planındaki kullanıcıya yazma yasağı uygular.
+    // Backend iOS/Android'de deneme planındaki kullanıcıya yazma yasağı uygular.
     // Modal'ların kendi generic "sistem hatası" toast'larını bastırmak için
     // bildirim.bastirSonraki() çağrılıyor — kullanıcı sadece paywall görür.
     if (error.response?.status === 403) {
-      const kod = error.response?.data?.kod
-      if (kod === 'PLAN_GEREKLI' || kod === 'DENEME_SURESI_DOLDU') {
-        // Önce toast'ları bastır (1.5 saniye), sonra paywall aç
+      const data = error.response?.data || {}
+      const kod  = data.kod
+      const planSayfasi = data.plan_sayfasi === true
+      const mesajPlan   = typeof data.hata === 'string' &&
+                          /plan|deneme|abonelik|premium/i.test(data.hata)
+
+      // Asıl tetikleyiciler — backend'in plan/deneme middleware'inden gelen 403
+      const planlaIlgili =
+        kod === 'PLAN_GEREKLI' ||
+        kod === 'DENEME_SURESI_DOLDU' ||
+        kod === 'SINIR_ASILDI' ||
+        planSayfasi ||
+        mesajPlan
+
+      if (planlaIlgili) {
         bildirim.bastirSonraki(1500)
         window.dispatchEvent(new CustomEvent('paywall:ac', {
-          detail: { kod, mesaj: error.response?.data?.hata },
+          detail: { kod: kod || 'PLAN_GEREKLI', mesaj: data.hata },
         }))
       }
     }

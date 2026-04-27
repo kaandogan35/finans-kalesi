@@ -115,7 +115,20 @@ class Response {
     public static function sunucu_hatasi(string $mesaj = 'Sunucu hatası oluştu'): void {
         self::hata($mesaj, 500);
     }
-    
+
+    /**
+     * Genel JSON yanıt — özel alanlar (kod, kalan_gun vb.) ile cevap göndermek için.
+     * PlanKontrol/SinirKontrol middleware'leri bu metodu kullanır:
+     *   Response::json(['basarili'=>false,'hata'=>'...','kod'=>'PLAN_GEREKLI'], 403);
+     *
+     * @param array $veri  Gönderilecek tüm yanıt gövdesi
+     * @param int   $kod   HTTP status (varsayılan 200)
+     */
+    public static function json(array $veri, int $kod = 200): void {
+        http_response_code($kod);
+        self::json_gonder($veri);
+    }
+
     /**
      * JSON formatında çıktı gönder ve işlemi bitir
      */
