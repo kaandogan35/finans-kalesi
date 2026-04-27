@@ -1,15 +1,15 @@
 /**
- * Türk cep telefonu formatı: 0XXX XXX XX XX (11 rakam)
- * Kullanıcı yazarken otomatik biçimlendirilir.
+ * Türk cep telefonu formatı: 0XXX XXX XXXX (11 rakam, 4+3+4 dağılım, 2 boşluk)
+ * Önceki 4+3+2+2 (3 boşluk) bazı dar input'lara sığmıyordu — son rakam kesiliyordu.
+ * 4+3+4 hem standart Türkçe yazım hem 1 karakter daha kısa, garantili sığar.
  */
 export function formatTelefon(deger) {
-  const sayilar = String(deger ?? '').replace(/\D/g, '').slice(0, 11)
-  const len = sayilar.length
+  const ham = telefonHam(deger)
+  const len = ham.length
   if (len === 0) return ''
-  if (len <= 4) return sayilar
-  if (len <= 7) return sayilar.slice(0, 4) + ' ' + sayilar.slice(4)
-  if (len <= 9) return sayilar.slice(0, 4) + ' ' + sayilar.slice(4, 7) + ' ' + sayilar.slice(7)
-  return sayilar.slice(0, 4) + ' ' + sayilar.slice(4, 7) + ' ' + sayilar.slice(7, 9) + ' ' + sayilar.slice(9, 11)
+  if (len <= 4) return ham
+  if (len <= 7) return ham.slice(0, 4) + ' ' + ham.slice(4)
+  return ham.slice(0, 4) + ' ' + ham.slice(4, 7) + ' ' + ham.slice(7, 11)
 }
 
 /**

@@ -128,7 +128,7 @@ export default function KayitOl() {
     const telRakam = (form.telefon || '').replace(/\D/g, '')
     const telTr = telRakam.startsWith('90') ? telRakam.slice(2) : (telRakam.startsWith('0') ? telRakam.slice(1) : telRakam)
     if (telTr.length !== 10 || !telTr.startsWith('5')) {
-      setHata('Geçerli bir cep telefonu girin (örn: 0530 123 45 67).'); return false
+      setHata('Geçerli bir cep telefonu girin (örn: 0530 843 3527).'); return false
     }
     return true
   }
@@ -221,7 +221,7 @@ export default function KayitOl() {
                   <div className="pm-auth-input-wrap">
                     <i className="bi bi-telephone pm-auth-input-icon" />
                     <input type="tel" name="telefon" value={formatTelefon(form.telefon)}
-                      onChange={handleChange} placeholder="Cep telefonu (0530 123 45 67)"
+                      onChange={handleChange} placeholder="Cep telefonu (0530 843 3527)"
                       autoComplete="tel" inputMode="numeric" maxLength={13}
                       className="pm-auth-input" />
                   </div>
@@ -420,7 +420,7 @@ export default function KayitOl() {
                       <div className={`${p}-giris-alan`}>
                         <span className={`${p}-giris-alan-ikon`}><i className="bi bi-telephone" /></span>
                         <input type="tel" name="telefon" value={formatTelefon(form.telefon)}
-                          onChange={handleChange} placeholder="0530 123 45 67"
+                          onChange={handleChange} placeholder="0530 843 3527"
                           autoComplete="tel" inputMode="numeric" maxLength={13}
                           className={`${p}-giris-input`} />
                       </div>

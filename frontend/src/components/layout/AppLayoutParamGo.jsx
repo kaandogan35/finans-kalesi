@@ -490,7 +490,7 @@ export default function AppLayoutParamGo() {
                   <label className="p-kasa-input-label">Cep Telefonu *</label>
                   <input
                     className="p-kasa-input"
-                    placeholder="0530 123 45 67"
+                    placeholder="0530 843 3527"
                     value={formatTelefon(telefonEksikInput)}
                     onChange={(e) => setTelefonEksikInput(telefonHam(e.target.value))}
                     inputMode="numeric"
