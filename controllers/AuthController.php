@@ -866,6 +866,9 @@ class AuthController {
                     'plan'                  => $kullanici['plan'],
                     'onboarding_tamamlandi' => $kullanici['onboarding_tamamlandi'],
                     'telefon_eksik'         => empty(trim($kullanici['telefon'] ?? '')),
+                    // KRİTİK: PaywallKoruyucu bu iki flag'e bakıyor — eksikse paywall hiç açılmaz
+                    'yeni_kayit'            => $kullanici['yeni_kayit'] ?? false,
+                    'yeni_sistem_kullanici' => $kullanici['yeni_sistem_kullanici'] ?? false,
                 ],
                 'tokenlar' => [
                     'access_token'  => $access_token,
@@ -1012,6 +1015,9 @@ class AuthController {
                     'plan'                  => $kullanici['plan'],
                     'onboarding_tamamlandi' => $kullanici['onboarding_tamamlandi'],
                     'telefon_eksik'         => empty(trim($kullanici['telefon'] ?? '')),
+                    // KRİTİK: PaywallKoruyucu bu iki flag'e bakıyor — eksikse paywall hiç açılmaz
+                    'yeni_kayit'            => $kullanici['yeni_kayit'] ?? false,
+                    'yeni_sistem_kullanici' => $kullanici['yeni_sistem_kullanici'] ?? false,
                 ],
                 'tokenlar' => [
                     'access_token'  => $access_token,
