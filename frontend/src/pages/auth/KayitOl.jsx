@@ -90,13 +90,11 @@ export default function KayitOl() {
     const _t = setTimeout(() => { setSosyalYukleniyor(''); toast.error('Google: zaman aşımı, tekrar deneyin.') }, 30000)
     try {
       const SocialLogin = await sosyalInit()
+      // Capgo resmi örneği: options boş. scopes/forcePrompt/filterByAuthorizedAccounts
+      // 8.3.20 öncesi sürümlerde Credential Manager UI açılmasını bozuyordu.
       const result = await SocialLogin.login({
         provider: 'google',
-        options: {
-          scopes: ['email', 'profile'],
-          forcePrompt: true,
-          filterByAuthorizedAccounts: false,
-        },
+        options: {},
       })
       const { idToken } = result.result
       const res = await authApi.googleGiris(idToken)

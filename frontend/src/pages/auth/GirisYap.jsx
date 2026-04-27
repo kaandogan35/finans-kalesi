@@ -142,17 +142,13 @@ export default function GirisYap() {
     const _t = setTimeout(() => { setSosyalYukleniyor(''); toast.error('Google: zaman aşımı, tekrar deneyin.') }, 30000)
     try {
       const SocialLogin = await sosyalInit()
+      // Capgo resmi örneği: options boş geçilir. scopes göndermek MainActivity'de
+      // ek intent handling gerektiriyor ve hesap seçicinin açılmasını engelleyebilir.
+      // filterByAuthorizedAccounts/forcePrompt ekleri 8.3.20 öncesi sürümlerde
+      // Credential Manager UI açılmasını bozuyordu. Plugin 8.3.20'ye yükseltildi.
       const result = await SocialLogin.login({
         provider: 'google',
-        options: {
-          scopes: ['email', 'profile'],
-          // Capgo plugin Android'de Credential Manager API kullanıyor — yeni
-          // cihazda/hesapta filterByAuthorizedAccounts=true varsayılan ise
-          // "yetkili hesap yok" → UI hiç açılmıyor, plugin stuck'a giriyor.
-          // forcePrompt=true zorla hesap seçiciyi açar, filter'i kapatır.
-          forcePrompt: true,
-          filterByAuthorizedAccounts: false,
-        },
+        options: {},
       })
       const { idToken } = result.result
       const res = await authApi.googleGiris(idToken)
