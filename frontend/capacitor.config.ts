@@ -25,6 +25,11 @@ const config: CapacitorConfig = {
       resize: 'none',
       resizeOnFullScreen: false,
     },
+    FirebaseAuthentication: {
+      // Sadece kullanacağımız sağlayıcılar
+      skipNativeAuth: false,
+      providers: ['google.com', 'apple.com'],
+    },
   },
   ios: {
     scheme: 'ParamGo',

@@ -16,9 +16,8 @@ import ParamGoLogo from '../../logo/ParamGoLogo'
 const isNative = Capacitor.isNativePlatform() || new URLSearchParams(window.location.search).has('native')
 const isIOS = Capacitor.getPlatform() === 'ios'
 const prefixMap = { paramgo: 'p' }
-const GOOGLE_IOS_CLIENT_ID = '505947540272-fuvn80vu0q2bjcgbihea1sm7b4jininv.apps.googleusercontent.com'
-// Capgo plugin Android'de Web Client ID istiyor (google-services.json client_type=3)
-const GOOGLE_WEB_CLIENT_ID = '268506330818-ugvjdtcg33kig40lf7io202idgt0cjal.apps.googleusercontent.com'
+// @capacitor-firebase/authentication google-services.json'u otomatik okur,
+// ek client ID setup gerektirmez. Eski Capgo client ID sabitleri kaldırıldı.
 
 const AVANTAJLAR = [
   { ikon: 'bi-people-fill',            baslik: 'Cari Hesaplar',     aciklama: '25 cari — ücretsiz sonsuza kadar' },
@@ -44,23 +43,8 @@ export default function KayitOl() {
   // Sayfa her açıldığında state'i resetle — önceki stuck "Bekleniyor..." takılı kalmasın
   useEffect(() => { setSosyalYukleniyor('') }, [])
 
-  // Initialize'i login fonksiyonu içinde await et — Capgo race condition fix
-  // Apple sadece iOS'ta — Android'de redirectUrl zorunluluğundan dolayı çıkarıldı
-  const sosyalInit = async () => {
-    const { SocialLogin } = await import('@capgo/capacitor-social-login')
-    const platform = Capacitor.getPlatform()
-    const config = {
-      google: {
-        iOSClientId: GOOGLE_IOS_CLIENT_ID,
-        webClientId: GOOGLE_WEB_CLIENT_ID,
-      },
-    }
-    if (platform === 'ios') {
-      config.apple = {}
-    }
-    await SocialLogin.initialize(config)
-    return SocialLogin
-  }
+  // Social Login — @capacitor-firebase/authentication
+  // Firebase native SDK kullanır, google-services.json otomatik okunur
 
   const handleAppleGiris = async () => {
     if (sosyalYukleniyor === 'apple') { setSosyalYukleniyor(''); return }
@@ -68,18 +52,23 @@ export default function KayitOl() {
     setSosyalYukleniyor('apple')
     const _t = setTimeout(() => { setSosyalYukleniyor(''); toast.error('Apple: zaman aşımı.') }, 30000)
     try {
-      const SocialLogin = await sosyalInit()
-      const result = await SocialLogin.login({ provider: 'apple', options: { scopes: ['email', 'name'] } })
-      const { idToken, profile } = result.result
-      const res = await authApi.appleGiris(idToken, profile?.givenName || '', profile?.familyName || '', profile?.email || '')
+      const { FirebaseAuthentication } = await import('@capacitor-firebase/authentication')
+      const result = await FirebaseAuthentication.signInWithApple({
+        scopes: ['email', 'name'],
+      })
+      const idToken = result?.credential?.idToken
+      if (!idToken) throw new Error('Apple kimlik doğrulaması alınamadı.')
+      const ad = result?.user?.displayName?.split(' ')?.[0] || ''
+      const soyad = result?.user?.displayName?.split(' ')?.slice(1).join(' ') || ''
+      const res = await authApi.appleGiris(idToken, ad, soyad, result?.user?.email || '')
       if (res.data?.basarili) {
         sosyalGiris(res.data.veri.kullanici, res.data.veri.tokenlar)
         toast.success('Apple ile giriş yapıldı!')
-        // Yeni kullanıcıysa Welcome, mevcut kullanıcıysa Dashboard
         navigate(res.data.veri.kullanici?.yeni_kayit ? '/welcome' : '/dashboard')
       } else { toast.error(res.data?.hata || 'Apple ile giriş başarısız.') }
     } catch (err) {
-      if (err?.message !== 'USER_CANCELLED') toast.error('Apple ile giriş yapılamadı.')
+      const msg = err?.message || ''
+      if (!/cancel/i.test(msg)) toast.error('Apple ile giriş yapılamadı.')
     } finally { clearTimeout(_t); setSosyalYukleniyor('') }
   }
 
@@ -89,14 +78,10 @@ export default function KayitOl() {
     setSosyalYukleniyor('google')
     const _t = setTimeout(() => { setSosyalYukleniyor(''); toast.error('Google: zaman aşımı, tekrar deneyin.') }, 30000)
     try {
-      const SocialLogin = await sosyalInit()
-      // Capgo resmi örneği: options boş. scopes/forcePrompt/filterByAuthorizedAccounts
-      // 8.3.20 öncesi sürümlerde Credential Manager UI açılmasını bozuyordu.
-      const result = await SocialLogin.login({
-        provider: 'google',
-        options: {},
-      })
-      const { idToken } = result.result
+      const { FirebaseAuthentication } = await import('@capacitor-firebase/authentication')
+      const result = await FirebaseAuthentication.signInWithGoogle()
+      const idToken = result?.credential?.idToken
+      if (!idToken) throw new Error('Google kimlik doğrulaması alınamadı.')
       const res = await authApi.googleGiris(idToken)
       if (res.data?.basarili) {
         sosyalGiris(res.data.veri.kullanici, res.data.veri.tokenlar)

@@ -13,11 +13,8 @@ import useTemaStore from '../../stores/temaStore'
 import ParamGoLogo from '../../logo/ParamGoLogo'
 import { authApi } from '../../api/auth'
 
-const GOOGLE_IOS_CLIENT_ID = '505947540272-fuvn80vu0q2bjcgbihea1sm7b4jininv.apps.googleusercontent.com'
-// Capgo plugin Android'de "Web Client ID" istiyor (client_type=3 google-services.json'da).
-// Bu ID Android client değil, OAuth 2.0 Web Client. SHA-1 doğrulaması için Android client
-// google-services.json içinde tanımlı (client_type=1, 3 SHA-1 ile).
-const GOOGLE_WEB_CLIENT_ID = '268506330818-ugvjdtcg33kig40lf7io202idgt0cjal.apps.googleusercontent.com'
+// @capacitor-firebase/authentication google-services.json'u otomatik okur,
+// ek client ID setup gerektirmez. Eski Capgo client ID sabitleri kaldırıldı.
 
 const isNative = Capacitor.isNativePlatform() || new URLSearchParams(window.location.search).has('native')
 const isIOS = Capacitor.getPlatform() === 'ios'
@@ -80,30 +77,10 @@ export default function GirisYap() {
     } finally { setYukleniyor(false) }
   }
 
-  // Social Login — @capgo/capacitor-social-login (Cap 8 uyumlu)
-  // KRİTİK: useEffect içinde fire-and-forget initialize race condition yaratıyordu —
-  // initialize henüz bitmeden kullanıcı butona basınca "Cannot find provider 'google'.
-  // Provider was not initialized." hatası geliyordu (Capgo issue #143/#197).
-  // Çözüm: Initialize'ı login fonksiyonu içinde await et — idempotent olduğu için
-  // tekrar çağrılması zararsız, ama provider'ın hazır olması garanti.
-  const sosyalInit = async () => {
-    const { SocialLogin } = await import('@capgo/capacitor-social-login')
-    const platform = Capacitor.getPlatform()
-    const config = {
-      google: {
-        iOSClientId: GOOGLE_IOS_CLIENT_ID,
-        webClientId: GOOGLE_WEB_CLIENT_ID,
-      },
-    }
-    // Apple Sign-In sadece iOS'ta — Android'de Capgo plugin redirectUrl
-    // (Sign in with Apple OAuth web akışı) gerektiriyor, biz Android'de
-    // Apple kullanmıyoruz, o yüzden config'e EKLEMİYORUZ.
-    if (platform === 'ios') {
-      config.apple = {}
-    }
-    await SocialLogin.initialize(config)
-    return SocialLogin
-  }
+  // Social Login — @capacitor-firebase/authentication (Capgo'dan geçiş)
+  // Firebase Auth native SDK kullanır, google-services.json otomatik okunur,
+  // ek Web Client ID setup veya MainActivity intent handler GEREKMEZ.
+  // Plugin'in resmi sign-in metotlarını çağırırız: signInWithGoogle / signInWithApple
 
   const handleAppleGiris = async () => {
     if (sosyalYukleniyor === 'apple') { setSosyalYukleniyor(''); return }
@@ -111,17 +88,17 @@ export default function GirisYap() {
     setSosyalYukleniyor('apple')
     const _t = setTimeout(() => { setSosyalYukleniyor(''); toast.error('Apple: zaman aşımı.') }, 30000)
     try {
-      const SocialLogin = await sosyalInit()
-      const result = await SocialLogin.login({
-        provider: 'apple',
-        options: { scopes: ['email', 'name'] },
+      const { FirebaseAuthentication } = await import('@capacitor-firebase/authentication')
+      const result = await FirebaseAuthentication.signInWithApple({
+        scopes: ['email', 'name'],
       })
-      const { idToken, profile } = result.result
+      const idToken = result?.credential?.idToken
+      if (!idToken) throw new Error('Apple kimlik doğrulaması alınamadı.')
       const res = await authApi.appleGiris(
         idToken,
-        profile?.givenName || '',
-        profile?.familyName || '',
-        profile?.email || ''
+        result?.user?.displayName?.split(' ')?.[0] || '',
+        result?.user?.displayName?.split(' ')?.slice(1).join(' ') || '',
+        result?.user?.email || ''
       )
       if (res.data?.basarili) {
         sosyalGiris(res.data.veri.kullanici, res.data.veri.tokenlar)
@@ -131,7 +108,8 @@ export default function GirisYap() {
         toast.error(res.data?.hata || 'Apple ile giriş başarısız.')
       }
     } catch (err) {
-      if (err?.message !== 'USER_CANCELLED') toast.error('Apple ile giriş yapılamadı.')
+      const msg = err?.message || ''
+      if (!/cancel/i.test(msg)) toast.error('Apple ile giriş yapılamadı.')
     } finally { clearTimeout(_t); setSosyalYukleniyor('') }
   }
 
@@ -141,16 +119,10 @@ export default function GirisYap() {
     setSosyalYukleniyor('google')
     const _t = setTimeout(() => { setSosyalYukleniyor(''); toast.error('Google: zaman aşımı, tekrar deneyin.') }, 30000)
     try {
-      const SocialLogin = await sosyalInit()
-      // Capgo resmi örneği: options boş geçilir. scopes göndermek MainActivity'de
-      // ek intent handling gerektiriyor ve hesap seçicinin açılmasını engelleyebilir.
-      // filterByAuthorizedAccounts/forcePrompt ekleri 8.3.20 öncesi sürümlerde
-      // Credential Manager UI açılmasını bozuyordu. Plugin 8.3.20'ye yükseltildi.
-      const result = await SocialLogin.login({
-        provider: 'google',
-        options: {},
-      })
-      const { idToken } = result.result
+      const { FirebaseAuthentication } = await import('@capacitor-firebase/authentication')
+      const result = await FirebaseAuthentication.signInWithGoogle()
+      const idToken = result?.credential?.idToken
+      if (!idToken) throw new Error('Google kimlik doğrulaması alınamadı.')
       const res = await authApi.googleGiris(idToken)
       if (res.data?.basarili) {
         sosyalGiris(res.data.veri.kullanici, res.data.veri.tokenlar)
