@@ -42,15 +42,20 @@ export default function KayitOl() {
   const [sosyalYukleniyor, setSosyalYukleniyor] = useState('')
 
   // Initialize'i login fonksiyonu içinde await et — Capgo race condition fix
+  // Apple sadece iOS'ta — Android'de redirectUrl zorunluluğundan dolayı çıkarıldı
   const sosyalInit = async () => {
     const { SocialLogin } = await import('@capgo/capacitor-social-login')
-    await SocialLogin.initialize({
+    const platform = Capacitor.getPlatform()
+    const config = {
       google: {
         iOSClientId: GOOGLE_IOS_CLIENT_ID,
         webClientId: GOOGLE_WEB_CLIENT_ID,
       },
-      apple: {},
-    })
+    }
+    if (platform === 'ios') {
+      config.apple = {}
+    }
+    await SocialLogin.initialize(config)
     return SocialLogin
   }
 

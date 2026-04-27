@@ -85,13 +85,20 @@ export default function GirisYap() {
   // tekrar çağrılması zararsız, ama provider'ın hazır olması garanti.
   const sosyalInit = async () => {
     const { SocialLogin } = await import('@capgo/capacitor-social-login')
-    await SocialLogin.initialize({
+    const platform = Capacitor.getPlatform()
+    const config = {
       google: {
         iOSClientId: GOOGLE_IOS_CLIENT_ID,
         webClientId: GOOGLE_WEB_CLIENT_ID,
       },
-      apple: {},
-    })
+    }
+    // Apple Sign-In sadece iOS'ta — Android'de Capgo plugin redirectUrl
+    // (Sign in with Apple OAuth web akışı) gerektiriyor, biz Android'de
+    // Apple kullanmıyoruz, o yüzden config'e EKLEMİYORUZ.
+    if (platform === 'ios') {
+      config.apple = {}
+    }
+    await SocialLogin.initialize(config)
     return SocialLogin
   }
 
