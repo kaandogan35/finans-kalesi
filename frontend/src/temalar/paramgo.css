@@ -1293,6 +1293,7 @@ body.keyboard-open .p-modal-center {
 }
 .p-btn-save:hover { opacity: 0.9; }
 .p-btn-save:active { opacity: 1; }
+.p-btn-save:disabled { opacity: 0.5; cursor: not-allowed; }
 .p-btn-save-warning { background: linear-gradient(135deg, #D97706, #B45309); box-shadow: 0 4px 16px rgba(217,119,6,0.25); }
 .p-btn-save-green { background: linear-gradient(135deg, #059669, #047857); box-shadow: 0 4px 16px rgba(5,150,105,0.25); }
 .p-btn-save-red { background: linear-gradient(135deg, #DC2626, #B91C1C); box-shadow: 0 4px 16px rgba(220,38,38,0.25); }
@@ -1725,6 +1726,11 @@ body.keyboard-open .p-modal-center {
   /* Sidebar açık hali */
   .p-sidebar.p-sidebar-open {
     transform: translateX(0);
+  }
+
+  /* Mobilde kullanıcı alanı — bottom nav'ın arkasında kalmasın */
+  .p-sidebar.p-sidebar-open .p-user-area {
+    padding-bottom: calc(64px + env(safe-area-inset-bottom, 0px));
   }
 
   /* Main tam genişlik + fixed topbar boşluğu */

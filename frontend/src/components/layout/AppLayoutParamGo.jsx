@@ -472,14 +472,24 @@ export default function AppLayoutParamGo() {
           <div className="p-modal-center" role="dialog" aria-modal="true">
             <div className="p-modal-box" style={{ maxWidth: 420 }}>
               <div className="p-modal-header p-mh-default">
-                <div className="d-flex align-items-center gap-3">
-                  <div className="p-modal-icon p-modal-icon-green">
-                    <i className="bi bi-telephone-fill" />
+                <div className="d-flex align-items-center justify-content-between gap-3" style={{ width: '100%' }}>
+                  <div className="d-flex align-items-center gap-3" style={{ minWidth: 0 }}>
+                    <div className="p-modal-icon p-modal-icon-green">
+                      <i className="bi bi-telephone-fill" />
+                    </div>
+                    <div style={{ minWidth: 0 }}>
+                      <h2 className="p-modal-title">Telefon Numaranızı Ekleyin</h2>
+                      <p className="p-modal-sub">İsteğe bağlı — sonradan ekleyebilirsiniz</p>
+                    </div>
                   </div>
-                  <div>
-                    <h2 className="p-modal-title">Telefon Numaranızı Ekleyin</h2>
-                    <p className="p-modal-sub">Hesabınızla ilgili size ulaşabilmemiz için</p>
-                  </div>
+                  <button
+                    type="button"
+                    className="p-modal-close"
+                    onClick={() => setTelefonEksikModal(false)}
+                    aria-label="Kapat"
+                  >
+                    <i className="bi bi-x-lg" />
+                  </button>
                 </div>
               </div>
               <form
@@ -501,10 +511,18 @@ export default function AppLayoutParamGo() {
                     autoFocus
                   />
                 </div>
-                <div className="p-modal-footer d-flex justify-content-end">
+                <div className="p-modal-footer d-flex justify-content-end gap-2">
+                  <button
+                    type="button"
+                    className="p-btn-cancel"
+                    onClick={() => setTelefonEksikModal(false)}
+                    disabled={telefonEksikKayit}
+                  >
+                    Şimdi Değil
+                  </button>
                   <button
                     type="submit"
-                    className="p-btn-save"
+                    className="p-btn-save p-btn-save-default"
                     disabled={telefonEksikKayit || !telefonEksikGecerli}
                   >
                     {telefonEksikKayit

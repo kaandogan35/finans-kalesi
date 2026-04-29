@@ -10,7 +10,7 @@
  * tarayıcı (web) ortamında children doğrudan render edilir.
  */
 
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useRef } from 'react'
 import { Capacitor } from '@capacitor/core'
 import { App as CapacitorApp } from '@capacitor/app'
 import useAuthStore from '../stores/authStore'
@@ -41,12 +41,15 @@ export default function GuvenlikKoruyucu({ children }) {
   const [jailbreakUyarisi, setJailbreakUyarisi] = useState(false)
   const [hata, setHata] = useState('')
   const [yukleniyor, setYukleniyor] = useState(false)
+  const biyometrikAktifRef = useRef(false)
 
   // Web ortamında hiçbir şey yapma
   const nativeMi = Capacitor.isNativePlatform()
 
   const biyometrikKontrol = useCallback(async () => {
     if (!NativeBiometric || !girisYapildi) return
+    // Android'de capacitor-native-biometric uyumsuz, devre dışı
+    if (Capacitor.getPlatform() === 'android') return
 
     try {
       const { isAvailable } = await NativeBiometric.isAvailable()
@@ -64,6 +67,7 @@ export default function GuvenlikKoruyucu({ children }) {
     if (!NativeBiometric) return
     setYukleniyor(true)
     setHata('')
+    biyometrikAktifRef.current = true
 
     try {
       await NativeBiometric.verifyIdentity({
@@ -79,7 +83,6 @@ export default function GuvenlikKoruyucu({ children }) {
       setHata('')
     } catch (err) {
       await hapticHata()
-      // Kullanıcı iptal etti veya başarısız
       const mesaj = err?.message || ''
       if (mesaj.includes('cancel') || mesaj.includes('Cancel')) {
         setHata('Kimlik doğrulama iptal edildi.')
@@ -88,6 +91,7 @@ export default function GuvenlikKoruyucu({ children }) {
       }
     } finally {
       setYukleniyor(false)
+      biyometrikAktifRef.current = false
     }
   }, [])
 
@@ -118,9 +122,9 @@ export default function GuvenlikKoruyucu({ children }) {
         await biyometrikKontrol()
       }
 
-      // 3. Uygulama öne gelince biyometrik kilit
+      // 3. Uygulama öne gelince biyometrik kilit (dialog açıkken tetiklenmesin)
       listener = await CapacitorApp.addListener('appStateChange', async ({ isActive }) => {
-        if (isActive && girisYapildi) {
+        if (isActive && girisYapildi && !biyometrikAktifRef.current) {
           await biyometrikKontrol()
         }
       })
