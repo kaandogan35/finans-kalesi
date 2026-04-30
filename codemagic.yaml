@@ -87,32 +87,50 @@ workflows:
 
       - name: Register GoogleService-Info.plist in Xcode project
         script: |
-          # GoogleService-Info.plist dosyayi pbxproj'da resource olarak kaydet.
-          # Sadece klasorde olmasi yetmez; .ipa bundle'ina kopyalanmasi icin
-          # PBXBuildFile + PBXFileReference + PBXResourcesBuildPhase girisi gerekli.
+          set -e
+          # Once dosya gercekten klasorde mi?
+          if [ ! -f "frontend/ios/App/App/GoogleService-Info.plist" ]; then
+            echo "HATA: frontend/ios/App/App/GoogleService-Info.plist YOK — onceki adim basarisiz"
+            exit 1
+          fi
+          echo "[OK] GoogleService-Info.plist klasorde mevcut"
+
+          # xcodeproj gem'i hazir mi?
           gem list xcodeproj -i > /dev/null 2>&1 || gem install xcodeproj --no-document
+
+          # pbxproj'a kaydet
           ruby <<'RUBY_SCRIPT'
-            require 'xcodeproj'
-            project_path = 'frontend/ios/App/App.xcodeproj'
-            project = Xcodeproj::Project.open(project_path)
-            app_target = project.targets.find { |t| t.name == 'App' }
+          require 'xcodeproj'
+          project_path = 'frontend/ios/App/App.xcodeproj'
+          project = Xcodeproj::Project.open(project_path)
+          app_target = project.targets.find { |t| t.name == 'App' }
+          raise 'App target bulunamadi!' unless app_target
 
-            # Zaten ekli mi?
-            already_added = app_target.resources_build_phase.files.any? do |bf|
-              bf.file_ref && bf.file_ref.path && bf.file_ref.path.include?('GoogleService-Info.plist')
-            end
+          # Zaten ekli mi?
+          already = app_target.resources_build_phase.files.any? do |bf|
+            bf.file_ref && bf.file_ref.path.to_s.include?('GoogleService-Info.plist')
+          end
 
-            if already_added
-              puts 'GoogleService-Info.plist zaten Xcode projesinde kayitli.'
-            else
-              app_group = project.main_group.find_subpath('App', false)
-              file_ref = app_group.new_reference('GoogleService-Info.plist')
-              file_ref.last_known_file_type = 'text.plist.xml'
-              app_target.add_resources([file_ref])
-              project.save
-              puts 'GoogleService-Info.plist Xcode projesine eklendi (resource).'
-            end
+          if already
+            puts '[OK] GoogleService-Info.plist zaten pbxproj kayitli'
+          else
+            app_group = project.main_group.find_subpath('App', false)
+            raise 'App grubu bulunamadi!' unless app_group
+            file_ref = app_group.new_reference('GoogleService-Info.plist')
+            file_ref.last_known_file_type = 'text.plist.xml'
+            app_target.add_resources([file_ref])
+            project.save
+            puts '[OK] GoogleService-Info.plist pbxproj-a eklendi'
+          end
           RUBY_SCRIPT
+
+          # Dogrulama: pbxproj artik referansi iceriyor mu?
+          if grep -q "GoogleService-Info.plist" frontend/ios/App/App.xcodeproj/project.pbxproj; then
+            echo "[OK] pbxproj GoogleService-Info.plist referansini iceriyor"
+          else
+            echo "HATA: pbxproj'a yazilmadi!"
+            exit 1
+          fi
 
       - name: Add Google Sign-In URL scheme to Info.plist
         script: |
