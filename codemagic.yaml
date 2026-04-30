@@ -126,9 +126,9 @@ workflows:
 
       - name: Force marketing version (App Store Connect icin zorunlu)
         script: |
-          # MARKETING_VERSION her build'de zorla 1.0.2 yazilir.
-          # Yeni surum icin BU SATIRDAKI degeri elle degistirin (orn: 1.0.3).
-          MARKET_VER="1.0.2"
+          # MARKETING_VERSION her build'de zorla yazilir.
+          # Yeni surum icin BU SATIRDAKI degeri elle degistirin.
+          MARKET_VER="1.0.3"
           PBXPROJ="frontend/ios/App/App.xcodeproj/project.pbxproj"
 
           # 1. agvtool ile dene
@@ -139,7 +139,7 @@ workflows:
           # 2. Guvenlik icin sed ile de zorla (her MARKETING_VERSION satirini 1.0.2 yap)
           sed -i '' "s/MARKETING_VERSION = [^;]*;/MARKETING_VERSION = $MARKET_VER;/g" "$PBXPROJ"
 
-          echo "=== Dogrulama (1.0.2 olmali) ==="
+          echo "=== Dogrulama (1.0.3 olmali) ==="
           grep "MARKETING_VERSION" "$PBXPROJ"
           echo "=== CURRENT_PROJECT_VERSION ==="
           grep "CURRENT_PROJECT_VERSION" "$PBXPROJ" | head -2
