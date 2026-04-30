@@ -1020,8 +1020,8 @@ export default function PlanSecim() {
           </>
         )}
 
-        {/* DAVET KODU */}
-        <div style={{ textAlign: 'center', marginBottom: 24 }}>
+        {/* DAVET KODU — sadece web */}
+        {PLATFORM === 'web' && <div style={{ textAlign: 'center', marginBottom: 24 }}>
           {!davetAcik ? (
             <button
               type="button"
@@ -1068,7 +1068,7 @@ export default function PlanSecim() {
               </button>
             </div>
           )}
-        </div>
+        </div>}
 
         {/* ÖDEME GEÇMİŞİ */}
         <div className={`${p}-abn-section-title mt-2`}>Ödeme Geçmişi</div>
