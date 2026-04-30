@@ -21,7 +21,6 @@
   "dependencies": {
     "@aparajita/capacitor-biometric-auth": "^10.0.0",
     "@basecom-gmbh/capacitor-jailbreak-root-detection": "^7.0.4",
-    "@capacitor-firebase/authentication": "^8.2.0",
     "@capacitor/android": "^8.3.0",
     "@capacitor/app": "^8.1.0",
     "@capacitor/browser": "^8.0.3",
@@ -35,6 +34,7 @@
     "@capacitor/splash-screen": "^8.0.1",
     "@capacitor/status-bar": "^8.0.2",
     "@capawesome-team/capacitor-datetime-picker": "^8.0.1",
+    "@capgo/capacitor-social-login": "^8.3.20",
     "@revenuecat/purchases-capacitor": "^12.3.1",
     "axios": "^1.13.6",
     "bootstrap": "^5.3.3",

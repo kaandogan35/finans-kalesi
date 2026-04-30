@@ -17,8 +17,9 @@ import { formatTelefon, telefonHam } from '../../utils/telefon'
 const isNative = Capacitor.isNativePlatform() || new URLSearchParams(window.location.search).has('native')
 const isIOS = Capacitor.getPlatform() === 'ios'
 const prefixMap = { paramgo: 'p' }
-// @capacitor-firebase/authentication google-services.json'u otomatik okur,
-// ek client ID setup gerektirmez. Eski Capgo client ID sabitleri kaldırıldı.
+// Capgo plugin client ID'leri
+const GOOGLE_IOS_CLIENT_ID = '505947540272-fuvn80vu0q2bjcgbihea1sm7b4jininv.apps.googleusercontent.com'
+const GOOGLE_WEB_CLIENT_ID = '268506330818-ugvjdtcg33kig40lf7io202idgt0cjal.apps.googleusercontent.com'
 
 const AVANTAJLAR = [
   { ikon: 'bi-people-fill',            baslik: 'Cari Hesaplar',     aciklama: '25 cari — ücretsiz sonsuza kadar' },
@@ -44,8 +45,22 @@ export default function KayitOl() {
   // Sayfa her açıldığında state'i resetle — önceki stuck "Bekleniyor..." takılı kalmasın
   useEffect(() => { setSosyalYukleniyor('') }, [])
 
-  // Social Login — @capacitor-firebase/authentication
-  // Firebase native SDK kullanır, google-services.json otomatik okunur
+  // Social Login — @capgo/capacitor-social-login (Cap 8 uyumlu, App Store onaylı)
+  const sosyalInit = async () => {
+    const { SocialLogin } = await import('@capgo/capacitor-social-login')
+    const platform = Capacitor.getPlatform()
+    const config = {
+      google: {
+        iOSClientId: GOOGLE_IOS_CLIENT_ID,
+        webClientId: GOOGLE_WEB_CLIENT_ID,
+      },
+    }
+    if (platform === 'ios') {
+      config.apple = {}
+    }
+    await SocialLogin.initialize(config)
+    return SocialLogin
+  }
 
   const handleAppleGiris = async () => {
     if (sosyalYukleniyor === 'apple') { setSosyalYukleniyor(''); return }
@@ -53,23 +68,25 @@ export default function KayitOl() {
     setSosyalYukleniyor('apple')
     const _t = setTimeout(() => { setSosyalYukleniyor(''); toast.error('Apple: zaman aşımı.') }, 30000)
     try {
-      const { FirebaseAuthentication } = await import('@capacitor-firebase/authentication')
-      const result = await FirebaseAuthentication.signInWithApple({
-        scopes: ['email', 'name'],
+      const SocialLogin = await sosyalInit()
+      const result = await SocialLogin.login({
+        provider: 'apple',
+        options: { scopes: ['email', 'name'] },
       })
-      const idToken = result?.credential?.idToken
-      if (!idToken) throw new Error('Apple kimlik doğrulaması alınamadı.')
-      const ad = result?.user?.displayName?.split(' ')?.[0] || ''
-      const soyad = result?.user?.displayName?.split(' ')?.slice(1).join(' ') || ''
-      const res = await authApi.appleGiris(idToken, ad, soyad, result?.user?.email || '')
+      const { idToken, profile } = result.result
+      const res = await authApi.appleGiris(
+        idToken,
+        profile?.givenName || '',
+        profile?.familyName || '',
+        profile?.email || ''
+      )
       if (res.data?.basarili) {
         sosyalGiris(res.data.veri.kullanici, res.data.veri.tokenlar)
         toast.success('Apple ile giriş yapıldı!')
         navigate(res.data.veri.kullanici?.yeni_kayit ? '/welcome' : '/dashboard')
       } else { toast.error(res.data?.hata || 'Apple ile giriş başarısız.') }
     } catch (err) {
-      const msg = err?.message || ''
-      if (!/cancel/i.test(msg)) toast.error('Apple ile giriş yapılamadı.')
+      if (err?.message !== 'USER_CANCELLED') toast.error('Apple ile giriş yapılamadı.')
     } finally { clearTimeout(_t); setSosyalYukleniyor('') }
   }
 
@@ -79,10 +96,12 @@ export default function KayitOl() {
     setSosyalYukleniyor('google')
     const _t = setTimeout(() => { setSosyalYukleniyor(''); toast.error('Google: zaman aşımı, tekrar deneyin.') }, 30000)
     try {
-      const { FirebaseAuthentication } = await import('@capacitor-firebase/authentication')
-      const result = await FirebaseAuthentication.signInWithGoogle()
-      const idToken = result?.credential?.idToken
-      if (!idToken) throw new Error('Google kimlik doğrulaması alınamadı.')
+      const SocialLogin = await sosyalInit()
+      const result = await SocialLogin.login({
+        provider: 'google',
+        options: {},
+      })
+      const { idToken } = result.result
       const res = await authApi.googleGiris(idToken)
       if (res.data?.basarili) {
         sosyalGiris(res.data.veri.kullanici, res.data.veri.tokenlar)
@@ -95,8 +114,7 @@ export default function KayitOl() {
       if (msg === 'USER_CANCELLED' || msg.includes('cancel')) {
         // sessiz
       } else {
-        const detay = msg || err?.code || JSON.stringify(err).slice(0, 100)
-        toast.error(`Google: ${detay}`)
+        toast.error('Google ile giriş yapılamadı.')
       }
     } finally { clearTimeout(_t); setSosyalYukleniyor('') }
   }

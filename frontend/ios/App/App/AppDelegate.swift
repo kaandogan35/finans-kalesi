@@ -1,7 +1,6 @@
 import UIKit
 import CommonCrypto
 import Capacitor
-import FirebaseCore
 
 // SSL Pinning — paramgo.com sertifika sabitleme
 // Hash (SHA-256, public key): XeT8c5VDNOSO0nrBABjIybAbqP5lw+1WbjBomevtUsU=
@@ -24,27 +23,7 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
     var window: UIWindow?
 
     func application(_ application: UIApplication, didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]?) -> Bool {
-        // Firebase'i guvenli sekilde baslat — GoogleService-Info.plist
-        // bundle'da bulunamazsa cokusu engelle, sadece logla.
-        configureFirebaseSafely()
         return true
-    }
-
-    private func configureFirebaseSafely() {
-        if FirebaseApp.app() != nil {
-            // Zaten configure edilmis
-            return
-        }
-        guard let path = Bundle.main.path(forResource: "GoogleService-Info", ofType: "plist") else {
-            NSLog("[ParamGo] UYARI: GoogleService-Info.plist bundle'da yok — Firebase atlandi")
-            return
-        }
-        guard let options = FirebaseOptions(contentsOfFile: path) else {
-            NSLog("[ParamGo] UYARI: GoogleService-Info.plist okunamadi — Firebase atlandi")
-            return
-        }
-        FirebaseApp.configure(options: options)
-        NSLog("[ParamGo] Firebase configure edildi: \(options.googleAppID)")
     }
 
     func applicationWillResignActive(_ application: UIApplication) {}
