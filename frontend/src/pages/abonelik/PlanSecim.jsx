@@ -409,6 +409,10 @@ export default function PlanSecim() {
   const plan = durum?.plan || jwtPlan
   const denemeDoldu = durum?.deneme_doldu || false
   const denemeKalanGun = durum?.deneme_kalan_gun ?? null
+  // Yeni model: kullanıcı henüz hiç abonelik almamış (deneme_bitis NULL).
+  // Bu durumda "süreniz doldu" yerine davetkâr "Premium'a geçin" mesajı gösterilir.
+  const henuzAbonelikYok = plan === 'deneme'
+    && (durum?.deneme_bitis === null || durum?.deneme_bitis === undefined)
   const standartGosterilen = yillik
     ? Math.round(FIYATLAR.standart.yillik / 12 * 100) / 100
     : FIYATLAR.standart.aylik
@@ -479,29 +483,55 @@ export default function PlanSecim() {
           <div className={`${p}-abn-page-sub`}>Planınızı yönetin, işletmenizi büyütün</div>
         </div>
 
-        {/* DENEME SÜRESİ BANNER */}
+        {/* DENEME SÜRESİ BANNER — 3 duruma göre */}
         {plan === 'deneme' && !yukleniyor && (
-          <div className={`abn-deneme-banner ${denemeDoldu ? 'doldu' : ''}`}>
-            <i className={`bi ${denemeDoldu ? 'bi-exclamation-triangle-fill' : 'bi-clock-fill'}`}
-               style={{ fontSize: 22, color: denemeDoldu ? '#dc2626' : '#d97706' }} />
-            <div style={{ flex: 1 }}>
-              <div style={{ fontWeight: 700, fontSize: 14, color: denemeDoldu ? '#991b1b' : '#92400e', marginBottom: 2 }}>
-                {denemeDoldu
-                  ? 'Ücretsiz erişim süreniz doldu'
-                  : `Ücretsiz erişim: ${denemeKalanGun} gün kaldı`
-                }
+          henuzAbonelikYok ? (
+            // Yeni kullanıcı, hiç abonelik almamış — davetkâr emerald banner
+            <div className="abn-deneme-banner yeni" style={{
+              background: 'linear-gradient(135deg, #ECFDF5 0%, #D1FAE5 100%)',
+              borderLeft: '4px solid #10B981',
+            }}>
+              <i className="bi bi-stars" style={{ fontSize: 22, color: '#059669' }} />
+              <div style={{ flex: 1 }}>
+                <div style={{ fontWeight: 700, fontSize: 14, color: '#065F46', marginBottom: 2 }}>
+                  Premium'a geçin, hemen başlayın
+                </div>
+                <div style={{ fontSize: 12, color: '#047857' }}>
+                  Tüm modüllere erişmek için bir plan seçin. İlk 7 gün ücretsiz — istediğiniz zaman iptal edebilirsiniz.
+                </div>
               </div>
-              <div style={{ fontSize: 12, color: denemeDoldu ? '#b91c1c' : '#a16207' }}>
-                {denemeDoldu
-                  ? 'Verileriniz güvende ancak yeni kayıt ekleyemezsiniz. Devam etmek için Premium\'a geçin.'
-                  : 'Tüm özellikler açık. Kesintisiz devam için Premium\'a geçin — ilk 7 gün ücretsiz.'
-                }
-              </div>
+              <span className="abn-deneme-chip" style={{
+                background: '#10B981',
+                color: '#fff',
+                fontWeight: 700,
+              }}>
+                7 Gün Ücretsiz
+              </span>
             </div>
-            <span className={`abn-deneme-chip ${denemeDoldu ? 'doldu' : ''}`}>
-              {denemeDoldu ? 'Süre Doldu' : `${denemeKalanGun} Gün`}
-            </span>
-          </div>
+          ) : (
+            // Eski kullanıcılar (geçiş): trial bitmiş veya devam ediyor
+            <div className={`abn-deneme-banner ${denemeDoldu ? 'doldu' : ''}`}>
+              <i className={`bi ${denemeDoldu ? 'bi-exclamation-triangle-fill' : 'bi-clock-fill'}`}
+                 style={{ fontSize: 22, color: denemeDoldu ? '#dc2626' : '#d97706' }} />
+              <div style={{ flex: 1 }}>
+                <div style={{ fontWeight: 700, fontSize: 14, color: denemeDoldu ? '#991b1b' : '#92400e', marginBottom: 2 }}>
+                  {denemeDoldu
+                    ? 'Ücretsiz erişim süreniz doldu'
+                    : `Ücretsiz erişim: ${denemeKalanGun} gün kaldı`
+                  }
+                </div>
+                <div style={{ fontSize: 12, color: denemeDoldu ? '#b91c1c' : '#a16207' }}>
+                  {denemeDoldu
+                    ? 'Verileriniz güvende ancak yeni kayıt ekleyemezsiniz. Devam etmek için Premium\'a geçin.'
+                    : 'Tüm özellikler açık. Kesintisiz devam için Premium\'a geçin — ilk 7 gün ücretsiz.'
+                  }
+                </div>
+              </div>
+              <span className={`abn-deneme-chip ${denemeDoldu ? 'doldu' : ''}`}>
+                {denemeDoldu ? 'Süre Doldu' : `${denemeKalanGun} Gün`}
+              </span>
+            </div>
+          )
         )}
 
         {/* HERO — Satış odaklı */}

@@ -38,11 +38,12 @@ class Abonelik {
      */
     public function guncelPlan(int $sirket_id): ?array {
         $stmt = $this->db->prepare("
-            SELECT a.*, s.abonelik_plani, s.abonelik_bitis, s.deneme_bitis
+            SELECT a.*, s.abonelik_plani, s.abonelik_bitis, s.deneme_bitis,
+                   s.iyzico_musteri_id, s.iyzico_abonelik_kodu
             FROM abonelikler a
             JOIN sirketler s ON s.id = a.sirket_id
             WHERE a.sirket_id = :sirket_id
-              AND a.durum = 'aktif'
+              AND a.durum IN ('aktif', 'iptal_planlandi')
             ORDER BY a.olusturma_tarihi DESC
             LIMIT 1
         ");
@@ -77,11 +78,11 @@ class Abonelik {
     ): int {
         $this->db->beginTransaction();
         try {
-            // Eski aktif aboneliği pasife çek
+            // Eski aktif ve iptal_planlandi abonelikleri pasife çek
             $stmt = $this->db->prepare("
                 UPDATE abonelikler
                 SET durum = 'pasif'
-                WHERE sirket_id = :sirket_id AND durum = 'aktif'
+                WHERE sirket_id = :sirket_id AND durum IN ('aktif', 'iptal_planlandi')
             ");
             $stmt->execute([':sirket_id' => $sirket_id]);
 
@@ -397,7 +398,7 @@ class Abonelik {
     public function iyzicoOdemeIslendiMi(string $odeme_ref): bool {
         if (!$odeme_ref) return false;
         $stmt = $this->db->prepare("
-            SELECT COUNT(*) FROM abonelik_odemeleri
+            SELECT COUNT(*) FROM odeme_gecmisi
             WHERE referans_no = :ref AND odeme_kanali = 'iyzico'
         ");
         $stmt->execute([':ref' => $odeme_ref]);
@@ -406,11 +407,13 @@ class Abonelik {
 
     public function planBilgisiIyzicoDan(int $sirket_id, string $abonelik_ref): array {
         // iyzico plan referans kodundan plan + dönem eşleştir
-        // IyzicoHelper::PLAN_KODLARI ile eşleştiriliyor (hardcoded UUID'ler)
+        // IyzicoHelper::PLAN_KODLARI ile eşleştiriliyor (hem trial hem trialsiz UUID'lere bakılır)
         require_once __DIR__ . '/../utils/IyzicoHelper.php';
         foreach (IyzicoHelper::PLAN_KODLARI as $plan => $donemler) {
-            foreach ($donemler as $donem => $kod) {
-                if ($kod === $abonelik_ref) {
+            foreach ($donemler as $donem => $variant) {
+                // variant: ['trial' => UUID, 'trialsiz' => UUID|null]
+                if (($variant['trial'] ?? null) === $abonelik_ref
+                    || ($variant['trialsiz'] ?? null) === $abonelik_ref) {
                     return [$plan, $donem];
                 }
             }
@@ -431,5 +434,65 @@ class Abonelik {
             ':abonelik_ref' => $abonelik_ref,
             ':sirket_id'    => $sirket_id,
         ]);
+    }
+
+    // ─────────────────────────────────────────
+    // TRIAL KULLANIM BAYRAĞI
+    // "1 kişi 1 kez trial" kuralı — iyzico'ya trial'sız plan göndermek için
+    // ─────────────────────────────────────────
+
+    /**
+     * Şirket daha önce trial kullandı mı?
+     * true ise iyzico'ya trial'sız plan gönderilir, kart girer girmez ödeme alınır.
+     */
+    public function trialKullanildiMi(int $sirket_id): bool {
+        $stmt = $this->db->prepare("
+            SELECT trial_kullanildi FROM sirketler WHERE id = :sirket_id LIMIT 1
+        ");
+        $stmt->execute([':sirket_id' => $sirket_id]);
+        return (int) $stmt->fetchColumn() === 1;
+    }
+
+    /**
+     * Trial kullanıldı bayrağını işaretle (idempotent — birden fazla çağrı sorun değil)
+     * İlk başarılı iyzico/Apple aboneliğinde tetiklenir.
+     */
+    public function trialKullanildiIsaretle(int $sirket_id): void {
+        $stmt = $this->db->prepare("
+            UPDATE sirketler SET trial_kullanildi = 1 WHERE id = :sirket_id
+        ");
+        $stmt->execute([':sirket_id' => $sirket_id]);
+    }
+
+    /**
+     * Aboneliği pasife çek + plan'ı 'deneme'ye düşür + deneme_bitis NULL
+     * Kullanım: iyzico EXPIRED veya Apple EXPIRATION sonrası, ya da iyzico iptal+dönem sonu
+     *
+     * NOT: trial_kullanildi bayrağı KORUNUR — kullanıcı tekrar abone olmak isterse
+     *      yine trial verilmez.
+     */
+    public function planSifirla(int $sirket_id): void {
+        $this->db->beginTransaction();
+        try {
+            $stmt = $this->db->prepare("
+                UPDATE abonelikler SET durum = 'pasif'
+                WHERE sirket_id = :sid AND durum IN ('aktif','iptal_planlandi')
+            ");
+            $stmt->execute([':sid' => $sirket_id]);
+
+            $stmt = $this->db->prepare("
+                UPDATE sirketler
+                SET abonelik_plani = 'deneme',
+                    abonelik_bitis = NULL,
+                    deneme_bitis   = NULL
+                WHERE id = :sid
+            ");
+            $stmt->execute([':sid' => $sirket_id]);
+
+            $this->db->commit();
+        } catch (\Throwable $e) {
+            $this->db->rollBack();
+            throw $e;
+        }
     }
 }

@@ -110,6 +110,9 @@ class WebhookController {
                 // iyzico referanslarını kaydet
                 $this->abonelik_model->iyzicoReferansKaydet($sirket_id, $musteri_ref, $abonelik_ref);
 
+                // Yedek: trial_kullanildi=1 (iyzicoDogrula çağrılmadan webhook gelirse)
+                $this->abonelik_model->trialKullanildiIsaretle($sirket_id);
+
                 $tutar = IyzicoHelper::WEB_FIYATLAR[$plan_adi][$odeme_donemi] ?? 0;
                 $this->abonelik_model->odemeKaydet($sirket_id, $abonelik_id, [
                     'plan_adi'     => $plan_adi,
@@ -226,6 +229,8 @@ class WebhookController {
                 $abonelik_id = $this->abonelik_model->planGuncelle(
                     $sirket_id, $plan, $donem, 'apple', $bitis_str
                 );
+                // Yedek: trial_kullanildi=1 (Apple IAP üzerinden trial kullanıldı)
+                $this->abonelik_model->trialKullanildiIsaretle($sirket_id);
                 // Deneme dışı satın alımda ödeme kaydı
                 if ($event_tipi !== 'INITIAL_PURCHASE' || $donem_tipi === 'NORMAL') {
                     $tutar = Abonelik::FIYATLAR[$plan][$donem] ?? 0;
@@ -244,9 +249,10 @@ class WebhookController {
                 break;
 
             case 'EXPIRATION':
-                // Abonelik bitti — deneme planına düşür
-                $this->abonelik_model->planGuncelle($sirket_id, 'deneme', null, null, null);
-                error_log("RevenueCat webhook: EXPIRATION sirket={$sirket_id}");
+                // Abonelik bitti — plan kapansın, modüllerde paywall açılsın
+                // trial_kullanildi bayrağı KORUNUR (planSifirla dokunmuyor)
+                $this->abonelik_model->planSifirla($sirket_id);
+                error_log("RevenueCat webhook: EXPIRATION sirket={$sirket_id} -> plan sifirlandi");
                 break;
 
             case 'TRANSFER':

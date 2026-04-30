@@ -309,92 +309,138 @@ export default function Welcome() {
   const aktifIcerik = EKRANLAR[aktifEkran]
   const Illustration = aktifIcerik.illustration
 
+  // Web: 520px mobile-frame içinde, beyaz kart şeklinde merkezi.
+  // Mobil: full-width, frame yok (mevcut .p-ob-hero / .p-ob-content responsive davranışı korunur).
+  const isMobil = typeof window !== 'undefined' && window.innerWidth < 640
+  const frameStyle = isMobil
+    ? {}
+    : {
+        width: '100%',
+        maxWidth: 520,
+        margin: '32px auto',
+        background: '#ffffff',
+        borderRadius: 24,
+        overflow: 'hidden',
+        boxShadow: '0 24px 60px -16px rgba(16,185,129,0.18), 0 8px 24px -8px rgba(0,0,0,0.08)',
+        display: 'flex',
+        flexDirection: 'column',
+      }
+
   return (
     <div
       className="p-ob-root"
       onTouchStart={handleTouchStart}
       onTouchMove={handleTouchMove}
       onTouchEnd={handleTouchEnd}
+      style={isMobil ? undefined : { background: '#F8F9FA', justifyContent: 'flex-start' }}
     >
-      {/* ── Hero arka plan ── */}
-      <div className="p-ob-hero" style={{ paddingBottom: 20, minHeight: 'auto' }}>
-        <div className="p-ob-hero-blob-1" />
-        <div className="p-ob-hero-blob-2" />
-        <div className="p-ob-hero-blob-3" />
+      <div style={frameStyle}>
+        {/* ── Hero arka plan ── */}
+        <div
+          className="p-ob-hero"
+          style={isMobil
+            ? { paddingBottom: 20, minHeight: 'auto' }
+            : {
+                padding: '20px 24px 28px',
+                minHeight: 'auto',
+                width: '100%',
+                borderRadius: 0,
+              }
+          }
+        >
+          <div className="p-ob-hero-blob-1" />
+          <div className="p-ob-hero-blob-2" />
+          <div className="p-ob-hero-blob-3" />
 
-        {/* Logo + Atla butonu — üst bar */}
-        <div style={{
-          display: 'flex',
-          justifyContent: 'space-between',
-          alignItems: 'center',
-          width: '100%',
-          maxWidth: 440,
-          padding: '0 4px',
-          marginBottom: 20,
-          position: 'relative',
-          zIndex: 2,
-        }}>
-          <div className="p-ob-hero-logo" style={{ margin: 0 }}>
-            <ParamGoLogo size="sm" variant="white" />
+          {/* Logo + Atla butonu — üst bar */}
+          <div style={{
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'center',
+            width: '100%',
+            maxWidth: 440,
+            margin: '0 auto',
+            marginBottom: 14,
+            position: 'relative',
+            zIndex: 2,
+          }}>
+            <div className="p-ob-hero-logo" style={{ margin: 0 }}>
+              <ParamGoLogo size="sm" variant="white" />
+            </div>
+
+            {!sonEkran && (
+              <button
+                type="button"
+                onClick={atla}
+                style={{
+                  background: 'rgba(255,255,255,0.16)',
+                  border: '1px solid rgba(255,255,255,0.32)',
+                  color: '#fff',
+                  fontSize: 12,
+                  fontWeight: 700,
+                  padding: '7px 14px',
+                  borderRadius: 999,
+                  cursor: 'pointer',
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: 5,
+                  backdropFilter: 'blur(8px)',
+                  WebkitBackdropFilter: 'blur(8px)',
+                  letterSpacing: '0.2px',
+                  transition: 'background 0.2s',
+                }}
+                onMouseEnter={(e) => e.currentTarget.style.background = 'rgba(255,255,255,0.26)'}
+                onMouseLeave={(e) => e.currentTarget.style.background = 'rgba(255,255,255,0.16)'}
+              >
+                Atla
+                <i className="bi bi-arrow-right" style={{ fontSize: 13 }} />
+              </button>
+            )}
           </div>
 
-          {!sonEkran && (
-            <button
-              type="button"
-              onClick={atla}
-              style={{
-                background: 'rgba(255,255,255,0.18)',
-                border: '1px solid rgba(255,255,255,0.28)',
-                color: '#fff',
-                fontSize: 12,
-                fontWeight: 700,
-                padding: '8px 14px',
-                borderRadius: 20,
-                cursor: 'pointer',
-                display: 'flex',
-                alignItems: 'center',
-                gap: 4,
-                backdropFilter: 'blur(6px)',
-                WebkitBackdropFilter: 'blur(6px)',
-              }}
-            >
-              Atla
-              <i className="bi bi-arrow-right" style={{ fontSize: 13 }} />
-            </button>
-          )}
+          {/* Ekran numarası rozeti */}
+          <div style={{
+            display: 'inline-block',
+            background: 'rgba(255,255,255,0.18)',
+            border: '1px solid rgba(255,255,255,0.32)',
+            color: '#fff',
+            fontSize: 10.5,
+            fontWeight: 800,
+            padding: '5px 14px',
+            borderRadius: 999,
+            letterSpacing: '0.6px',
+            textTransform: 'uppercase',
+            backdropFilter: 'blur(8px)',
+            WebkitBackdropFilter: 'blur(8px)',
+            position: 'relative',
+            zIndex: 2,
+          }}>
+            {aktifIcerik.vurguAnahtar}
+          </div>
         </div>
 
-        {/* Ekran numarası rozeti */}
-        <div style={{
-          background: 'rgba(255,255,255,0.18)',
-          border: '1px solid rgba(255,255,255,0.28)',
-          color: '#fff',
-          fontSize: 11,
-          fontWeight: 700,
-          padding: '5px 12px',
-          borderRadius: 14,
-          letterSpacing: '0.5px',
-          textTransform: 'uppercase',
-          backdropFilter: 'blur(6px)',
-          WebkitBackdropFilter: 'blur(6px)',
-          position: 'relative',
-          zIndex: 2,
-        }}>
-          {aktifIcerik.vurguAnahtar}
-        </div>
-      </div>
-
-      {/* ── İçerik ── */}
-      <div className="p-ob-content" style={{ paddingTop: 8 }}>
+        {/* ── İçerik ── */}
         <div
-          key={aktifEkran}
-          className="p-ob-card"
-          style={{
-            margin: '0 auto 24px',
-            padding: '32px 24px 28px',
-            textAlign: 'center',
-          }}
+          className="p-ob-content"
+          style={isMobil
+            ? { paddingTop: 8 }
+            : { paddingTop: 0, paddingBottom: 28, maxWidth: '100%' }
+          }
         >
+          <div
+            key={aktifEkran}
+            className="p-ob-card"
+            style={isMobil
+              ? { margin: '0 auto 24px', padding: '32px 24px 28px', textAlign: 'center' }
+              : {
+                  margin: '0',
+                  padding: '28px 28px 24px',
+                  textAlign: 'center',
+                  borderRadius: 0,
+                  boxShadow: 'none',
+                }
+            }
+          >
           {/* İllustration */}
           <div style={{
             display: 'flex',
@@ -488,6 +534,7 @@ export default function Welcome() {
             <i className="bi bi-arrow-left" /> Önceki
           </button>
         )}
+        </div>
       </div>
 
       {/* ── Paywall Modal (sadece native) ── */}

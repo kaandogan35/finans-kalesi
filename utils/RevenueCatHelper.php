@@ -137,9 +137,9 @@ class RevenueCatHelper {
                 return false;
             }
 
-            // iyzico (web) abonelikleri RC ile senkronize edilmez
-            // RC sadece Apple IAP için geçerlidir
-            if ($mevcut_kanal === 'iyzico' || $mevcut_kanal === 'web') {
+            // RC senkronizasyonu YALNIZCA Apple/Google IAP için geçerlidir
+            // Diğer kanallar (iyzico, web, davet, NULL vb.) atlanır
+            if (!in_array($mevcut_kanal, ['apple', 'google'], true)) {
                 return false;
             }
 

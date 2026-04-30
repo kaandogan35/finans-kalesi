@@ -122,14 +122,18 @@ class PlanKontrol {
     }
 
     /**
-     * Deneme planı yazma kontrolü — iOS/Web + Eski/Yeni kullanıcı ayrımlı
+     * Deneme planı yazma kontrolü
+     *
+     * YENİ MODEL (2026-04-30 sonrası):
+     *  - Yeni kullanıcılar artık kayıt anında trial almaz, deneme_bitis=NULL olarak başlar.
+     *  - Trial yalnızca iyzico/Apple aboneliği başladığında (sağlayıcının kendi 7 günü) aktiftir.
+     *  - Deneme planında olan = abonelik almamış demektir → tüm yazma işlemleri engellenir.
      *
      * Mantık:
      *  - Ücretli plan (standart/kurumsal) → kontrol yok
      *  - GET istekler → kontrol yok (okuma her zaman serbest)
-     *  - iOS + YENİ kullanıcı + deneme plan → 403 PLAN_GEREKLI (Apple trial zorunlu)
-     *  - iOS + ESKİ kullanıcı + deneme plan → eski sistem (deneme süresi kontrolü)
-     *  - Web + deneme plan → eski sistem (deneme süresi kontrolü)
+     *  - YENİ kullanıcı + deneme plan (iOS veya Web) → 403 PLAN_GEREKLI (paywall)
+     *  - ESKİ kullanıcı + deneme plan → mevcut deneme süresi kontrolü (geçiş süresi)
      */
     public static function denemeSuresiKontrol(array $payload): void {
         $plan = $payload['plan'] ?? 'deneme';
@@ -147,14 +151,15 @@ class PlanKontrol {
             return;
         }
 
-        $platform       = self::platformAl();
         $yeni_kullanici = self::yeniSistemKullanicisiMi($sirket_id);
 
-        if ($platform === 'ios' && $yeni_kullanici) {
-            // Yeni iOS kullanıcısı — Apple trial zorunlu
+        if ($yeni_kullanici) {
+            // Yeni sistem kullanıcısı — kayıt anında trial almıyor.
+            // Deneme planında olması = abonelik almadığı anlamına gelir, yazma engellenir.
+            // Hem iOS hem Web hem Android için aynı davranış.
             Response::json([
                 'basarili'     => false,
-                'hata'         => 'Bu işlemi yapabilmek için Premium aboneliği başlatmanız gerekir. İlk 7 gün ücretsiz.',
+                'hata'         => 'Bu işlemi yapabilmek için aboneliği başlatmanız gerekir. İlk 7 gün ücretsiz.',
                 'kod'          => 'PLAN_GEREKLI',
                 'kalan_gun'    => 0,
                 'plan_sayfasi' => true,
@@ -162,8 +167,7 @@ class PlanKontrol {
             exit;
         }
 
-        // Eski kullanıcılar (iOS veya Web) ve yeni Web kullanıcıları: eski mantık
-        // Deneme süresi dolunca engelle
+        // Eski kullanıcılar (geçiş): deneme süresi dolmuşsa engelle
         $db = Database::baglan();
         $abonelik = new Abonelik($db);
 

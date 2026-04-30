@@ -101,8 +101,10 @@ class AuthController {
                 'rol'       => 'sahip'  // Ilk kullanici = sirket sahibi
             ]);
             
-            // 7. Ücretsiz deneme başlat
-            $this->abonelik_model->denemeBaslat((int) $sirket_id);
+            // 7. (Kaldırıldı) Eski sistemde kayıt anında 7 gün trial başlatılıyordu.
+            //    Yeni sistemde trial yalnızca iyzico/Apple aboneliği başladığında verilir
+            //    (sağlayıcının kendi trial period'u). Kayıt sonrası plan='deneme',
+            //    deneme_bitis=NULL → modüllerde yazma engellenir, paywall açılır.
 
             // 8. Tokenlar olustur
             $kullanici_bilgi = [
@@ -156,7 +158,7 @@ class AuthController {
                     'rol'                   => 'sahip',
                     'tema_adi'              => 'paramgo',
                     'plan'                  => 'deneme',
-                    'deneme_bitis'          => date('Y-m-d H:i:s', strtotime('+' . \Abonelik::DENEME_SURESI_GUN . ' days')),
+                    'deneme_bitis'          => null,  // Yeni sistem: kayıt anında trial yok
                     'onboarding_tamamlandi' => 1,  // Yeni sistem: klasik onboarding bypass
                     'yeni_kayit'            => true, // Frontend Welcome ekranlarına yönlendirmek için
                     'yeni_sistem_kullanici' => true, // Bugün kayıt olan = yeni sistem
@@ -810,7 +812,7 @@ class AuthController {
                     'sosyal_giris'   => 1,
                 ]);
 
-                $this->abonelik_model->denemeBaslat((int)$sirket_id);
+                // (Kaldırıldı) denemeBaslat — yeni sistemde kayıt anında trial yok
 
                 $kullanici = [
                     'id'           => $kullanici_id,
@@ -820,7 +822,7 @@ class AuthController {
                     'rol'          => 'sahip',
                     'tema_adi'     => 'paramgo',
                     'plan'         => 'deneme',
-                    'deneme_bitis' => date('Y-m-d H:i:s', strtotime('+' . \Abonelik::DENEME_SURESI_GUN . ' days')),
+                    'deneme_bitis' => null,  // Yeni sistem: kayıt anında trial yok
                     'onboarding_tamamlandi' => 1,  // Yeni sistem bypass
                     'yeni_kayit'   => true,
                     'yeni_sistem_kullanici' => true,  // Bugün kayıt olan = yeni sistem
@@ -959,7 +961,7 @@ class AuthController {
                     'sosyal_giris'   => 1,
                 ]);
 
-                $this->abonelik_model->denemeBaslat((int)$sirket_id);
+                // (Kaldırıldı) denemeBaslat — yeni sistemde kayıt anında trial yok
 
                 $kullanici = [
                     'id'           => $kullanici_id,
@@ -969,7 +971,7 @@ class AuthController {
                     'rol'          => 'sahip',
                     'tema_adi'     => 'paramgo',
                     'plan'         => 'deneme',
-                    'deneme_bitis' => date('Y-m-d H:i:s', strtotime('+' . \Abonelik::DENEME_SURESI_GUN . ' days')),
+                    'deneme_bitis' => null,  // Yeni sistem: kayıt anında trial yok
                     'onboarding_tamamlandi' => 1,  // Yeni sistem bypass
                     'yeni_kayit'   => true,
                     'yeni_sistem_kullanici' => true,  // Bugün kayıt olan = yeni sistem

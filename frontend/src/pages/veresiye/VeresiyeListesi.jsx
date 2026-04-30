@@ -368,7 +368,7 @@ export default function VeresiyeListesi() {
                   <button type="button" className={`${p}-btn-cancel`} onClick={() => setYeniModalAcik(false)} disabled={yeniKaydediyor}>
                     İptal
                   </button>
-                  <button type="submit" className={`${p}-btn-save`} disabled={yeniKaydediyor}>
+                  <button type="submit" className={`${p}-btn-save ${p}-btn-save-default`} disabled={yeniKaydediyor}>
                     {yeniKaydediyor ? 'Kaydediliyor...' : 'Kaydet & Aç'}
                   </button>
                 </div>

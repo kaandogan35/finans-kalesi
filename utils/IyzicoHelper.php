@@ -17,17 +17,73 @@ if (!class_exists('Iyzipay\Options', false)) {
 
 class IyzicoHelper {
 
-    // iyzico panelinde oluşturulan plan referans kodları
+    // iyzico panelinde oluşturulan plan referans kodları (2026-04-30 güncel)
+    //
+    // İki versiyon plan tutuyoruz:
+    //   - 'trial':    7 gün ücretsiz deneme period'lu plan (ilk abonelik için)
+    //   - 'trialsiz': Trial period 0 gün — kart girer girmez ödeme alınır
+    //                 (iptal sonrası tekrar abone olanlar için, "1 kez trial" kuralı)
+    //
+    // NOT: 2026-04-30'da yıllık planlardaki "Faturalama Aralığı: Aylık" hatası tespit
+    //      edilip eski yıllık UUID'ler silindi, yeni doğru UUID'ler ile değiştirildi.
+    //      Eski UUID'ler (silindi):
+    //        Standart Yıllık (yanlış): 2e8611ba-bd74-48dc-8db3-49a3c16a4931
+    //        Kurumsal Yıllık (yanlış): 129785d6-3cee-44e6-9f36-d3061caedb61
     public const PLAN_KODLARI = [
         'standart' => [
-            'aylik'  => '06d2cecf-bdb9-44b4-8740-bb0fa42d8968',
-            'yillik' => '2e8611ba-bd74-48dc-8db3-49a3c16a4931',
+            'aylik' => [
+                'trial'    => '06d2cecf-bdb9-44b4-8740-bb0fa42d8968',
+                'trialsiz' => 'ae9b32a5-2010-45d1-bf3c-6437c557415a',
+            ],
+            'yillik' => [
+                'trial'    => 'd3543b96-a19d-4516-accb-2615ffdba90f',
+                'trialsiz' => '57f426ba-34e7-4577-b5af-f36915919055',
+            ],
         ],
         'kurumsal' => [
-            'aylik'  => 'ffdeb3cb-de30-4c14-8a36-f5791797bf48',
-            'yillik' => '129785d6-3cee-44e6-9f36-d3061caedb61',
+            'aylik' => [
+                'trial'    => 'ffdeb3cb-de30-4c14-8a36-f5791797bf48',
+                'trialsiz' => '911abc5e-2a9f-40ca-923e-57ee246ea4f8',
+            ],
+            'yillik' => [
+                'trial'    => '89619682-2043-45cc-933d-6ea947b25ca2',
+                'trialsiz' => 'c08848af-2d1b-4959-a9e4-57d215d89f71',
+            ],
         ],
     ];
+
+    /**
+     * Plan UUID'sini seç — trial gerekiyor mu yoksa trial'sız mı?
+     *
+     * @param string $plan_adi      'standart' | 'kurumsal'
+     * @param string $odeme_donemi  'aylik' | 'yillik'
+     * @param bool   $trial_kullanildi  true ise trial'sız UUID döndürmeye çalışır
+     * @return string|null Plan UUID'si, geçersiz ise null
+     */
+    public static function planUuidSec(string $plan_adi, string $odeme_donemi, bool $trial_kullanildi): ?string {
+        $kayit = self::PLAN_KODLARI[$plan_adi][$odeme_donemi] ?? null;
+        if (!$kayit) {
+            return null;
+        }
+
+        if ($trial_kullanildi) {
+            // Trial daha önce kullanıldı → trial'sız UUID kullan
+            if (!empty($kayit['trialsiz'])) {
+                return $kayit['trialsiz'];
+            }
+            // Trial'sız UUID henüz tanımlanmamış (iyzico paneli bekliyor)
+            // → fallback: trial'lı UUID. ⚠️ Bu açık bir uyarı log'a yazılır
+            error_log(
+                "iyzico planUuidSec UYARI: trialsiz UUID tanimli degil, trial'li plana fallback. "
+                . "plan={$plan_adi}/{$odeme_donemi} — bu kullanici 7 gun bedava trial alacak. "
+                . "Iyzico paneline trialsiz plan ekleyip PLAN_KODLARI'na UUID girin."
+            );
+            return $kayit['trial'] ?? null;
+        }
+
+        // İlk abonelik → trial'lı UUID
+        return $kayit['trial'] ?? null;
+    }
 
     // Web fiyatları (TL, KDV hariç)
     public const WEB_FIYATLAR = [
@@ -51,14 +107,17 @@ class IyzicoHelper {
 
     /**
      * Checkout Form başlat — ödeme sayfası URL'i döndür
+     *
+     * @param bool $trial_kullanildi true ise trial'sız UUID seçilir (varsa)
      */
     public static function checkoutBaslat(
         string $plan_adi,
         string $odeme_donemi,
         array  $musteri,
-        string $callback_url
+        string $callback_url,
+        bool   $trial_kullanildi = false
     ): array {
-        $plan_kodu = self::PLAN_KODLARI[$plan_adi][$odeme_donemi] ?? null;
+        $plan_kodu = self::planUuidSec($plan_adi, $odeme_donemi, $trial_kullanildi);
         if (!$plan_kodu) {
             throw new \RuntimeException("Geçersiz plan: {$plan_adi}/{$odeme_donemi}");
         }
@@ -232,6 +291,64 @@ class IyzicoHelper {
             'baslangic_tarihi' => $data['startDate'] ?? null,
             'ham'              => $data,
         ];
+    }
+
+    /**
+     * Müşterinin iyzico'daki aktif aboneliklerini listele, aktif olanın referans kodunu döndür.
+     * iyzico_abonelik_kodu DB'de eksikse fallback olarak kullanılır.
+     */
+    public static function aktifAbonelikRefBul(string $musteri_ref): ?string {
+        try {
+            $request = new \Iyzipay\Request\Subscription\SubscriptionListRequest();
+            $request->setLocale('tr');
+            $request->setCustomerReferenceCode($musteri_ref);
+            $request->setPage(1);
+            $request->setCount(20);
+
+            $result = \Iyzipay\Model\Subscription\SubscriptionList::create($request, self::options());
+            $raw = $result->getRawResult();
+            $data = json_decode($raw, true);
+
+            if (($data['status'] ?? '') !== 'success') {
+                error_log('iyzico aboneliklist hata: ' . ($data['errorMessage'] ?? 'bilinmiyor') . ' musteri=' . $musteri_ref);
+                return null;
+            }
+
+            $items = $data['data']['items'] ?? [];
+            foreach ($items as $abn) {
+                if (($abn['subscriptionStatus'] ?? '') === 'ACTIVE') {
+                    return $abn['referenceCode'] ?? null;
+                }
+            }
+            return null;
+        } catch (\Throwable $e) {
+            error_log('iyzico aboneliklist exception: ' . $e->getMessage() . ' musteri=' . $musteri_ref);
+            return null;
+        }
+    }
+
+    /**
+     * Tek bir aboneliğin iyzico'daki güncel durumunu döndürür.
+     * Dönüş: 'ACTIVE' | 'CANCELED' | 'EXPIRED' | 'PENDING' | null (hata)
+     */
+    public static function abonelikDurumCek(string $abonelik_ref): ?string {
+        try {
+            $request = new \Iyzipay\Request\Subscription\SubscriptionDetailsRequest();
+            $request->setLocale('tr');
+            $request->setSubscriptionReferenceCode($abonelik_ref);
+
+            $result = \Iyzipay\Model\Subscription\SubscriptionDetails::retrieve($request, self::options());
+            $raw = $result->getRawResult();
+            $data = json_decode($raw, true);
+
+            if (($data['status'] ?? '') !== 'success') {
+                return null;
+            }
+            return $data['data']['subscriptionStatus'] ?? null;
+        } catch (\Throwable $e) {
+            error_log('iyzico abonelikDurumCek exception: ' . $e->getMessage() . ' ref=' . $abonelik_ref);
+            return null;
+        }
     }
 
     /**
