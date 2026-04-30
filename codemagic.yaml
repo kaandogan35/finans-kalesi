@@ -45,6 +45,7 @@ workflows:
       - name: Create frontend .env
         script: |
           echo "VITE_REVENUECAT_IOS_KEY=$VITE_REVENUECAT_IOS_KEY" > frontend/.env
+          echo "VITE_REVENUECAT_ANDROID_KEY=$VITE_REVENUECAT_ANDROID_KEY" >> frontend/.env
 
       - name: Build frontend (Vite)
         script: |

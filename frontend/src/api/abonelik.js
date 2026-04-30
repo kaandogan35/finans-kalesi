@@ -32,4 +32,7 @@ export const abonelikApi = {
 
   /** Web — Abonelik referans kodu ile manuel aktivasyon (kullanıcı iyzico panelden kopyalar) */
   iyzicoAktive: (abonelik_ref) => api.post('/abonelik/iyzico-aktive', { abonelik_ref }),
+
+  /** Davet kodu ile 1 yıllık Kurumsal plan aktifleştir */
+  davetKullan: (kod) => api.post('/abonelik/davet-kullan', { kod }),
 }

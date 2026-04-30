@@ -87,6 +87,16 @@ class BildirimOlusturucu {
                 );
             }
 
+            // 7. Android Push bildirimi (FcmHelper yüklüyse)
+            if (class_exists('FcmHelper')) {
+                FcmHelper::kullanici_push(
+                    $kullanici_id,
+                    $veri['baslik'],
+                    $veri['mesaj'],
+                    ['url' => $veri['aksiyon_url'] ?? '/dashboard']
+                );
+            }
+
             return $bildirim_id;
 
         } catch (\Exception $e) {

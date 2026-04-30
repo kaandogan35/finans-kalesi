@@ -50,6 +50,12 @@ if (file_exists($push_helper)) {
     require_once $push_helper;
 }
 
+// FcmHelper — Android push bildirimleri (varsa yükle)
+$fcm_helper = CRON_ROOT . '/utils/FcmHelper.php';
+if (file_exists($fcm_helper)) {
+    require_once $fcm_helper;
+}
+
 // ─── Sayaçlar ─────────────────────────────────────────────────────
 $toplam_gonderilen = 0;
 $toplam_cek_tarandi = 0;

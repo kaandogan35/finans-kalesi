@@ -1300,6 +1300,7 @@ body.keyboard-open .p-modal-center {
 .p-btn-save-warning-alt { background: linear-gradient(135deg, #D97706, #B45309); box-shadow: 0 4px 16px rgba(217,119,6,0.25); }
 .p-btn-save-default { background: linear-gradient(135deg, #10B981, #059669); box-shadow: 0 4px 16px rgba(16,185,129,0.35); transition: all 0.2s ease; }
 .p-btn-save-default:hover { box-shadow: 0 6px 24px rgba(16,185,129,0.45); transform: translateY(-1px); }
+.p-btn-save-default:disabled { background: linear-gradient(135deg, #6EE7B7, #34D399); box-shadow: none; opacity: 1; color: rgba(255,255,255,0.75); cursor: not-allowed; }
 
 /* ─── Modal Form Controls ─── */
 .p-modal-box .form-control,
@@ -7789,6 +7790,68 @@ body:has(.pm-auth-screen) {
   }
 }
 
+
+/* ─── Profilim Sekmesi ─────────────────────────────────────────────────────── */
+.gvn-profile-hero {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 14px;
+  padding: 28px 20px 20px;
+  background: linear-gradient(160deg, #f0fdf8 0%, #ffffff 60%);
+  border: 1px solid rgba(16,185,129,0.12);
+  border-radius: 16px;
+  margin-bottom: 12px;
+  position: relative;
+  overflow: hidden;
+}
+.gvn-profile-hero::before {
+  content: '';
+  position: absolute;
+  top: -40px; right: -40px;
+  width: 140px; height: 140px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(16,185,129,0.07) 0%, transparent 70%);
+  pointer-events: none;
+}
+.gvn-avatar {
+  width: 72px; height: 72px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #10B981 0%, #059669 100%);
+  box-shadow: 0 4px 20px rgba(16,185,129,0.28), 0 0 0 4px rgba(16,185,129,0.10);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 26px; font-weight: 800; color: #fff;
+  letter-spacing: -1px;
+  font-family: var(--p-font-body);
+  flex-shrink: 0;
+}
+.gvn-info-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 11px 0;
+  border-bottom: 1px solid #F3F4F6;
+}
+.gvn-info-row:last-child { border-bottom: none; }
+.gvn-info-icon {
+  width: 34px; height: 34px;
+  border-radius: 9px;
+  background: rgba(16,185,129,0.07);
+  border: 1px solid rgba(16,185,129,0.12);
+  display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0;
+  color: #10B981;
+  font-size: 14px;
+}
+.gvn-info-label {
+  font-size: 11px; font-weight: 600;
+  color: #9CA3AF; text-transform: uppercase;
+  letter-spacing: 0.4px; line-height: 1; margin-bottom: 3px;
+}
+.gvn-info-value {
+  font-size: 13px; font-weight: 600; color: #111827; line-height: 1.2;
+}
+.gvn-info-value.empty { color: #D1D5DB; font-style: italic; font-weight: 400; }
 
 /* ══════════════════════════════════════════════════════════════
    KULLANICI YÖNETİMİ — KullaniciYonetimi.jsx (kuy- prefix)
