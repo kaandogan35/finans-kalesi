@@ -85,6 +85,35 @@ workflows:
             echo "UYARI: GOOGLE_SERVICE_INFO_PLIST env var bulunamadı."
           fi
 
+      - name: Register GoogleService-Info.plist in Xcode project
+        script: |
+          # GoogleService-Info.plist dosyayi pbxproj'da resource olarak kaydet.
+          # Sadece klasorde olmasi yetmez; .ipa bundle'ina kopyalanmasi icin
+          # PBXBuildFile + PBXFileReference + PBXResourcesBuildPhase girisi gerekli.
+          gem list xcodeproj -i > /dev/null 2>&1 || gem install xcodeproj --no-document
+          ruby <<'RUBY_SCRIPT'
+            require 'xcodeproj'
+            project_path = 'frontend/ios/App/App.xcodeproj'
+            project = Xcodeproj::Project.open(project_path)
+            app_target = project.targets.find { |t| t.name == 'App' }
+
+            # Zaten ekli mi?
+            already_added = app_target.resources_build_phase.files.any? do |bf|
+              bf.file_ref && bf.file_ref.path && bf.file_ref.path.include?('GoogleService-Info.plist')
+            end
+
+            if already_added
+              puts 'GoogleService-Info.plist zaten Xcode projesinde kayitli.'
+            else
+              app_group = project.main_group.find_subpath('App', false)
+              file_ref = app_group.new_reference('GoogleService-Info.plist')
+              file_ref.last_known_file_type = 'text.plist.xml'
+              app_target.add_resources([file_ref])
+              project.save
+              puts 'GoogleService-Info.plist Xcode projesine eklendi (resource).'
+            end
+          RUBY_SCRIPT
+
       - name: Add Google Sign-In URL scheme to Info.plist
         script: |
           PLIST="frontend/ios/App/App/Info.plist"
