@@ -1,6 +1,7 @@
 import UIKit
 import CommonCrypto
 import Capacitor
+import FirebaseCore
 
 // SSL Pinning — paramgo.com sertifika sabitleme
 // Hash (SHA-256, public key): XeT8c5VDNOSO0nrBABjIybAbqP5lw+1WbjBomevtUsU=
@@ -23,6 +24,11 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
     var window: UIWindow?
 
     func application(_ application: UIApplication, didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]?) -> Bool {
+        // Firebase başlat — GoogleService-Info.plist iOS bundle'da olmalı
+        // Çift init koruması: zaten configure edilmişse atla
+        if FirebaseApp.app() == nil {
+            FirebaseApp.configure()
+        }
         return true
     }
 
